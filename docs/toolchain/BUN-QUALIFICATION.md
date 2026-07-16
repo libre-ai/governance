@@ -36,6 +36,12 @@ The release is a technical compliance and reproducibility record, not legal advi
 
 **Bootstrap acceptance:** complete.
 
-## G2 replacement rule
+## G2 checkpoint
 
-At the beginning of Foundation Build, check stable releases again. Replace the canary with the first qualified stable Rust release, regenerate `bun.lock`, rerun every gate and archive the new checksums. A different canary is forbidden without repeating this qualification.
+`WP-G2-T01` rechecked upstream on 2026-07-16. Stable remains `1.3.14+0d9b296af`, 903 commits behind the selected Rust-line commit and without a root `Cargo.toml`. No stable Rust-line release exists. Evidence and the proposed negative-checkpoint disposition are recorded in [`G2-T01-QUALIFICATION.md`](G2-T01-QUALIFICATION.md).
+
+Human continuation accepted the negative checkpoint on 2026-07-16 and unlocked development foundation work while the exact canary remains bootstrap-only. It did not approve production, another canary or Clever provisioning.
+
+## Replacement rule
+
+Replace the canary with the first qualified stable Rust release, regenerate `bun.lock`, rerun every gate and archive the new checksums. A different canary is forbidden without repeating full binary/source/licence qualification.

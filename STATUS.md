@@ -31,8 +31,9 @@
 
 ## Current G2 entry
 
-- execute `WP-G2-T01` production toolchain qualification before every other foundation package ;
-- keep production and Clever Cloud blocked if no stable Rust-line Bun release qualifies.
+- `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
+- `WP-G2-C01` contract SDK and boundary validators is unlocked ;
+- production, another canary and Clever Cloud remain blocked.
 
 ## Explicitly deferred
 
