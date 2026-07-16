@@ -4,6 +4,7 @@ const allowed = new Set([
   "MIT",
   "Apache-2.0",
   "MIT OR Apache-2.0",
+  "0BSD",
   "BSD-2-Clause",
   "BSD-3-Clause",
   "ISC",
