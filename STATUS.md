@@ -23,13 +23,13 @@
 - shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
 - nine application specifications expanded to the G1 standard with an executable structure gate ;
-- G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority.
+- G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority ;
+- canonical contract catalog locked: 26 strict JSON Schemas with 25 fixture pairs, 7 OpenAPI surfaces, 5 parsed WIT worlds and 2 parsed deny-by-default Biscuit policies.
 
 ## Pending in G1
 
-- lock JSON Schema, OpenAPI and WIT contract inventory ;
 - lock data ownership, retention and deletion rules ;
-- lock browser session and Biscuit authorization contracts ;
+- lock cross-cutting browser session plus Biscuit issuance, attenuation, rotation, revocation and tenant conformance ;
 - decompose final work packages with no unresolved architecture decision.
 
 ## Explicitly deferred

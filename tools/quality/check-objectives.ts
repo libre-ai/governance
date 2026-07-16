@@ -14,6 +14,8 @@ const requiredFiles = [
   "docs/specifications/SPECIFICATION-STANDARD.md",
   "docs/specifications/DECISION-QUEUE.md",
   "docs/adr/0002-g1-cross-cutting-product-decisions.md",
+  "contracts/catalog.v1.json",
+  "contracts/COMPATIBILITY.md",
   "prompts/00-cleanup.md",
   "prompts/01-specification-lock.md",
   "prompts/02-foundation-build.md",

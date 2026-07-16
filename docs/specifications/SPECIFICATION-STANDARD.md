@@ -73,7 +73,7 @@ Validation details MAY identify field paths and rule IDs but MUST NOT echo secre
 - Producers write one current version. Consumers MAY read explicitly listed older versions only through a bounded adapter with deletion criteria.
 - Breaking changes require a new major contract path, migration plan and simultaneous consumer qualification before release.
 - Generated types never become authority; schemas/WIT/OpenAPI remain authority.
-- Every contract has valid minimal, valid complete, malformed, unknown-field and cross-tenant negative fixtures.
+- Every schema has a canonical positive fixture, malformed-root rejection, unknown-field rejection and at least one domain-specific negative fixture. Boundary suites add complete and cross-tenant vectors wherever tenant ownership applies.
 
 ## Data and privacy baseline
 
