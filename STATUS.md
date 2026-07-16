@@ -20,7 +20,8 @@
 - missing Gear remote recreated solely as a verified archive ;
 - canonical public GitHub repository created and initial history pushed ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
-- shared GitHub CI run `29491575814` green for exact Bun and Rust gates.
+- shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
+- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled.
 
 ## Pending in G1
 
@@ -41,4 +42,5 @@
 - Bun stable remains `1.3.14`; the selected Rust-line commit exists only in `1.4.0-canary.1` ;
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
+- CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
 - app briefs are boundaries, not complete functional specifications.
