@@ -270,6 +270,35 @@
         "argon2idAttempted": false,
         "plaintextReleased": false
       }
+    },
+    {
+      "name": "unsupported-version",
+      "recoverySecretUtf8": "notebook-core-v2-public-test-secreu",
+      "digestRecomputedAfterMutation": true,
+      "envelope": {
+        "schemaVersion": "libre-ai.notebook-backup.v3",
+        "id": "urn:libre-ai:backup:golden-1",
+        "createdAt": "2026-07-16T00:00:00Z",
+        "cipher": "aes-256-gcm",
+        "kdf": {
+          "algorithm": "argon2id",
+          "version": 19,
+          "memoryKiB": 65536,
+          "iterations": 3,
+          "parallelism": 1,
+          "outputLengthBytes": 32,
+          "salt": "AAECAwQFBgcICQoLDA0ODw=="
+        },
+        "nonce": "EBESExQVFhcYGRob",
+        "ciphertext": "gzckcwGC5oEMM1spx7R/FJUzsvSkmQWc2VIuohJymZIO6ljAh/JfFsPzlUrk2NbbuGaxPesIsoXXv0Nr2w==",
+        "digest": "e4415f8ef0e586f9f4879c5414176d332d3b9b9d138978615829dbf15742e057"
+      },
+      "expected": {
+        "result": "error",
+        "code": "unsupported-version",
+        "argon2idAttempted": false,
+        "plaintextReleased": false
+      }
     }
   ],
   "reproductionEvidence": {

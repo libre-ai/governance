@@ -1,8 +1,16 @@
 import { readFile } from "node:fs/promises";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { verifyPolicyCoreRawInputVectors } from "./policy-core-raw-inputs";
 
 type JsonRecord = Record<string, unknown>;
+type ErrorVariant =
+  | "input-invalid"
+  | "evaluated-at-invalid"
+  | "rule-id-duplicate"
+  | "approval-invalid"
+  | "digest-mismatch"
+  | "tenant-mismatch";
 type GoldenCase = {
   id: string;
   policy: JsonRecord;
@@ -10,10 +18,11 @@ type GoldenCase = {
   need: JsonRecord;
   evaluatedAt: string;
   expectedEvaluation?: JsonRecord;
-  expectedError?: { code: string; message: string };
+  expectedError?: { variant: ErrorVariant };
 };
 
 const failures: string[] = [];
+const rawInputCount = await verifyPolicyCoreRawInputVectors(failures, "policy-core-v2");
 const schemaNames = [
   "common.v1.schema.json",
   "policy-definition.v2.schema.json",
@@ -116,6 +125,21 @@ function without(value: JsonRecord, ...keys: string[]): JsonRecord {
   return projection;
 }
 
+function isUtcSeconds(value: string): boolean {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value))
+    return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
+}
+
+function boundedInteger(value: unknown, key: string, label: string): number {
+  if (!isRecord(value) || !Number.isSafeInteger(value[key]) || Number(value[key]) <= 0) {
+    failures.push(`${label}: ${key} is not a positive safe integer`);
+    return 0;
+  }
+  return Number(value[key]);
+}
+
 const policyValidator = validator("policy-definition.v2.schema.json");
 const snapshotValidator = validator("model-snapshot.v2.schema.json");
 const needValidator = validator("policy-need.v2.schema.json");
@@ -132,6 +156,7 @@ if (!Array.isArray(golden.cases) || golden.cases.length === 0) {
 }
 
 const caseIds = new Set<string>();
+const errorVariants = new Set<ErrorVariant>();
 for (const candidate of golden.cases) {
   const label = `golden:${candidate.id}`;
   if (caseIds.has(candidate.id)) failures.push(`${label}: duplicate case id`);
@@ -142,7 +167,14 @@ for (const candidate of golden.cases) {
   const success = candidate.expectedEvaluation !== undefined;
   const error = candidate.expectedError !== undefined;
   if (success === error) failures.push(`${label}: expected exactly one evaluation or error`);
-  if (candidate.expectedError?.code === "policy.input_invalid") {
+  const errorVariant = candidate.expectedError?.variant;
+  if (errorVariant !== undefined) errorVariants.add(errorVariant);
+  if (
+    candidate.expectedError !== undefined &&
+    JSON.stringify(Object.keys(candidate.expectedError).sort()) !== JSON.stringify(["variant"])
+  )
+    failures.push(`${label}: expected error must contain only the closed WIT variant`);
+  if (errorVariant === "input-invalid") {
     if (policyValid && snapshotValid && needValid)
       failures.push(`${label}: input-invalid vector has only schema-valid inputs`);
     continue;
@@ -152,12 +184,26 @@ for (const candidate of golden.cases) {
     continue;
   }
 
+  const evaluatedAtValid = isUtcSeconds(candidate.evaluatedAt);
+  if (errorVariant === "evaluated-at-invalid" ? evaluatedAtValid : !evaluatedAtValid)
+    failures.push(`${label}: evaluatedAt does not demonstrate ${errorVariant ?? "success"}`);
+
+  const policyRules = candidate.policy.rules as JsonRecord[];
+  const policyRuleIds = policyRules.map((rule) => String(rule.id));
+  const duplicateRuleId = new Set(policyRuleIds).size !== policyRuleIds.length;
+  if (errorVariant === "rule-id-duplicate" ? !duplicateRuleId : duplicateRuleId)
+    failures.push(`${label}: duplicate rule id condition is inconsistent`);
+
   const approval = candidate.policy.approval as JsonRecord;
   const selfApproval = approval.approverId === candidate.policy.proposedBy;
-  if (candidate.expectedError?.code === "policy.approval_invalid" && !selfApproval)
-    failures.push(`${label}: approval-invalid vector does not self-approve`);
-  if (candidate.expectedError?.code !== "policy.approval_invalid" && selfApproval)
-    failures.push(`${label}: self-approval is not refused`);
+  if (errorVariant === "approval-invalid" ? !selfApproval : selfApproval)
+    failures.push(`${label}: approval separation condition is inconsistent`);
+
+  const tenantsMatch =
+    candidate.policy.tenantId === candidate.snapshot.tenantId &&
+    candidate.policy.tenantId === candidate.need.tenantId;
+  if (errorVariant === "tenant-mismatch" ? tenantsMatch : !tenantsMatch)
+    failures.push(`${label}: tenant condition is inconsistent`);
 
   const policySubject = {
     schemaVersion: candidate.policy.schemaVersion,
@@ -169,24 +215,18 @@ for (const candidate of golden.cases) {
     rules: candidate.policy.rules,
   };
   const policyDigest = digest("libre-ai.policy-definition.v2", policySubject, "policy");
-  if (
-    candidate.policy.digest !== policyDigest ||
-    (candidate.policy.approval as JsonRecord).subjectDigest !== policyDigest
-  ) {
-    failures.push(`${label}: invalid policy digest`);
-  }
-  if (
-    candidate.snapshot.digest !==
-    digest("libre-ai.model-snapshot.v2", without(candidate.snapshot, "digest"), "snapshot")
-  ) {
-    failures.push(`${label}: invalid snapshot digest`);
-  }
-  if (
-    candidate.need.digest !==
-    digest("libre-ai.policy-need.v2", without(candidate.need, "digest"), "need")
-  ) {
-    failures.push(`${label}: invalid need digest`);
-  }
+  const policyDigestValid =
+    candidate.policy.digest === policyDigest &&
+    (candidate.policy.approval as JsonRecord).subjectDigest === policyDigest;
+  const snapshotDigestValid =
+    candidate.snapshot.digest ===
+    digest("libre-ai.model-snapshot.v2", without(candidate.snapshot, "digest"), "snapshot");
+  const needDigestValid =
+    candidate.need.digest ===
+    digest("libre-ai.policy-need.v2", without(candidate.need, "digest"), "need");
+  const allDigestsValid = policyDigestValid && snapshotDigestValid && needDigestValid;
+  if (errorVariant === "digest-mismatch" ? allDigestsValid : !allDigestsValid)
+    failures.push(`${label}: digest condition is inconsistent`);
 
   if (!candidate.expectedEvaluation) continue;
   const evaluation = candidate.expectedEvaluation;
@@ -239,6 +279,10 @@ for (const required of [
   "multiple-sources-stale-priority",
   "source-from-future",
   "type-mismatch-unknown",
+  "fractional-number-jcs",
+  "duplicate-rule-id",
+  "evaluated-at-invalid",
+  "digest-mismatch",
   "tenant-mismatch",
   "duplicate-exact-fact",
   "self-approval-refused",
@@ -246,6 +290,20 @@ for (const required of [
   "order-independence-b",
 ]) {
   if (!caseIds.has(required)) failures.push(`golden vectors: missing ${required}`);
+}
+const allErrorVariants = new Set<ErrorVariant>([
+  "input-invalid",
+  "evaluated-at-invalid",
+  "rule-id-duplicate",
+  "approval-invalid",
+  "digest-mismatch",
+  "tenant-mismatch",
+]);
+if (
+  errorVariants.size !== allErrorVariants.size ||
+  [...allErrorVariants].some((variant) => !errorVariants.has(variant))
+) {
+  failures.push("golden vectors: closed WIT error variants are not fully covered");
 }
 const orderA = golden.cases.find((candidate) => candidate.id === "order-independence-a");
 const orderB = golden.cases.find((candidate) => candidate.id === "order-independence-b");
@@ -255,6 +313,92 @@ if (
   JSON.stringify(orderA.expectedEvaluation) !== JSON.stringify(orderB.expectedEvaluation)
 ) {
   failures.push("golden vectors: order-independence outputs differ");
+}
+
+const budgets = JSON.parse(
+  await readFile("contracts/fixtures/policy-core-v2/resource-budgets.v1.json", "utf8"),
+) as JsonRecord;
+if (
+  budgets.schemaVersion !== "libre-ai.policy-core-resource-budgets.v1" ||
+  budgets.status !== "candidate-preimplementation"
+) {
+  failures.push("resource budgets: invalid identity or status");
+}
+const byteLimits = budgets.byteLimits;
+const cardinalityLimits = budgets.cardinalityLimits;
+const cpuQualification = budgets.cpuQualification;
+const memoryQualification = budgets.memoryQualification;
+const policyInput = boundedInteger(byteLimits, "policyInput", "resource budgets");
+const snapshotInput = boundedInteger(byteLimits, "snapshotInput", "resource budgets");
+const needInput = boundedInteger(byteLimits, "needInput", "resource budgets");
+const totalJsonInput = boundedInteger(byteLimits, "totalJsonInput", "resource budgets");
+const evaluatedAtLimit = boundedInteger(byteLimits, "evaluatedAt", "resource budgets");
+const outputLimit = boundedInteger(byteLimits, "successfulOutput", "resource budgets");
+const rulesLimit = boundedInteger(cardinalityLimits, "rules", "resource budgets");
+const modelFactsLimit = boundedInteger(cardinalityLimits, "modelFacts", "resource budgets");
+const needFactsLimit = boundedInteger(cardinalityLimits, "needFacts", "resource budgets");
+const setMembersLimit = boundedInteger(cardinalityLimits, "setMembersPerRule", "resource budgets");
+const policySchema = JSON.parse(
+  await readFile("contracts/schemas/policy-definition.v2.schema.json", "utf8"),
+) as JsonRecord;
+const snapshotSchema = JSON.parse(
+  await readFile("contracts/schemas/model-snapshot.v2.schema.json", "utf8"),
+) as JsonRecord;
+const needSchema = JSON.parse(
+  await readFile("contracts/schemas/policy-need.v2.schema.json", "utf8"),
+) as JsonRecord;
+const policyProperties = policySchema.properties as JsonRecord;
+const snapshotProperties = snapshotSchema.properties as JsonRecord;
+const needProperties = needSchema.properties as JsonRecord;
+const definitions = policySchema.$defs as JsonRecord;
+const factSet = definitions.factSet as JsonRecord;
+const factSetVariants = Array.isArray(factSet.oneOf) ? (factSet.oneOf as JsonRecord[]) : [];
+const schemaSetMaximum = Math.max(
+  ...factSetVariants.map((variant) =>
+    typeof variant.maxItems === "number" ? variant.maxItems : 0,
+  ),
+);
+if (
+  rulesLimit !== (policyProperties.rules as JsonRecord).maxItems ||
+  modelFactsLimit !== (snapshotProperties.facts as JsonRecord).maxItems ||
+  needFactsLimit !== (needProperties.facts as JsonRecord).maxItems ||
+  setMembersLimit !== schemaSetMaximum
+) {
+  failures.push("resource budgets: cardinalities drift from JSON Schemas");
+}
+if (
+  policyInput !== 8 * 1024 * 1024 ||
+  snapshotInput !== 8 * 1024 * 1024 ||
+  needInput !== 8 * 1024 * 1024 ||
+  totalJsonInput !== policyInput + snapshotInput + needInput ||
+  evaluatedAtLimit !== 64 ||
+  outputLimit !== 2 * 1024 * 1024
+) {
+  failures.push("resource budgets: byte ceilings drift from normative semantics");
+}
+const expectedMatchedPairs = rulesLimit * Math.max(modelFactsLimit, needFactsLimit);
+const expectedSetComparisonsPerLookup = Math.ceil(Math.log2(setMembersLimit + 1));
+if (
+  boundedInteger(cardinalityLimits, "setMembersAcrossPolicy", "resource budgets") !==
+    rulesLimit * setMembersLimit ||
+  boundedInteger(cpuQualification, "ruleOccurrenceEvaluations", "resource budgets") !==
+    expectedMatchedPairs ||
+  boundedInteger(cpuQualification, "setMemberComparisonsPerLookup", "resource budgets") !==
+    expectedSetComparisonsPerLookup ||
+  boundedInteger(cpuQualification, "setMemberComparisons", "resource budgets") !==
+    expectedMatchedPairs * expectedSetComparisonsPerLookup
+) {
+  failures.push("resource budgets: deterministic CPU ceilings are inconsistent");
+}
+if (
+  !isRecord(cpuQualification) ||
+  cpuQualification.setLookup !== "sorted-binary-search-or-equivalent-bounded-lookup" ||
+  cpuQualification.duplicateDetection !== "canonical-hash-or-ordered-index" ||
+  cpuQualification.wallClockLimit !== null ||
+  !isRecord(memoryQualification) ||
+  memoryQualification.peakComponentLinearMemoryBytes !== 256 * 1024 * 1024
+) {
+  failures.push("resource budgets: qualification timing or memory ceiling is invalid");
 }
 
 const operators = JSON.parse(
@@ -316,5 +460,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, bounded for preimplementation`,
 );

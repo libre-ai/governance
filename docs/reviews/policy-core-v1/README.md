@@ -71,12 +71,17 @@ Security review must:
    mandatory; no new package is introduced.
 3. A schema-valid duplicate rule ID lacked a complete error vector. The golden
    corpus now fixes `policy.rule_id_duplicate` before any rule evaluation.
+4. Additive byte-exact fixtures now exercise the already locked decoder refusals:
+   BOM, invalid UTF-8, duplicate decoded keys, isolated surrogates and invalid
+   JSON numbers. They do not reinterpret the v1 authority.
 
 ## Conformance evidence
 
-- the TypeScript checker validates 17 complete golden cases and 28 operator cases;
+- the TypeScript checker validates 17 complete golden cases, 28 operator cases and
+  9 raw decoder refusals;
 - the independent Rust checker recomputes input/evaluation hashes, RFC 8785 edge
-  numbers and the stable order pair without implementing operator or verdict logic;
+  numbers, the stable order pair and the same 9 raw refusals without implementing
+  operator or verdict logic;
 - all 31 JSON Schema projections validate in TypeScript and Rust;
 - the WIT world parses without host imports;
 - root Bun checks, workspace Rust tests, Clippy, formatting and type checking pass.
