@@ -2,8 +2,9 @@
 
 Statut : **candidate / NO-GO public scoring**. Le verdict méthodologique favorable lié au commit
 `5bcce21` reste une preuve technique liée à son hash, mais ne renseigne pas les identifiants
-agent/session désormais requis : une passe attribuable doit le confirmer, et les autres rôles restent
-également requis.
+agent/session désormais requis : une passe attribuable doit le confirmer. Le verdict Sécurité lié à
+`1d701a2` est `reject` avec constats bloquants ; une remédiation normative et une nouvelle passe seront
+nécessaires. Architecture et vie privée restent également requises.
 
 La promotion exige quatre records issus d’agents review-only distincts de l’agent/session auteur,
 conformément à [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :

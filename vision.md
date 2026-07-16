@@ -457,13 +457,13 @@ Knowledge Objects + Contracts + Evidence
                     ↓
 Graphe · Impact · Context packs · Documentation · Plans
                     ↓
-          Agent Orchestrator
+ Futur Agent Orchestrator (hors S01)
                     ↓
 Work packages · Exécution bornée · Évidence
 ```
 
-Le Knowledge Engine décrit et compile. L’Agent Orchestrator exécute sous
-politique. Proof vérifie indépendamment. Artifact construit et distribue.
+Le Knowledge Engine décrit et compile. Après un Specification Lock dédié, un futur Agent Orchestrator
+pourra exécuter sous politique. Proof vérifie indépendamment. Artifact construit et distribue.
 
 ### 7.6 Repositories publics
 

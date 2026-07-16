@@ -35,7 +35,7 @@
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
 - ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 48 locked baseline authorities ;
 - solo G2 governance requires attributable technical verdicts from agents whose identity and session differ from the authoring agent; the repository owner remains merge authority but is not the technical reviewer ;
-- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only; Boussole has favorable methodology evidence for its exact reviewed hash but still needs attribution under the current agent protocol, and all other named architecture, security, cryptography and privacy verdicts remain pending ;
+- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only; Boussole has favorable methodology evidence requiring attribution under the current agent protocol, while its security verdict is rejected with blocking findings and all other named architecture, cryptography and privacy verdicts remain pending ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - no product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
