@@ -56,7 +56,10 @@ from the authoring agent/session; the repository owner's merge decision is not a
   surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
 - the resolved WIT world exports one `api` and is asserted to have zero imports;
 - ten exact/+1 byte boundaries and JSON depth 64 are executable in both TypeScript
-  and Rust before any product engine exists;
+  and Rust before any product engine exists; exact inputs remain schema-valid and
+  the exact 2 MiB output remains valid, digest-bound JCS;
+- source URIs are bounded sanitized public HTTPS citations without userinfo,
+  query or fragment, and principal IDs are opaque `usr_*`/`svc_*` values;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
 ## Required independent agent checks
@@ -84,7 +87,10 @@ The Security review agent must:
   an implementation exceeding the candidate memory budget;
 - confirm that no result grants authorization, purchasing power or approval.
 
-The Privacy review agent must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
+The Privacy review agent must confirm tenant-bound minimization, sanitized source
+citations without personal data or secrets, opaque proposer/reviewer IDs, sourced
+facts without personal fixture data, and that outputs/logs/errors expose neither
+fact values nor reviewer identity.
 
 ## Promotion rule
 

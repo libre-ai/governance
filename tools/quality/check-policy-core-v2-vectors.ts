@@ -391,7 +391,7 @@ if (
   snapshotInput !== 8 * 1024 * 1024 ||
   needInput !== 8 * 1024 * 1024 ||
   totalJsonInput !== policyInput + snapshotInput + needInput ||
-  evaluatedAtLimit !== 64 ||
+  evaluatedAtLimit !== 20 ||
   outputLimit !== 2 * 1024 * 1024
 ) {
   failures.push("resource budgets: byte ceilings drift from normative semantics");
@@ -415,8 +415,8 @@ const expectedBoundaryCases = {
   "snapshot-over-limit": ["snapshotInput", snapshotInput + 1, "input-invalid"],
   "need-at-limit": ["needInput", needInput, "within-limit"],
   "need-over-limit": ["needInput", needInput + 1, "input-invalid"],
-  "evaluated-at-at-limit": ["evaluatedAt", evaluatedAtLimit, "within-limit"],
-  "evaluated-at-over-limit": ["evaluatedAt", evaluatedAtLimit + 1, "input-invalid"],
+  "evaluated-at-at-limit": ["evaluatedAt", 20, "within-limit"],
+  "evaluated-at-over-limit": ["evaluatedAt", 21, "input-invalid"],
   "output-at-limit": ["successfulOutput", outputLimit, "within-limit"],
   "output-over-limit": ["successfulOutput", outputLimit + 1, "input-invalid"],
 } as const;
@@ -469,6 +469,109 @@ try {
 } catch (error) {
   if (!(error instanceof StrictJsonError) || error.defect !== "max-depth")
     failures.push(`decoder qualification: wrong excessive-depth refusal: ${String(error)}`);
+}
+
+const boundaryBase = golden.cases.find((candidate) => candidate.id === "all-operators-eligible");
+if (!boundaryBase?.expectedEvaluation) {
+  failures.push("resource boundaries: missing valid base case");
+} else {
+  const padValidJson = (value: JsonRecord, targetLength: number): Uint8Array => {
+    const encoded = JSON.stringify(value);
+    const padding = targetLength - Buffer.byteLength(encoded, "utf8");
+    if (padding < 0) throw new Error("resource boundary base exceeds target");
+    return new TextEncoder().encode(`${encoded}${" ".repeat(padding)}`);
+  };
+  for (const [target, value, validate] of [
+    ["policyInput", boundaryBase.policy, policyValidator],
+    ["snapshotInput", boundaryBase.snapshot, snapshotValidator],
+    ["needInput", boundaryBase.need, needValidator],
+  ] as const) {
+    const bytes = padValidJson(value, inputLimits[target]);
+    const parsed = parseStrictJson(bytes, maximumJsonDepth);
+    if (bytes.byteLength !== inputLimits[target] || preflight(target, bytes.byteLength))
+      failures.push(`resource boundaries: ${target} exact valid preflight failed`);
+    if (!validate(parsed)) failures.push(`resource boundaries: ${target} exact JSON is invalid`);
+  }
+
+  const canonicalEvaluatedAt = "2026-07-16T00:00:00Z";
+  if (
+    Buffer.byteLength(canonicalEvaluatedAt, "utf8") !== evaluatedAtLimit ||
+    preflight("evaluatedAt", Buffer.byteLength(canonicalEvaluatedAt, "utf8")) ||
+    !isUtcSeconds(canonicalEvaluatedAt)
+  ) {
+    failures.push("resource boundaries: exact evaluatedAt is not valid");
+  }
+
+  const outputAtLength = (targetLength: number): JsonRecord => {
+    const output = structuredClone(boundaryBase.expectedEvaluation as JsonRecord);
+    output.policyId = "urn:libre-ai:policy:a";
+    const initialLength = jcs(output).byteLength;
+    const padding = targetLength - initialLength;
+    if (padding < 0) throw new Error("resource boundary output exceeds target");
+    output.policyId = `${String(output.policyId)}${"a".repeat(padding)}`;
+    const evaluationDigest = digest(
+      "libre-ai.policy-evaluation.v2",
+      without(output, "id", "digest"),
+    );
+    output.id = `urn:libre-ai:evaluation:${evaluationDigest}`;
+    output.digest = evaluationDigest;
+    return output;
+  };
+  for (const [length, expected] of [
+    [outputLimit, "within-limit"],
+    [outputLimit + 1, "input-invalid"],
+  ] as const) {
+    const output = outputAtLength(length);
+    const bytes = jcs(output);
+    if (!evaluationValidator(output) || bytes.byteLength !== length)
+      failures.push(`resource boundaries: ${expected} output is not schema-valid at target`);
+    if ((preflight("successfulOutput", bytes.byteLength) ?? "within-limit") !== expected)
+      failures.push(`resource boundaries: ${expected} output preflight mismatch`);
+  }
+
+  const privacyMutations: Array<
+    [string, JsonRecord, ValidateFunction, (value: JsonRecord) => void]
+  > = [
+    [
+      "policy source userinfo",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        ((value.rules as JsonRecord[])[0]?.source as JsonRecord).uri =
+          "https://private-canary@example.org/evidence";
+      },
+    ],
+    [
+      "snapshot source query",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        ((value.facts as JsonRecord[])[0]?.source as JsonRecord).uri =
+          "https://example.org/evidence?token=private_canary";
+      },
+    ],
+    [
+      "non-opaque proposer",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        value.proposedBy = "private_identity_canary";
+      },
+    ],
+    [
+      "non-opaque approver",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        (value.approval as JsonRecord).approverId = "private_identity_canary";
+      },
+    ],
+  ];
+  for (const [label, base, validate, mutate] of privacyMutations) {
+    const candidate = structuredClone(base);
+    mutate(candidate);
+    if (validate(candidate)) failures.push(`privacy qualification: accepted ${label}`);
+  }
 }
 
 const expectedMatchedPairs = rulesLimit * Math.max(modelFactsLimit, needFactsLimit);
@@ -555,5 +658,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries, depth ${maximumJsonDepth}, bounded for preimplementation`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries with valid exact ceilings, depth ${maximumJsonDepth}, privacy-minimized sources and principals, bounded for preimplementation`,
 );
