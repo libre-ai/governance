@@ -62,7 +62,7 @@ Résultats :
 - [ ] AAD/digest, séparation de domaine, Base64 et JCS sont non ambigus ;
 - [ ] AES-256-GCM, nonce 12 octets, tag 16 octets et `C || T` sont corrects ;
 - [ ] Argon2id v19, `P/S/K/X`, bornes et sortie directe de 32 octets sont corrects ;
-- [ ] tailles plaintext/ciphertext/enveloppe et parsing hostile sont bornés ;
+- [ ] limites 16 MiB plaintext, 16 777 232 octets ciphertext et 22 370 175 octets enveloppe, ainsi que parsing hostile, sont bornés ;
 - [ ] digest recalculable ne peut jamais remplacer ni court-circuiter GCM ;
 - [ ] ordre d'ouverture, secret factice et enum d'erreur fermé ne créent pas d'oracle exploitable ;
 - [ ] migration v2 et absence de lecteur v1 heuristique sont justifiées.
@@ -73,7 +73,7 @@ Résultats :
 - [ ] chaque succès et mutation passe dans les runtimes Rust/WASM et navigateur ;
 - [ ] secret, clé, état AES, mémoire Argon2id et plaintexts d'échec sont zéroïsés autant que vérifiable ;
 - [ ] aucune clé/donnée privée n'entre dans persistance, logs, erreurs, métriques, globals ou caches ;
-- [ ] le composant WASM a une liste d'imports vide et s'exécute sans WASI ;
+- [ ] l'interface WIT autonome `api` ne crée aucun import de types ; module et composant WASM ont chacun une liste d'imports vide et le composant s'exécute sans WASI ;
 - [ ] id, temps, sel et nonce proviennent seulement du host local ;
 - [ ] CSPRNG, unicité sel/nonce et conversion stable du recovery secret sont testés ;
 - [ ] aucun réseau ni stockage distant ne reçoit contenu, index, secret ou clé ;

@@ -21,6 +21,8 @@ La Gate S documente le challenge sans simuler l'indépendance. ADR-0003 sépare 
 - ouverture positive et refus des cinq mutations cryptographiques ;
 - refus des paramètres faibles avant Argon2id ;
 - parsing/résolution WIT avec `wit-parser` ;
+- encodage jetable de la frontière WIT pour distinguer imports du module et imports du composant ;
+- mesure native conservatoire du profil KDF et de l'amplification mémoire one-shot, sans intégrer de moteur au dépôt ;
 - CI complète `Bun quality` et `Rust quality` ;
 - revue des axes sécurité, qualité, performance, complétude, souveraineté et données personnelles.
 
@@ -32,14 +34,16 @@ Ces recoupements réduisent le risque d'erreur de transcription. Ils ne constitu
 | --- | --- | --- | --- |
 | S-01 | major | `contract-error.message` permettrait à une implémentation de faire franchir diagnostics, valeurs privées ou erreurs de bibliothèque malgré la table de messages statiques. | Supprimer le record et retourner uniquement l'enum fermé `error-code`. L'affichage devient une responsabilité host non normative. |
 | S-02 | major | Une revue unique exigeant protocole et binaire créerait un verrou circulaire. | Gate A examine le protocole/vecteurs avant implémentation ; Gate B examine ensuite le binaire, sans auto-approbation. |
-| S-03 | major résiduel | `m=65536, t=3, p=1` et la limite plaintext de 100 MiB ne sont pas qualifiés sur mobiles et peuvent provoquer latence ou pression mémoire. | Aucun fallback KDF. Benchmarks navigateurs/appareils et budgets explicites obligatoires en Gate B. |
+| S-03 | major partiellement corrigé | La limite one-shot initiale de 100 MiB dépasse 1 GiB de RSS dans le harness natif de qualification et serait dangereuse avant même les copies WIT/navigateur. | Réduire le candidat à 16 MiB ; conserver zéro fallback KDF. Les benchmarks navigateurs/appareils et budgets explicites restent obligatoires en Gate B. Un format supérieur devra être chunké sous un autre contrat. |
 | S-04 | major résiduel | La zéroïsation réelle des copies ABI, de la mémoire Argon2id et des erreurs/panics ne peut pas être prouvée par le contrat. | Choix de bibliothèques, instrumentation et inspection du composant exigés en Gate B. |
 | S-05 | maîtrisé | Le digest est public et recalculable par un attaquant. | Il n'autorise rien, n'est jamais vérifié à la place du tag et ne peut court-circuiter Argon2id/AES-GCM. Les mutations recalculent le digest pour tester ce cas. |
 | S-06 | major résiduel | Le cœur stateless ne peut pas garantir la fraîcheur du sel et du nonce fournis par le host. | CSPRNG host, nouveau sel/nonce par scellement et tests d'intégration navigateur obligatoires avant release. |
 | S-07 | maîtrisé | `invalid-envelope` distingue les paramètres KDF publics invalides d'un échec cryptographique. | Accepté : aucune tentative cryptographique valide n'existe dans ce cas ; mauvais secret et toute altération cryptographique structurellement valide restent unifiés. |
 | S-08 | major résiduel | Une UI textuelle peut transformer différemment un recovery secret Unicode entre création et restauration. | Le cœur traite des octets opaques ; la conversion UI stable et ses vecteurs Unicode doivent être fixés avant intégration. |
+| S-09 | major | Un `use` d'une interface `types` séparée ne ressemble pas à un import WIT explicite, mais devient des imports réels dans le composant encodé. | Regrouper types et fonctions dans l'unique interface exportée `api`; Gate B inspectera séparément module et composant. |
+| S-10 | major résiduel | Rust ne permet pas de récupérer fiablement tous les OOM déclenchés à l'intérieur d'un parseur/JCS, même si les grandes préallocations explicites sont fallibles. | Limite 16 MiB et validation avant décodage ; Gate B injectera la pression mémoire et documentera les traps résiduels, sans fallback cryptographique. |
 
-Aucun constat major corrigible au niveau du candidat ne reste ouvert après S-01/S-02. S-03, S-04, S-06 et S-08 nécessitent le host ou le moteur réel et bloquent la release via la Gate B.
+Aucun constat major corrigible au niveau du candidat ne reste ouvert après S-01/S-02/S-03/S-09. S-04, S-06, S-08 et S-10 nécessitent le host ou le moteur réel et bloquent la release via la Gate B.
 
 ## Contraintes de progression
 
