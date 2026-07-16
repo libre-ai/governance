@@ -8,6 +8,7 @@ type Bytes = Uint8Array<ArrayBufferLike>;
 const failures: string[] = [];
 const fixtureRoot = "contracts/fixtures/radar-engine-v2/";
 const vectorPath = `${fixtureRoot}golden-vectors.v1.json`;
+const securityVectorPath = `${fixtureRoot}security-vectors.v1.json`;
 const maxEvaluationItemBytes = 262_144;
 const maxEvaluationRulesBytes = 524_288;
 const refusalCodes = new Set([
@@ -48,6 +49,28 @@ function safePath(path: string, requiredRoot: string, label: string): boolean {
     return false;
   }
   return true;
+}
+
+function isCanonicalBaseUrl(value: unknown): boolean {
+  if (
+    typeof value !== "string" ||
+    Buffer.byteLength(value, "utf8") > 2_048 ||
+    [...value].some((character) => character.charCodeAt(0) > 0x7f)
+  ) {
+    return false;
+  }
+  try {
+    const parsed = new URL(value);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.hash === "" &&
+      parsed.href === value
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function bytes(path: string): Promise<Bytes> {
@@ -103,6 +126,38 @@ function decodeJson(value: Uint8Array, label: string): unknown {
 
 function utf8Compare(left: string, right: string): number {
   return Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
+}
+
+function hasInvalidUtf8(value: Uint8Array): boolean {
+  try {
+    new TextDecoder("utf-8", { fatal: true }).decode(value);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function requireExactIds(
+  cases: JsonRecord[],
+  expected: unknown,
+  label: string,
+  exact = false,
+): void {
+  if (!Array.isArray(expected) || expected.some((id) => typeof id !== "string")) {
+    failures.push(`${label}: invalid required case ids`);
+    return;
+  }
+  const expectedIds = new Set(expected as string[]);
+  const actual = new Set(
+    cases.map((value) => value.id).filter((id): id is string => typeof id === "string"),
+  );
+  if (
+    expectedIds.size !== expected.length ||
+    (exact && actual.size !== expectedIds.size) ||
+    [...expectedIds].some((id) => !actual.has(id))
+  ) {
+    failures.push(`${label}: required case inventory mismatch`);
+  }
 }
 
 function identityDigest(item: JsonRecord): string | undefined {
@@ -161,6 +216,20 @@ try {
 const vectorDocument = isRecord(document) ? document : {};
 if (vectorDocument.schemaVersion !== "libre-ai.radar-engine-golden-vectors.v2") {
   failures.push(`${vectorPath}: invalid envelope`);
+}
+
+let securityDocument: unknown;
+try {
+  securityDocument = await Bun.file(securityVectorPath).json();
+} catch (error) {
+  failures.push(`${securityVectorPath}: invalid JSON: ${String(error)}`);
+}
+const securityVectors = isRecord(securityDocument) ? securityDocument : {};
+if (
+  securityVectors.schemaVersion !== "libre-ai.radar-engine-security-vectors.v1" ||
+  securityVectors.status !== "candidate-security-remediation"
+) {
+  failures.push(`${securityVectorPath}: invalid envelope`);
 }
 
 const referencedFixtures = new Set<string>();
@@ -243,6 +312,32 @@ for (const [index, rawCase] of parseCases.entries()) {
     referencedFixtures.add(input);
     inputBytes = await verifyHash(input, parseCase.inputSha256, label);
   }
+  if (
+    parseCase.id === "utf8-bom-accepted" &&
+    !Buffer.from(inputBytes.subarray(0, 3)).equals(Buffer.from([0xef, 0xbb, 0xbf]))
+  ) {
+    failures.push(`${label}: UTF-8 BOM case has no BOM`);
+  }
+  if (
+    parseCase.id === "utf16-bom-rejected" &&
+    !Buffer.from(inputBytes.subarray(0, 2)).equals(Buffer.from([0xff, 0xfe]))
+  ) {
+    failures.push(`${label}: UTF-16 case has no UTF-16 BOM`);
+  }
+  if (parseCase.id === "invalid-utf8-rejected" && !hasInvalidUtf8(inputBytes))
+    failures.push(`${label}: invalid UTF-8 case is valid UTF-8`);
+  if (parseCase.id === "xml-numeric-and-predefined-references") {
+    const source = Buffer.from(inputBytes).toString("utf8");
+    for (const reference of ["&#x41;", "&amp;", "&lt;", "&gt;", "&quot;", "&apos;"])
+      if (!source.includes(reference))
+        failures.push(`${label}: missing XML reference ${reference}`);
+  }
+  if (
+    parseCase.id === "xml-invalid-numeric-reference" &&
+    !Buffer.from(inputBytes).includes(Buffer.from("&#0;"))
+  ) {
+    failures.push(`${label}: invalid numeric reference canary missing`);
+  }
   if (typeof parseCase.mediaType !== "string") failures.push(`${label}: missing mediaType`);
   if (typeof parseCase.sourceId !== "string") failures.push(`${label}: missing sourceId`);
   if (typeof parseCase.baseUrl !== "string") failures.push(`${label}: missing baseUrl`);
@@ -291,6 +386,16 @@ for (const [index, rawCase] of parseCases.entries()) {
     ) {
       failures.push(`${label}: successful input exceeds maxInputBytes`);
     }
+    if (
+      parseCase.id === "max-input-bytes-equality" &&
+      inputBytes.byteLength !== limits.maxInputBytes
+    ) {
+      failures.push(`${label}: maxInputBytes equality is not exact`);
+    }
+    if (parseCase.id === "max-depth-equality-in-unknown-json" && limits.maxDepth !== 5)
+      failures.push(`${label}: maxDepth equality is not exact`);
+    if (parseCase.id === "max-items-equality-before-deduplication" && limits.maxItems !== 2)
+      failures.push(`${label}: maxItems equality is not exact`);
   }
   const mediaTypeIsBoundedAscii =
     typeof parseCase.mediaType === "string" &&
@@ -308,9 +413,7 @@ for (const [index, rawCase] of parseCases.entries()) {
     typeof parseCase.sourceId === "string" &&
     Buffer.byteLength(parseCase.sourceId, "utf8") <= 256 &&
     /^urn:libre-ai:[a-z][a-z0-9-]*:[A-Za-z0-9._~-]+$/.test(parseCase.sourceId) &&
-    typeof parseCase.baseUrl === "string" &&
-    Buffer.byteLength(parseCase.baseUrl, "utf8") <= 2_048 &&
-    /^https?:\/\//.test(parseCase.baseUrl);
+    isCanonicalBaseUrl(parseCase.baseUrl);
   if ((expectation.code === "invalid-source") === sourceIsValid) {
     failures.push(`${label}: invalid-source expectation disagrees with source inputs`);
   }
@@ -326,8 +429,29 @@ for (const [index, rawCase] of parseCases.entries()) {
   if (isRecord(limits) && outputBytes.byteLength > (limits.maxOutputBytes as number)) {
     failures.push(`${label}: successful output exceeds maxOutputBytes`);
   }
+  if (
+    parseCase.id === "max-output-bytes-equality" &&
+    (!isRecord(limits) || outputBytes.byteLength !== limits.maxOutputBytes)
+  ) {
+    failures.push(`${label}: maxOutputBytes equality is not exact`);
+  }
   if (!output || !Array.isArray(output.items)) continue;
   const outputItems = output.items;
+  if (
+    parseCase.id === "content-derived-identity" &&
+    (!isRecord(outputItems[0]) || outputItems[0].externalId !== null || outputItems[0].url !== null)
+  ) {
+    failures.push(`${label}: content identity fallback is not exercised`);
+  }
+  if (
+    parseCase.id === "utc-year-rollover-becomes-null" &&
+    (outputItems.length !== 2 ||
+      outputItems.some((item) => !isRecord(item) || item.publishedAt !== null))
+  ) {
+    failures.push(`${label}: UTC year rollover did not become null`);
+  }
+  if (parseCase.id === "max-items-equality-before-deduplication" && outputItems.length !== 2)
+    failures.push(`${label}: maxItems equality output count mismatch`);
   if (output.sourceId !== parseCase.sourceId || output.baseUrl !== parseCase.baseUrl)
     failures.push(`${label}: output does not bind sourceId/baseUrl`);
   const keys = new Set<string>();
@@ -397,6 +521,26 @@ for (const [index, rawCase] of evaluationCases.entries()) {
     referencedFixtures.add(rulesPath);
     rulesBytes = await verifyHash(rulesPath, evaluationCase.rulesSha256, label);
   }
+  if (
+    evaluationCase.id === "json-invalid-duplicate-item-key" &&
+    (Buffer.from(itemBytes)
+      .toString("utf8")
+      .match(/"title"\s*:/g)?.length ?? 0) < 2
+  ) {
+    failures.push(`${label}: duplicate item-key canary missing`);
+  }
+  if (
+    evaluationCase.id === "json-invalid-duplicate-rules-key" &&
+    (Buffer.from(rulesBytes)
+      .toString("utf8")
+      .match(/"version"\s*:/g)?.length ?? 0) < 2
+  ) {
+    failures.push(`${label}: duplicate rules-key canary missing`);
+  }
+  if (evaluationCase.id === "json-invalid-utf8-item" && !hasInvalidUtf8(itemBytes))
+    failures.push(`${label}: invalid UTF-8 item is valid UTF-8`);
+  if (evaluationCase.id === "json-invalid-utf8-rules" && !hasInvalidUtf8(rulesBytes))
+    failures.push(`${label}: invalid UTF-8 rules are valid UTF-8`);
   const expectation = evaluationCase.expect;
   if (!isRecord(expectation)) {
     failures.push(`${label}: missing expectation`);
@@ -440,7 +584,101 @@ for (const [index, rawCase] of evaluationCases.entries()) {
     ) {
       failures.push(`${label}: rule result order diverges from rule order`);
     }
+    if (evaluationCase.id === "operator-matrix-and-strict-dates") {
+      const expectedMatches = [true, true, true, true, true, false, false, true, true];
+      if (
+        !Array.isArray(ruleResults) ||
+        ruleResults.length !== expectedMatches.length ||
+        ruleResults.some(
+          (result, resultIndex) =>
+            !isRecord(result) || result.matched !== expectedMatches[resultIndex],
+        )
+      ) {
+        failures.push(`${label}: operator matrix does not cover exact expected matches`);
+      }
+    }
   }
+}
+
+requireExactIds(
+  parseCases.filter(isRecord),
+  securityVectors.requiredParseCaseIds,
+  `${securityVectorPath}#/requiredParseCaseIds`,
+);
+requireExactIds(
+  evaluationCases.filter(isRecord),
+  securityVectors.requiredEvaluationCaseIds,
+  `${securityVectorPath}#/requiredEvaluationCaseIds`,
+);
+
+const boundarySpecifications = {
+  "parse-input-at-limit": ["parse-input-bytes", 10_485_760, "within-limit"],
+  "parse-input-over-limit": ["parse-input-bytes", 10_485_761, "body-too-large"],
+  "parse-output-at-limit": ["parse-output-bytes", 52_428_800, "within-limit"],
+  "parse-output-over-limit": ["parse-output-bytes", 52_428_801, "output-too-large"],
+  "evaluation-item-at-limit": ["evaluation-item-bytes", 262_144, "within-limit"],
+  "evaluation-item-over-limit": ["evaluation-item-bytes", 262_145, "body-too-large"],
+  "evaluation-rules-at-limit": ["evaluation-rules-bytes", 524_288, "within-limit"],
+  "evaluation-rules-over-limit": ["evaluation-rules-bytes", 524_289, "body-too-large"],
+  "max-items-at-limit": ["candidate-items", 5_000, "within-limit"],
+  "max-items-over-limit": ["candidate-items", 5_001, "max-items-exceeded"],
+  "max-depth-at-limit": ["syntax-depth", 64, "within-limit"],
+  "max-depth-over-limit": ["syntax-depth", 65, "max-depth-exceeded"],
+  "media-type-at-limit": ["media-type-bytes", 128, "within-limit"],
+  "media-type-over-limit": ["media-type-bytes", 129, "media-type-unsupported"],
+  "source-id-at-limit": ["source-id-bytes", 256, "within-limit"],
+  "source-id-over-limit": ["source-id-bytes", 257, "invalid-source"],
+  "base-url-at-limit": ["base-url-bytes", 2_048, "within-limit"],
+  "base-url-over-limit": ["base-url-bytes", 2_049, "invalid-source"],
+} as const;
+const boundaryCases = Array.isArray(securityVectors.generatedBoundaryCases)
+  ? securityVectors.generatedBoundaryCases
+  : [];
+requireExactIds(
+  boundaryCases.filter(isRecord),
+  Object.keys(boundarySpecifications),
+  `${securityVectorPath}#/generatedBoundaryCases`,
+  true,
+);
+for (const [index, boundaryCase] of boundaryCases.entries()) {
+  const label = `${securityVectorPath}#/generatedBoundaryCases/${index}`;
+  if (!isRecord(boundaryCase) || typeof boundaryCase.id !== "string") {
+    failures.push(`${label}: invalid boundary case`);
+    continue;
+  }
+  const expected = boundarySpecifications[boundaryCase.id as keyof typeof boundarySpecifications];
+  if (
+    !expected ||
+    boundaryCase.target !== expected[0] ||
+    boundaryCase.value !== expected[1] ||
+    boundaryCase.expectedPreflight !== expected[2]
+  ) {
+    failures.push(`${label}: boundary metadata mismatch`);
+  }
+}
+
+const publicRefusalCases = Array.isArray(securityVectors.publicRefusalCases)
+  ? securityVectors.publicRefusalCases
+  : [];
+const expectedPublicMappings = [...refusalCodes]
+  .sort()
+  .map((code) => ({ componentCode: code, publicCode: `radar.${code.replaceAll("-", "_")}` }));
+const actualPublicMappings = publicRefusalCases
+  .filter(isRecord)
+  .map((value) => ({ componentCode: value.componentCode, publicCode: value.publicCode }))
+  .sort((left, right) => String(left.componentCode).localeCompare(String(right.componentCode)));
+if (JSON.stringify(actualPublicMappings) !== JSON.stringify(expectedPublicMappings))
+  failures.push(`${securityVectorPath}: public refusal mapping is not exact`);
+if (securityVectors.publicMessage !== "Request refused")
+  failures.push(`${securityVectorPath}: public refusal message is not content-free`);
+if (
+  !Array.isArray(securityVectors.forbiddenDiagnosticCanaries) ||
+  securityVectors.forbiddenDiagnosticCanaries.length < 5 ||
+  securityVectors.forbiddenDiagnosticCanaries.some(
+    (value) => typeof value !== "string" || value.length === 0,
+  )
+) {
+  failures.push(`${securityVectorPath}: diagnostic canaries are incomplete`);
 }
 
 for (const code of refusalCodes) {
@@ -453,7 +691,7 @@ for await (const relativePath of new Bun.Glob("**/*").scan({
   onlyFiles: true,
 })) {
   const path = `${fixtureRoot}${relativePath}`;
-  if (path !== vectorPath && !referencedFixtures.has(path)) {
+  if (path !== vectorPath && path !== securityVectorPath && !referencedFixtures.has(path)) {
     failures.push(`${path}: fixture is not referenced by golden vectors`);
   }
 }
@@ -464,5 +702,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Radar vectors verified: ${parseCases.length} parse cases, ${evaluationCases.length} evaluation cases, ${refusalCodes.size} refusal codes`,
+  `Radar vectors verified: ${parseCases.length} parse cases, ${evaluationCases.length} evaluation cases, ${boundaryCases.length} generated boundaries, ${refusalCodes.size} refusal codes`,
 );
