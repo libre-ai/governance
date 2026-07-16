@@ -21,11 +21,12 @@
 - canonical public GitHub repository created and initial history pushed ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
 - shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
-- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled.
+- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
+- nine application specifications expanded to the G1 standard with an executable structure gate ;
+- G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority.
 
 ## Pending in G1
 
-- complete application behavior and refusal specifications ;
 - lock JSON Schema, OpenAPI and WIT contract inventory ;
 - lock data ownership, retention and deletion rules ;
 - lock browser session and Biscuit authorization contracts ;
@@ -43,4 +44,4 @@
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- app briefs are boundaries, not complete functional specifications.
+- application behavior is specified, but executable contract artifacts and cross-runtime conformance vectors remain incomplete.

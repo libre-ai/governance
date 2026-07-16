@@ -16,5 +16,10 @@
 | D12 | Canary is bootstrap-only after qualification | durable binary/source/notices archive permits shared CI; first qualified stable Rust release is mandatory at G2 and production remains forbidden meanwhile |
 | D13 | Biome + Ajv + React Aria | one lint/format stack, strict JSON Schema validation, accessible UI primitives |
 | D14 | Playwright remains browser proof | Bun.WebView never replaces multi-engine E2E |
+| D15 | Explicit tenant model by application | personal server data and every internal Biscuit use a mandatory opaque tenant; organization apps use RLS; local-only data has no server tenant |
+| D16 | Provider-neutral OIDC boundary | Authorization Code + PKCE is stable; provider selection and provisioning remain deferred to G4 |
+| D17 | Bounded retention and deletion defaults | ADR-0002 durations drive schemas, purge jobs, backups and evidence |
+| D18 | Notebook v1 local-only | encrypted export/import replaces server sync and multi-device merge |
+| D19 | Boussole public scoring independently gated | methodological and France/EU legal/privacy approvals are both required and hash-bound |
 
 Changes to this register require an ADR and explicit human approval.
