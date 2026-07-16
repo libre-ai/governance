@@ -13,6 +13,6 @@ Une CI verte ou une décision de merge du propriétaire ne remplace aucun verdic
 La passe cryptographie doit reproduire Argon2id, AAD, AES-256-GCM, tag et digest avec une seconde
 implémentation, puis confirmer la borne candidate de 16 MiB, les limites navigateur et l’ordre
 anti-oracle. Elle vérifie aussi que l'interface WIT autonome `api` n'introduit aucun import de types.
-La passe vie privée confirme le local-only, l’absence de réseau/log, l'identifiant CSPRNG opaque,
-l'absence de timestamp clair et les profils normatifs code/Unicode du recovery secret.
+La passe vie privée confirme le local-only, l’absence de réseau/log, les identifiants CSPRNG
+export-scoped, l'absence de timestamp/révision/exclusion claire et l'unique recovery code normatif.
 L’artefact WASM final devra avoir une liste d’imports vide.

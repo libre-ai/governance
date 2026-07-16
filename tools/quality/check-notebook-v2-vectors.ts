@@ -105,8 +105,14 @@ if (!isRecord(golden) || !isRecord(golden.request) || !isRecord(golden.envelope)
     failures.push("canonical envelope mismatch");
 
   const secret = golden.recoverySecret as RecordValue;
-  if (!isRecord(secret) || secret.sensitive !== false || String(secret.value).length === 0)
-    failures.push("test secret is not explicitly public");
+  if (
+    !isRecord(secret) ||
+    secret.sensitive !== false ||
+    typeof secret.hex !== "string" ||
+    !/^[a-f0-9]{32}$/.test(secret.hex) ||
+    secret.byteLength !== 16
+  )
+    failures.push("test recovery code is not explicitly public and fixed-length");
 }
 const mutations = Array.isArray(vectors.mutations) ? vectors.mutations : [];
 const expectedMutationNames = [
@@ -167,6 +173,18 @@ if (!isRecord(context) || !isRecord(context.golden) || !Array.isArray(context.mu
     if (!/^urn:libre-ai:context:[a-f0-9]{32}$/.test(String(normalized.id)))
       failures.push("context id is not an opaque 128-bit value");
     if ("createdAt" in normalized) failures.push("clear context createdAt is forbidden");
+    if ("excludedBlockIds" in normalized) failures.push("context exclusions must stay local");
+    if (
+      Array.isArray(normalized.blocks) &&
+      normalized.blocks.some(
+        (block) =>
+          !isRecord(block) ||
+          "revision" in block ||
+          typeof block.id !== "string" ||
+          !/^blk_[a-f0-9]{32}$/.test(block.id),
+      )
+    )
+      failures.push("context block metadata is not export-scoped and minimal");
     const unsigned = structuredClone(normalized);
     delete unsigned.digest;
     const preimage = Buffer.concat([
@@ -186,7 +204,9 @@ if (!isRecord(context) || !isRecord(context.golden) || !Array.isArray(context.mu
     "duplicate-block-id",
     "missing-root-target",
     "missing-link-target",
-    "excluded-overlap",
+    "semantic-block-id",
+    "json-depth-over-limit",
+    "numeric-over-limit",
     "invalid-nested-json",
     "duplicate-nested-json-key",
   ];
@@ -195,6 +215,18 @@ if (!isRecord(context) || !isRecord(context.golden) || !Array.isArray(context.mu
     JSON.stringify(expectedContextNames)
   )
     failures.push("context mutation inventory mismatch");
+  if (
+    !isRecord(context.limits) ||
+    context.limits.maxJsonDepth !== 64 ||
+    context.limits.maxJsonNodes !== 100000 ||
+    context.limits.maxTotalLinks !== 16384 ||
+    context.limits.maxNumberMagnitude !== Number.MAX_SAFE_INTEGER
+  )
+    failures.push("context semantic resource limits are missing");
+  if (!Array.isArray(context.resourceCases) || context.resourceCases.length !== 6)
+    failures.push("context resource boundary cases are missing");
+  if (!Array.isArray(context.numericCases) || context.numericCases.length !== 8)
+    failures.push("context numeric boundary cases are missing");
 }
 
 const codeProfile = vectors.recoverySecretCodeProfile;
@@ -209,23 +241,8 @@ if (
 )
   failures.push("missing canonical generated recovery code profile");
 
-const textProfile = vectors.recoverySecretTextProfile;
-if (
-  !isRecord(textProfile) ||
-  textProfile.name !== "libre-ai.recovery-secret-text.v1" ||
-  !Array.isArray(textProfile.cases)
-)
-  failures.push("missing recovery secret Unicode profile");
-else
-  for (const [index, item] of textProfile.cases.entries()) {
-    if (!isRecord(item) || typeof item.input !== "string") {
-      failures.push(`recovery secret vector ${index}: malformed`);
-      continue;
-    }
-    const bytes = new TextEncoder().encode(item.input.normalize("NFC"));
-    if (item.utf8Hex !== hex(bytes) || item.byteLength !== bytes.byteLength)
-      failures.push(`recovery secret vector ${index}: NFC/UTF-8 mismatch`);
-  }
+if ("recoverySecretTextProfile" in vectors)
+  failures.push("ambiguous text recovery profile must not exist in v2");
 
 if (failures.length) {
   for (const failure of failures) console.error(failure);

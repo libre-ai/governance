@@ -29,7 +29,7 @@ type SealRequest = Omit<Envelope, "ciphertext" | "digest" | "schemaVersion"> & {
 
 type Mutation = {
   name: string;
-  recoverySecretUtf8: string;
+  recoverySecretHex: string;
   digestRecomputedAfterMutation: boolean;
   envelope: Envelope;
   expected: {
@@ -47,7 +47,6 @@ type GoldenVectors = {
   golden: {
     request: SealRequest;
     recoverySecret: {
-      value: string;
       hex: string;
       byteLength: number;
       sensitive: boolean;
@@ -96,23 +95,39 @@ type GoldenVectors = {
       canonicalOutputUtf8: string;
       outputByteLength: number;
     };
+    limits: {
+      maxInputBytes: number;
+      maxContentBytes: number;
+      maxJsonDepth: number;
+      maxJsonNodes: number;
+      maxBlocks: number;
+      maxLinksPerBlock: number;
+      maxTotalLinks: number;
+      maxNumberMagnitude: number;
+    };
     mutations: Array<{
       name: string;
       documentUtf8?: string;
       documentHex?: string;
       expected: { result: string; code: string };
     }>;
+    resourceCases: Array<{
+      name: string;
+      dimension: string;
+      value: number;
+      expected: string;
+    }>;
+    numericCases: Array<{
+      name: string;
+      inputUtf8: string;
+      canonicalUtf8?: string;
+      expected: string;
+    }>;
   };
   recoverySecretCodeProfile: {
     name: string;
     algorithm: string;
     case: { bytesHex: string; display: string; byteLength: number };
-  };
-  recoverySecretTextProfile: {
-    name: string;
-    algorithm: string;
-    cases: Array<{ input: string; normalized: string; utf8Hex: string; byteLength: number }>;
-    rejections: Array<{ name: string; input?: string; inputEscaped?: string; expected: string }>;
   };
 };
 
@@ -217,7 +232,6 @@ function digestPreimage(envelope: Envelope): Uint8Array {
 function normalizeContext(value: Record<string, unknown>): Record<string, unknown> {
   const output = structuredClone(value) as Record<string, unknown> & {
     rootBlockIds: string[];
-    excludedBlockIds?: string[];
     blocks: Array<{
       id: string;
       mediaType: string;
@@ -228,7 +242,6 @@ function normalizeContext(value: Record<string, unknown>): Record<string, unknow
     digest: string;
   };
   output.rootBlockIds.sort();
-  output.excludedBlockIds?.sort();
   for (const block of output.blocks) {
     block.links.sort();
     if (block.mediaType === "application/json") {
@@ -325,9 +338,10 @@ for (const path of [
     `${path}: pending independent agent review metadata is missing`,
   );
   const required = entry?.review?.required;
-  expect(
-    Array.isArray(required) && required.includes("cryptography") && required.includes("privacy"),
-    `${path}: cryptography and privacy reviews are required`,
+  expectEqual(
+    JSON.stringify(required),
+    JSON.stringify(["architecture", "security", "cryptography", "privacy"]),
+    `${path}: Gate A agent roles`,
   );
 }
 
@@ -392,12 +406,13 @@ expect(readme.includes("Gate A"), "README must retain the independent pre-implem
 expect(readme.includes("Gate B"), "README must retain the independent pre-release gate");
 const semantics = await Bun.file("contracts/wit/notebook-core-v2/SEMANTICS.md").text();
 for (const required of [
-  "`recovery-secret` | 16 octets | 1024 octets",
+  "`recovery-secret` | 16 octets | 16 octets",
   "plaintext | 1 octet | 16 777 216 octets",
   "nonce GCM : **12 octets exactement**",
   "sel Argon2id : **16 octets exactement**",
   "libre-ai.recovery-secret-code.v1",
-  "libre-ai.recovery-secret-text.v1",
+  "16 384 liens",
+  "100 000 valeurs JSON",
   "22 370 044 octets",
 ]) {
   expect(semantics.includes(required), `SEMANTICS normative rule missing: ${required}`);
@@ -439,6 +454,19 @@ expectEqual(
 expectEqual(contextSchema.properties?.id?.minLength, 53, "context opaque id length");
 expectEqual(contextSchema.properties?.id?.maxLength, 53, "context opaque id length");
 expect(contextSchema.properties?.createdAt === undefined, "context createdAt must not leak");
+expect(
+  contextSchema.properties?.excludedBlockIds === undefined,
+  "context exclusions must stay local",
+);
+expect(
+  contextSchema.properties?.blocks?.items?.properties?.revision === undefined,
+  "context revisions must stay local",
+);
+expectEqual(
+  contextSchema.$defs?.exportBlockId?.pattern,
+  "^blk_[a-f0-9]{32}$",
+  "context export-scoped block id",
+);
 const performance = await Bun.file(`${root}/PERFORMANCE.md`).text();
 expect(performance.includes("1 081,4 MiB"), "100 MiB peak-memory evidence is missing");
 expect(performance.includes("22 370 044 octets"), "maximum raw envelope bound is missing");
@@ -481,14 +509,14 @@ const plaintext = decodeCanonicalBase64(vectors.golden.plaintext.base64, "golden
 expectEqual(plaintext.byteLength, vectors.golden.plaintext.byteLength, "plaintext byte length");
 expectEqual(bytesToHex(plaintext), vectors.golden.plaintext.hex, "plaintext hex");
 expectEqual(vectors.golden.request.plaintext, vectors.golden.plaintext.base64, "request plaintext");
-const recoverySecret = encoder.encode(vectors.golden.recoverySecret.value);
+const recoverySecret = hexToBytes(vectors.golden.recoverySecret.hex, "golden recovery secret");
 expectEqual(
   recoverySecret.byteLength,
   vectors.golden.recoverySecret.byteLength,
   "secret byte length",
 );
 expectEqual(bytesToHex(recoverySecret), vectors.golden.recoverySecret.hex, "secret hex");
-expect(recoverySecret.byteLength >= 16 && recoverySecret.byteLength <= 1024, "secret bounds");
+expectEqual(recoverySecret.byteLength, 16, "secret fixed length");
 
 const salt = decodeCanonicalBase64(vectors.golden.envelope.kdf.salt, "golden salt");
 const nonce = decodeCanonicalBase64(vectors.golden.envelope.nonce, "golden nonce");
@@ -526,6 +554,11 @@ expectEqual(
 
 const keyBytes = hexToBytes(vectors.golden.argon2id.derivedKeyHex, "Argon2id derived key");
 expectEqual(keyBytes.byteLength, 32, "AES-256 key length");
+const reviewChecklist = await Bun.file(`${root}/INDEPENDENT-REVIEW.md`).text();
+expect(
+  reviewChecklist.includes(`clé dérivée \`${vectors.golden.argon2id.derivedKeyHex}\``),
+  "review checklist derived key is stale",
+);
 const key = await crypto.subtle.importKey(
   "raw",
   exactBuffer(keyBytes),
@@ -625,17 +658,18 @@ for (const mutation of vectors.mutations) {
     mutation.name === "recovery-secret-too-short" ||
     mutation.name === "recovery-secret-too-long"
   ) {
-    const secretLength = encoder.encode(mutation.recoverySecretUtf8).byteLength;
+    const mutationSecret = hexToBytes(mutation.recoverySecretHex, `${mutation.name} secret`);
+    const secretLength = mutationSecret.byteLength;
     if (mutation.name === "wrong-recovery-secret") {
       expect(
-        mutation.recoverySecretUtf8 !== vectors.golden.recoverySecret.value,
+        mutation.recoverySecretHex !== vectors.golden.recoverySecret.hex,
         "wrong recovery secret did not change",
       );
       expectEqual(secretLength, recoverySecret.byteLength, "wrong recovery secret byte length");
     } else if (mutation.name === "recovery-secret-too-short") {
       expectEqual(secretLength, 15, "short recovery secret byte length");
     } else {
-      expectEqual(secretLength, 1025, "long recovery secret byte length");
+      expectEqual(secretLength, 17, "long recovery secret byte length");
     }
     continue;
   }
@@ -698,7 +732,9 @@ const expectedContextMutationNames = [
   "duplicate-block-id",
   "missing-root-target",
   "missing-link-target",
-  "excluded-overlap",
+  "semantic-block-id",
+  "json-depth-over-limit",
+  "numeric-over-limit",
   "invalid-nested-json",
   "duplicate-nested-json-key",
 ];
@@ -722,7 +758,6 @@ for (const mutation of vectors.contextCanonicalization.mutations) {
     const document = JSON.parse(mutation.documentUtf8) as {
       rootBlockIds?: string[];
       blocks?: Array<{ id: string; links: string[]; mediaType: string; content: string }>;
-      excludedBlockIds?: string[];
     };
     const blockIds = new Set(document.blocks?.map((block) => block.id));
     if (mutation.name === "unknown-field") {
@@ -739,10 +774,21 @@ for (const mutation of vectors.contextCanonicalization.mutations) {
         document.blocks?.some((block) => block.links.some((id) => !blockIds.has(id))) === true,
         "missing link is present",
       );
-    } else if (mutation.name === "excluded-overlap") {
+    } else if (mutation.name === "semantic-block-id") {
+      expect(!validateContext(document), "semantic context block id accepted by schema");
+    } else if (mutation.name === "json-depth-over-limit") {
+      const content = document.blocks?.find(
+        (block) => block.mediaType === "application/json",
+      )?.content;
+      expect(content?.startsWith("[".repeat(65)) === true, "deep JSON vector is not over limit");
+    } else if (mutation.name === "numeric-over-limit") {
+      const content = document.blocks?.find(
+        (block) => block.mediaType === "application/json",
+      )?.content;
+      const nested = JSON.parse(content ?? "{}") as { value?: number };
       expect(
-        document.excludedBlockIds?.some((id) => blockIds.has(id)) === true,
-        "excluded context id does not overlap",
+        Math.abs(nested.value ?? 0) > Number.MAX_SAFE_INTEGER,
+        "numeric over-limit vector is in range",
       );
     } else if (mutation.name === "invalid-nested-json") {
       const content = document.blocks?.find(
@@ -761,7 +807,7 @@ for (const mutation of vectors.contextCanonicalization.mutations) {
 expect(
   vectors.contextCanonicalization.mutations
     .find((mutation) => mutation.name === "duplicate-top-level-key")
-    ?.documentUtf8?.includes('"id":"urn:libre-ai:context:f01112131415161718191a1b1c1d1e1f"') ===
+    ?.documentUtf8?.includes('"id":"urn:libre-ai:context:f03132333435363738393a3b3c3d3e3f"') ===
     true,
   "duplicate top-level key vector is missing its duplicate",
 );
@@ -775,6 +821,83 @@ expect(
   contextGolden.canonicalOutputUtf8.includes("333333333.3333333"),
   "context RFC 8785 number normalization vector is missing",
 );
+expect(!contextGolden.canonicalOutputUtf8.includes("revision"), "context revision leaked");
+expect(
+  !contextGolden.canonicalOutputUtf8.includes("excludedBlockIds"),
+  "context exclusions leaked",
+);
+expect(
+  (normalizedContext.blocks as Array<{ id: string; links: string[] }>).every(
+    (block) =>
+      /^blk_[a-f0-9]{32}$/.test(block.id) &&
+      block.links.every((id) => /^blk_[a-f0-9]{32}$/.test(id)),
+  ),
+  "context block ids are not export-scoped",
+);
+
+const contextLimits = vectors.contextCanonicalization.limits;
+for (const [dimension, expected] of Object.entries({
+  maxInputBytes: 22_370_044,
+  maxContentBytes: 16_777_216,
+  maxJsonDepth: 64,
+  maxJsonNodes: 100_000,
+  maxBlocks: 1_000,
+  maxLinksPerBlock: 1_000,
+  maxTotalLinks: 16_384,
+  maxNumberMagnitude: Number.MAX_SAFE_INTEGER,
+})) {
+  expectEqual(
+    contextLimits[dimension as keyof typeof contextLimits],
+    expected,
+    `context ${dimension}`,
+  );
+}
+const expectedResourceCases = [
+  ["json-depth-at-limit", "jsonDepth", 64, "accepted"],
+  ["json-depth-over-limit", "jsonDepth", 65, "invalid-document"],
+  ["json-nodes-at-limit", "jsonNodes", 100_000, "accepted"],
+  ["json-nodes-over-limit", "jsonNodes", 100_001, "invalid-document"],
+  ["total-links-at-limit", "totalLinks", 16_384, "accepted"],
+  ["total-links-over-limit", "totalLinks", 16_385, "invalid-document"],
+];
+expectEqual(
+  JSON.stringify(
+    vectors.contextCanonicalization.resourceCases.map((item) => [
+      item.name,
+      item.dimension,
+      item.value,
+      item.expected,
+    ]),
+  ),
+  JSON.stringify(expectedResourceCases),
+  "context resource cases",
+);
+expectEqual(
+  vectors.contextCanonicalization.numericCases.map((item) => item.name).join(","),
+  [
+    "max-safe-integer",
+    "min-safe-integer",
+    "binary64-rounding",
+    "negative-zero",
+    "small-exponent",
+    "integer-over-limit",
+    "negative-integer-over-limit",
+    "exponent-over-limit",
+  ].join(","),
+  "context numeric cases",
+);
+for (const item of vectors.contextCanonicalization.numericCases) {
+  const parsed = JSON.parse(item.inputUtf8) as { value: number };
+  if (item.expected === "accepted") {
+    expect(Math.abs(parsed.value) <= Number.MAX_SAFE_INTEGER, `${item.name}: number exceeds bound`);
+    expectEqual(canonicalJson(parsed), item.canonicalUtf8, `${item.name} numeric JCS`);
+  } else {
+    expect(
+      Math.abs(parsed.value) > Number.MAX_SAFE_INTEGER,
+      `${item.name}: rejected number is in range`,
+    );
+  }
+}
 
 expectEqual(
   vectors.recoverySecretCodeProfile.name,
@@ -791,35 +914,14 @@ expectEqual(
   "recovery secret code round-trip",
 );
 expectEqual(vectors.recoverySecretCodeProfile.case.byteLength, 16, "recovery secret code length");
-
 expectEqual(
-  vectors.recoverySecretTextProfile.name,
-  "libre-ai.recovery-secret-text.v1",
-  "recovery secret text profile",
-);
-for (const vector of vectors.recoverySecretTextProfile.cases) {
-  const normalized = vector.input.normalize("NFC");
-  const encoded = encoder.encode(normalized);
-  expectEqual(normalized, vector.normalized, "recovery secret NFC");
-  expectEqual(bytesToHex(encoded), vector.utf8Hex, "recovery secret UTF-8");
-  expectEqual(encoded.byteLength, vector.byteLength, "recovery secret byte length");
-}
-expectEqual(
-  vectors.recoverySecretTextProfile.cases[1]?.utf8Hex,
-  vectors.recoverySecretTextProfile.cases[2]?.utf8Hex,
-  "NFC/NFD recovery secret equivalence",
+  vectors.recoverySecretCodeProfile.case.bytesHex,
+  vectors.golden.recoverySecret.hex,
+  "golden recovery secret profile",
 );
 expect(
-  vectors.recoverySecretTextProfile.rejections.some(
-    (vector) => vector.name === "leading-bom" && vector.input?.startsWith("\uFEFF") === true,
-  ),
-  "leading BOM recovery secret rejection is missing",
-);
-expect(
-  vectors.recoverySecretTextProfile.rejections.some(
-    (vector) => vector.name === "non-scalar-surrogate" && vector.inputEscaped === "\\uD800",
-  ),
-  "non-scalar recovery secret rejection is missing",
+  !("recoverySecretTextProfile" in vectors),
+  "ambiguous text recovery profile must not exist in v2",
 );
 
 if (failures.length > 0) {
@@ -828,5 +930,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, recovery profiles; Gate A remains pending`,
+  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, bounded Context, one recovery profile; Gate A remains pending`,
 );
