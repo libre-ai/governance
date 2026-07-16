@@ -8,9 +8,9 @@
 
 ## Pourquoi cette gate existe
 
-Le dépôt est actuellement maintenu par une seule personne. Les équipes GitHub `security` et `architecture` mentionnées par `CODEOWNERS` n'existent pas encore. Bloquer toute expérimentation sur une approbation interne « indépendante » serait impossible ; simuler cette indépendance serait trompeur.
+Le dépôt est actuellement maintenu par une seule personne. Les équipes humaines GitHub `security` et `architecture` mentionnées par `CODEOWNERS` n'existent pas encore. L’indépendance technique repose donc sur des agents et sessions séparés selon `docs/reviews/AGENT-REVIEW-PROTOCOL.md`, sans présenter le challenge auteur Gate S comme un verdict.
 
-La Gate S documente le challenge sans simuler l'indépendance. ADR-0003 sépare le cycle : une Gate A externe examine le protocole et les vecteurs avant toute implémentation ; une Gate B externe examine ensuite le composant construit avant release.
+La Gate S documente le challenge sans simuler l'indépendance. ADR-0003 sépare le cycle : une Gate A tenue par un agent indépendant examine le protocole et les vecteurs avant toute implémentation ; une Gate B tenue par un autre contexte agentique indépendant examine ensuite le composant construit avant release.
 
 ## Méthode exécutée
 
@@ -56,11 +56,11 @@ Après Gate S :
 
 Avant toute implémentation :
 
-- un cryptographe externe examine et reproduit le protocole/vecteurs (Gate A) ;
+- un agent cryptographie indépendant examine et reproduit le protocole/vecteurs (Gate A) ;
 
 Avant toute sauvegarde utilisateur ou release :
 
-- un cryptographe externe examine le composant réellement construit (Gate B) ;
+- un agent cryptographie indépendant de l’implémentation examine le composant réellement construit (Gate B) ;
 - [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) reçoit des verdicts Gate A puis Gate B attribuables ;
 - les constats résiduels ci-dessus sont fermés par preuves ;
 - les gates projet sécurité, confidentialité locale et frontière Rust sont approuvées.

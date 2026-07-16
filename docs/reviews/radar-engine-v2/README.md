@@ -1,13 +1,14 @@
-# Independent review dossier — Radar engine v2 contract
+# Independent agent review dossier — Radar engine v2 contract
 
-**State:** `pending-independent-review`
+**State:** `pending-independent-agent-review`
 
-**Required review roles:** one Security pass and one Architecture pass, isolated from implementation
-and bound to the reviewed commit/hash under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`.
+**Protocol:** [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md)
 
-**Decision recorded here:** no promotion verdict. The generic agent review and human continuation
-milestone authorize candidate integration only; they do not lock, release or authorize implementation
-of the contract.
+**Required reviewers:** one Security agent and one Architecture agent, each using an identity and
+session distinct from the authoring agent.
+
+**Decision recorded here:** none. This dossier is a review request and does not approve, release or
+authorize implementation of the contract.
 
 ## Review subject
 
@@ -29,7 +30,8 @@ Normative artifacts:
 
 The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
 `contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
-role-separated Security and Architecture verdicts followed by the human control milestone.
+independent Security and Architecture agent verdicts. The authoring agent must not review or perform
+that promotion alone.
 
 ## Contract decisions to review
 
@@ -80,18 +82,16 @@ shasum -a 256 contracts/fixtures/radar-engine-v2/positive/rss-2.0.xml
 shasum -a 256 contracts/fixtures/radar-engine-v2/golden/rss-2.0.normalized.json
 ```
 
-The vector index itself is intentionally not self-hashed. Its current candidate SHA-256 is
-`4e41d9805fa1c9531182616b13b492b398d70585e13dde03af5b73334de04f43`; reviewers must recompute it
-at the reviewed commit. Its `contractFiles` section binds the WIT, profile and schemas; each case
-binds its own raw inputs and exact output bytes.
+The vector index itself is intentionally not self-hashed. Reviewers must recompute its SHA-256 at
+the reviewed commit. Its `contractFiles` section binds the WIT, profile and schemas; each case binds
+its own raw inputs and exact output bytes.
 
-## Expected role-separated evidence
+## Expected independent evidence
 
-A Security review agent should return a separate verdict covering `SECURITY.md`. An Architecture
-review agent should return a separate verdict covering `ARCHITECTURE.md`. Each review-only pass must
-identify its role, the reviewed Git commit and the SHA-256 of `golden-vectors.v1.json`, list blocking
-findings, and explicitly state `approve` or `reject`. A conditional, stale or missing verdict keeps
-every candidate entry pending; complete verdicts still require the human lock milestone.
+Security and Architecture review agents return separate verdicts covering `SECURITY.md` and
+`ARCHITECTURE.md`. Each record includes the agent/session identity required by the shared protocol,
+the reviewed Git commit, the SHA-256 of `golden-vectors.v1.json`, findings and an explicit verdict.
+A self-review, conditional verdict or missing record keeps every candidate entry pending.
 
 ## Known residual work (not part of this candidate)
 

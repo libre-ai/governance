@@ -1,6 +1,6 @@
 # Candidat de revue cryptographique — Notebook Core v2
 
-> **Statut : GATE S ACCEPTÉE POUR RÉDACTION DU CANDIDAT UNIQUEMENT.** Cette auto-revue de bootstrap solo n'est pas indépendante et n'autorise aucun moteur, même expérimental. ADR-0003 a catalogué une copie v2 comme `candidate` ; son implémentation attend la Gate A cryptographique et vie privée indépendante. La future conformité du composant (Gate B), `rust-boundary-value-review` et `local-crypto-and-privacy-review` resteront obligatoires avant toute émission de sauvegarde.
+> **Statut : GATE S ACCEPTÉE POUR RÉDACTION DU CANDIDAT UNIQUEMENT.** Ce challenge de rédaction n'est ni indépendant ni un verdict et n'autorise aucun moteur, même expérimental. ADR-0003 a catalogué une copie v2 comme `candidate` ; son implémentation attend les verdicts Gate A d’agents cryptographie et vie privée indépendants. La future conformité du composant (Gate B), `rust-boundary-value-review` et `local-crypto-and-privacy-review` resteront obligatoires avant toute émission de sauvegarde.
 
 Les mots **DOIT**, **NE DOIT PAS** et **DEVRAIT** sont normatifs. Les standards de référence sont RFC 9106 (Argon2id), NIST SP 800-38D (GCM), RFC 4648 §4 (Base64) et RFC 8785 (JCS).
 
@@ -161,26 +161,26 @@ Le host reste responsable de ses propres buffers d'entrée/sortie et DOIT écras
 
 `world.wit` ne déclare aucun `import` et n'utilise aucune interface de types séparée. Le module et le composant construits DOIVENT avoir une liste d'imports vide : pas de WASI clocks, random, sockets, HTTP, filesystem, key/value, environment ou logging. `id`, `created-at`, sel et nonce proviennent uniquement de la requête. Le scan du composant final et le test sans WASI appartiennent à la Gate B.
 
-## 9. Gate S — bootstrap solo
+## 9. Gate S — challenge de rédaction solo
 
-La Gate S est une auto-revue contradictoire, pas une revue indépendante. Elle est consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) avec les outils croisés, les constats corrigés et les risques résiduels.
+La Gate S est un challenge contradictoire dans le contexte auteur, pas une revue ni un verdict. Elle est consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) avec les outils croisés, les constats corrigés et les risques résiduels.
 
 Elle autorise uniquement :
 
 1. le merge de ce dossier comme proposition de revue ;
 2. la préparation machine-checkable du candidat dans `contracts/` avec statut `candidate` ;
-3. la reproduction externe du protocole et des vecteurs en vue de Gate A.
+3. la reproduction agentique indépendante du protocole et des vecteurs en vue de Gate A.
 
 Elle n'autorise ni statut `locked`, ni implémentation, ni compatibilité publique, ni sauvegarde utilisateur, ni release. Toute modification normative impose de régénérer les vecteurs et de réexécuter le challenge.
 
-## 10. Gates A/B — revues externes avant implémentation puis release
+## 10. Gates A/B — revues agentiques indépendantes avant implémentation puis release
 
-Avant tout moteur, un cryptographe externe complète la Gate A de [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) et vérifie :
+Avant tout moteur, un agent cryptographie indépendant complète la Gate A de [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) selon [`../../reviews/AGENT-REVIEW-PROTOCOL.md`](../../reviews/AGENT-REVIEW-PROTOCOL.md) et vérifie :
 
 1. la reproduction indépendante de la clé, des AAD, du ciphertext/tag, du digest, du golden et des mutations ;
 2. l’exactitude du protocole, des bornes, de la migration et du modèle anti-oracle.
 
-Une fois un composant construit, le reviewer complète séparément Gate B et vérifie :
+Une fois un composant construit, un agent reviewer indépendant de l’implémentation complète séparément Gate B et vérifie :
 
 1. la conformité WIT/schémas/golden dans les runtimes Rust/WASM et navigateur ;
 2. le choix, les versions, la provenance et la configuration des primitives ;

@@ -21,7 +21,7 @@
 | D17 | Bounded retention and deletion defaults | ADR-0002 durations drive schemas, purge jobs, backups and evidence |
 | D18 | Notebook v1 local-only | encrypted export/import replaces server sync and multi-device merge |
 | D19 | Boussole public scoring independently gated | methodological and France/EU legal/privacy approvals are both required and hash-bound |
-| D20 | WP-G2-S01 uses candidate v2 product boundaries plus one bounded Missions simulator | Context and Practices remain unimplemented; the G2 orchestrator only simulates and validates locked v1 events, while real execution requires a separate lock |
-| D21 | Solo G2 uses role-separated agent reviews plus human control milestones | agent review may integrate candidates; complete role evidence and explicit human acceptance remain mandatory before lock, product implementation, public use or deployment |
+| D20 | WP-G2-S01 relock uses candidate v2 boundaries only | Radar, Notebook, Policy and Boussole move to reviewed v2 contracts; Context, Orchestrator and Practices remain unimplemented |
+| D21 | Solo engineering review is multi-agent | ADR-0003 reviewers are independent agents/sessions, never the authoring agent; product-level human approvals remain unchanged |
 
 Changes to this register require an ADR and explicit human approval.

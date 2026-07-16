@@ -24,13 +24,13 @@ Si des prototypes ont néanmoins émis des fichiers v1, aucune adaptation automa
 
 ## Progression après Gate S
 
-La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise uniquement la rédaction et les contrôles machine du candidat. Aucun moteur expérimental n’est autorisé avant reproduction externe du protocole et approbation Gate A.
+La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise uniquement la rédaction et les contrôles machine du candidat. Aucun moteur expérimental n’est autorisé avant reproduction agentique indépendante du protocole et verdict Gate A.
 
 Après Gate A, une implémentation bornée pourra produire les preuves impossibles au seul niveau du contrat : zéroïsation réelle, imports du composant, intégration CSPRNG/secret côté host et budgets navigateur. Elle ne devient jamais un producteur utilisateur avant Gate B et les gates de release.
 
 ## Promotion après Gate A seulement
 
-Après approbation externe de la Gate A consignée dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
+Après verdict favorable de l’agent Gate A consigné dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
 
 1. vérifier que les copies cataloguées sous `contracts/` sont byte-identiques aux candidats examinés ;
 2. lier les autorités aux commits et preuves exacts de Gate A ;

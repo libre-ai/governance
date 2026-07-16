@@ -1,10 +1,12 @@
-# Revue par rôles — Boussole scoring v2
+# Revue agentique indépendante — Boussole scoring v2
 
-Statut : **candidate intégrable / NO-GO public scoring**.
+Statut : **candidate / NO-GO public scoring**. Le verdict méthodologique favorable lié au commit
+`5bcce21` reste une preuve technique liée à son hash, mais ne renseigne pas les identifiants
+agent/session désormais requis : une passe attribuable doit le confirmer, et les autres rôles restent
+également requis.
 
-L’intégration du candidat suit la revue agent générique et le jalon humain de continuation. La
-promotion exige quatre verdicts issus de passes agent review-only distinctes, puis le jalon humain de
-verrouillage défini dans `docs/reviews/AGENT-REVIEW-PROTOCOL.md` :
+La promotion exige quatre records issus d’agents review-only distincts de l’agent/session auteur,
+conformément à [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
 
 1. architecture — cohérence WIT/JSON Schema et compatibilité ;
 2. sécurité — bornes, refus, arithmétique et imports WASM ;
@@ -20,5 +22,6 @@ négatifs, le dénominateur nul, le reviewer dupliqué et une référence de pro
 dérivés utilisent uniquement des patches `replace` JSON Pointer bornés et effectivement appliqués
 par la gate.
 
-Jusqu’à ces quatre verdicts et leur acceptation humaine, le code, les schémas et les données peuvent
-être testés mais toute fonctionnalité de scoring public reste désactivée à la compilation/release.
+Jusqu’à ces quatre verdicts agentiques et aux approbations produit humaines exigées par les contrats,
+le code, les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public
+reste désactivée à la compilation/release.

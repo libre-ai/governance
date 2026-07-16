@@ -1,6 +1,6 @@
-# Procès-verbal de revue cryptographique externe — Gates A/B
+# Procès-verbal de revue cryptographique agentique indépendante — Gates A/B
 
-> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace aucune revue. Seul un cryptographe externe à la rédaction du candidat et au développement du moteur peut rendre les verdicts Gate A (protocole) puis Gate B (composant).
+> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S de rédaction ne remplace aucune revue. Seul un agent cryptographie dont l’identité et la session diffèrent de l’agent auteur puis de l’agent implémenteur peut rendre les verdicts Gate A (protocole) puis Gate B (composant), conformément à [`../../reviews/AGENT-REVIEW-PROTOCOL.md`](../../reviews/AGENT-REVIEW-PROTOCOL.md).
 
 ## Portée de la décision
 
@@ -8,8 +8,11 @@ La Gate A examine le protocole, les schémas et les vecteurs catalogués ; son a
 
 ## Candidats immuables
 
-À compléter par le reviewer :
+À compléter par l’agent reviewer :
 
+- `authorAgentId` et `authorSessionId` : `<required>` ;
+- `reviewerAgentId` et `reviewerSessionId` : `<required>` ;
+- provider et modèle/version du reviewer : `<required>` ;
 - commit Git du protocole, SHA complet : `<required>` ;
 - arbre Git du dossier protocole : `<required>` ;
 - Gate A — commit moteur/host : `not-yet-implemented` ;
@@ -18,9 +21,9 @@ La Gate A examine le protocole, les schémas et les vecteurs catalogués ; son a
 - Gate B — digest du composant WASM construit : `<required-before-gate-b>` ;
 - dépôt : `https://github.com/libre-ai/libre-ai` ;
 - date UTC de revue : `<required>` ;
-- référence professionnelle publique ou interne du reviewer : `<required>`.
+- référence immuable du record agentique : `<required>`.
 
-Le reviewer travaille sur des commits propres et consigne les commandes de liaison :
+L’agent reviewer travaille sur des commits propres et consigne les commandes de liaison :
 
 ```bash
 git rev-parse HEAD
@@ -30,8 +33,9 @@ git status --short
 
 ## Indépendance
 
-- [ ] le reviewer n'a rédigé ni le candidat, ni ses golden vectors, ni le moteur principal ;
-- [ ] il ne s'auto-approuve pas et déclare les conflits d'intérêts éventuels ;
+- [ ] `reviewerAgentId != authorAgentId` et `reviewerSessionId != authorSessionId` ;
+- [ ] l’agent reviewer n'a rédigé ni le candidat, ni ses golden vectors, ni le moteur principal ;
+- [ ] il ne s'auto-approuve pas et déclare les conflits éventuels ;
 - [ ] ses preuves n'utilisent que le secret public de test, sans donnée personnelle ni clé réelle ;
 - [ ] sa chaîne de reproduction est indépendante des implémentations utilisées pendant la Gate S.
 

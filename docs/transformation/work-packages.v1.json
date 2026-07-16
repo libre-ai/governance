@@ -11,6 +11,7 @@
     "Applications never read or write another product database and never query across tenants.",
     "Every branch is bounded by declared write paths and reports security, PII, tests and evidence before integration.",
     "No agent approves its own schema, authorization, migration, release or deployment output.",
+    "ADR-0003 contract candidates are reviewed by independent agents whose identity and session differ from the authoring agent; CI is evidence, not a verdict.",
     "Clever Cloud Paris EU remains the runtime target and production data never enters GitHub.",
     "WP-G3-A01 remains blocked from orchestrator integration until a separate human-approved execution-plan, control-protocol and agent-harness Specification Lock exists."
   ],
@@ -233,24 +234,18 @@
     {
       "id": "WP-G2-S01",
       "phase": "G2",
-      "name": "Specialized Rust/WASM engines and bounded mission simulator",
-      "objective": "Implement the candidate Rust/WASM boundaries for Radar, Notebook canonicalization and crypto, Model Policy and Boussole, plus a deterministic G2 Missions simulator and OrchestratorEvent validator; leave generic Context, real agent execution and Practices scoring unimplemented.",
+      "name": "Pure specialized Rust and WASM product engines",
+      "objective": "Implement only the candidate Rust/WASM boundaries for Radar, Notebook canonicalization and crypto, Model Policy and Boussole; leave Context, agent orchestration and Practices scoring unimplemented.",
       "owners": ["specialized-rust"],
       "integrator": "architecture",
       "writePaths": [
         "crates/radar-engine/**",
         "crates/notebook-core/**",
         "crates/policy-core/**",
-        "crates/boussole-scoring/**",
-        "crates/agent-orchestrator/**"
+        "crates/boussole-scoring/**"
       ],
       "readAuthorities": [
         "contracts/catalog.v1.json",
-        "contracts/schemas/common.v1.schema.json",
-        "contracts/schemas/agent-handoff.v1.schema.json",
-        "contracts/schemas/orchestrator-event.v1.schema.json",
-        "contracts/openapi/missions.v1.yaml",
-        "docs/apps/missions.md",
         "contracts/wit/radar-engine-v2/world.wit",
         "contracts/wit/radar-engine-v2/PROFILE.md",
         "contracts/wit/notebook-core-v2/world.wit",
@@ -289,21 +284,16 @@
         "boussole-security-review",
         "boussole-methodology-review",
         "boussole-privacy-review",
-        "missions-orchestrator-contract-review",
-        "orchestrator-budget-security-review",
         "rust-boundary-value-review"
       ],
       "acceptance": [
         "Every retained product engine has cross-runtime golden vectors and an explicit TS/Rust boundary bound to a cataloged v2 WIT profile.",
-        "The bounded simulator uses only locked AgentHandoff v1, OrchestratorEvent v1 and canonical Artifact/Evidence references at its TS/Rust boundary.",
-        "No product engine implementation starts while any of its read authorities remains candidate or lacks its independent named human approvals.",
+        "No product engine implementation starts while any of its read authorities remains candidate or lacks its independent named agent verdicts.",
         "Pure WIT worlds import no network, storage, clock, randomness, identity or logging capability.",
         "Radar enforces source-scoped identities and explicit input, output, item and depth budgets without partial results.",
         "Notebook crypto passes independent Argon2id, AES-GCM, AAD, anti-oracle, zeroization and browser-budget review.",
         "Policy proves human proposer/approver separation and Boussole public scoring remains release-disabled pending both hash-bound approvals.",
-        "No crates/context implementation exists; notebook-core remains the sole ContextDocument canonicalization authority.",
-        "Agent orchestration is limited to deterministic simulation and semantic event validation with no DB, UI, secret, network, human approval, provider, tool execution, harness or general agent engine.",
-        "Sequences, replay, idempotency, event transitions, input sizes and virtual duration budgets fail closed under shared Rust/TypeScript vectors.",
+        "No crates/context or crates/agent-orchestrator implementation exists in this package; notebook-core remains the sole ContextDocument canonicalization authority.",
         "The reserved Practices scoring WIT remains unimplemented until a new approved package demonstrates a real invariant."
       ],
       "definitionStatus": "locked"
