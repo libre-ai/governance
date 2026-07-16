@@ -85,7 +85,7 @@ shasum -a 256 contracts/fixtures/radar-engine-v2/golden/rss-2.0.normalized.json
 ```
 
 The vector index itself is intentionally not self-hashed. Its current candidate SHA-256 is
-`c51d5d7495b40bcbec5664b616fb7363e1d20b3ceb323ff11d3bd6b1f7d11efe`; reviewers must recompute it
+`a30d1fd4cb2d24576a0f959d8404eb32b64695ad6462242363a74394a14d7c00`; reviewers must recompute it
 at the reviewed commit. Its `contractFiles` section binds the WIT, profile and schemas; each case
 binds its own raw inputs and exact output bytes.
 
