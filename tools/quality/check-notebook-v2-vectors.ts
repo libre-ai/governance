@@ -223,8 +223,29 @@ if (!isRecord(context) || !isRecord(context.golden) || !Array.isArray(context.mu
     context.limits.maxNumberMagnitude !== Number.MAX_SAFE_INTEGER
   )
     failures.push("context semantic resource limits are missing");
-  if (!Array.isArray(context.resourceCases) || context.resourceCases.length !== 6)
+  if (
+    !isRecord(context.resourceFixtureProfile) ||
+    context.resourceFixtureProfile.name !== "libre-ai.context-resource-fixture.v1"
+  )
+    failures.push("context resource fixture profile is missing");
+  if (!Array.isArray(context.resourceCases) || context.resourceCases.length !== 6) {
     failures.push("context resource boundary cases are missing");
+  } else {
+    for (const [index, item] of context.resourceCases.entries()) {
+      if (
+        !isRecord(item) ||
+        item.fixtureOrdinal !== index + 1 ||
+        typeof item.inputCanonicalByteLength !== "number" ||
+        typeof item.inputCanonicalSha256 !== "string" ||
+        !/^[a-f0-9]{64}$/.test(item.inputCanonicalSha256) ||
+        (item.expected === "accepted" &&
+          (typeof item.canonicalOutputByteLength !== "number" ||
+            typeof item.canonicalOutputSha256 !== "string" ||
+            !/^[a-f0-9]{64}$/.test(item.canonicalOutputSha256)))
+      )
+        failures.push(`context resource case ${index}: non-replayable fixture`);
+    }
+  }
   if (!Array.isArray(context.numericCases) || context.numericCases.length !== 8)
     failures.push("context numeric boundary cases are missing");
 }

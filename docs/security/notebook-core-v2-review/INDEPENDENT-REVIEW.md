@@ -60,7 +60,7 @@ Résultats :
 - [ ] ouverture positive restituant les 45 octets attendus ;
 - [ ] mauvais secret, secrets de 15/17 octets, nonce, sel, ciphertext, AAD et digest seul modifiés retournent uniquement `authentication-failed` ;
 - [ ] paramètres faibles retournent uniquement `invalid-envelope` sans Argon2id et version publique inconnue retourne `unsupported-version` ;
-- [ ] golden Context v2, douze refus adversariaux et cas limites profondeur/nœuds/liens/nombres sont reproduits ;
+- [ ] golden Context v2, douze refus adversariaux et cas limites matérialisés profondeur/nœuds/liens/nombres sont reproduits ;
 - [ ] aucun plaintext n'est libéré par un cas négatif.
 
 ## Analyse du protocole

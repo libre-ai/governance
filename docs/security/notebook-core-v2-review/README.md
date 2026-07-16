@@ -33,7 +33,7 @@ de sauvegarde/contexte/blocs CSPRNG opaques, retrait de `createdAt`, révisions 
   sur des commits immuables, y compris les rejets historiques.
 
 Le golden unique contient le scellement/ouverture, dix mutations backup, la canonicalisation Context
-v2 avec douze refus adversariaux, les cas limites profondeur/nœuds/liens/nombres et le seul profil
+v2 avec douze refus adversariaux, les cas limites rejouables profondeur/nœuds/liens/nombres et le seul profil
 `libre-ai.recovery-secret-code.v1`. Tout le matériel est
 public, déterministe et interdit comme secret, sel, nonce ou identifiant de production.
 

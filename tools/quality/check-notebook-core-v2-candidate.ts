@@ -111,11 +111,26 @@ type GoldenVectors = {
       documentHex?: string;
       expected: { result: string; code: string };
     }>;
+    resourceFixtureProfile: {
+      name: string;
+      serialization: string;
+      contextId: string;
+      blockIds: string;
+      jsonDepth: string;
+      jsonNodes: string;
+      totalLinks: string;
+      inputDerivedFields: string;
+    };
     resourceCases: Array<{
       name: string;
-      dimension: string;
+      dimension: "jsonDepth" | "jsonNodes" | "totalLinks";
       value: number;
       expected: string;
+      fixtureOrdinal: number;
+      inputCanonicalByteLength: number;
+      inputCanonicalSha256: string;
+      canonicalOutputByteLength?: number;
+      canonicalOutputSha256?: string;
     }>;
     numericCases: Array<{
       name: string;
@@ -262,6 +277,103 @@ function normalizeContext(value: Record<string, unknown>): Record<string, unknow
   );
   output.digest = sha256Hex(preimage);
   return output;
+}
+
+function materializeContextResourceCase(
+  fixtureOrdinal: number,
+  dimension: "jsonDepth" | "jsonNodes" | "totalLinks",
+  value: number,
+): Record<string, unknown> {
+  const blockIds = Array.from(
+    { length: 1_000 },
+    (_, index) => `blk_${index.toString(16).padStart(32, "0")}`,
+  );
+  let blocks: Array<{
+    id: string;
+    mediaType: string;
+    content: string;
+    links: string[];
+  }>;
+  if (dimension === "jsonDepth") {
+    const arrays = value - 1;
+    blocks = [
+      {
+        id: blockIds[0] as string,
+        mediaType: "application/json",
+        content: `${"[".repeat(arrays)}0${"]".repeat(arrays)}`,
+        links: [],
+      },
+    ];
+  } else if (dimension === "jsonNodes") {
+    blocks = [
+      {
+        id: blockIds[0] as string,
+        mediaType: "application/json",
+        content: `[${Array.from({ length: value - 1 }, () => "0").join(",")}]`,
+        links: [],
+      },
+    ];
+  } else {
+    let remaining = value;
+    blocks = blockIds.map((id) => {
+      const linkCount = Math.min(1_000, remaining);
+      remaining -= linkCount;
+      return { id, mediaType: "text/plain", content: "", links: blockIds.slice(0, linkCount) };
+    });
+    expectEqual(remaining, 0, "resource fixture undistributed links");
+  }
+  return {
+    schemaVersion: "libre-ai.context-document.v2",
+    id: `urn:libre-ai:context:${fixtureOrdinal.toString(16).padStart(32, "0")}`,
+    rootBlockIds: [blockIds[0]],
+    blocks,
+    totalBytes: blocks.reduce(
+      (total, block) => total + encoder.encode(block.content).byteLength,
+      0,
+    ),
+    digest: "0".repeat(64),
+  };
+}
+
+function jsonMetrics(value: unknown): { depth: number; nodes: number } {
+  let depth = 0;
+  let nodes = 0;
+  const pending: Array<readonly [unknown, number]> = [[value, 1]];
+  while (pending.length > 0) {
+    const [item, itemDepth] = pending.pop() as readonly [unknown, number];
+    nodes += 1;
+    depth = Math.max(depth, itemDepth);
+    if (Array.isArray(item)) {
+      for (const nested of item) pending.push([nested, itemDepth + 1]);
+    } else if (typeof item === "object" && item !== null) {
+      for (const nested of Object.values(item)) pending.push([nested, itemDepth + 1]);
+    }
+  }
+  return { depth, nodes };
+}
+
+function contextResourceMetrics(document: Record<string, unknown>): {
+  jsonDepth: number;
+  jsonNodes: number;
+  totalLinks: number;
+} {
+  const blocks = document.blocks as Array<{
+    mediaType: string;
+    content: string;
+    links: string[];
+  }>;
+  let jsonDepth = 0;
+  let jsonNodes = 0;
+  let totalLinks = 0;
+  for (const block of blocks) {
+    totalLinks += block.links.length;
+    if (block.mediaType === "application/json") {
+      const metrics = jsonMetrics(JSON.parse(block.content));
+      jsonDepth = Math.max(jsonDepth, metrics.depth);
+      jsonNodes += metrics.nodes;
+    }
+  }
+  return { jsonDepth, jsonNodes, totalLinks };
 }
 
 function contextDigestPreimage(document: Record<string, unknown>): Uint8Array {
@@ -411,6 +523,7 @@ for (const required of [
   "nonce GCM : **12 octets exactement**",
   "sel Argon2id : **16 octets exactement**",
   "libre-ai.recovery-secret-code.v1",
+  "libre-ai.context-resource-fixture.v1",
   "16 384 liens",
   "100 000 valeurs JSON",
   "22 370 044 octets",
@@ -780,7 +893,8 @@ for (const mutation of vectors.contextCanonicalization.mutations) {
       const content = document.blocks?.find(
         (block) => block.mediaType === "application/json",
       )?.content;
-      expect(content?.startsWith("[".repeat(65)) === true, "deep JSON vector is not over limit");
+      expect(content?.startsWith("[".repeat(64)) === true, "deep JSON vector is not over limit");
+      expectEqual(jsonMetrics(JSON.parse(content ?? "0")).depth, 65, "deep JSON mutation depth");
     } else if (mutation.name === "numeric-over-limit") {
       const content = document.blocks?.find(
         (block) => block.mediaType === "application/json",
@@ -852,13 +966,23 @@ for (const [dimension, expected] of Object.entries({
     `context ${dimension}`,
   );
 }
+expectEqual(
+  vectors.contextCanonicalization.resourceFixtureProfile.name,
+  "libre-ai.context-resource-fixture.v1",
+  "context resource fixture profile",
+);
+expectEqual(
+  vectors.contextCanonicalization.resourceFixtureProfile.serialization,
+  "RFC 8785 JCS UTF-8 without BOM or trailing newline",
+  "context resource fixture serialization",
+);
 const expectedResourceCases = [
-  ["json-depth-at-limit", "jsonDepth", 64, "accepted"],
-  ["json-depth-over-limit", "jsonDepth", 65, "invalid-document"],
-  ["json-nodes-at-limit", "jsonNodes", 100_000, "accepted"],
-  ["json-nodes-over-limit", "jsonNodes", 100_001, "invalid-document"],
-  ["total-links-at-limit", "totalLinks", 16_384, "accepted"],
-  ["total-links-over-limit", "totalLinks", 16_385, "invalid-document"],
+  ["json-depth-at-limit", "jsonDepth", 64, "accepted", 1],
+  ["json-depth-over-limit", "jsonDepth", 65, "invalid-document", 2],
+  ["json-nodes-at-limit", "jsonNodes", 100_000, "accepted", 3],
+  ["json-nodes-over-limit", "jsonNodes", 100_001, "invalid-document", 4],
+  ["total-links-at-limit", "totalLinks", 16_384, "accepted", 5],
+  ["total-links-over-limit", "totalLinks", 16_385, "invalid-document", 6],
 ];
 expectEqual(
   JSON.stringify(
@@ -867,11 +991,64 @@ expectEqual(
       item.dimension,
       item.value,
       item.expected,
+      item.fixtureOrdinal,
     ]),
   ),
   JSON.stringify(expectedResourceCases),
   "context resource cases",
 );
+const resourceLimitByDimension = {
+  jsonDepth: contextLimits.maxJsonDepth,
+  jsonNodes: contextLimits.maxJsonNodes,
+  totalLinks: contextLimits.maxTotalLinks,
+};
+for (const item of vectors.contextCanonicalization.resourceCases) {
+  const document = materializeContextResourceCase(item.fixtureOrdinal, item.dimension, item.value);
+  const inputCanonical = canonicalJson(document);
+  const inputBytes = encoder.encode(inputCanonical);
+  expectEqual(
+    inputBytes.byteLength,
+    item.inputCanonicalByteLength,
+    `${item.name} input byte length`,
+  );
+  expectEqual(sha256Hex(inputBytes), item.inputCanonicalSha256, `${item.name} input SHA-256`);
+  expect(inputBytes.byteLength <= contextLimits.maxInputBytes, `${item.name}: raw input too large`);
+  expect(
+    validateContext(document),
+    `${item.name}: resource input rejected by schema: ${ajv.errorsText(validateContext.errors)}`,
+  );
+  const metrics = contextResourceMetrics(document);
+  expectEqual(metrics[item.dimension], item.value, `${item.name} materialized dimension`);
+  if (item.expected === "accepted") {
+    expect(
+      metrics.jsonDepth <= contextLimits.maxJsonDepth &&
+        metrics.jsonNodes <= contextLimits.maxJsonNodes &&
+        metrics.totalLinks <= contextLimits.maxTotalLinks,
+      `${item.name}: accepted fixture exceeds a semantic resource limit`,
+    );
+    const canonicalOutput = canonicalJson(normalizeContext(document));
+    const outputBytes = encoder.encode(canonicalOutput);
+    expectEqual(
+      outputBytes.byteLength,
+      item.canonicalOutputByteLength,
+      `${item.name} output byte length`,
+    );
+    expectEqual(sha256Hex(outputBytes), item.canonicalOutputSha256, `${item.name} output SHA-256`);
+    expect(
+      validateContext(JSON.parse(canonicalOutput)),
+      `${item.name}: canonical output rejected by schema`,
+    );
+  } else {
+    expect(
+      metrics[item.dimension] > resourceLimitByDimension[item.dimension],
+      `${item.name}: rejected fixture does not exceed its limit`,
+    );
+    expect(
+      item.canonicalOutputByteLength === undefined && item.canonicalOutputSha256 === undefined,
+      `${item.name}: rejected fixture exposes an output`,
+    );
+  }
+}
 expectEqual(
   vectors.contextCanonicalization.numericCases.map((item) => item.name).join(","),
   [
@@ -930,5 +1107,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, bounded Context, one recovery profile; Gate A remains pending`,
+  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A remains pending`,
 );
