@@ -118,6 +118,14 @@ function without(value: JsonRecord, ...keys: string[]): JsonRecord {
   return projection;
 }
 
+function boundedInteger(value: unknown, key: string, label: string): number {
+  if (!isRecord(value) || !Number.isSafeInteger(value[key]) || Number(value[key]) <= 0) {
+    failures.push(`${label}: ${key} is not a positive safe integer`);
+    return 0;
+  }
+  return Number(value[key]);
+}
+
 const policyValidator = validator("policy-definition.v2.schema.json");
 const snapshotValidator = validator("model-snapshot.v2.schema.json");
 const needValidator = validator("policy-need.v2.schema.json");
@@ -261,6 +269,92 @@ if (
   failures.push("golden vectors: order-independence outputs differ");
 }
 
+const budgets = JSON.parse(
+  await readFile("contracts/fixtures/policy-core-v2/resource-budgets.v1.json", "utf8"),
+) as JsonRecord;
+if (
+  budgets.schemaVersion !== "libre-ai.policy-core-resource-budgets.v1" ||
+  budgets.status !== "candidate-preimplementation"
+) {
+  failures.push("resource budgets: invalid identity or status");
+}
+const byteLimits = budgets.byteLimits;
+const cardinalityLimits = budgets.cardinalityLimits;
+const cpuQualification = budgets.cpuQualification;
+const memoryQualification = budgets.memoryQualification;
+const policyInput = boundedInteger(byteLimits, "policyInput", "resource budgets");
+const snapshotInput = boundedInteger(byteLimits, "snapshotInput", "resource budgets");
+const needInput = boundedInteger(byteLimits, "needInput", "resource budgets");
+const totalJsonInput = boundedInteger(byteLimits, "totalJsonInput", "resource budgets");
+const evaluatedAtLimit = boundedInteger(byteLimits, "evaluatedAt", "resource budgets");
+const outputLimit = boundedInteger(byteLimits, "successfulOutput", "resource budgets");
+const rulesLimit = boundedInteger(cardinalityLimits, "rules", "resource budgets");
+const modelFactsLimit = boundedInteger(cardinalityLimits, "modelFacts", "resource budgets");
+const needFactsLimit = boundedInteger(cardinalityLimits, "needFacts", "resource budgets");
+const setMembersLimit = boundedInteger(cardinalityLimits, "setMembersPerRule", "resource budgets");
+const policySchema = JSON.parse(
+  await readFile("contracts/schemas/policy-definition.v2.schema.json", "utf8"),
+) as JsonRecord;
+const snapshotSchema = JSON.parse(
+  await readFile("contracts/schemas/model-snapshot.v2.schema.json", "utf8"),
+) as JsonRecord;
+const needSchema = JSON.parse(
+  await readFile("contracts/schemas/policy-need.v2.schema.json", "utf8"),
+) as JsonRecord;
+const policyProperties = policySchema.properties as JsonRecord;
+const snapshotProperties = snapshotSchema.properties as JsonRecord;
+const needProperties = needSchema.properties as JsonRecord;
+const definitions = policySchema.$defs as JsonRecord;
+const factSet = definitions.factSet as JsonRecord;
+const factSetVariants = Array.isArray(factSet.oneOf) ? (factSet.oneOf as JsonRecord[]) : [];
+const schemaSetMaximum = Math.max(
+  ...factSetVariants.map((variant) =>
+    typeof variant.maxItems === "number" ? variant.maxItems : 0,
+  ),
+);
+if (
+  rulesLimit !== (policyProperties.rules as JsonRecord).maxItems ||
+  modelFactsLimit !== (snapshotProperties.facts as JsonRecord).maxItems ||
+  needFactsLimit !== (needProperties.facts as JsonRecord).maxItems ||
+  setMembersLimit !== schemaSetMaximum
+) {
+  failures.push("resource budgets: cardinalities drift from JSON Schemas");
+}
+if (
+  policyInput !== 8 * 1024 * 1024 ||
+  snapshotInput !== 8 * 1024 * 1024 ||
+  needInput !== 8 * 1024 * 1024 ||
+  totalJsonInput !== policyInput + snapshotInput + needInput ||
+  evaluatedAtLimit !== 64 ||
+  outputLimit !== 2 * 1024 * 1024
+) {
+  failures.push("resource budgets: byte ceilings drift from normative semantics");
+}
+const expectedMatchedPairs = rulesLimit * Math.max(modelFactsLimit, needFactsLimit);
+const expectedSetComparisonsPerLookup = Math.ceil(Math.log2(setMembersLimit + 1));
+if (
+  boundedInteger(cardinalityLimits, "setMembersAcrossPolicy", "resource budgets") !==
+    rulesLimit * setMembersLimit ||
+  boundedInteger(cpuQualification, "ruleOccurrenceEvaluations", "resource budgets") !==
+    expectedMatchedPairs ||
+  boundedInteger(cpuQualification, "setMemberComparisonsPerLookup", "resource budgets") !==
+    expectedSetComparisonsPerLookup ||
+  boundedInteger(cpuQualification, "setMemberComparisons", "resource budgets") !==
+    expectedMatchedPairs * expectedSetComparisonsPerLookup
+) {
+  failures.push("resource budgets: deterministic CPU ceilings are inconsistent");
+}
+if (
+  !isRecord(cpuQualification) ||
+  cpuQualification.setLookup !== "sorted-binary-search-or-equivalent-bounded-lookup" ||
+  cpuQualification.duplicateDetection !== "canonical-hash-or-ordered-index" ||
+  cpuQualification.wallClockLimit !== null ||
+  !isRecord(memoryQualification) ||
+  memoryQualification.peakComponentLinearMemoryBytes !== 256 * 1024 * 1024
+) {
+  failures.push("resource budgets: qualification timing or memory ceiling is invalid");
+}
+
 const operators = JSON.parse(
   await readFile("contracts/fixtures/policy-core-v2/operators.json", "utf8"),
 ) as {
@@ -320,5 +414,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, bounded for preimplementation`,
 );

@@ -18,6 +18,7 @@ implementation until separate Architecture, Security and Privacy role passes app
 - `contracts/wit/policy-core-v2/SEMANTICS.md`
 - `contracts/fixtures/policy-core-v2/operators.json`
 - `contracts/fixtures/policy-core-v2/golden.json`
+- `contracts/fixtures/policy-core-v2/resource-budgets.v1.json`
 - `contracts/fixtures/policy-core-invalid-json/manifest.json` and its byte-exact `.bin` inputs
 
 ## Review claims
@@ -40,6 +41,8 @@ implementation until separate Architecture, Security and Privacy role passes app
 10. `proposedBy` and the human `approval.approverId` are distinct; an agent cannot approve.
 11. `engineVersion` is an immutable component constant and is never caller-controlled.
 12. Rust must preserve the same IEEE-754 binary64 value as TypeScript before RFC 8785 canonicalization.
+13. Preimplementation ceilings bound semantic work to 1,000,000 rule/occurrence
+    evaluations, set lookup to 7 comparisons and peak component memory to 256 MiB.
 
 ## Adversarial findings already incorporated
 
@@ -59,7 +62,9 @@ Architecture review must:
 - independently recompute at least one success digest, one order-independence pair
   and one error vector in both TypeScript and Rust;
 - confirm that no Rust engine or application implementation is hidden in this
-  candidate.
+  candidate;
+- challenge the cardinality-derived CPU ceilings and 256 MiB peak-memory
+  qualification budget before any implementation begins.
 
 Security review must:
 
@@ -69,6 +74,8 @@ Security review must:
 - attempt origin/jurisdiction conflation and satisfying-occurrence cherry-picking;
 - confirm bounded arrays/strings/numbers, constant non-sensitive errors and no
   network/clock/storage/randomness capability;
+- reject quadratic full-set scans and any valid-input resource refusal caused by
+  an implementation exceeding the candidate memory budget;
 - confirm that no result grants authorization, purchasing power or approval.
 
 Privacy review must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
