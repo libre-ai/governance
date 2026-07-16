@@ -10,6 +10,7 @@ sécurité, cryptographie et vie privée, puis un jalon humain de verrouillage s
 `contracts/fixtures/notebook-core-v2/golden-vectors.v1.json`.
 
 La passe cryptographie doit reproduire Argon2id, AAD, AES-256-GCM, tag et digest avec une seconde
-implémentation, puis confirmer les limites navigateur et l’ordre anti-oracle. La passe vie privée
+implémentation, puis confirmer la borne candidate de 16 MiB, les limites navigateur et l’ordre
+anti-oracle. Elle vérifie aussi que l'interface WIT autonome `api` n'introduit aucun import de types. La passe vie privée
 confirme le local-only, l’absence de réseau/log et la portée des métadonnées `id`/`createdAt`.
 L’artefact WASM final devra avoir une liste d’imports vide.

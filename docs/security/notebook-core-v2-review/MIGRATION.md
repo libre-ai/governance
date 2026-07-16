@@ -6,6 +6,7 @@
 
 Les ruptures sont substantielles :
 
+- le monde WIT exporte une interface autonome `api` afin que le composant n'importe aucune interface de types ;
 - `seal-backup` reçoit désormais une requête typée avec `id`, `created-at`, version, cipher et KDF ;
 - `open-backup` renvoie le plaintext avec les métadonnées effectivement authentifiées ;
 - les erreurs string libres deviennent un enum fermé ;

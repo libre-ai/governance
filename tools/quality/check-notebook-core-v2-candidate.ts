@@ -267,6 +267,7 @@ const requiredFiles = [
   "MIGRATION.md",
   "SOLO-CHALLENGE.md",
   "INDEPENDENT-REVIEW.md",
+  "PERFORMANCE.md",
   "world.wit",
   "notebook-backup-seal-request.v2.schema.json",
   "notebook-backup.v2.schema.json",
@@ -278,6 +279,15 @@ const wit = await Bun.file(`${root}/world.wit`).text();
 const executableWit = wit.replaceAll(/\/\/.*$/gm, "");
 expect(wit.startsWith("package libre-ai:notebook-core@2.0.0;"), "WIT package must be v2");
 expect(!/\bimport\b/.test(executableWit), "WIT host imports are forbidden");
+expect(
+  executableWit.includes("interface api {"),
+  "WIT must expose one self-contained api interface",
+);
+expect(!executableWit.includes("interface types"), "WIT separate type interfaces are forbidden");
+expect(
+  /world notebook-core\s*\{\s*export api;\s*\}/s.test(executableWit),
+  "WIT world must export only the self-contained api interface",
+);
 expect(!executableWit.includes("contract-error"), "WIT free-form contract-error is forbidden");
 expect(!executableWit.includes("message:"), "WIT free-form error messages are forbidden");
 expectEqual(
@@ -292,7 +302,7 @@ expect(readme.includes("Gate A"), "README must retain the independent pre-implem
 expect(readme.includes("Gate B"), "README must retain the independent pre-release gate");
 for (const required of [
   "`recovery-secret` | 16 octets | 1024 octets",
-  "plaintext | 1 octet | 104 857 600 octets",
+  "plaintext | 1 octet | 16 777 216 octets",
   "nonce GCM : **12 octets exactement**",
   "sel Argon2id : **16 octets exactement**",
 ]) {
@@ -303,10 +313,47 @@ const requestSchema = await Bun.file(`${root}/notebook-backup-seal-request.v2.sc
 const envelopeSchema = await Bun.file(`${root}/notebook-backup.v2.schema.json`).json();
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
+const maxPlaintextBytes = 16 * 1024 * 1024;
+const maxCiphertextBytes = maxPlaintextBytes + 16;
+const maxPlaintextBase64Bytes = 4 * Math.ceil(maxPlaintextBytes / 3);
+const maxCiphertextBase64Bytes = 4 * Math.ceil(maxCiphertextBytes / 3);
+expectEqual(
+  requestSchema.properties?.plaintext?.maxLength,
+  maxPlaintextBase64Bytes,
+  "request plaintext Base64 maximum",
+);
+expectEqual(
+  envelopeSchema.properties?.ciphertext?.maxLength,
+  maxCiphertextBase64Bytes,
+  "envelope ciphertext Base64 maximum",
+);
+const performance = await Bun.file(`${root}/PERFORMANCE.md`).text();
+expect(performance.includes("1 081,4 MiB"), "100 MiB peak-memory evidence is missing");
+expect(performance.includes("22 370 175 octets"), "maximum raw envelope bound is missing");
+const semantics = await Bun.file("contracts/wit/notebook-core-v2/SEMANTICS.md").text();
+expect(semantics.includes("interface autonome `api`"), "canonical WIT import rationale is missing");
+expect(semantics.includes("22 370 175 octets"), "canonical raw envelope bound is missing");
 const validateRequest = ajv.compile(requestSchema);
 const validateEnvelope = ajv.compile(envelopeSchema);
 
 const vectors = (await Bun.file(`${root}/notebook-core-v2.golden.json`).json()) as GoldenVectors;
+const maximalEnvelope: Envelope = {
+  ...structuredClone(vectors.golden.envelope),
+  id: `urn:libre-ai:backup:${"a".repeat(128)}`,
+  kdf: {
+    ...structuredClone(vectors.golden.envelope.kdf),
+    memoryKiB: 131_072,
+    iterations: 4,
+    parallelism: 4,
+  },
+  ciphertext: "",
+  digest: "a".repeat(64),
+};
+expectEqual(
+  encoder.encode(canonicalJson(maximalEnvelope)).byteLength + maxCiphertextBase64Bytes,
+  22_370_175,
+  "maximum raw canonical envelope bytes",
+);
 expectEqual(vectors.schemaVersion, "libre-ai.notebook-core-golden.v2", "vector schemaVersion");
 expectEqual(vectors.status, "review-candidate", "vector status");
 expect(vectors.golden.recoverySecret.sensitive === false, "test recovery secret must be public");
