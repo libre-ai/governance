@@ -4,7 +4,17 @@
   "title": "Libre AI Knowledge Object v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "kind", "id", "name", "status", "authority", "provenance"],
+  "required": [
+    "schemaVersion",
+    "kind",
+    "id",
+    "name",
+    "purpose",
+    "status",
+    "trust",
+    "authority",
+    "provenance"
+  ],
   "properties": {
     "schemaVersion": {
       "const": "libre-ai.knowledge-object.v1"
@@ -35,7 +45,8 @@
     },
     "purpose": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 2000
     },
     "version": {
       "type": "string",
@@ -52,21 +63,32 @@
       "additionalProperties": false,
       "required": ["path", "owners"],
       "properties": {
-        "path": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+        },
         "owners": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 16,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._/-]{1,127}$"
+          }
         }
       }
     },
     "relationships": {
       "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["type", "target"],
+        "required": ["type", "target", "status"],
         "properties": {
           "type": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
           "target": { "type": "string", "pattern": "^urn:libre-ai:" },
@@ -82,18 +104,57 @@
         "authors": {
           "type": "array",
           "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
         },
         "createdAt": { "type": "string", "format": "date-time" },
         "reviewedAt": { "type": "string", "format": "date-time" },
-        "legacyRepository": { "type": "string", "format": "uri" },
+        "legacyRepository": { "type": "string", "format": "uri", "pattern": "^https://" },
         "legacyRevision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "model": { "type": "string" },
-        "harness": { "type": "string" }
+        "model": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "harness": { "type": "string", "minLength": 1, "maxLength": 160 }
+      },
+      "dependentRequired": {
+        "legacyRepository": ["legacyRevision"],
+        "legacyRevision": ["legacyRepository"]
       }
     },
     "validFrom": { "type": "string", "format": "date-time" },
     "validUntil": { "type": "string", "format": "date-time" },
     "supersedes": { "type": "string", "pattern": "^urn:libre-ai:" }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": { "enum": ["reviewed", "accepted", "deprecated", "archived"] }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "trust": { "enum": ["reviewed", "normative"] },
+          "provenance": {
+            "type": "object",
+            "properties": { "reviewedAt": { "type": "string", "format": "date-time" } },
+            "required": ["reviewedAt"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "trust": { "const": "normative" } }, "required": ["trust"] },
+      "then": { "properties": { "status": { "const": "accepted" } } }
+    },
+    {
+      "if": {
+        "properties": { "trust": { "enum": ["external", "observed"] } },
+        "required": ["trust"]
+      },
+      "then": {
+        "properties": { "status": { "enum": ["draft", "untrusted"] } }
+      }
+    }
+  ]
 }

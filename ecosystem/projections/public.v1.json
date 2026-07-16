@@ -1,0 +1,66 @@
+{
+  "objects": [
+    {
+      "authority": {
+        "owners": [
+          "libre-ai/architecture"
+        ],
+        "path": "ecosystem/objects/bets/bun-fullstack.json"
+      },
+      "id": "urn:libre-ai:bet:bun-fullstack",
+      "kind": "Bet",
+      "name": "Bun fullstack pour les applications web",
+      "provenance": {
+        "authors": [
+          "libre-ai"
+        ],
+        "createdAt": "2026-07-16T00:00:00Z",
+        "reviewedAt": "2026-07-16T00:00:00Z"
+      },
+      "purpose": "Réduire la fragmentation de la stack web et accélérer la livraison d’expériences IA-native.",
+      "relationships": [
+        {
+          "status": "accepted",
+          "target": "urn:libre-ai:decision:bun-react-rust-big-bang",
+          "type": "implemented-by"
+        }
+      ],
+      "schemaVersion": "libre-ai.knowledge-object.v1",
+      "status": "accepted",
+      "trust": "normative"
+    },
+    {
+      "authority": {
+        "owners": [
+          "libre-ai/architecture"
+        ],
+        "path": "docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md"
+      },
+      "id": "urn:libre-ai:decision:bun-react-rust-big-bang",
+      "kind": "Decision",
+      "name": "Bun/React, Rust spécialisé et reconstruction Big Bang",
+      "provenance": {
+        "authors": [
+          "libre-ai"
+        ],
+        "createdAt": "2026-07-16T00:00:00Z",
+        "reviewedAt": "2026-07-16T00:00:00Z"
+      },
+      "purpose": "Établir la stack et le mode de migration canoniques de Libre AI.",
+      "relationships": [
+        {
+          "status": "accepted",
+          "target": "urn:libre-ai:bet:bun-fullstack",
+          "type": "implements"
+        }
+      ],
+      "schemaVersion": "libre-ai.knowledge-object.v1",
+      "status": "accepted",
+      "trust": "normative",
+      "version": "1.0.0"
+    }
+  ],
+  "schemaVersion": "libre-ai.knowledge-projection.v1",
+  "selectionDigest": "30173077c777ade4f3d517c30f63f9a9b9c0d0198ca5cd767578619bf86019b6",
+  "sourceSchemaVersion": "libre-ai.knowledge-object.v1"
+}
