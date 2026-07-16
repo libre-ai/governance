@@ -59,6 +59,10 @@ if (!isRecord(golden) || !isRecord(golden.request) || !isRecord(golden.envelope)
   );
   if (!requestValidator?.(golden.request)) failures.push("seal request rejected by schema");
   if (!envelopeValidator?.(golden.envelope)) failures.push("envelope rejected by schema");
+  if (!/^urn:libre-ai:backup:[a-f0-9]{32}$/.test(String(golden.envelope.id)))
+    failures.push("backup id is not an opaque 128-bit value");
+  if ("createdAt" in golden.request || "createdAt" in golden.envelope)
+    failures.push("clear createdAt is forbidden in backup artifacts");
 
   const salt = canonicalBase64((golden.request.kdf as RecordValue).salt);
   const nonce = canonicalBase64(golden.request.nonce);
@@ -71,7 +75,6 @@ if (!isRecord(golden) || !isRecord(golden.request) || !isRecord(golden.envelope)
   const metadata = {
     schemaVersion: golden.envelope.schemaVersion,
     id: golden.envelope.id,
-    createdAt: golden.envelope.createdAt,
     cipher: golden.envelope.cipher,
     kdf: golden.envelope.kdf,
     nonce: golden.envelope.nonce,
@@ -106,6 +109,23 @@ if (!isRecord(golden) || !isRecord(golden.request) || !isRecord(golden.envelope)
     failures.push("test secret is not explicitly public");
 }
 const mutations = Array.isArray(vectors.mutations) ? vectors.mutations : [];
+const expectedMutationNames = [
+  "wrong-recovery-secret",
+  "recovery-secret-too-short",
+  "recovery-secret-too-long",
+  "nonce-modified",
+  "salt-modified",
+  "ciphertext-modified",
+  "aad-modified",
+  "digest-modified",
+  "weak-kdf-parameters",
+  "unsupported-version",
+];
+if (
+  JSON.stringify(mutations.filter(isRecord).map((mutation) => mutation.name)) !==
+  JSON.stringify(expectedMutationNames)
+)
+  failures.push("backup mutation inventory mismatch");
 const errors = new Set(
   mutations
     .filter(isRecord)
@@ -118,17 +138,99 @@ for (const [index, mutation] of mutations.entries()) {
   if (
     !isRecord(expected) ||
     JSON.stringify(Object.keys(expected).sort()) !==
-      JSON.stringify(["argon2idAttempted", "code", "plaintextReleased", "result"])
+      JSON.stringify([
+        "aesGcmAttempted",
+        "argon2idAttempted",
+        "code",
+        "plaintextReleased",
+        "result",
+      ])
   )
     failures.push(`mutation ${index}: expected result must contain only the closed error fields`);
 }
 for (const required of ["invalid-envelope", "authentication-failed", "unsupported-version"]) {
   if (!errors.has(required)) failures.push(`missing ${required} mutation`);
 }
+
+const context = vectors.contextCanonicalization;
+if (!isRecord(context) || !isRecord(context.golden) || !Array.isArray(context.mutations)) {
+  failures.push("missing context canonicalization vectors");
+} else {
+  const normalized = context.golden.normalized;
+  const contextValidator = ajv.getSchema(
+    "https://contracts.libre-ai.fr/schemas/context-document.v2.schema.json",
+  );
+  if (!contextValidator?.(normalized)) failures.push("normalized context rejected by schema");
+  if (!isRecord(normalized)) {
+    failures.push("normalized context is not an object");
+  } else {
+    if (!/^urn:libre-ai:context:[a-f0-9]{32}$/.test(String(normalized.id)))
+      failures.push("context id is not an opaque 128-bit value");
+    if ("createdAt" in normalized) failures.push("clear context createdAt is forbidden");
+    const unsigned = structuredClone(normalized);
+    delete unsigned.digest;
+    const preimage = Buffer.concat([
+      Buffer.from("libre-ai.context-document.v2", "utf8"),
+      Buffer.from([0]),
+      Buffer.from(jcs(unsigned), "utf8"),
+    ]);
+    if (normalized.digest !== digestBytes(preimage)) failures.push("context digest mismatch");
+    if (context.golden.canonicalOutputUtf8 !== jcs(normalized))
+      failures.push("context canonical output mismatch");
+  }
+  const expectedContextNames = [
+    "bom-prefixed",
+    "malformed-utf8",
+    "duplicate-top-level-key",
+    "unknown-field",
+    "duplicate-block-id",
+    "missing-root-target",
+    "missing-link-target",
+    "excluded-overlap",
+    "invalid-nested-json",
+    "duplicate-nested-json-key",
+  ];
+  if (
+    JSON.stringify(context.mutations.filter(isRecord).map((mutation) => mutation.name)) !==
+    JSON.stringify(expectedContextNames)
+  )
+    failures.push("context mutation inventory mismatch");
+}
+
+const codeProfile = vectors.recoverySecretCodeProfile;
+if (
+  !isRecord(codeProfile) ||
+  codeProfile.name !== "libre-ai.recovery-secret-code.v1" ||
+  !isRecord(codeProfile.case) ||
+  typeof codeProfile.case.display !== "string" ||
+  !/^[a-f0-9]{32}$/.test(codeProfile.case.display) ||
+  codeProfile.case.display !== codeProfile.case.bytesHex ||
+  codeProfile.case.byteLength !== 16
+)
+  failures.push("missing canonical generated recovery code profile");
+
+const textProfile = vectors.recoverySecretTextProfile;
+if (
+  !isRecord(textProfile) ||
+  textProfile.name !== "libre-ai.recovery-secret-text.v1" ||
+  !Array.isArray(textProfile.cases)
+)
+  failures.push("missing recovery secret Unicode profile");
+else
+  for (const [index, item] of textProfile.cases.entries()) {
+    if (!isRecord(item) || typeof item.input !== "string") {
+      failures.push(`recovery secret vector ${index}: malformed`);
+      continue;
+    }
+    const bytes = new TextEncoder().encode(item.input.normalize("NFC"));
+    if (item.utf8Hex !== hex(bytes) || item.byteLength !== bytes.byteLength)
+      failures.push(`recovery secret vector ${index}: NFC/UTF-8 mismatch`);
+  }
+
 if (failures.length) {
   for (const failure of failures) console.error(failure);
   process.exit(1);
 }
 console.log(
-  `Notebook vectors structurally verified: ${mutations.length} mutations; independent cryptography review remains required`,
+  `Notebook vectors structurally verified: ${mutations.length} backup and ${isRecord(context) && Array.isArray(context.mutations) ? context.mutations.length : 0} context mutations; independent role reviews remain required`,
 );

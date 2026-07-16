@@ -15,7 +15,6 @@ type Kdf = {
 type Envelope = {
   schemaVersion: string;
   id: string;
-  createdAt: string;
   cipher: string;
   kdf: Kdf;
   nonce: string;
@@ -37,6 +36,7 @@ type Mutation = {
     result: string;
     code: string;
     argon2idAttempted: boolean;
+    aesGcmAttempted: boolean;
     plaintextReleased: boolean;
   };
 };
@@ -82,6 +82,38 @@ type GoldenVectors = {
     canonicalEnvelopeUtf8: string;
   };
   mutations: Mutation[];
+  contextCanonicalization: {
+    golden: {
+      inputUtf8: string;
+      normalized: Record<string, unknown>;
+      digest: {
+        domainUtf8: string;
+        separatorHex: string;
+        canonicalDocumentWithoutDigestUtf8: string;
+        preimageHex: string;
+        hexLower: string;
+      };
+      canonicalOutputUtf8: string;
+      outputByteLength: number;
+    };
+    mutations: Array<{
+      name: string;
+      documentUtf8?: string;
+      documentHex?: string;
+      expected: { result: string; code: string };
+    }>;
+  };
+  recoverySecretCodeProfile: {
+    name: string;
+    algorithm: string;
+    case: { bytesHex: string; display: string; byteLength: number };
+  };
+  recoverySecretTextProfile: {
+    name: string;
+    algorithm: string;
+    cases: Array<{ input: string; normalized: string; utf8Hex: string; byteLength: number }>;
+    rejections: Array<{ name: string; input?: string; inputEscaped?: string; expected: string }>;
+  };
 };
 
 const root = "docs/security/notebook-core-v2-review";
@@ -154,7 +186,6 @@ function metadata(envelope: Envelope): Omit<Envelope, "ciphertext" | "digest"> {
   return {
     schemaVersion: envelope.schemaVersion,
     id: envelope.id,
-    createdAt: envelope.createdAt,
     cipher: envelope.cipher,
     kdf: structuredClone(envelope.kdf),
     nonce: envelope.nonce,
@@ -180,6 +211,53 @@ function digestPreimage(envelope: Envelope): Uint8Array {
     encoder.encode("libre-ai.notebook-backup.v2/digest"),
     new Uint8Array([0]),
     encoder.encode(canonicalJson(envelopeWithoutDigest(envelope))),
+  );
+}
+
+function normalizeContext(value: Record<string, unknown>): Record<string, unknown> {
+  const output = structuredClone(value) as Record<string, unknown> & {
+    rootBlockIds: string[];
+    excludedBlockIds?: string[];
+    blocks: Array<{
+      id: string;
+      mediaType: string;
+      content: string;
+      links: string[];
+    }>;
+    totalBytes: number;
+    digest: string;
+  };
+  output.rootBlockIds.sort();
+  output.excludedBlockIds?.sort();
+  for (const block of output.blocks) {
+    block.links.sort();
+    if (block.mediaType === "application/json") {
+      block.content = canonicalJson(JSON.parse(block.content));
+    }
+  }
+  output.blocks.sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+  output.totalBytes = output.blocks.reduce(
+    (total, block) => total + encoder.encode(block.content).byteLength,
+    0,
+  );
+  const unsigned = structuredClone(output) as Partial<typeof output>;
+  delete unsigned.digest;
+  const preimage = concatenate(
+    encoder.encode("libre-ai.context-document.v2"),
+    new Uint8Array([0]),
+    encoder.encode(canonicalJson(unsigned)),
+  );
+  output.digest = sha256Hex(preimage);
+  return output;
+}
+
+function contextDigestPreimage(document: Record<string, unknown>): Uint8Array {
+  const unsigned = structuredClone(document);
+  delete unsigned.digest;
+  return concatenate(
+    encoder.encode("libre-ai.context-document.v2"),
+    new Uint8Array([0]),
+    encoder.encode(canonicalJson(unsigned)),
   );
 }
 
@@ -294,6 +372,7 @@ expect(
 );
 expect(!executableWit.includes("contract-error"), "WIT free-form contract-error is forbidden");
 expect(!executableWit.includes("message:"), "WIT free-form error messages are forbidden");
+expect(!executableWit.includes("created-at"), "clear backup timestamps are forbidden");
 expectEqual(
   executableWit.match(/result<[^;]+, error-code>/g)?.length ?? 0,
   3,
@@ -304,19 +383,26 @@ const readme = await Bun.file(`${root}/README.md`).text();
 expect(readme.includes("GATE S ACCEPTÉE"), "README must expose Gate S status");
 expect(readme.includes("Gate A"), "README must retain the independent pre-implementation gate");
 expect(readme.includes("Gate B"), "README must retain the independent pre-release gate");
+const semantics = await Bun.file("contracts/wit/notebook-core-v2/SEMANTICS.md").text();
 for (const required of [
   "`recovery-secret` | 16 octets | 1024 octets",
   "plaintext | 1 octet | 16 777 216 octets",
   "nonce GCM : **12 octets exactement**",
   "sel Argon2id : **16 octets exactement**",
+  "libre-ai.recovery-secret-code.v1",
+  "libre-ai.recovery-secret-text.v1",
+  "22 370 044 octets",
 ]) {
-  expect(readme.includes(required), `README normative bound missing: ${required}`);
+  expect(semantics.includes(required), `SEMANTICS normative rule missing: ${required}`);
 }
 
 const requestSchema = await Bun.file(`${root}/notebook-backup-seal-request.v2.schema.json`).json();
 const envelopeSchema = await Bun.file(`${root}/notebook-backup.v2.schema.json`).json();
+const contextSchema = await Bun.file("contracts/schemas/context-document.v2.schema.json").json();
+const commonSchema = await Bun.file("contracts/schemas/common.v1.schema.json").json();
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
+ajv.addSchema(commonSchema);
 const maxPlaintextBytes = 16 * 1024 * 1024;
 const maxCiphertextBytes = maxPlaintextBytes + 16;
 const maxPlaintextBase64Bytes = 4 * Math.ceil(maxPlaintextBytes / 3);
@@ -331,19 +417,33 @@ expectEqual(
   maxCiphertextBase64Bytes,
   "envelope ciphertext Base64 maximum",
 );
+expectEqual(requestSchema.properties?.id?.minLength, 52, "request opaque id length");
+expectEqual(requestSchema.properties?.id?.maxLength, 52, "request opaque id length");
+expect(requestSchema.properties?.createdAt === undefined, "request createdAt must stay encrypted");
+expect(
+  envelopeSchema.properties?.createdAt === undefined,
+  "envelope createdAt must stay encrypted",
+);
+expectEqual(
+  contextSchema.properties?.totalBytes?.maximum,
+  maxPlaintextBytes,
+  "context content maximum",
+);
+expectEqual(contextSchema.properties?.id?.minLength, 53, "context opaque id length");
+expectEqual(contextSchema.properties?.id?.maxLength, 53, "context opaque id length");
+expect(contextSchema.properties?.createdAt === undefined, "context createdAt must not leak");
 const performance = await Bun.file(`${root}/PERFORMANCE.md`).text();
 expect(performance.includes("1 081,4 MiB"), "100 MiB peak-memory evidence is missing");
-expect(performance.includes("22 370 175 octets"), "maximum raw envelope bound is missing");
-const semantics = await Bun.file("contracts/wit/notebook-core-v2/SEMANTICS.md").text();
+expect(performance.includes("22 370 044 octets"), "maximum raw envelope bound is missing");
 expect(semantics.includes("interface autonome `api`"), "canonical WIT import rationale is missing");
-expect(semantics.includes("22 370 175 octets"), "canonical raw envelope bound is missing");
 const validateRequest = ajv.compile(requestSchema);
 const validateEnvelope = ajv.compile(envelopeSchema);
+const validateContext = ajv.compile(contextSchema);
 
 const vectors = (await Bun.file(`${root}/notebook-core-v2.golden.json`).json()) as GoldenVectors;
 const maximalEnvelope: Envelope = {
   ...structuredClone(vectors.golden.envelope),
-  id: `urn:libre-ai:backup:${"a".repeat(128)}`,
+  id: `urn:libre-ai:backup:${"a".repeat(32)}`,
   kdf: {
     ...structuredClone(vectors.golden.envelope.kdf),
     memoryKiB: 131_072,
@@ -355,7 +455,7 @@ const maximalEnvelope: Envelope = {
 };
 expectEqual(
   encoder.encode(canonicalJson(maximalEnvelope)).byteLength + maxCiphertextBase64Bytes,
-  22_370_175,
+  22_370_044,
   "maximum raw canonical envelope bytes",
 );
 expectEqual(vectors.schemaVersion, "libre-ai.notebook-core-golden.v2", "vector schemaVersion");
@@ -447,10 +547,13 @@ expectEqual(
 
 const expectedMutationNames = [
   "wrong-recovery-secret",
+  "recovery-secret-too-short",
+  "recovery-secret-too-long",
   "nonce-modified",
   "salt-modified",
   "ciphertext-modified",
   "aad-modified",
+  "digest-modified",
   "weak-kdf-parameters",
   "unsupported-version",
 ];
@@ -460,61 +563,257 @@ expectEqual(
   "mutation inventory",
 );
 
+const recomputedMutationNames = new Set([
+  "nonce-modified",
+  "salt-modified",
+  "ciphertext-modified",
+  "aad-modified",
+  "weak-kdf-parameters",
+]);
 for (const mutation of vectors.mutations) {
   const expectedKeys = Object.keys(mutation.expected).sort();
   expectEqual(
     JSON.stringify(expectedKeys),
-    JSON.stringify(["argon2idAttempted", "code", "plaintextReleased", "result"]),
+    JSON.stringify(["aesGcmAttempted", "argon2idAttempted", "code", "plaintextReleased", "result"]),
     `${mutation.name} closed expected error`,
   );
   expect(mutation.expected.plaintextReleased === false, `${mutation.name}: plaintext released`);
   expectEqual(
-    sha256Hex(digestPreimage(mutation.envelope)),
-    mutation.envelope.digest,
-    `${mutation.name} digest`,
+    mutation.digestRecomputedAfterMutation,
+    recomputedMutationNames.has(mutation.name),
+    `${mutation.name} digest recomputation flag`,
   );
+  const calculatedDigest = sha256Hex(digestPreimage(mutation.envelope));
+  if (mutation.name === "digest-modified" || mutation.name === "unsupported-version") {
+    expect(
+      calculatedDigest !== mutation.envelope.digest,
+      `${mutation.name}: digest unexpectedly valid`,
+    );
+  } else {
+    expectEqual(calculatedDigest, mutation.envelope.digest, `${mutation.name} digest`);
+  }
 
   const schemaValid = validateEnvelope(mutation.envelope);
-  if (mutation.name === "weak-kdf-parameters") {
-    expect(!schemaValid, `${mutation.name}: weak parameters accepted by schema`);
+  if (mutation.name === "weak-kdf-parameters" || mutation.name === "unsupported-version") {
+    expect(!schemaValid, `${mutation.name}: invalid public envelope accepted by schema`);
     expect(mutation.expected.argon2idAttempted === false, `${mutation.name}: Argon2id attempted`);
-    expectEqual(mutation.expected.code, "invalid-envelope", `${mutation.name} code`);
-    continue;
-  }
-  if (mutation.name === "unsupported-version") {
-    expect(!schemaValid, `${mutation.name}: unsupported version accepted by schema`);
-    expect(
-      mutation.digestRecomputedAfterMutation === true,
-      `${mutation.name}: digest recomputation marker is false`,
+    expect(mutation.expected.aesGcmAttempted === false, `${mutation.name}: AES-GCM attempted`);
+    expectEqual(
+      mutation.expected.code,
+      mutation.name === "weak-kdf-parameters" ? "invalid-envelope" : "unsupported-version",
+      `${mutation.name} code`,
     );
-    expect(mutation.expected.argon2idAttempted === false, `${mutation.name}: Argon2id attempted`);
-    expectEqual(mutation.expected.code, "unsupported-version", `${mutation.name} code`);
     continue;
   }
-
   expect(
     schemaValid,
     `${mutation.name}: valid mutation rejected: ${ajv.errorsText(validateEnvelope.errors)}`,
   );
   expect(mutation.expected.argon2idAttempted === true, `${mutation.name}: Argon2id not attempted`);
+  expect(mutation.expected.aesGcmAttempted === true, `${mutation.name}: AES-GCM not attempted`);
   expectEqual(mutation.expected.code, "authentication-failed", `${mutation.name} code`);
 
-  if (mutation.name === "wrong-recovery-secret") {
-    expect(
-      mutation.recoverySecretUtf8 !== vectors.golden.recoverySecret.value,
-      "wrong recovery secret did not change",
-    );
-    expectEqual(
-      encoder.encode(mutation.recoverySecretUtf8).byteLength,
-      recoverySecret.byteLength,
-      "wrong recovery secret byte length",
-    );
+  if (
+    mutation.name === "wrong-recovery-secret" ||
+    mutation.name === "recovery-secret-too-short" ||
+    mutation.name === "recovery-secret-too-long"
+  ) {
+    const secretLength = encoder.encode(mutation.recoverySecretUtf8).byteLength;
+    if (mutation.name === "wrong-recovery-secret") {
+      expect(
+        mutation.recoverySecretUtf8 !== vectors.golden.recoverySecret.value,
+        "wrong recovery secret did not change",
+      );
+      expectEqual(secretLength, recoverySecret.byteLength, "wrong recovery secret byte length");
+    } else if (mutation.name === "recovery-secret-too-short") {
+      expectEqual(secretLength, 15, "short recovery secret byte length");
+    } else {
+      expectEqual(secretLength, 1025, "long recovery secret byte length");
+    }
     continue;
   }
 
   const mutationOpened = await decrypt(mutation.envelope, key);
-  expect(mutationOpened === undefined, `${mutation.name}: AES-GCM mutation authenticated`);
+  if (mutation.name === "digest-modified") {
+    expect(mutationOpened !== undefined, "digest-only mutation must still run valid GCM");
+  } else {
+    expect(mutationOpened === undefined, `${mutation.name}: AES-GCM mutation authenticated`);
+  }
 }
+
+const contextGolden = vectors.contextCanonicalization.golden;
+expect(
+  encoder.encode(contextGolden.inputUtf8).byteLength <= 22_370_044,
+  "golden context exceeds the raw input bound",
+);
+const parsedContext = JSON.parse(contextGolden.inputUtf8) as Record<string, unknown>;
+expect(
+  validateContext(parsedContext),
+  `context input rejected: ${ajv.errorsText(validateContext.errors)}`,
+);
+const normalizedContext = normalizeContext(parsedContext);
+expect(
+  Number(normalizedContext.totalBytes) <= maxPlaintextBytes,
+  "normalized context exceeds the content bound",
+);
+expect(
+  validateContext(normalizedContext),
+  `normalized context rejected: ${ajv.errorsText(validateContext.errors)}`,
+);
+expectEqual(
+  canonicalJson(normalizedContext),
+  contextGolden.canonicalOutputUtf8,
+  "context canonical output",
+);
+expectEqual(
+  encoder.encode(contextGolden.canonicalOutputUtf8).byteLength,
+  contextGolden.outputByteLength,
+  "context output byte length",
+);
+const contextPreimage = contextDigestPreimage(normalizedContext);
+expectEqual(
+  bytesToHex(contextPreimage),
+  contextGolden.digest.preimageHex,
+  "context digest preimage",
+);
+expectEqual(sha256Hex(contextPreimage), contextGolden.digest.hexLower, "context digest");
+expectEqual(
+  canonicalJson(normalizedContext),
+  canonicalJson(contextGolden.normalized),
+  "context normalized object",
+);
+
+const expectedContextMutationNames = [
+  "bom-prefixed",
+  "malformed-utf8",
+  "duplicate-top-level-key",
+  "unknown-field",
+  "duplicate-block-id",
+  "missing-root-target",
+  "missing-link-target",
+  "excluded-overlap",
+  "invalid-nested-json",
+  "duplicate-nested-json-key",
+];
+expectEqual(
+  JSON.stringify(vectors.contextCanonicalization.mutations.map((mutation) => mutation.name)),
+  JSON.stringify(expectedContextMutationNames),
+  "context mutation inventory",
+);
+for (const mutation of vectors.contextCanonicalization.mutations) {
+  expectEqual(mutation.expected.result, "error", `${mutation.name} context result`);
+  expectEqual(mutation.expected.code, "invalid-document", `${mutation.name} context code`);
+  expect(
+    (mutation.documentUtf8 === undefined) !== (mutation.documentHex === undefined),
+    `${mutation.name}: exactly one encoded context input is required`,
+  );
+  if (mutation.name === "bom-prefixed") {
+    expect(mutation.documentUtf8?.startsWith("\uFEFF") === true, "context BOM vector is malformed");
+  } else if (mutation.name === "malformed-utf8") {
+    expectEqual(mutation.documentHex, "ff", "context malformed UTF-8 vector");
+  } else if (mutation.documentUtf8 !== undefined && mutation.name !== "duplicate-top-level-key") {
+    const document = JSON.parse(mutation.documentUtf8) as {
+      rootBlockIds?: string[];
+      blocks?: Array<{ id: string; links: string[]; mediaType: string; content: string }>;
+      excludedBlockIds?: string[];
+    };
+    const blockIds = new Set(document.blocks?.map((block) => block.id));
+    if (mutation.name === "unknown-field") {
+      expect(!validateContext(document), "unknown context field accepted by schema");
+    } else if (mutation.name === "duplicate-block-id") {
+      expect(blockIds.size !== document.blocks?.length, "duplicate context block id is missing");
+    } else if (mutation.name === "missing-root-target") {
+      expect(
+        document.rootBlockIds?.some((id) => !blockIds.has(id)) === true,
+        "missing root is present",
+      );
+    } else if (mutation.name === "missing-link-target") {
+      expect(
+        document.blocks?.some((block) => block.links.some((id) => !blockIds.has(id))) === true,
+        "missing link is present",
+      );
+    } else if (mutation.name === "excluded-overlap") {
+      expect(
+        document.excludedBlockIds?.some((id) => blockIds.has(id)) === true,
+        "excluded context id does not overlap",
+      );
+    } else if (mutation.name === "invalid-nested-json") {
+      const content = document.blocks?.find(
+        (block) => block.mediaType === "application/json",
+      )?.content;
+      let parsed = true;
+      try {
+        JSON.parse(content ?? "");
+      } catch {
+        parsed = false;
+      }
+      expect(!parsed, "invalid nested JSON vector parsed successfully");
+    }
+  }
+}
+expect(
+  vectors.contextCanonicalization.mutations
+    .find((mutation) => mutation.name === "duplicate-top-level-key")
+    ?.documentUtf8?.includes('"id":"urn:libre-ai:context:f01112131415161718191a1b1c1d1e1f"') ===
+    true,
+  "duplicate top-level key vector is missing its duplicate",
+);
+expect(
+  vectors.contextCanonicalization.mutations
+    .find((mutation) => mutation.name === "duplicate-nested-json-key")
+    ?.documentUtf8?.includes('{\\"a\\":1,\\"a\\":2}') === true,
+  "duplicate nested key vector is missing its duplicate",
+);
+expect(
+  contextGolden.canonicalOutputUtf8.includes("333333333.3333333"),
+  "context RFC 8785 number normalization vector is missing",
+);
+
+expectEqual(
+  vectors.recoverySecretCodeProfile.name,
+  "libre-ai.recovery-secret-code.v1",
+  "recovery secret code profile",
+);
+expect(
+  /^[a-f0-9]{32}$/.test(vectors.recoverySecretCodeProfile.case.display),
+  "recovery secret code display is not canonical hexadecimal",
+);
+expectEqual(
+  vectors.recoverySecretCodeProfile.case.display,
+  vectors.recoverySecretCodeProfile.case.bytesHex,
+  "recovery secret code round-trip",
+);
+expectEqual(vectors.recoverySecretCodeProfile.case.byteLength, 16, "recovery secret code length");
+
+expectEqual(
+  vectors.recoverySecretTextProfile.name,
+  "libre-ai.recovery-secret-text.v1",
+  "recovery secret text profile",
+);
+for (const vector of vectors.recoverySecretTextProfile.cases) {
+  const normalized = vector.input.normalize("NFC");
+  const encoded = encoder.encode(normalized);
+  expectEqual(normalized, vector.normalized, "recovery secret NFC");
+  expectEqual(bytesToHex(encoded), vector.utf8Hex, "recovery secret UTF-8");
+  expectEqual(encoded.byteLength, vector.byteLength, "recovery secret byte length");
+}
+expectEqual(
+  vectors.recoverySecretTextProfile.cases[1]?.utf8Hex,
+  vectors.recoverySecretTextProfile.cases[2]?.utf8Hex,
+  "NFC/NFD recovery secret equivalence",
+);
+expect(
+  vectors.recoverySecretTextProfile.rejections.some(
+    (vector) => vector.name === "leading-bom" && vector.input?.startsWith("\uFEFF") === true,
+  ),
+  "leading BOM recovery secret rejection is missing",
+);
+expect(
+  vectors.recoverySecretTextProfile.rejections.some(
+    (vector) => vector.name === "non-scalar-surrogate" && vector.inputEscaped === "\\uD800",
+  ),
+  "non-scalar recovery secret rejection is missing",
+);
 
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
@@ -522,5 +821,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} mutations; Gate A remains pending`,
+  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, recovery profiles; Gate A remains pending`,
 );

@@ -27,7 +27,7 @@ pas les appareils faibles, les navigateurs, les erreurs d'allocation ou les éca
 
 La limite initiale de 100 MiB est refusée : elle dépasse 1 GiB de RSS avant qualification navigateur.
 Le candidat v2 est ramené à **16 MiB** de plaintext, **16 777 232 octets** de `C || T`,
-**22 369 644 caractères** Base64 et **22 370 175 octets** d'enveloppe JCS maximale.
+**22 369 644 caractères** Base64 et **22 370 044 octets** d'enveloppe JCS maximale. La même borne brute s'applique à l'entrée Context v2, dont les contenus cumulés sont aussi limités à 16 MiB.
 
 Cette borne reste prudente mais non approuvée. Gate A doit accepter le budget cible ; Gate B doit
 mesurer le composant réellement livrable dans chaque navigateur et classe d'appareil supportés. Une
