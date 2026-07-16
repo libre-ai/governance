@@ -92,6 +92,7 @@ repositories:
     freeze_status: pending
   - id: legacy.website
     remote: https://github.com/libre-ai/website.git
-    revision: 9b8c9fc6e58397e266bbe705d1bebd2555c46631
-    dirty_entries: 71
-    freeze_status: blocked-local-work
+    revision: 380e4f71179ee8d17aa4ae993bbcfdc180b30ec7
+    dirty_entries: 0
+    ahead_of_origin: 10
+    freeze_status: cleanup-merged-local

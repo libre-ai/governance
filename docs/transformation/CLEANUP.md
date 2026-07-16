@@ -26,6 +26,6 @@ Produce a reliable final reference of every historical repository, not a new rel
 - provisioning Clever Cloud ;
 - importing Git history into the canonical monorepo.
 
-## Website special case
+## Website special case — reconciled
 
-Website currently combines a main branch behind `origin/main`, staged and unstaged work, untracked files, and a separate six-commit `impl/epic-2-corpus` worktree. Follow [`prompts/website-reconciliation.md`](../../prompts/website-reconciliation.md) and obtain human validation before changing branches or commits.
+Option B was explicitly approved. The dirty tree was committed directly, then `origin/main` and the six-commit `impl/epic-2-corpus` branch were merged. Conflicts favored local visual work for the first merge and corpus work for the second. Component contracts and publication tests were repaired afterward. Local `main` is clean at `380e4f7`, ten commits ahead of `origin/main`, with all available gates green. Remaining work is global cleanup, push decision and archive marking.

@@ -8,11 +8,13 @@
 - Big Bang architecture accepted ;
 - Bun canary locally verified and snapshotted for macOS ARM64/Linux x64 ;
 - root Bun/Cargo workspaces and quality gates green ;
-- target repository map, app briefs, contracts and workstreams created.
+- target repository map, app briefs, contracts and workstreams created ;
+- Website local work, `origin/main` and six corpus commits consolidated on clean local `main` at `380e4f7` ;
+- Website checks, 19 unit/script tests, static build and 40 Playwright tests green.
 
 ## Pending before G0 completion
 
-- reconcile Website after human validation: `main` is behind `origin/main` by one commit, with 17 staged paths, 29 unstaged tracked paths, 25 untracked paths and a separate six-commit `impl/epic-2-corpus` worktree ;
+- complete Website global cleanup, decide push timing, then mark the repository archived ;
 - reconcile Design System coherent visual/motion work: 29 tracked modifications and 11 untracked generated/source files on a branch aligned with `origin/main` ;
 - classify and freeze every historical repository ;
 - complete legal/CI disposition of the Bun canary snapshot ;
@@ -26,6 +28,6 @@
 
 ## Current risks
 
-- Website has three concurrent sources of change ;
+- Website local main is ten commits ahead of `origin/main` until the cleanup series is pushed ;
 - Bun stable Rust line is not yet observed ;
 - app briefs are boundaries, not complete functional specifications.
