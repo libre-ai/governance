@@ -1,28 +1,24 @@
-# Procès-verbal de revue cryptographique indépendante — Gate A
+# Procès-verbal de revue cryptographique externe — Gate R
 
-> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. Seul un reviewer indépendant peut changer la décision. Une décision sans commit candidat immuable, preuves reproductibles et traitement des constats est invalide.
+> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace pas cette revue. Seul un cryptographe externe au développement du candidat et du moteur peut rendre le verdict Gate R.
 
 ## Portée de la décision
 
-La Gate A porte exclusivement sur le protocole et autorise, si elle est approuvée :
+La Gate R examine ensemble le protocole et le composant réellement livrable. Son approbation autorise la promotion atomique vers les autorités `contracts/` et rend le candidat éligible aux autres gates de release. Elle n'autorise pas seule une release.
 
-1. la promotion atomique du candidat vers les autorités `contracts/` en v2 ;
-2. l'implémentation du moteur derrière les gates de développement.
-
-Elle **n'autorise pas** une release ni l'émission de sauvegardes utilisateur. La conformité du composant construit relève de la Gate B définie dans [`README.md`](README.md#10-gate-b--conformité-du-moteur-avant-release).
-
-## Candidat immuable
+## Candidats immuables
 
 À compléter par le reviewer :
 
-- commit Git candidat, SHA complet : `<required>` ;
-- arbre Git du dossier candidat : `<required>` ;
+- commit Git du protocole, SHA complet : `<required>` ;
+- arbre Git du dossier protocole : `<required>` ;
+- commit Git du moteur/host qualifié, SHA complet : `<required>` ;
+- digest du composant WASM construit : `<required>` ;
 - dépôt : `https://github.com/libre-ai/libre-ai` ;
-- chemin : `docs/security/notebook-core-v2-review/` ;
 - date UTC de revue : `<required>` ;
 - référence professionnelle publique ou interne du reviewer : `<required>`.
 
-Commandes de liaison, exécutées sur un worktree propre :
+Le reviewer travaille sur des commits propres et consigne les commandes de liaison :
 
 ```bash
 git rev-parse HEAD
@@ -30,20 +26,16 @@ git rev-parse HEAD:docs/security/notebook-core-v2-review
 git status --short
 ```
 
-Le commit candidat doit contenir au minimum `README.md`, `MIGRATION.md`, `world.wit`, les deux JSON Schema et `notebook-core-v2.golden.json`. Le procès-verbal approuvé peut être enregistré dans un commit ultérieur puisqu'il référence explicitement le commit candidat.
-
 ## Indépendance
 
-Le reviewer confirme explicitement :
+- [ ] le reviewer n'a rédigé ni le candidat, ni ses golden vectors, ni le moteur principal ;
+- [ ] il ne s'auto-approuve pas et déclare les conflits d'intérêts éventuels ;
+- [ ] ses preuves n'utilisent que le secret public de test, sans donnée personnelle ni clé réelle ;
+- [ ] sa chaîne de reproduction est indépendante des implémentations utilisées pendant la Gate S.
 
-- [ ] ne pas être l'auteur de ce candidat ni de ses golden vectors ;
-- [ ] ne pas auto-approuver une implémentation dont il serait l'auteur principal ;
-- [ ] ne signaler aucun conflit d'intérêts susceptible d'altérer la décision ;
-- [ ] n'utiliser que le secret public de test et aucune donnée personnelle ou clé réelle.
+## Reproduction indépendante du protocole
 
-## Reproduction indépendante
-
-Documenter les implémentations, versions, commandes et sorties. Au moins une chaîne de reproduction doit être indépendante de pyca/cryptography, OpenSSL EVP_KDF et Node Web Crypto déjà utilisés par l'auteur du candidat.
+Documenter implémentations, versions, commandes et sorties. Au moins une chaîne doit être indépendante de pyca/cryptography, OpenSSL EVP_KDF et Node Web Crypto.
 
 - implémentation Argon2id : `<required>` ;
 - implémentation AES-256-GCM : `<required>` ;
@@ -52,66 +44,68 @@ Documenter les implémentations, versions, commandes et sorties. Au moins une ch
 - environnement et versions : `<required>` ;
 - référence vers les preuves non sensibles : `<required>`.
 
-Résultats attendus :
+Résultats :
 
 - [ ] clé dérivée `e6b35d4e67ec1f04cf571aa3cc441746dadec01406cd82a88ec4ea5708183e1c` ;
-- [ ] AAD de 350 octets identiques au champ `golden.aad.bytesHex` ;
-- [ ] ciphertext/tag et digest identiques au golden vector ;
-- [ ] ouverture positive restituant exactement les 45 octets du plaintext de test ;
-- [ ] mauvais secret refusé par `authentication-failed` ;
-- [ ] nonce modifié refusé par `authentication-failed` ;
-- [ ] sel modifié refusé par `authentication-failed` ;
-- [ ] ciphertext modifié refusé par `authentication-failed` ;
-- [ ] AAD modifié refusé par `authentication-failed` ;
-- [ ] paramètres faibles refusés par `invalid-envelope` sans lancer Argon2id ;
-- [ ] aucun plaintext n'est libéré par les cas négatifs.
+- [ ] AAD de 350 octets identiques au golden ;
+- [ ] ciphertext/tag, digest et enveloppe identiques ;
+- [ ] ouverture positive restituant les 45 octets attendus ;
+- [ ] mauvais secret, nonce, sel, ciphertext et AAD modifiés retournent uniquement `authentication-failed` ;
+- [ ] paramètres faibles retournent uniquement `invalid-envelope` sans Argon2id ;
+- [ ] aucun plaintext n'est libéré par un cas négatif.
 
 ## Analyse du protocole
 
-Le reviewer conclut sur chacun des points suivants et référence ses constats si nécessaire :
+- [ ] `id` et `createdAt` sont explicites et authentifiés ;
+- [ ] AAD/digest, séparation de domaine, Base64 et JCS sont non ambigus ;
+- [ ] AES-256-GCM, nonce 12 octets, tag 16 octets et `C || T` sont corrects ;
+- [ ] Argon2id v19, `P/S/K/X`, bornes et sortie directe de 32 octets sont corrects ;
+- [ ] tailles plaintext/ciphertext/enveloppe et parsing hostile sont bornés ;
+- [ ] digest recalculable ne peut jamais remplacer ni court-circuiter GCM ;
+- [ ] ordre d'ouverture, secret factice et enum d'erreur fermé ne créent pas d'oracle exploitable ;
+- [ ] migration v2 et absence de lecteur v1 heuristique sont justifiées.
 
-- [ ] `id` et `createdAt` sont des entrées explicites et intégralement authentifiées ;
-- [ ] les octets AAD et leur séparation de domaine sont non ambigus ;
-- [ ] AES-256-GCM, nonce 12 octets, tag 16 octets et layout `C || T` sont corrects ;
-- [ ] Base64 canonique, sel 16 octets et bornes du recovery secret sont suffisants ;
-- [ ] bornes plaintext/ciphertext/enveloppe et comportement de parsing sont sûrs ;
-- [ ] Argon2id v19, `P/S/K/X`, paramètres et sortie directe de 32 octets sont corrects ;
-- [ ] digest préfixé, octets couverts et exclusion du seul champ `digest` sont corrects ;
-- [ ] l'ordre d'ouverture et les erreurs ne créent pas d'oracle exploitable ;
-- [ ] les exigences de zéroïsation et non-persistance sont complètes et testables en Gate B ;
-- [ ] l'absence totale d'import WASM est complète et testable en Gate B ;
-- [ ] le passage à `notebook-core@2.0.0` et l'absence d'adaptateur v1 automatique sont justifiés.
+## Conformité du moteur et du host
 
-## Budget à qualifier en Gate B
+- [ ] versions, provenance, licences et configuration des primitives sont approuvées ;
+- [ ] chaque succès et mutation passe dans les runtimes Rust/WASM et navigateur ;
+- [ ] secret, clé, état AES, mémoire Argon2id et plaintexts d'échec sont zéroïsés autant que vérifiable ;
+- [ ] aucune clé/donnée privée n'entre dans persistance, logs, erreurs, métriques, globals ou caches ;
+- [ ] le composant WASM a une liste d'imports vide et s'exécute sans WASI ;
+- [ ] id, temps, sel et nonce proviennent seulement du host local ;
+- [ ] CSPRNG, unicité sel/nonce et conversion stable du recovery secret sont testés ;
+- [ ] aucun réseau ni stockage distant ne reçoit contenu, index, secret ou clé ;
+- [ ] mauvais secret et altérations cryptographiques restent observables sous le même code fermé.
 
-La Gate A fixe les seuils que le moteur réel devra respecter :
+## Performance et ressources
 
-- navigateurs et versions supportés : `<required>` ;
-- classes minimales d'appareil : `<required>` ;
-- pic mémoire maximal autorisé pour `m=65536, t=3, p=1` : `<required>` ;
-- latence maximale de scellement : `<required>` ;
-- latence maximale d'ouverture valide : `<required>` ;
-- tolérance de latence entre erreurs cryptographiques comparables : `<required>` ;
-- comportement attendu en mémoire insuffisante : `resource-limit-exceeded`, sans fallback KDF.
+Documenter les résultats réels :
+
+- navigateurs/versions et classes d'appareil : `<required>` ;
+- pic mémoire et latence pour `m=65536, t=3, p=1` : `<required>` ;
+- scellement/ouverture au plaintext maximal ou limite révisée : `<required>` ;
+- comportement en mémoire insuffisante : `<required>` ;
+- absence de fallback KDF : `<required>` ;
+- analyse des écarts de temps entre erreurs cryptographiques comparables : `<required>`.
 
 ## Constats
 
-Chaque constat reçoit un identifiant, une sévérité (`blocking`, `major`, `minor`), une preuve, une correction et son statut. Tout constat `blocking` ou `major` ouvert interdit l'approbation.
+Tout constat `blocking` ou `major` ouvert interdit l'approbation.
 
 | ID | Sévérité | Constat et preuve | Correction | Statut |
 | --- | --- | --- | --- | --- |
-| `<required-if-any>` |  |  |  |  |
+| `<required-if-any>` | `<required-if-any>` | `<required-if-any>` | `<required-if-any>` | `<required-if-any>` |
 
-## Décision Gate A
+## Décision Gate R
 
 Cocher exactement une décision :
 
-- [ ] **APPROVED** — aucun constat bloquant/majeur ouvert ; promotion v2 et implémentation autorisées, release interdite avant Gate B ;
-- [ ] **APPROVED WITH MINOR RESERVATIONS** — réserves non normatives listées et échéancées ; mêmes limites que ci-dessus ;
-- [ ] **REJECTED** — promotion et implémentation interdites.
+- [ ] **APPROVED** — aucun constat bloquant/majeur ouvert ; promotion canonique autorisée, sous réserve des autres gates de release ;
+- [ ] **APPROVED WITH MINOR RESERVATIONS** — réserves non normatives listées et échéancées ;
+- [ ] **REJECTED** — promotion et release interdites.
 
-Justification synthétique : `<required>`.
+Justification : `<required>`.
 
 Référence du commit attribuable contenant ce procès-verbal : `<required>`.
 
-Toute modification normative de `README.md`, `MIGRATION.md`, `world.wit`, des schémas ou des vecteurs après le commit candidat annule cette décision et impose une nouvelle Gate A.
+Toute modification normative du protocole ou du composant après les commits examinés annule la décision et impose une nouvelle Gate R.

@@ -21,17 +21,21 @@ Aucun moteur n'étant encore implémenté, il ne devrait exister aucune sauvegar
 
 Si des prototypes ont néanmoins émis des fichiers v1, aucune adaptation automatique sûre n'est définissable : v1 ne fixe ni AAD, ni digest, ni dérivation de `id`/`createdAt`. Le propriétaire doit ouvrir le prototype avec sa version exacte, hors du nouveau cœur, puis resceller le plaintext en v2 avec un nouveau sel et un nouveau nonce. Un fichier v1 seul, sans implémentation historique précisément identifiée, est non migrable. Le cœur v2 ne tente jamais plusieurs recettes cryptographiques et ne fournit pas d'oracle de détection.
 
-## Promotion après Gate A seulement
+## Développement après Gate S
 
-Après approbation de la Gate A consignée dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
+La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise un moteur expérimental contre ce dossier candidat, avec données publiques de test uniquement. Ce moteur ne constitue pas un producteur v2, ne peut écrire aucune sauvegarde utilisateur et ne transforme pas ce dossier en autorité canonique.
+
+Cette phase sert à obtenir les preuves impossibles au seul niveau du contrat : zéroïsation réelle, imports du composant, intégration CSPRNG/secret côté host et budgets navigateur.
+
+## Promotion après Gate R seulement
+
+Après approbation externe de la Gate R consignée dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
 
 1. copier le WIT et les deux JSON Schema candidats vers `contracts/` sous leurs noms v2 ;
 2. cataloguer v2, ajouter les fixtures positives/négatives et étendre les contrôles de version du harness ;
 3. générer les projections TypeScript/Rust et mettre à jour les listes de WIT qualifiées ;
 4. remplacer les références Notebook et work packages de v1 par v2 ;
 5. conserver v1 comme autorité historique dépréciée, sans producteur, jusqu'à preuve qu'aucune donnée v1 n'existe ;
-6. seulement ensuite autoriser l'implémentation Rust/WASM derrière les gates de développement.
+6. lier les autorités promues au composant et aux preuves exactes examinés en Gate R.
 
-La promotion et l'implémentation n'autorisent aucune sauvegarde utilisateur. La Gate B définie dans [`README.md`](README.md#10-gate-b--conformité-du-moteur-avant-release) doit encore qualifier le composant construit, sa zéroïsation, ses imports et ses performances avant release.
-
-Avant la Gate A, le contenu de ce dossier reste une proposition non canonique.
+La promotion n'autorise une release qu'après les gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`. Avant la Gate R, le contenu de ce dossier et toute implémentation associée restent expérimentaux et non canoniques.

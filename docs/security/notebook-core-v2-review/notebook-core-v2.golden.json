@@ -122,7 +122,6 @@
       "expected": {
         "result": "error",
         "code": "authentication-failed",
-        "message": "Backup authentication failed.",
         "argon2idAttempted": true,
         "plaintextReleased": false
       }
@@ -152,7 +151,6 @@
       "expected": {
         "result": "error",
         "code": "authentication-failed",
-        "message": "Backup authentication failed.",
         "argon2idAttempted": true,
         "plaintextReleased": false
       }
@@ -182,7 +180,6 @@
       "expected": {
         "result": "error",
         "code": "authentication-failed",
-        "message": "Backup authentication failed.",
         "argon2idAttempted": true,
         "plaintextReleased": false
       }
@@ -212,7 +209,6 @@
       "expected": {
         "result": "error",
         "code": "authentication-failed",
-        "message": "Backup authentication failed.",
         "argon2idAttempted": true,
         "plaintextReleased": false
       }
@@ -242,7 +238,6 @@
       "expected": {
         "result": "error",
         "code": "authentication-failed",
-        "message": "Backup authentication failed.",
         "argon2idAttempted": true,
         "plaintextReleased": false
       }
@@ -272,7 +267,6 @@
       "expected": {
         "result": "error",
         "code": "invalid-envelope",
-        "message": "Invalid backup envelope.",
         "argon2idAttempted": false,
         "plaintextReleased": false
       }
