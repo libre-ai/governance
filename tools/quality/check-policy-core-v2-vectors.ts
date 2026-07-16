@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { verifyPolicyCoreRawInputVectors } from "./policy-core-raw-inputs";
 
 type JsonRecord = Record<string, unknown>;
 type GoldenCase = {
@@ -14,6 +15,7 @@ type GoldenCase = {
 };
 
 const failures: string[] = [];
+const rawInputCount = await verifyPolicyCoreRawInputVectors(failures, "policy-core-v2");
 const schemaNames = [
   "common.v1.schema.json",
   "policy-definition.v2.schema.json",
@@ -318,5 +320,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals`,
 );
