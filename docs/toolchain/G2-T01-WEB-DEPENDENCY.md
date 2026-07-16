@@ -2,7 +2,7 @@
 
 - **Checkpoint:** 2026-07-16
 - **Requesting package:** `WP-G2-W01`
-- **Status:** automated evidence passes; `supply-chain-license-review` remains human and open
+- **Status:** automated evidence passes; `supply-chain-license-review` accepted by human disposition on 2026-07-16
 - **Production status:** blocked by `G2-T01-QUALIFICATION.md`
 
 ## Atomic integration disposition
@@ -54,14 +54,13 @@ bun run --cwd distribution/templates/bun-app test:e2e
                                              PASS — browser evidence recorded by W01
 ```
 
-## Human review boundary
+## Human review outcome
 
-The following remains deliberately unapproved by this document:
+The repository owner accepted the web dependency closure, lock delta and permissive 0BSD licence by
+explicit human disposition on 2026-07-16. This closes `supply-chain-license-review` for W01 only.
 
-- licence and provenance acceptance for the dependency closure;
+The following remains deliberately unapproved:
+
 - production use of the Bun canary;
 - G2 foundation acceptance;
 - any Clever Cloud provisioning.
-
-A human supply-chain reviewer must verify the lock delta, upstream notices and this evidence before
-merge.
