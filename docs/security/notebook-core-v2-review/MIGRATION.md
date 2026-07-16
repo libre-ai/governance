@@ -21,21 +21,21 @@ Aucun moteur n'étant encore implémenté, il ne devrait exister aucune sauvegar
 
 Si des prototypes ont néanmoins émis des fichiers v1, aucune adaptation automatique sûre n'est définissable : v1 ne fixe ni AAD, ni digest, ni dérivation de `id`/`createdAt`. Le propriétaire doit ouvrir le prototype avec sa version exacte, hors du nouveau cœur, puis resceller le plaintext en v2 avec un nouveau sel et un nouveau nonce. Un fichier v1 seul, sans implémentation historique précisément identifiée, est non migrable. Le cœur v2 ne tente jamais plusieurs recettes cryptographiques et ne fournit pas d'oracle de détection.
 
-## Développement après Gate S
+## Progression après Gate S
 
-La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise un moteur expérimental contre ce dossier candidat, avec données publiques de test uniquement. Ce moteur ne constitue pas un producteur v2, ne peut écrire aucune sauvegarde utilisateur et ne transforme pas ce dossier en autorité canonique.
+La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise uniquement la rédaction et les contrôles machine du candidat. Aucun moteur expérimental n’est autorisé avant reproduction externe du protocole et approbation Gate A.
 
-Cette phase sert à obtenir les preuves impossibles au seul niveau du contrat : zéroïsation réelle, imports du composant, intégration CSPRNG/secret côté host et budgets navigateur.
+Après Gate A, une implémentation bornée pourra produire les preuves impossibles au seul niveau du contrat : zéroïsation réelle, imports du composant, intégration CSPRNG/secret côté host et budgets navigateur. Elle ne devient jamais un producteur utilisateur avant Gate B et les gates de release.
 
-## Promotion après Gate R seulement
+## Promotion après Gate A seulement
 
-Après approbation externe de la Gate R consignée dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
+Après approbation externe de la Gate A consignée dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
 
-1. copier le WIT et les deux JSON Schema candidats vers `contracts/` sous leurs noms v2 ;
-2. cataloguer v2, ajouter les fixtures positives/négatives et étendre les contrôles de version du harness ;
-3. générer les projections TypeScript/Rust et mettre à jour les listes de WIT qualifiées ;
-4. remplacer les références Notebook et work packages de v1 par v2 ;
+1. vérifier que les copies cataloguées sous `contracts/` sont byte-identiques aux candidats examinés ;
+2. lier les autorités aux commits et preuves exacts de Gate A ;
+3. promouvoir explicitement les statuts `candidate` concernés vers `locked` ;
+4. lever le blocage d’implémentation du work package, sans autoriser de sauvegarde utilisateur ;
 5. conserver v1 comme autorité historique dépréciée, sans producteur, jusqu'à preuve qu'aucune donnée v1 n'existe ;
-6. lier les autorités promues au composant et aux preuves exactes examinés en Gate R.
+6. préparer la Gate B attribuable sur le composant construit.
 
-La promotion n'autorise une release qu'après les gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`. Avant la Gate R, le contenu de ce dossier et toute implémentation associée restent expérimentaux et non canoniques.
+La promotion n'autorise une release qu'après Gate B puis les gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`. Avant Gate A, aucune implémentation n’est autorisée ; avant Gate B, aucune sauvegarde utilisateur n’est émise.

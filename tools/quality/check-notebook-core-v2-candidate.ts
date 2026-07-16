@@ -205,14 +205,61 @@ async function decrypt(envelope: Envelope, key: CryptoKey): Promise<Uint8Array |
   }
 }
 
-const forbiddenPromotions = [
-  "contracts/wit/notebook-core-v2",
+const candidateArtifacts = [
+  "contracts/wit/notebook-core-v2/world.wit",
+  "contracts/wit/notebook-core-v2/SEMANTICS.md",
+  "contracts/schemas/context-document.v2.schema.json",
   "contracts/schemas/notebook-backup-seal-request.v2.schema.json",
   "contracts/schemas/notebook-backup.v2.schema.json",
-  "contracts/fixtures/notebook-core-v2",
+  "contracts/fixtures/notebook-core-v2/golden-vectors.v1.json",
 ];
-for (const path of forbiddenPromotions) {
-  expect(!existsSync(path), `${path}: Gate R is pending; canonical promotion is forbidden`);
+for (const path of candidateArtifacts) {
+  expect(existsSync(path), `${path}: ADR-0003 candidate artifact is missing`);
+}
+
+const catalog = (await Bun.file("contracts/catalog.v1.json").json()) as {
+  contracts?: Array<{
+    path?: unknown;
+    status?: unknown;
+    review?: { state?: unknown; required?: unknown };
+  }>;
+};
+for (const path of [
+  "contracts/wit/notebook-core-v2/world.wit",
+  "contracts/schemas/context-document.v2.schema.json",
+  "contracts/schemas/notebook-backup-seal-request.v2.schema.json",
+  "contracts/schemas/notebook-backup.v2.schema.json",
+]) {
+  const entry = catalog.contracts?.find((candidate) => candidate.path === path);
+  expect(
+    entry?.status === "candidate",
+    `${path}: independent Gate A is pending; status must remain candidate`,
+  );
+  expect(
+    entry?.review?.state === "pending-independent-review",
+    `${path}: pending independent review metadata is missing`,
+  );
+  const required = entry?.review?.required;
+  expect(
+    Array.isArray(required) && required.includes("cryptography") && required.includes("privacy"),
+    `${path}: cryptography and privacy reviews are required`,
+  );
+}
+
+const reviewedCopies: ReadonlyArray<readonly [string, string]> = [
+  [`${root}/world.wit`, "contracts/wit/notebook-core-v2/world.wit"],
+  [
+    `${root}/notebook-backup-seal-request.v2.schema.json`,
+    "contracts/schemas/notebook-backup-seal-request.v2.schema.json",
+  ],
+  [`${root}/notebook-backup.v2.schema.json`, "contracts/schemas/notebook-backup.v2.schema.json"],
+];
+for (const [reviewPath, candidatePath] of reviewedCopies) {
+  expectEqual(
+    await Bun.file(candidatePath).text(),
+    await Bun.file(reviewPath).text(),
+    `${candidatePath} reviewed-source identity`,
+  );
 }
 
 const requiredFiles = [
@@ -241,7 +288,8 @@ expectEqual(
 
 const readme = await Bun.file(`${root}/README.md`).text();
 expect(readme.includes("GATE S ACCEPTÉE"), "README must expose Gate S status");
-expect(readme.includes("Gate R"), "README must retain the external release gate");
+expect(readme.includes("Gate A"), "README must retain the independent pre-implementation gate");
+expect(readme.includes("Gate B"), "README must retain the independent pre-release gate");
 for (const required of [
   "`recovery-secret` | 16 octets | 1024 octets",
   "plaintext | 1 octet | 104 857 600 octets",
@@ -412,5 +460,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate S verified: closed WIT, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} mutations, no canonical promotion`,
+  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} mutations; Gate A remains pending`,
 );

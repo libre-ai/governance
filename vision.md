@@ -457,13 +457,14 @@ Knowledge Objects + Contracts + Evidence
                     ↓
 Graphe · Impact · Context packs · Documentation · Plans
                     ↓
-          Agent Orchestrator
+     Agent Orchestrator G2
                     ↓
-Work packages · Exécution bornée · Évidence
+Simulation bornée · OrchestratorEvent · Références d’évidence
 ```
 
-Le Knowledge Engine décrit et compile. L’Agent Orchestrator exécute sous
-politique. Proof vérifie indépendamment. Artifact construit et distribue.
+Le Knowledge Engine décrit et compile. En G2, l’Agent Orchestrator simule et
+valide sans exécuter. Une exécution sous politique reste soumise à un lock
+ultérieur. Proof vérifie indépendamment. Artifact construit et distribue.
 
 ### 7.6 Repositories publics
 
@@ -545,7 +546,6 @@ libre-ai/
 │   ├── agent-orchestrator/
 │   ├── agent-harness/
 │   ├── authz-biscuit/
-│   ├── context/
 │   ├── policy-core/
 │   ├── proof/
 │   ├── artifact/
@@ -789,26 +789,15 @@ Possède :
 Ne possède pas l’exécution agentique, la release, l’inspection indépendante ou
 le rendu web.
 
-### 9.10 `crates/agent-orchestrator`
+### 9.10 `crates/agent-orchestrator` — simulateur G2 borné
 
-Successeur nettoyé de l’actuel Agent Factory engine.
+WP-G2-S01 conserve uniquement un simulateur déterministe et un validateur sémantique. Ils consomment `AgentHandoff` v1, émettent un sous-ensemble strict d’`OrchestratorEvent` v1 et transportent seulement des références Proof/Artifact canoniques. Missions reste l’autorité de l’approbation, de l’autorisation, de l’idempotence durable, de la persistance et du verdict.
 
-Possède :
+La crate G2 ne possède ni plan d’exécution, commande start/pause/resume/cancel, DB, réseau, secret, outil, provider, harness, approbation humaine ou moteur généraliste. Toute exécution réelle exige un Specification Lock et un work package séparés couvrant plan hash-bound, contrôle, événements v2 causaux, budgets observables, sandbox/harness et autorisation atténuée. Aucun code legacy d’automerge ou déploiement n’est porté implicitement.
 
-- planification de missions ;
-- politiques d’exécution ;
-- budgets ;
-- handoffs ;
-- refus ;
-- replay et idempotence ;
-- coordination des adaptateurs ;
-- journal d’audit sans PII.
+### 9.11 Futur `crates/agent-harness`
 
-Il consomme le graphe du Knowledge Engine mais ne le gouverne pas.
-
-### 9.11 `crates/agent-harness`
-
-Possède :
+Non créé par WP-G2-S01. Après un lock séparé, il possède :
 
 - sandbox ;
 - exécution bornée ;
@@ -835,18 +824,13 @@ Possède :
 
 Le navigateur ne crée jamais de Biscuit.
 
-### 9.13 `crates/context`
+### 9.13 Contexte canonique — sans crate dédiée
 
-Conserve uniquement les capacités Rust justifiées :
-
-- parsing hostile-input-aware ;
-- normalisation déterministe ;
-- provenance ;
-- local-first/WASM ;
-- formats partagés avec clients natifs.
-
-Les fetchers et workflows web ordinaires peuvent appartenir aux applications
-Bun.
+`notebook-core` reste l’unique autorité Rust/WASM de canonicalisation de
+`ContextDocument`. Aucune crate `context` générique, CLI parallèle ou seconde
+WIT n’est créée. L’ingestion hostile et la provenance de l’ancien Context Kit
+restent archivées tant qu’un nouveau package approuvé ne démontre pas un
+invariant distinct, un consommateur et une frontière canonique.
 
 ### 9.14 `crates/policy-core`
 
@@ -1176,15 +1160,9 @@ Le moteur Rust :
 
 ### 14.2 Agent Orchestrator
 
-L’orchestrateur Rust :
+Le composant G2 est un simulateur/validateur sans autorité d’état : il applique des séquences, transitions, replays et budgets virtuels déterministes aux contrats Missions v1 verrouillés. Missions conserve workflow humain, autorisation, stockage et verdict. Le simulateur n’exécute aucun outil et ne remplace jamais l’agrégat Mission.
 
-- transforme un plan en work packages ;
-- applique politiques, budgets et autorisations ;
-- journalise sans PII ;
-- gère replay et idempotence ;
-- refuse les actions hors périmètre ;
-- délègue au harness ;
-- ne s’auto-approuve pas.
+Un moteur ultérieur reste conditionné par un RFC architecture/sécurité, les contrats d’exécution et de contrôle v2, puis un package distinct incluant le harness.
 
 ### 14.3 Proof
 
@@ -1486,7 +1464,7 @@ packages ↛ apps
 crates ↛ apps TypeScript
 proof → contrats et artefacts publics uniquement
 ecosystem-engine ↛ logique produit
-agent-orchestrator ↛ UI produit
+agent-orchestrator ↛ UI produit, DB partagée et moteur agentique généraliste
 ```
 
 Ces règles sont testées automatiquement.
@@ -1517,18 +1495,18 @@ Ces règles sont testées automatiquement.
 
 | Repository actuel | Cible | Portage principal | Rust attendu |
 | --- | --- | --- | --- |
-| `agent-factory` | `crates/agent-orchestrator`, `crates/agent-harness`, doctrine écosystème | nettoyage et renommage | oui, cœur stratégique |
+| `agent-factory` | `crates/agent-orchestrator` borné ; harness futur | simulateur/validation G2 uniquement, aucun portage d’exécution | oui pour le profil borné |
 | `agent-board` | `apps/missions` | Bun/React greenfield | seulement si moteur d’état le justifie |
 | `ai-practices` | `apps/practices` | Bun/React/Bun.sql | corpus/scoring opposable à évaluer |
 | `artifact-supply` | `crates/artifact` | nettoyage et renommage | oui |
 | `benchmarks` | `verification/benchmarks` et `campaigns` | import sélectif des campagnes | tooling selon besoin |
 | `boussole-politique` | `apps/boussole` | Bun/React local-first | scoring déterministe conservé |
 | `client-kit` | `packages/*`, `distribution/templates/bun-app` | reconstruction TS/React | bindings natifs seulement si consommés |
-| `context-kit` | `crates/context` + adaptateurs | extraction des primitives justifiées | oui pour parsing/provenance/WASM |
+| `context-kit` | archive externe uniquement | aucune reprise sans nouveau package approuvé | non dans G2 |
 | `design-system` | `packages/ui` | tokens et composants React | non par défaut |
 | `dioxus-app-template` | archive externe uniquement | remplacé par `bun-app`, aucune projection cible | non |
 | `feed-radar` | `apps/radar` | Bun fullstack | parsing/règles déterministes à conserver |
-| `gear` | archive externe uniquement | aucun code importé | non, remplacé par context/artifact |
+| `gear` | archive externe uniquement | aucun code importé | non, responsabilités redistribuées par contrats |
 | `notebook` | `apps/notebook` | greenfield Bun/React local-first | chiffrement/index/WASM si justifié |
 | `policy` | `apps/model-policy`, `crates/policy-core` | Bun UI/API + cœur WASM | oui pour policy/scoring |
 | `proof-kit` | `crates/proof`, `verification/` | suppression du lab Dioxus | oui |
@@ -1571,9 +1549,9 @@ construisent la cible en parallèle dans le monorepo, avec intégration continue
 
 ### Workstream C — Specialized Rust
 
-- Agent Orchestrator et Harness ;
+- simulateur/validateur Agent Orchestrator G2, sans Harness ;
 - Biscuit ;
-- Context ;
+- canonicalisation ContextDocument dans Notebook Core uniquement ;
 - Policy Core ;
 - Proof ;
 - Artifact ;
