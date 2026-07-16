@@ -7,8 +7,10 @@
 **Required reviewers:** one Security agent and one Architecture agent, each using an identity and
 session distinct from the authoring agent.
 
-**Decision recorded here:** none. This dossier is a review request and does not approve, release or
-authorize implementation of the contract.
+**Recorded decisions:** Architecture and Security verdicts are both `reject` with blocking findings;
+see [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) and
+[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). They are immutable audit evidence, not approvals. Radar
+remains candidate-only and NO-GO for implementation until remediation and fresh attributable passes.
 
 ## Review subject
 
