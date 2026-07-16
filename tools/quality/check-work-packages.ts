@@ -69,7 +69,7 @@ for (const workPackage of packages) {
     (workPackage.risk === "high" || workPackage.risk === "critical") &&
     workPackage.humanGates.length === 0
   ) {
-    failures.push(`${workPackage.id}: high/critical package has no independent human gate`);
+    failures.push(`${workPackage.id}: high/critical package has no independent acceptance gate`);
   }
   if (!workPackage.parallelGroup.startsWith(workPackage.phase.toLowerCase())) {
     failures.push(`${workPackage.id}: parallel group and phase diverge`);

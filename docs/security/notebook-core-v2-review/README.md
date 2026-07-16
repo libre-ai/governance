@@ -1,8 +1,9 @@
 # Dossier de revue — Notebook Core v2
 
 > **Statut : GATE S ACCEPTÉE POUR RÉDACTION DU CANDIDAT UNIQUEMENT.** Les artefacts restent
-> `candidate` / `pending-independent-review`. Aucun moteur, aucune donnée utilisateur, aucun statut
-> `locked` et aucune release ne sont autorisés avant les verdicts Gate A puis le jalon humain.
+> `candidate` / `pending-independent-agent-review`. Aucun moteur, aucune donnée utilisateur, aucun
+> statut `locked` et aucune release ne sont autorisés avant les verdicts agentiques Gate A puis
+> l’autorisation de merge du propriétaire.
 
 ## Autorité unique
 
@@ -40,10 +41,11 @@ public, déterministe et interdit comme secret, sel, nonce ou identifiant de pro
 ## Progression
 
 Gate S autorise seulement l'évolution machine-checkable du candidat. Gate A exige des verdicts
-séparés architecture, sécurité, cryptographie et vie privée, chacun lié au commit et aux SHA-256, puis
-un jalon humain explicite. Une modification normative invalide les verdicts antérieurs concernés.
+d’agents séparés pour architecture, sécurité, cryptographie et vie privée, chacun lié au commit et aux
+SHA-256. Le propriétaire autorise ensuite le merge sans devenir reviewer technique. Une modification
+normative invalide les verdicts antérieurs concernés.
 
-Après verrouillage et seulement après le jalon humain, Gate B examinera le composant et le host réels :
+Après verrouillage autorisé par le propriétaire, Gate B examinera le composant et le host réels :
 imports module/composant, exécution sans WASI, zéroïsation, OOM/panics, CSPRNG, conversion du secret,
 absence de persistance/log/réseau privés et budgets navigateur. Gate B et les gates projet restent
 obligatoires avant toute sauvegarde utilisateur ou release.

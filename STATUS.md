@@ -34,11 +34,10 @@
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
 - ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 48 locked baseline authorities ;
-- solo G2 governance accepts role-separated agent reviews for candidate integration, with explicit human control milestones before lock, product implementation, public use or deployment ;
-- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only; Boussole methodology is approved for its exact reviewed hash, while all other named architecture, security, cryptography and privacy verdicts remain pending ;
+- solo G2 governance requires attributable technical verdicts from agents whose identity and session differ from the authoring agent; the repository owner remains merge authority but is not the technical reviewer ;
+- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only; Radar architecture/security and Boussole security verdicts are rejected with blocking findings, Boussole methodology evidence still requires attribution under the current agent protocol, and all other named verdicts remain pending ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
-- no product engine, generic Context crate or Practices scorer is implemented ;
-- the bounded Agent Orchestrator simulator, semantic validator and shared Rust/TypeScript goldens are merged, pending role-separated Missions and budget/replay security verdicts before any capability expansion ;
+- no product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
 ## Explicitly deferred

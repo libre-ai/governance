@@ -457,14 +457,13 @@ Knowledge Objects + Contracts + Evidence
                     ↓
 Graphe · Impact · Context packs · Documentation · Plans
                     ↓
-     Agent Orchestrator G2
+ Futur Agent Orchestrator (hors S01)
                     ↓
-Simulation bornée · OrchestratorEvent · Références d’évidence
+Work packages · Exécution bornée · Évidence
 ```
 
-Le Knowledge Engine décrit et compile. En G2, l’Agent Orchestrator simule et
-valide sans exécuter. Une exécution sous politique reste soumise à un lock
-ultérieur. Proof vérifie indépendamment. Artifact construit et distribue.
+Le Knowledge Engine décrit et compile. Après un Specification Lock dédié, un futur Agent Orchestrator
+pourra exécuter sous politique. Proof vérifie indépendamment. Artifact construit et distribue.
 
 ### 7.6 Repositories publics
 
@@ -789,15 +788,15 @@ Possède :
 Ne possède pas l’exécution agentique, la release, l’inspection indépendante ou
 le rendu web.
 
-### 9.10 `crates/agent-orchestrator` — simulateur G2 borné
+### 9.10 Orchestration agentique — différée
 
-WP-G2-S01 conserve uniquement un simulateur déterministe et un validateur sémantique. Ils consomment `AgentHandoff` v1, émettent un sous-ensemble strict d’`OrchestratorEvent` v1 et transportent seulement des références Proof/Artifact canoniques. Missions reste l’autorité de l’approbation, de l’autorisation, de l’idempotence durable, de la persistance et du verdict.
+Aucune `crates/agent-orchestrator` n’est créée par WP-G2-S01. La nécessité à terme pour Missions est reconnue, mais les contrats actuels ne définissent ni plan d’exécution approuvé, ni commandes de contrôle, ni consommation de budgets, ni agent-harness.
 
-La crate G2 ne possède ni plan d’exécution, commande start/pause/resume/cancel, DB, réseau, secret, outil, provider, harness, approbation humaine ou moteur généraliste. Toute exécution réelle exige un Specification Lock et un work package séparés couvrant plan hash-bound, contrôle, événements v2 causaux, budgets observables, sandbox/harness et autorisation atténuée. Aucun code legacy d’automerge ou déploiement n’est porté implicitement.
+Une future crate exige un Specification Lock et un work package séparés couvrant au minimum : plan exécutable hash-bound, contrôle start/pause/resume/cancel, événements v2 causaux et idempotents, sandbox/harness, autorisation atténuée, absence d’auto-approbation et journal sans PII. Aucun code legacy d’automerge, déploiement ou provider n’est porté implicitement.
 
-### 9.11 Futur `crates/agent-harness`
+### 9.11 `crates/agent-harness`
 
-Non créé par WP-G2-S01. Après un lock séparé, il possède :
+Possède :
 
 - sandbox ;
 - exécution bornée ;
@@ -1160,9 +1159,7 @@ Le moteur Rust :
 
 ### 14.2 Agent Orchestrator
 
-Le composant G2 est un simulateur/validateur sans autorité d’état : il applique des séquences, transitions, replays et budgets virtuels déterministes aux contrats Missions v1 verrouillés. Missions conserve workflow humain, autorisation, stockage et verdict. Le simulateur n’exécute aucun outil et ne remplace jamais l’agrégat Mission.
-
-Un moteur ultérieur reste conditionné par un RFC architecture/sécurité, les contrats d’exécution et de contrôle v2, puis un package distinct incluant le harness.
+L’orchestrateur n’est pas une fondation G2 implémentable avec les autorités actuelles. Missions conserve son workflow humain et ses fixtures de protocole, mais aucune simulation Rust ne devient une seconde autorité d’état. Un moteur ultérieur est conditionné par un RFC architecture/sécurité, les contrats d’exécution et de contrôle, puis un package distinct incluant le harness.
 
 ### 14.3 Proof
 
@@ -1495,7 +1492,7 @@ Ces règles sont testées automatiquement.
 
 | Repository actuel | Cible | Portage principal | Rust attendu |
 | --- | --- | --- | --- |
-| `agent-factory` | `crates/agent-orchestrator` borné ; harness futur | simulateur/validation G2 uniquement, aucun portage d’exécution | oui pour le profil borné |
+| `agent-factory` | futur package `agent-orchestrator` + `agent-harness` | archive/RFC uniquement en G2 ; aucune reprise S01 | différé jusqu’au lock dédié |
 | `agent-board` | `apps/missions` | Bun/React greenfield | seulement si moteur d’état le justifie |
 | `ai-practices` | `apps/practices` | Bun/React/Bun.sql | corpus/scoring opposable à évaluer |
 | `artifact-supply` | `crates/artifact` | nettoyage et renommage | oui |
@@ -1549,7 +1546,7 @@ construisent la cible en parallèle dans le monorepo, avec intégration continue
 
 ### Workstream C — Specialized Rust
 
-- simulateur/validateur Agent Orchestrator G2, sans Harness ;
+- Agent Orchestrator et Harness — différés jusqu’à un Specification Lock dédié ;
 - Biscuit ;
 - canonicalisation ContextDocument dans Notebook Core uniquement ;
 - Policy Core ;

@@ -299,7 +299,12 @@ const catalog = (await Bun.file("contracts/catalog.v1.json").json()) as {
   contracts?: Array<{
     path?: unknown;
     status?: unknown;
-    review?: { state?: unknown; required?: unknown };
+    review?: {
+      state?: unknown;
+      reviewerKind?: unknown;
+      separation?: unknown;
+      required?: unknown;
+    };
   }>;
 };
 for (const path of [
@@ -314,8 +319,10 @@ for (const path of [
     `${path}: independent Gate A is pending; status must remain candidate`,
   );
   expect(
-    entry?.review?.state === "pending-independent-review",
-    `${path}: pending independent review metadata is missing`,
+    entry?.review?.state === "pending-independent-agent-review" &&
+      entry.review.reviewerKind === "agent" &&
+      entry.review.separation === "different-agent-and-session",
+    `${path}: pending independent agent review metadata is missing`,
   );
   const required = entry?.review?.required;
   expect(

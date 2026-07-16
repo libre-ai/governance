@@ -2,10 +2,10 @@
 
 ## Status
 
-This is a contract candidate. Candidate integration is allowed after a green generic agent review
-and human continuation milestone, but it is not locked for release or authorized for product
-implementation until separate Architecture, Security and Privacy role passes approve it under
-`docs/reviews/AGENT-REVIEW-PROTOCOL.md` and the human lock milestone accepts their evidence.
+This is a contract candidate. It is not locked for release or authorized for product implementation
+until separate Architecture, Security and Privacy review agents approve it under
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Each reviewer agent/session differs
+from the authoring agent/session; the repository owner's merge decision is not a technical review.
 
 ## Candidate authorities
 
@@ -56,9 +56,9 @@ implementation until separate Architecture, Security and Privacy role passes app
   surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
-## Required role-separated checks
+## Required independent agent checks
 
-Architecture review must:
+The Architecture review agent must:
 
 - challenge every operator/type/cardinality branch and verdict transition;
 - confirm that schema, OpenAPI, WIT and semantic profile describe one boundary;
@@ -69,7 +69,7 @@ Architecture review must:
 - challenge the cardinality-derived CPU ceilings and 256 MiB peak-memory
   qualification budget before any implementation begins.
 
-Security review must:
+The Security review agent must:
 
 - attempt tenant substitution, digest substitution, duplicate-key and duplicate-
   fact inputs;
@@ -81,11 +81,11 @@ Security review must:
   an implementation exceeding the candidate memory budget;
 - confirm that no result grants authorization, purchasing power or approval.
 
-Privacy review must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
+The Privacy review agent must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
 
 ## Promotion rule
 
 Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
 verdicts from separate review-only passes, followed by the full contract, generated-projection and
-cross-runtime conformance gates and explicit human acceptance. A generator, evaluator or CI job
-cannot promote this candidate automatically.
+cross-runtime conformance gates. A generator, evaluator, CI job or authoring agent cannot promote
+this candidate automatically; the repository owner remains merge authority, not technical reviewer.

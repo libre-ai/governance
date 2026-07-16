@@ -1,60 +1,38 @@
-# G2 agent review protocol — solo maintainer
+# Independent agent review protocol — solo maintainer
 
-## Purpose
+ADR-0003 contract candidates are reviewed by independent agents, not by a second human maintainer. The repository owner decides whether to merge, but that merge decision is not a technical review and cannot replace the evidence below.
 
-Libre AI is currently developed by one human maintainer using specialized coding and review agents.
-For G2 candidate work, independence is therefore a separation of **review roles and execution
-contexts**, not a requirement for multiple human accounts.
+## Independence rule
 
-This protocol applies only to candidate drafting, harness improvement and bounded G2 implementation.
-It does not approve production, infrastructure deployment, public scoring, personal-data processing or
-a promotion from `candidate` to `locked`.
+A review is valid only when all of these conditions hold:
 
-## Review levels
+- the reviewer is an agent distinct from the authoring agent;
+- `reviewerAgentId != authorAgentId` and `reviewerSessionId != authorSessionId`;
+- the reviewer receives a fresh review prompt and an immutable commit, without the authoring conversation or hidden mutable worktree;
+- the reviewer did not author the candidate, its normative vectors or the implementation under review;
+- CI, generators and the authoring agent cannot issue the verdict.
 
-### 1. Candidate integration review
+An agent must never approve its own proposal. A failed independence check keeps the candidate pending.
 
-A candidate branch may be merged when:
+## Attributable review record
 
-- the exact qualified toolchain and all repository gates pass;
-- an agent performs a review-only pass over the exact commit and records security, quality,
-  performance, completeness and sovereignty/privacy findings;
-- the agent review states that it is not a role-specific promotion verdict;
-- the human maintainer explicitly accepts the control milestone and instructs continuation.
+Each required role records, in its dossier or a linked immutable artifact:
 
-This level keeps every catalog entry in `pending-independent-review`. It exists so the harness,
-vectors and review process can evolve on `main` without pretending that candidate semantics are
-locked.
+- `authorAgentId` and `authorSessionId`;
+- `reviewerAgentId`, `reviewerSessionId`, provider and model/version;
+- reviewed Git commit SHA and relevant contract/vector hashes;
+- review role (`architecture`, `security`, `cryptography`, `methodology` or `privacy`);
+- commands, independent reproduction evidence and findings by severity;
+- exactly one verdict: `approve`, `approve-with-minor-reservations` or `reject`.
 
-### 2. Role-specific promotion review
+Each catalog role requires its own record and fresh review session; one generic verdict cannot satisfy several roles. Open blocking/major findings, a conditional verdict, missing evidence or a normative change after review invalidate approval. A new immutable commit requires every affected role to review again.
 
-Each role listed in `contracts/catalog.v1.json` must produce a separate verdict. A verdict MAY be
-produced by a role-scoped review agent in a fresh session or isolated review-only pass. It MUST:
+## Candidate integration
 
-- identify the role, exact Git commit and every relevant vector/schema SHA-256;
-- run or independently recompute the dossier's required evidence;
-- list blocking and non-blocking findings and residual risks;
-- state explicit `approve` or `reject`;
-- avoid modifying the reviewed files during the review pass.
+A candidate branch may be merged after all qualified repository gates pass and an independent agent performs a general review-only pass over the exact commit. That record covers security, quality, performance, completeness and sovereignty/privacy and explicitly states that it is not a role-specific promotion verdict. Candidate integration leaves every authority in `pending-independent-agent-review`. The repository owner's merge decision is not a technical review.
 
-One generic agent verdict cannot satisfy several catalog roles. A later content or hash change makes
-the affected verdict stale and requires a new role pass.
+## Promotion
 
-### 3. Human control milestone
+Promotion from `candidate` to `locked` requires all catalog-listed role-specific agent verdicts and green quality gates. A separate integrator agent may prepare the promotion change after verifying the records; neither the authoring agent nor any reviewer may approve its own output. The solo repository owner remains the merge authority.
 
-The solo maintainer reviews the collected role verdicts and explicitly records `accept`, `continue`,
-`hold` or `reject`. Human control is required before:
-
-- changing a catalog entry from `candidate` to `locked`;
-- starting a product-engine implementation against that authority;
-- enabling public scoring or personal/tenant data processing;
-- adding network, provider, persistence, secret or approval capabilities;
-- production or infrastructure deployment.
-
-The human milestone accepts or rejects evidence; it does not replace missing role verdicts.
-
-## Audit trail
-
-GitHub PR comments/issues MAY hold candidate-integration evidence. Promotion evidence MUST be durable
-in the repository review dossier or referenced by immutable URL and content hash. CI, generators and
-the implementation agent cannot silently change review state.
+This protocol governs engineering review only. It does not replace product-level human decisions explicitly required by Policy, Missions, Sessions, Practices or Boussole public-release contracts.

@@ -2,7 +2,7 @@
 
 | Historique | Cible |
 | --- | --- |
-| agent-factory | crates/agent-orchestrator pour simulation/validation G2 uniquement ; exécution et harness archivés jusqu’à un lock dédié |
+| agent-factory | archive uniquement en G2 ; futur package orchestrator/harness après Specification Lock dédié |
 | agent-board | apps/missions |
 | ai-practices | apps/practices |
 | artifact-supply | crates/artifact |

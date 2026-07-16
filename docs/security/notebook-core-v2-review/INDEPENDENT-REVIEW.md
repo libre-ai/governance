@@ -1,15 +1,18 @@
-# Procès-verbal de revue cryptographique externe — Gates A/B
+# Procès-verbal de revue agentique indépendante — Gates A/B
 
-> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace aucune revue. Gate A exige quatre passes review-only séparées — architecture, sécurité, cryptographie et vie privée — puis un jalon humain ; Gate B examine ensuite le composant et le host réels.
+> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S de rédaction ne remplace aucune revue. Gate A exige quatre passes agentiques review-only séparées — architecture, sécurité, cryptographie et vie privée — conformément à [`../../reviews/AGENT-REVIEW-PROTOCOL.md`](../../reviews/AGENT-REVIEW-PROTOCOL.md). Gate B examine ensuite le composant et le host réels.
 
 ## Portée de la décision
 
-La Gate A examine le protocole, les schémas et les vecteurs catalogués selon `docs/reviews/AGENT-REVIEW-PROTOCOL.md` ; quatre verdicts `APPROVE` et un jalon humain `accept` autorisent seulement la promotion `candidate → locked` et le début de l’implémentation. La Gate B examine ensuite le composant réellement livrable ; elle est nécessaire, mais non suffisante, avant release.
+La Gate A examine le protocole, les schémas et les vecteurs catalogués selon `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. Quatre verdicts agentiques `APPROVE`, puis l’autorisation de merge du propriétaire, permettent seulement la promotion `candidate → locked` et le début de l’implémentation. L’autorisation propriétaire n’est pas une revue technique. La Gate B examine ensuite le composant réellement livrable ; elle est nécessaire, mais non suffisante, avant release.
 
 ## Candidats immuables
 
-À compléter par le reviewer :
+À compléter par l’agent reviewer :
 
+- `authorAgentId` et `authorSessionId` : `<required>` ;
+- `reviewerAgentId` et `reviewerSessionId` : `<required>` ;
+- provider et modèle/version du reviewer : `<required>` ;
 - commit Git du protocole, SHA complet : `<required>` ;
 - arbre Git du dossier protocole : `<required>` ;
 - Gate A — commit moteur/host : `not-yet-implemented` ;
@@ -18,9 +21,9 @@ La Gate A examine le protocole, les schémas et les vecteurs catalogués selon `
 - Gate B — digest du composant WASM construit : `<required-before-gate-b>` ;
 - dépôt : `https://github.com/libre-ai/libre-ai` ;
 - date UTC de revue : `<required>` ;
-- référence professionnelle publique ou interne du reviewer : `<required>`.
+- référence immuable du record agentique : `<required>`.
 
-Le reviewer travaille sur des commits propres et consigne les commandes de liaison :
+L’agent reviewer travaille sur des commits propres et consigne les commandes de liaison :
 
 ```bash
 git rev-parse HEAD
@@ -32,10 +35,11 @@ git status --short
 
 Pour chaque rôle :
 
-- [ ] le reviewer opère dans une passe fraîche, review-only, et n'a pas rédigé les artefacts examinés pendant cette passe ;
-- [ ] il ne s'auto-approuve pas, ne rend qu'un seul rôle et déclare les conflits d'intérêts éventuels ;
+- [ ] `reviewerAgentId != authorAgentId` et `reviewerSessionId != authorSessionId` ;
+- [ ] l’agent reviewer opère dans une passe fraîche, review-only, et n'a pas rédigé les artefacts examinés ;
+- [ ] il ne s'auto-approuve pas, ne rend qu'un seul rôle et déclare les conflits éventuels ;
 - [ ] ses preuves n'utilisent que le matériel public de test, sans donnée personnelle ni clé réelle ;
-- [ ] le reviewer cryptographie utilise une chaîne de reproduction indépendante des implémentations Gate S.
+- [ ] l’agent cryptographie utilise une chaîne de reproduction indépendante des implémentations Gate S.
 
 ## Reproduction indépendante du protocole
 
@@ -114,7 +118,7 @@ Chaque passe produit exactement `APPROVE` ou `REJECT`, avec rapport et SHA-256 :
 | cryptographie | `<required>` | `<APPROVE-or-REJECT>` | `<required>` |
 | vie privée France/UE | `<required>` | `<APPROVE-or-REJECT>` | `<required>` |
 
-Jalon humain après quatre `APPROVE` : `<accept|continue|hold|reject>` ; référence attribuable : `<required>`.
+Décision propriétaire après quatre `APPROVE` : `<merge|continue|hold|reject>` ; référence attribuable : `<required>`. Cette décision autorise ou refuse la suite, mais ne remplace aucun verdict technique agentique.
 
 ## Décision Gate B
 
