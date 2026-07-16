@@ -1,0 +1,41 @@
+# Workstreams
+
+## A — Canonical Core
+
+**Paths :** `ecosystem/`, `contracts/`, `crates/ecosystem-engine`, `tools/`.
+
+**Résultats :** objets versionnés, graphe, règles de dépendance, génération, provenance et projections.
+
+## B — Web Platform
+
+**Paths :** `packages/`, `distribution/templates/bun-app`.
+
+**Résultats :** React UI, Bun runtime, auth web, DB/cache, observabilité, tests, PWA et template.
+
+## C — Specialized Rust
+
+**Paths :** `crates/` hors ecosystem engine.
+
+**Résultats :** agent orchestration, Biscuit, context, policy, proof, artifact, WASM/WIT et CLIs.
+
+## D — Experiences
+
+**Paths :** `apps/`.
+
+**Résultats :** website, practices, radar, notebook, sessions, model-policy, boussole, specifications et missions.
+
+## E — Infrastructure and Release
+
+**Paths :** `infrastructure/`, `verification/`, `distribution/`.
+
+**Résultats :** Clever Cloud, PostgreSQL/Redis/Cellar, observabilité, Playwright, SBOM, provenance et release candidate.
+
+## Règles communes
+
+- un owner et un intégrateur par workstream ;
+- contrats approuvés avant consommation ;
+- branches courtes ;
+- changements transverses annoncés avant merge ;
+- aucun agent n’approuve sa propre sortie ;
+- toute solution temporaire possède une suppression avant RC ;
+- les gates sécurité précèdent la complétude.
