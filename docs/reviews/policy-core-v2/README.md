@@ -50,7 +50,8 @@ implementation until separate Architecture, Security and Privacy role passes app
 - decimal JCS thresholds and negative zero are explicit cross-runtime test cases;
 - `serde_json/float_roundtrip` is mandatory in the workspace to prevent binary64
   parsing drift;
-- schema-valid duplicate rule IDs have a complete `policy.rule_id_duplicate` vector;
+- schema-valid duplicate rule IDs have a complete `rule-id-duplicate` vector;
+- all six closed WIT error variants have complete, precedence-compatible cases;
 - nine byte-exact inputs cover BOM, invalid UTF-8, duplicate decoded keys, isolated
   surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.

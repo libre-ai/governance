@@ -4,6 +4,13 @@ import addFormats from "ajv-formats";
 import { verifyPolicyCoreRawInputVectors } from "./policy-core-raw-inputs";
 
 type JsonRecord = Record<string, unknown>;
+type ErrorVariant =
+  | "input-invalid"
+  | "evaluated-at-invalid"
+  | "rule-id-duplicate"
+  | "approval-invalid"
+  | "digest-mismatch"
+  | "tenant-mismatch";
 type GoldenCase = {
   id: string;
   policy: JsonRecord;
@@ -11,7 +18,7 @@ type GoldenCase = {
   need: JsonRecord;
   evaluatedAt: string;
   expectedEvaluation?: JsonRecord;
-  expectedError?: { code: string };
+  expectedError?: { variant: ErrorVariant };
 };
 
 const failures: string[] = [];
@@ -118,6 +125,13 @@ function without(value: JsonRecord, ...keys: string[]): JsonRecord {
   return projection;
 }
 
+function isUtcSeconds(value: string): boolean {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value))
+    return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
+}
+
 function boundedInteger(value: unknown, key: string, label: string): number {
   if (!isRecord(value) || !Number.isSafeInteger(value[key]) || Number(value[key]) <= 0) {
     failures.push(`${label}: ${key} is not a positive safe integer`);
@@ -142,6 +156,7 @@ if (!Array.isArray(golden.cases) || golden.cases.length === 0) {
 }
 
 const caseIds = new Set<string>();
+const errorVariants = new Set<ErrorVariant>();
 for (const candidate of golden.cases) {
   const label = `golden:${candidate.id}`;
   if (caseIds.has(candidate.id)) failures.push(`${label}: duplicate case id`);
@@ -152,12 +167,14 @@ for (const candidate of golden.cases) {
   const success = candidate.expectedEvaluation !== undefined;
   const error = candidate.expectedError !== undefined;
   if (success === error) failures.push(`${label}: expected exactly one evaluation or error`);
+  const errorVariant = candidate.expectedError?.variant;
+  if (errorVariant !== undefined) errorVariants.add(errorVariant);
   if (
     candidate.expectedError !== undefined &&
-    JSON.stringify(Object.keys(candidate.expectedError).sort()) !== JSON.stringify(["code"])
+    JSON.stringify(Object.keys(candidate.expectedError).sort()) !== JSON.stringify(["variant"])
   )
-    failures.push(`${label}: expected error must contain only the closed public code`);
-  if (candidate.expectedError?.code === "policy.input_invalid") {
+    failures.push(`${label}: expected error must contain only the closed WIT variant`);
+  if (errorVariant === "input-invalid") {
     if (policyValid && snapshotValid && needValid)
       failures.push(`${label}: input-invalid vector has only schema-valid inputs`);
     continue;
@@ -167,12 +184,26 @@ for (const candidate of golden.cases) {
     continue;
   }
 
+  const evaluatedAtValid = isUtcSeconds(candidate.evaluatedAt);
+  if (errorVariant === "evaluated-at-invalid" ? evaluatedAtValid : !evaluatedAtValid)
+    failures.push(`${label}: evaluatedAt does not demonstrate ${errorVariant ?? "success"}`);
+
+  const policyRules = candidate.policy.rules as JsonRecord[];
+  const policyRuleIds = policyRules.map((rule) => String(rule.id));
+  const duplicateRuleId = new Set(policyRuleIds).size !== policyRuleIds.length;
+  if (errorVariant === "rule-id-duplicate" ? !duplicateRuleId : duplicateRuleId)
+    failures.push(`${label}: duplicate rule id condition is inconsistent`);
+
   const approval = candidate.policy.approval as JsonRecord;
   const selfApproval = approval.approverId === candidate.policy.proposedBy;
-  if (candidate.expectedError?.code === "policy.approval_invalid" && !selfApproval)
-    failures.push(`${label}: approval-invalid vector does not self-approve`);
-  if (candidate.expectedError?.code !== "policy.approval_invalid" && selfApproval)
-    failures.push(`${label}: self-approval is not refused`);
+  if (errorVariant === "approval-invalid" ? !selfApproval : selfApproval)
+    failures.push(`${label}: approval separation condition is inconsistent`);
+
+  const tenantsMatch =
+    candidate.policy.tenantId === candidate.snapshot.tenantId &&
+    candidate.policy.tenantId === candidate.need.tenantId;
+  if (errorVariant === "tenant-mismatch" ? tenantsMatch : !tenantsMatch)
+    failures.push(`${label}: tenant condition is inconsistent`);
 
   const policySubject = {
     schemaVersion: candidate.policy.schemaVersion,
@@ -184,24 +215,18 @@ for (const candidate of golden.cases) {
     rules: candidate.policy.rules,
   };
   const policyDigest = digest("libre-ai.policy-definition.v2", policySubject, "policy");
-  if (
-    candidate.policy.digest !== policyDigest ||
-    (candidate.policy.approval as JsonRecord).subjectDigest !== policyDigest
-  ) {
-    failures.push(`${label}: invalid policy digest`);
-  }
-  if (
-    candidate.snapshot.digest !==
-    digest("libre-ai.model-snapshot.v2", without(candidate.snapshot, "digest"), "snapshot")
-  ) {
-    failures.push(`${label}: invalid snapshot digest`);
-  }
-  if (
-    candidate.need.digest !==
-    digest("libre-ai.policy-need.v2", without(candidate.need, "digest"), "need")
-  ) {
-    failures.push(`${label}: invalid need digest`);
-  }
+  const policyDigestValid =
+    candidate.policy.digest === policyDigest &&
+    (candidate.policy.approval as JsonRecord).subjectDigest === policyDigest;
+  const snapshotDigestValid =
+    candidate.snapshot.digest ===
+    digest("libre-ai.model-snapshot.v2", without(candidate.snapshot, "digest"), "snapshot");
+  const needDigestValid =
+    candidate.need.digest ===
+    digest("libre-ai.policy-need.v2", without(candidate.need, "digest"), "need");
+  const allDigestsValid = policyDigestValid && snapshotDigestValid && needDigestValid;
+  if (errorVariant === "digest-mismatch" ? allDigestsValid : !allDigestsValid)
+    failures.push(`${label}: digest condition is inconsistent`);
 
   if (!candidate.expectedEvaluation) continue;
   const evaluation = candidate.expectedEvaluation;
@@ -256,6 +281,8 @@ for (const required of [
   "type-mismatch-unknown",
   "fractional-number-jcs",
   "duplicate-rule-id",
+  "evaluated-at-invalid",
+  "digest-mismatch",
   "tenant-mismatch",
   "duplicate-exact-fact",
   "self-approval-refused",
@@ -263,6 +290,20 @@ for (const required of [
   "order-independence-b",
 ]) {
   if (!caseIds.has(required)) failures.push(`golden vectors: missing ${required}`);
+}
+const allErrorVariants = new Set<ErrorVariant>([
+  "input-invalid",
+  "evaluated-at-invalid",
+  "rule-id-duplicate",
+  "approval-invalid",
+  "digest-mismatch",
+  "tenant-mismatch",
+]);
+if (
+  errorVariants.size !== allErrorVariants.size ||
+  [...allErrorVariants].some((variant) => !errorVariants.has(variant))
+) {
+  failures.push("golden vectors: closed WIT error variants are not fully covered");
 }
 const orderA = golden.cases.find((candidate) => candidate.id === "order-independence-a");
 const orderB = golden.cases.find((candidate) => candidate.id === "order-independence-b");
