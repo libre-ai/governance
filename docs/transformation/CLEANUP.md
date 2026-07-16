@@ -26,6 +26,10 @@ Produce a reliable final reference of every historical repository, not a new rel
 - provisioning Clever Cloud ;
 - importing Git history into the canonical monorepo.
 
-## Website special case — reconciled
+## Website special case — merge reconciled
 
-Option B was explicitly approved. The dirty tree was committed directly, then `origin/main` and the six-commit `impl/epic-2-corpus` branch were merged. Conflicts favored local visual work for the first merge and corpus work for the second. Component contracts and publication tests were repaired afterward. Local `main` is clean at `380e4f7`, ten commits ahead of `origin/main`, with all available gates green. Remaining work is global cleanup, push decision and archive marking.
+Option B was explicitly approved. The dirty tree was committed directly, then `origin/main` and the six-commit `impl/epic-2-corpus` branch were merged. Conflicts favored local visual work for the first merge and corpus work for the second. Component contracts and publication tests were repaired afterward. Local `main` is clean at `380e4f7`, ten commits ahead of `origin/main`, with build and runtime gates green. Remaining work is Design System consumer-evidence reconciliation, global cleanup, push decision and archive marking.
+
+## Design System special case — committed locally
+
+The coherent visual/motion set was regenerated, reviewed and committed at `c8fb246`. Product and motion outputs are reproducible, CI now regenerates both families, licences/provenance are present and the full pinned builder path is green. Local `main` is one commit ahead of `origin/main`. Do not mark the repository archived until Website's two obsolete brand paths and four missing distribution evidence files are reconciled.

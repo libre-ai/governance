@@ -47,9 +47,10 @@ repositories:
     freeze_status: pending
   - id: legacy.design-system
     remote: https://github.com/libre-ai/design-system.git
-    revision: a5c82ad645430c9da471738aac2e6daaa69b831f
-    dirty_entries: 40
-    freeze_status: blocked-local-work
+    revision: c8fb246c213b2ac962491c316ce807322d692a6e
+    dirty_entries: 0
+    ahead_of_origin: 1
+    freeze_status: cleanup-committed-local
   - id: legacy.dioxus-app-template
     remote: https://github.com/libre-ai/dioxus-app-template.git
     revision: b93ee56a40b04099f6b4cd39fba67fcf61652e47
