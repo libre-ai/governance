@@ -27,13 +27,17 @@
 - canonical contract catalog locked: 47 authorities, 30 strict JSON Schemas with 29 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
 - data lifecycle locked through an executable ADR-0002 retention policy, tenant ownership matrix, deletion receipt and restore/rollback rules ;
 - provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked ;
-- G1 closed with 26 machine-validated work packages, acyclic dependencies, 55 exclusive write paths and explicit human gates.
+- G1 initially closed with 26 machine-validated work packages, acyclic dependencies and explicit human gates.
 
 ## Current G2 entry
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
-- production, another canary and Clever Cloud remain blocked.
+- ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 48 locked baseline authorities ;
+- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only pending their named architecture, security, cryptography, methodology and privacy reviews ;
+- no product engine, generic Context crate or Practices scorer is implemented ;
+- the bounded Agent Orchestrator simulator, semantic validator and shared Rust/TypeScript goldens are implemented locally pending independent Missions and budget/replay security review ;
+- real Missions execution, production, another canary and Clever Cloud remain blocked.
 
 ## Explicitly deferred
 
@@ -46,4 +50,5 @@
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- contract authorities are executable, but application engine golden vectors and end-to-end tenant/RLS conformance remain G2 implementation evidence.
+- candidate engine vectors now define contract behavior, but runtime conformance, bounded-resource
+  evidence and end-to-end tenant/RLS proof remain G2 implementation evidence.

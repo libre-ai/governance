@@ -46,7 +46,7 @@ interface types {
 world notebook-core {
   use types.{error-code, opened-backup, seal-backup-request};
 
-  /// Canonicalizes context-document JSON bytes and returns RFC 8785 bytes.
+  /// Canonicalizes context-document.v2 JSON bytes and returns RFC 8785 bytes.
   export canonicalize-context: func(document: list<u8>) -> result<list<u8>, error-code>;
 
   /// Seals one explicit request under Argon2id v=19 and AES-256-GCM.

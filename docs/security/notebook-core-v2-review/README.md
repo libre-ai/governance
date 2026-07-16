@@ -1,6 +1,6 @@
 # Candidat de revue cryptographique — Notebook Core v2
 
-> **Statut : GATE S ACCEPTÉE — candidat autorisé pour merge documentaire et développement non-production.** Cette auto-revue de bootstrap solo n'est pas indépendante et ne constitue pas une approbation cryptographique. Le dossier ne modifie pas `notebook-core-v1` et ne peut être promu vers `contracts/`, utilisé avec des données utilisateur ou releasé avant la Gate R externe. Les gates `rust-boundary-value-review` et `local-crypto-and-privacy-review` restent également obligatoires.
+> **Statut : GATE S ACCEPTÉE POUR RÉDACTION DU CANDIDAT UNIQUEMENT.** Cette auto-revue de bootstrap solo n'est pas indépendante et n'autorise aucun moteur, même expérimental. ADR-0003 a catalogué une copie v2 comme `candidate` ; son implémentation attend la Gate A cryptographique et vie privée indépendante. La future conformité du composant (Gate B), `rust-boundary-value-review` et `local-crypto-and-privacy-review` resteront obligatoires avant toute émission de sauvegarde.
 
 Les mots **DOIT**, **NE DOIT PAS** et **DEVRAIT** sont normatifs. Les standards de référence sont RFC 9106 (Argon2id), NIST SP 800-38D (GCM), RFC 4648 §4 (Base64) et RFC 8785 (JCS).
 
@@ -12,7 +12,7 @@ Les mots **DOIT**, **NE DOIT PAS** et **DEVRAIT** sont normatifs. Les standards 
 - [`notebook-core-v2.golden.json`](notebook-core-v2.golden.json) fixe les octets intermédiaires et les mutations.
 - [`MIGRATION.md`](MIGRATION.md) motive le changement de major.
 - [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) consigne l'auto-revue contradictoire et ses risques résiduels.
-- [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) est le procès-verbal Gate R à compléter avant promotion canonique ou release.
+- [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) est le procès-verbal indépendant : Gate A protocole avant implémentation, Gate B composant avant release.
 
 Le WIT transporte `plaintext`, `salt`, `nonce` et `recovery-secret` comme octets déjà décodés. Dans la projection JSON seulement, `plaintext`, `salt` et `nonce` utilisent le Base64 normatif ci-dessous. `seal-backup` renvoie l'enveloppe en JSON JCS UTF-8 sans BOM ni saut de ligne terminal.
 
@@ -156,9 +156,9 @@ Le WIT ne renvoie que l'enum `error-code`, jamais de message ni de détail libre
 
 Le cœur DOIT zéroïser avant tout retour succès/erreur, autant que le modèle mémoire le permet : toutes ses copies du recovery secret, la clé de 32 octets, l'état clé AES, la mémoire de travail Argon2id et tout plaintext produit avant un échec global. Ces valeurs NE DOIVENT PAS être placées dans une globale, un cache, une chaîne de caractères, une erreur, un log, un dump, une télémétrie ou une enveloppe, ni être renvoyées. La clé n'est jamais persistée et n'existe que pendant un appel.
 
-Le host reste responsable de ses propres buffers d'entrée/sortie et DOIT écraser ses `Uint8Array` sensibles après l'appel ; JavaScript et les copies de mémoire WASM empêchent toute promesse d'effacement physique absolu. La Gate S reconnaît cette limite sans prétendre la vérifier. La Gate R contrôle les effets réels sur les chemins succès, erreur, allocation et panic ainsi que le comportement des bibliothèques retenues.
+Le host reste responsable de ses propres buffers d'entrée/sortie et DOIT écraser ses `Uint8Array` sensibles après l'appel ; JavaScript et les copies de mémoire WASM empêchent toute promesse d'effacement physique absolu. La Gate S reconnaît cette limite sans prétendre la vérifier. La Gate B contrôle les effets réels sur les chemins succès, erreur, allocation et panic ainsi que le comportement des bibliothèques retenues.
 
-`world.wit` ne déclare aucun `import`. Le composant construit DOIT avoir une liste d'imports vide : pas de WASI clocks, random, sockets, HTTP, filesystem, key/value, environment ou logging. `id`, `created-at`, sel et nonce proviennent uniquement de la requête. Le scan du composant final et le test sans WASI appartiennent à la Gate R.
+`world.wit` ne déclare aucun `import`. Le composant construit DOIT avoir une liste d'imports vide : pas de WASI clocks, random, sockets, HTTP, filesystem, key/value, environment ou logging. `id`, `created-at`, sel et nonce proviennent uniquement de la requête. Le scan du composant final et le test sans WASI appartiennent à la Gate B.
 
 ## 9. Gate S — bootstrap solo
 
@@ -166,22 +166,25 @@ La Gate S est une auto-revue contradictoire, pas une revue indépendante. Elle e
 
 Elle autorise uniquement :
 
-1. le merge de ce dossier comme proposition non canonique ;
-2. le développement d'un moteur expérimental avec les seules données publiques de test ;
-3. les benchmarks et tests nécessaires à une future revue externe.
+1. le merge de ce dossier comme proposition de revue ;
+2. la préparation machine-checkable du candidat dans `contracts/` avec statut `candidate` ;
+3. la reproduction externe du protocole et des vecteurs en vue de Gate A.
 
-Elle n'autorise ni promotion vers `contracts/`, ni statut `locked`, ni compatibilité publique, ni sauvegarde utilisateur, ni release. Toute modification normative impose de régénérer les vecteurs et de réexécuter le challenge.
+Elle n'autorise ni statut `locked`, ni implémentation, ni compatibilité publique, ni sauvegarde utilisateur, ni release. Toute modification normative impose de régénérer les vecteurs et de réexécuter le challenge.
 
-## 10. Gate R — revue externe avant promotion et release
+## 10. Gates A/B — revues externes avant implémentation puis release
 
-Quand le moteur et le host local existent, un cryptographe externe examine dans une même revue le protocole et le composant réellement livrable. Il complète [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) et vérifie notamment :
+Avant tout moteur, un cryptographe externe complète la Gate A de [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) et vérifie :
 
-1. reproduction indépendante de la clé, des AAD, du ciphertext/tag, du digest, du golden et des mutations ;
-2. exactitude du protocole, des bornes, de la migration et du modèle anti-oracle ;
-3. conformité WIT/schémas/golden dans les runtimes Rust/WASM et navigateur ;
-4. choix, versions, provenance et configuration des primitives ;
-5. zéroïsation effective et absence de clé/plaintext dans persistance, logs, erreurs, télémétrie, globals et caches ;
-6. liste d'imports WASM vide et exécution sans WASI ;
-7. CSPRNG host, conversion du recovery secret et budgets mémoire/latence sur les cibles supportées.
+1. la reproduction indépendante de la clé, des AAD, du ciphertext/tag, du digest, du golden et des mutations ;
+2. l’exactitude du protocole, des bornes, de la migration et du modèle anti-oracle.
 
-La promotion canonique et la release restent bloquées jusqu'à approbation de la Gate R, puis des gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`.
+Une fois un composant construit, le reviewer complète séparément Gate B et vérifie :
+
+1. la conformité WIT/schémas/golden dans les runtimes Rust/WASM et navigateur ;
+2. le choix, les versions, la provenance et la configuration des primitives ;
+3. la zéroïsation effective et l’absence de clé/plaintext dans persistance, logs, erreurs, télémétrie, globals et caches ;
+4. la liste d’imports WASM vide et l’exécution sans WASI ;
+5. le CSPRNG host, la conversion du recovery secret et les budgets mémoire/latence sur les cibles supportées.
+
+L’implémentation reste bloquée jusqu’à la Gate A. La release reste bloquée jusqu’à la Gate B, puis les gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`.

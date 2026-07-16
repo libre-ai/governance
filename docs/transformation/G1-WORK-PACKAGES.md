@@ -1,6 +1,6 @@
 # G1 locked work packages
 
-- **Status:** locked
+- **Status:** locked package topology; WP-G2-S01 execution blocked while ADR-0003 authorities are candidates
 - **Machine authority:** [`work-packages.v1.json`](work-packages.v1.json)
 - **Schema:** [`contracts/schemas/work-package-plan.v1.schema.json`](../../contracts/schemas/work-package-plan.v1.schema.json)
 
@@ -28,12 +28,12 @@ G1 defines 26 bounded packages. A package is ready to schedule when its dependen
 | `g2-2` | `WP-G2-W01` | Bun/React/design/PWA template |
 | `g2-2` | `WP-G2-Z01` | specialized Biscuit capability |
 | `g2-2` | `WP-G2-P01` | Proof and Artifact |
-| `g2-2` | `WP-G2-S01` | cataloged Rust/WASM engines and orchestrator |
+| `g2-2` | `WP-G2-S01` | four candidate pure Rust/WASM product engines plus bounded Missions simulator |
 | `g2-3` | `WP-G2-I01` | provider-neutral OIDC and opaque browser sessions |
 | `g2-4` | `WP-G2-D01` | PostgreSQL/RLS, retention and deletion platform |
 | `g2-5` | `WP-G2-Q01` | clean-checkout integrated foundation evidence |
 
-No application reconstruction starts before `WP-G2-Q01`. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` includes the required Notebook crypto core but explicitly excludes Practices scoring; its WIT remains reserved until a new human-approved package demonstrates a real invariant.
+No application reconstruction starts before `WP-G2-Q01`. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` keeps `notebook-core` as the sole ContextDocument canonicalization authority and creates no `crates/context`. `crates/agent-orchestrator` is limited to deterministic simulation and semantic validation of locked Missions v1 events; real execution still requires a separate Specification Lock/package. Practices scoring remains excluded; its WIT stays reserved until a new human-approved package demonstrates a real invariant.
 
 ## G3 — parallel experiences
 

@@ -1,10 +1,10 @@
-# Procès-verbal de revue cryptographique externe — Gate R
+# Procès-verbal de revue cryptographique externe — Gates A/B
 
-> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace pas cette revue. Seul un cryptographe externe au développement du candidat et du moteur peut rendre le verdict Gate R.
+> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace aucune revue. Seul un cryptographe externe à la rédaction du candidat et au développement du moteur peut rendre les verdicts Gate A (protocole) puis Gate B (composant).
 
 ## Portée de la décision
 
-La Gate R examine ensemble le protocole et le composant réellement livrable. Son approbation autorise la promotion atomique vers les autorités `contracts/` et rend le candidat éligible aux autres gates de release. Elle n'autorise pas seule une release.
+La Gate A examine le protocole, les schémas et les vecteurs catalogués ; son approbation autorise seulement la promotion `candidate → locked` et le début de l’implémentation. La Gate B examine ensuite le composant réellement livrable ; elle est nécessaire, mais non suffisante, avant release.
 
 ## Candidats immuables
 
@@ -12,8 +12,10 @@ La Gate R examine ensemble le protocole et le composant réellement livrable. So
 
 - commit Git du protocole, SHA complet : `<required>` ;
 - arbre Git du dossier protocole : `<required>` ;
-- commit Git du moteur/host qualifié, SHA complet : `<required>` ;
-- digest du composant WASM construit : `<required>` ;
+- Gate A — commit moteur/host : `not-yet-implemented` ;
+- Gate A — digest composant WASM : `not-yet-implemented` ;
+- Gate B — commit Git du moteur/host qualifié, SHA complet : `<required-before-gate-b>` ;
+- Gate B — digest du composant WASM construit : `<required-before-gate-b>` ;
 - dépôt : `https://github.com/libre-ai/libre-ai` ;
 - date UTC de revue : `<required>` ;
 - référence professionnelle publique ou interne du reviewer : `<required>`.
@@ -65,7 +67,7 @@ Résultats :
 - [ ] ordre d'ouverture, secret factice et enum d'erreur fermé ne créent pas d'oracle exploitable ;
 - [ ] migration v2 et absence de lecteur v1 heuristique sont justifiées.
 
-## Conformité du moteur et du host
+## Gate B — conformité du moteur et du host
 
 - [ ] versions, provenance, licences et configuration des primitives sont approuvées ;
 - [ ] chaque succès et mutation passe dans les runtimes Rust/WASM et navigateur ;
@@ -96,9 +98,9 @@ Tout constat `blocking` ou `major` ouvert interdit l'approbation.
 | --- | --- | --- | --- | --- |
 | `<required-if-any>` | `<required-if-any>` | `<required-if-any>` | `<required-if-any>` | `<required-if-any>` |
 
-## Décision Gate R
+## Décisions Gates A/B
 
-Cocher exactement une décision :
+Pour chaque gate, cocher exactement une décision et préciser `A` ou `B` dans la justification :
 
 - [ ] **APPROVED** — aucun constat bloquant/majeur ouvert ; promotion canonique autorisée, sous réserve des autres gates de release ;
 - [ ] **APPROVED WITH MINOR RESERVATIONS** — réserves non normatives listées et échéancées ;
@@ -108,4 +110,4 @@ Justification : `<required>`.
 
 Référence du commit attribuable contenant ce procès-verbal : `<required>`.
 
-Toute modification normative du protocole ou du composant après les commits examinés annule la décision et impose une nouvelle Gate R.
+Toute modification normative du protocole après Gate A impose une nouvelle Gate A ; toute modification du composant examiné après Gate B impose une nouvelle Gate B.
