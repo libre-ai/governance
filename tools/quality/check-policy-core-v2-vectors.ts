@@ -11,7 +11,7 @@ type GoldenCase = {
   need: JsonRecord;
   evaluatedAt: string;
   expectedEvaluation?: JsonRecord;
-  expectedError?: { code: string; message: string };
+  expectedError?: { code: string };
 };
 
 const failures: string[] = [];
@@ -152,6 +152,11 @@ for (const candidate of golden.cases) {
   const success = candidate.expectedEvaluation !== undefined;
   const error = candidate.expectedError !== undefined;
   if (success === error) failures.push(`${label}: expected exactly one evaluation or error`);
+  if (
+    candidate.expectedError !== undefined &&
+    JSON.stringify(Object.keys(candidate.expectedError).sort()) !== JSON.stringify(["code"])
+  )
+    failures.push(`${label}: expected error must contain only the closed public code`);
   if (candidate.expectedError?.code === "policy.input_invalid") {
     if (policyValid && snapshotValid && needValid)
       failures.push(`${label}: input-invalid vector has only schema-valid inputs`);
