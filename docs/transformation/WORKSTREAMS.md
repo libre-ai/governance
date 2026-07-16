@@ -1,5 +1,7 @@
 # Workstreams
 
+These workstreams are organizational groupings, not branch write authority. Executable package boundaries, dependencies and gates are locked in [`G1-WORK-PACKAGES.md`](G1-WORK-PACKAGES.md) and [`work-packages.v1.json`](work-packages.v1.json).
+
 ## A — Canonical Core
 
 **Paths :** `ecosystem/`, `contracts/`, `crates/ecosystem-engine`, `tools/`.

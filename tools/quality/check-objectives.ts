@@ -10,6 +10,8 @@ const requiredFiles = [
   "docs/transformation/G0-FREEZE-EVIDENCE.md",
   "docs/transformation/G0-CANONICAL-BOOTSTRAP.md",
   "docs/transformation/BIG-BANG.md",
+  "docs/transformation/G1-WORK-PACKAGES.md",
+  "docs/transformation/work-packages.v1.json",
   "docs/toolchain/BUN-QUALIFICATION.md",
   "docs/specifications/SPECIFICATION-STANDARD.md",
   "docs/specifications/DECISION-QUEUE.md",

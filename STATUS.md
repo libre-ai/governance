@@ -1,6 +1,6 @@
 # Transformation status
 
-**Current phase:** G1 — Specification Lock.
+**Current phase:** G2 — Canonical Foundations.
 
 ## Completed
 
@@ -24,19 +24,20 @@
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
 - nine application specifications expanded to the G1 standard with an executable structure gate ;
 - G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority ;
-- canonical contract catalog locked: 46 authorities, 29 strict JSON Schemas with 28 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
+- canonical contract catalog locked: 47 authorities, 30 strict JSON Schemas with 29 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
 - data lifecycle locked through an executable ADR-0002 retention policy, tenant ownership matrix, deletion receipt and restore/rollback rules ;
-- provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked.
+- provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked ;
+- G1 closed with 26 machine-validated work packages, acyclic dependencies, 55 exclusive write paths and explicit human gates.
 
-## Pending in G1
+## Current G2 entry
 
-- decompose final work packages with no unresolved architecture decision.
+- execute `WP-G2-T01` production toolchain qualification before every other foundation package ;
+- keep production and Clever Cloud blocked if no stable Rust-line Bun release qualifies.
 
 ## Explicitly deferred
 
-- Clever Cloud provisioning, secrets, databases, DNS and deployment ;
-- production qualification ;
-- public repository projections.
+- Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
+- public repository projections until G5.
 
 ## Current risks
 

@@ -10,13 +10,15 @@ Preserve user work, reconcile accepted branches, remove machine-local/generated 
 
 ## G1 — Specification Lock
 
-**Status:** in progress.
+**Status:** complete.
 
 Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
 
 **Acceptance:** implementation agents receive no unresolved architecture decision.
 
 ## G2 — Canonical foundations
+
+**Status:** in progress; entry package `WP-G2-T01`.
 
 Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized Rust boundaries, contracts, Proof, Artifact and a qualified Bun template.
 

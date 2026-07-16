@@ -4,6 +4,10 @@
 
 Implement the final shared foundation in `libre-ai/libre-ai`.
 
+## Execution order
+
+Execute only locked packages from `docs/transformation/work-packages.v1.json`: `WP-G2-T01` first, then groups `g2-1` through `g2-5`. A package writes only its declared paths.
+
 ## Scope
 
 - root Bun/Cargo workspaces ;
