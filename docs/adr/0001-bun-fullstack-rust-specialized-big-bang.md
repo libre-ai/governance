@@ -21,7 +21,8 @@ Au checkpoint du 2026-07-16, Bun stable est `1.3.14`. Le canary Rust vérifié e
 7. Utiliser JSON Schema, OpenAPI et WIT comme contrats canoniques ; générer les types Rust/TypeScript.
 8. Réaliser un cutover global après reconstruction et qualification de la cible.
 9. Ne maintenir aucune couche de compatibilité pour les anciens noms, packages ou APIs sauf obligation externe démontrée.
-10. Utiliser Forgejo auto-hébergé sur Clever Cloud Paris/UE comme forge canonique et GitHub comme miroir public sans autorité de merge.
+10. Conserver GitHub comme forge canonique déjà arbitrée ; ne pas introduire une nouvelle forge dans cette migration.
+11. Différer volontairement toute configuration Clever Cloud jusqu’à la phase d’intégration/déploiement.
 
 ## Outillage retenu
 

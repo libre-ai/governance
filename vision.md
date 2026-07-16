@@ -478,22 +478,23 @@ Repository public ou package
 Les projections sont à sens unique et portent le SHA source, le chemin, le hash
 de contenu et la version du compilateur.
 
-### 7.7 Forge et collaboration canoniques
+### 7.7 GitHub et collaboration canoniques
 
-La cible utilise une instance Forgejo open source auto-hébergée sur Clever Cloud
-en région Paris/UE :
+La décision déjà prise est conservée : l’organisation GitHub `libre-ai` porte
+les repositories, issues, pull requests, protections de branches et releases
+publiques.
 
-- Git, issues, pull requests et merge queue canoniques dans Forgejo ;
-- runners Forgejo Actions auto-hébergés en Europe ;
-- PostgreSQL et stockage de sauvegarde européens ;
-- GitHub comme miroir public sans droit de merge canonique ;
-- packages conservés d’abord dans un registry européen ;
-- export Git, issues et artefacts testé ;
-- sauvegarde et restauration de la forge intégrées au runbook.
+- `libre-ai/libre-ai` devient le repository canonique ;
+- les anciens repositories deviennent des archives ou projections ;
+- les merges, tags et releases canoniques sont réalisés sur GitHub ;
+- aucune nouvelle forge ou infrastructure Git n’est ajoutée à cette migration ;
+- la souveraineté runtime et données reste assurée séparément par les choix
+d’hébergement applicatif ;
+- les exports Git et les artefacts empêchent que GitHub devienne une dépendance
+de données irréversible.
 
-La licence GPL de Forgejo concerne le service déployé et ne relicencie pas les
-projets hébergés. Son exploitation et ses mises à jour restent soumises aux
-gates de sécurité et de licence.
+Ce choix est une décision de distribution et de collaboration, pas une
+affirmation de souveraineté complète de la forge.
 
 ---
 
@@ -1278,6 +1279,12 @@ Le cutover production d’un produit requiert soit :
 
 ### 15.3 Clever Cloud
 
+Clever Cloud reste la cible de déploiement applicatif Paris/UE, mais sa
+configuration est volontairement différée. Aucun provisioning, secret,
+environnement ou déploiement n’est attendu pendant le cleanup et la
+Specification Lock. Cette absence est une décision de séquencement, pas un
+blocage.
+
 Le support natif « dernière version disponible » ne suffit pas à la
 reproductibilité cible.
 
@@ -1519,7 +1526,7 @@ Ces règles sont testées automatiquement.
 | `client-kit` | `packages/*`, `distribution/templates/bun-app` | reconstruction TS/React | bindings natifs seulement si consommés |
 | `context-kit` | `crates/context` + adaptateurs | extraction des primitives justifiées | oui pour parsing/provenance/WASM |
 | `design-system` | `packages/ui` | tokens et composants React | non par défaut |
-| `dioxus-app-template` | archive + projection legacy | remplacé par `bun-app` | non |
+| `dioxus-app-template` | archive externe uniquement | remplacé par `bun-app`, aucune projection cible | non |
 | `feed-radar` | `apps/radar` | Bun fullstack | parsing/règles déterministes à conserver |
 | `gear` | archive externe uniquement | aucun code importé | non, remplacé par context/artifact |
 | `notebook` | `apps/notebook` | greenfield Bun/React local-first | chiffrement/index/WASM si justifié |

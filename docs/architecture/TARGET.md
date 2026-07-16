@@ -2,7 +2,7 @@
 
 ## Autorité
 
-Le monorepo `libre-ai/libre-ai` est l’unique source modifiable. Il est hébergé sur Forgejo auto-hébergé sur Clever Cloud Paris/UE avec runners européens. GitHub est un miroir public sans autorité de merge. Les repositories spécialisés sont des projections générées ; les anciens repositories sont des archives.
+Le monorepo `libre-ai/libre-ai` est l’unique source modifiable et GitHub reste la forge canonique déjà arbitrée. Les repositories spécialisés sont des projections générées ; les anciens repositories sont des archives. Clever Cloud reste la cible runtime Paris/UE, sans configuration ni provisioning pendant le cleanup et la Specification Lock.
 
 ## Plans
 
