@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
-import { verifyPolicyCoreRawInputVectors } from "./policy-core-raw-inputs";
+import {
+  parseStrictJson,
+  StrictJsonError,
+  verifyPolicyCoreRawInputVectors,
+} from "./policy-core-raw-inputs";
 
 type JsonRecord = Record<string, unknown>;
 type ErrorVariant =
@@ -138,6 +142,22 @@ function boundedInteger(value: unknown, key: string, label: string): number {
     return 0;
   }
   return Number(value[key]);
+}
+
+function requireExactCaseIds(cases: unknown[], expected: readonly string[], label: string): void {
+  const ids = cases
+    .filter(isRecord)
+    .map((candidate) => candidate.id)
+    .filter((id): id is string => typeof id === "string");
+  const actual = new Set(ids);
+  if (
+    ids.length !== cases.length ||
+    actual.size !== ids.length ||
+    actual.size !== expected.length ||
+    expected.some((id) => !actual.has(id))
+  ) {
+    failures.push(`${label}: case inventory mismatch`);
+  }
 }
 
 const policyValidator = validator("policy-definition.v2.schema.json");
@@ -376,6 +396,81 @@ if (
 ) {
   failures.push("resource budgets: byte ceilings drift from normative semantics");
 }
+
+const inputLimits = {
+  policyInput,
+  snapshotInput,
+  needInput,
+  evaluatedAt: evaluatedAtLimit,
+  successfulOutput: outputLimit,
+} as const;
+const preflight = (
+  target: keyof typeof inputLimits,
+  byteLength: number,
+): "input-invalid" | undefined => (byteLength > inputLimits[target] ? "input-invalid" : undefined);
+const expectedBoundaryCases = {
+  "policy-at-limit": ["policyInput", policyInput, "within-limit"],
+  "policy-over-limit": ["policyInput", policyInput + 1, "input-invalid"],
+  "snapshot-at-limit": ["snapshotInput", snapshotInput, "within-limit"],
+  "snapshot-over-limit": ["snapshotInput", snapshotInput + 1, "input-invalid"],
+  "need-at-limit": ["needInput", needInput, "within-limit"],
+  "need-over-limit": ["needInput", needInput + 1, "input-invalid"],
+  "evaluated-at-at-limit": ["evaluatedAt", evaluatedAtLimit, "within-limit"],
+  "evaluated-at-over-limit": ["evaluatedAt", evaluatedAtLimit + 1, "input-invalid"],
+  "output-at-limit": ["successfulOutput", outputLimit, "within-limit"],
+  "output-over-limit": ["successfulOutput", outputLimit + 1, "input-invalid"],
+} as const;
+const boundaryCases = Array.isArray(budgets.byteBoundaryCases) ? budgets.byteBoundaryCases : [];
+requireExactCaseIds(boundaryCases, Object.keys(expectedBoundaryCases), "resource boundaries");
+for (const [index, boundaryCase] of boundaryCases.entries()) {
+  const label = `resource boundaries:${index}`;
+  if (
+    !isRecord(boundaryCase) ||
+    typeof boundaryCase.id !== "string" ||
+    typeof boundaryCase.target !== "string" ||
+    !(boundaryCase.target in inputLimits) ||
+    !Number.isSafeInteger(boundaryCase.byteLength)
+  ) {
+    failures.push(`${label}: invalid case`);
+    continue;
+  }
+  const expected = expectedBoundaryCases[boundaryCase.id as keyof typeof expectedBoundaryCases];
+  const declaredOutcome = boundaryCase.expectedError ?? boundaryCase.expectedPreflight;
+  if (
+    !expected ||
+    boundaryCase.target !== expected[0] ||
+    boundaryCase.byteLength !== expected[1] ||
+    declaredOutcome !== expected[2]
+  ) {
+    failures.push(`${label}: metadata mismatch`);
+  }
+  const generated = new Uint8Array(Number(boundaryCase.byteLength));
+  const actual = preflight(boundaryCase.target as keyof typeof inputLimits, generated.byteLength);
+  if ((actual ?? "within-limit") !== declaredOutcome) failures.push(`${label}: preflight mismatch`);
+}
+
+const decoderQualification = budgets.decoderQualification;
+const maximumJsonDepth = boundedInteger(
+  decoderQualification,
+  "maximumJsonDepth",
+  "decoder qualification",
+);
+if (maximumJsonDepth !== 64) failures.push("decoder qualification: maximum depth drift");
+const nestedJson = (depth: number): Uint8Array =>
+  new TextEncoder().encode(`${"[".repeat(depth)}0${"]".repeat(depth)}`);
+try {
+  parseStrictJson(nestedJson(maximumJsonDepth), maximumJsonDepth);
+} catch (error) {
+  failures.push(`decoder qualification: exact depth rejected: ${String(error)}`);
+}
+try {
+  parseStrictJson(nestedJson(maximumJsonDepth + 1), maximumJsonDepth);
+  failures.push("decoder qualification: excessive depth accepted");
+} catch (error) {
+  if (!(error instanceof StrictJsonError) || error.defect !== "max-depth")
+    failures.push(`decoder qualification: wrong excessive-depth refusal: ${String(error)}`);
+}
+
 const expectedMatchedPairs = rulesLimit * Math.max(modelFactsLimit, needFactsLimit);
 const expectedSetComparisonsPerLookup = Math.ceil(Math.log2(setMembersLimit + 1));
 if (
@@ -460,5 +555,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, bounded for preimplementation`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries, depth ${maximumJsonDepth}, bounded for preimplementation`,
 );
