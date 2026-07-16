@@ -7,6 +7,7 @@ const requiredFiles = [
   "ROADMAP.md",
   "docs/decisions/DECISION-REGISTER.md",
   "docs/transformation/CLEANUP.md",
+  "docs/transformation/G0-FREEZE-EVIDENCE.md",
   "docs/transformation/BIG-BANG.md",
   "docs/toolchain/BUN-QUALIFICATION.md",
   "prompts/00-cleanup.md",

@@ -4,6 +4,8 @@
 
 Produce a reliable final reference of every historical repository, not a new release of the old architecture.
 
+**Status:** complete. All 18 repositories are archived. Final SHAs, branch-tip preservation and qualification evidence are recorded in [`G0-FREEZE-EVIDENCE.md`](G0-FREEZE-EVIDENCE.md).
+
 ## Per-repository procedure
 
 1. read AGENTS/ADR/readiness and actual Git state ;

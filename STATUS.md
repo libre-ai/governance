@@ -1,6 +1,6 @@
 # Transformation status
 
-**Current phase:** preparation for G0 — cleanup and freeze.
+**Current phase:** G0 — historical freeze complete; canonical publication pending.
 
 ## Completed
 
@@ -14,13 +14,15 @@
 - Website final remote SHA `0318c92`, repository archived ;
 - Design System visual/motion work committed and pushed at `c8fb246` ;
 - Design System 76-SVG rebuild, 22 targeted tests, distribution provenance and full pinned CI rebuild green ;
-- Design System repository archived after Website consumer reconciliation.
+- Design System repository archived after Website consumer reconciliation ;
+- all 18 historical repositories aligned and archived at recorded SHAs ;
+- 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
+- missing Gear remote recreated solely as a verified archive.
 
 ## Pending before G0 completion
 
-- classify and freeze the remaining 16 historical repositories ;
-- complete legal/CI disposition of the Bun canary snapshot ;
-- create/configure the canonical GitHub repository and protections.
+- publish the Bun canary source/binaries/notices as a durable bootstrap release ;
+- create and configure the canonical GitHub repository, CI and branch protections.
 
 ## Explicitly deferred
 
@@ -30,6 +32,7 @@
 
 ## Current risks
 
-- sixteen historical repositories remain unarchived ;
-- Bun stable Rust line is not yet observed ;
+- Bun stable remains `1.3.14`; the selected Rust-line commit exists only in `1.4.0-canary.1` ;
+- the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
+- GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - app briefs are boundaries, not complete functional specifications.

@@ -8,6 +8,7 @@ interface Asset {
 interface BunToolchainSnapshot {
   localSnapshot: string;
   sourceCommit: string;
+  sourceArchive: Asset;
   assets: Record<string, Asset>;
 }
 
@@ -27,6 +28,21 @@ for (const [platform, asset] of Object.entries(manifest.assets)) {
   const actual = hasher.digest("hex");
   if (actual !== asset.sha256) {
     failures.push(`${platform}: checksum ${actual} does not match ${asset.sha256}`);
+  }
+}
+
+const sourceArchivePath = `${manifest.localSnapshot}/${manifest.sourceArchive.name}`;
+const sourceArchiveFile = Bun.file(sourceArchivePath);
+if (!(await sourceArchiveFile.exists())) {
+  failures.push(`Missing ${sourceArchivePath}`);
+} else {
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(await sourceArchiveFile.arrayBuffer());
+  const actual = hasher.digest("hex");
+  if (actual !== manifest.sourceArchive.sha256) {
+    failures.push(
+      `Source archive checksum ${actual} does not match ${manifest.sourceArchive.sha256}`,
+    );
   }
 }
 
