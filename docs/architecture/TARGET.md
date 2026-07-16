@@ -24,7 +24,7 @@ apps → packages → contracts
 apps → adaptateurs versionnés → crates
 packages ↛ apps
 proof → contrats et artefacts publics
-agent-orchestrator G2 → AgentHandoff/OrchestratorEvent verrouillés, simulation sans exécution ; jamais UI produit ni DB partagée
+futur agent-orchestrator → seulement après lock exécution/contrôle/harness ; jamais UI produit ni DB partagée
 ecosystem-engine ↛ logique métier produit
 ```
 
