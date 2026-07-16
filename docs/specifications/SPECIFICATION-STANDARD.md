@@ -62,8 +62,8 @@ Validation details MAY identify field paths and rule IDs but MUST NOT echo secre
 - State-changing browser requests require CSRF and Origin/Referer validation.
 - Browser storage MUST NOT contain Biscuit tokens or external OIDC tokens.
 - Internal calls use short-lived attenuated Biscuit tokens in `Authorization: Bearer`.
-- Authority facts include `user`, mandatory `tenant`, `role(user, role)`, `token_id` and an expiration check; no email or personal content. `token_id` is bound to the root authority block ID used for revocation.
-- Authorizers inject `resource`, `operation`, `tenant`, current time and resource ownership facts.
+- Authority facts include `user`, mandatory `tenant`, `role(user, role)` and an expiration check; no email or personal content. The verifier derives the signed root authority block ID used for revocation and never trusts a token-supplied identifier.
+- Authorizers inject `resource`, `operation`, current time and authoritative `resource_tenant`/ownership facts; policy equality binds them to the token tenant.
 - Policies end with `deny if true`. A missing tenant, unknown operation, revoked root block, expired token or policy timeout is a refusal.
 - PostgreSQL RLS repeats the tenant boundary for every tenant-owned table.
 

@@ -24,12 +24,12 @@
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
 - nine application specifications expanded to the G1 standard with an executable structure gate ;
 - G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority ;
-- canonical contract catalog locked: 26 strict JSON Schemas with 25 fixture pairs, 7 OpenAPI surfaces, 5 parsed WIT worlds and 2 parsed deny-by-default Biscuit policies.
+- canonical contract catalog locked: 46 authorities, 29 strict JSON Schemas with 28 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
+- data lifecycle locked through an executable ADR-0002 retention policy, tenant ownership matrix, deletion receipt and restore/rollback rules ;
+- provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked.
 
 ## Pending in G1
 
-- lock data ownership, retention and deletion rules ;
-- lock cross-cutting browser session plus Biscuit issuance, attenuation, rotation, revocation and tenant conformance ;
 - decompose final work packages with no unresolved architecture decision.
 
 ## Explicitly deferred
@@ -44,4 +44,4 @@
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- application behavior is specified, but executable contract artifacts and cross-runtime conformance vectors remain incomplete.
+- contract authorities are executable, but application engine golden vectors and end-to-end tenant/RLS conformance remain G2 implementation evidence.

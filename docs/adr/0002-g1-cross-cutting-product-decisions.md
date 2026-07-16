@@ -41,6 +41,8 @@ Les applications serveur utilisent un adaptateur OIDC neutre, Authorization Code
 | logs opérationnels | 30 jours ; aucun contenu ou PII |
 | manifestes Proof/Artifact | immuables tant que la release ou décision associée est conservée |
 
+La projection exécutable de ce tableau est `contracts/data/retention.v1.json` ; toute divergence bloque G1/release.
+
 Une demande de suppression s'exécute immédiatement dans les stores actifs. Les sauvegardes chiffrées expirent sous 35 jours et ne sont pas restaurées sélectivement. Une obligation légale contradictoire bloque la suppression concernée avec motif et échéance auditables ; elle ne justifie aucune extension silencieuse.
 
 ### 4. Synchronisation Notebook

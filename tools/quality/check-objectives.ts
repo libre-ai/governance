@@ -13,6 +13,8 @@ const requiredFiles = [
   "docs/toolchain/BUN-QUALIFICATION.md",
   "docs/specifications/SPECIFICATION-STANDARD.md",
   "docs/specifications/DECISION-QUEUE.md",
+  "docs/specifications/DATA-LIFECYCLE.md",
+  "docs/specifications/IDENTITY-AUTHORIZATION.md",
   "docs/adr/0002-g1-cross-cutting-product-decisions.md",
   "contracts/catalog.v1.json",
   "contracts/COMPATIBILITY.md",

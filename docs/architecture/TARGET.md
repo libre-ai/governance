@@ -54,9 +54,9 @@ Les objets Bun HTTP ne traversent pas la couche application. Les migrations et d
 
 ## Auth
 
-- OIDC éventuel pour authentification externe ;
-- session navigateur opaque en cookie HttpOnly ;
-- Biscuit attenué pour autorisation interne ;
+- OIDC fournisseur-neutre Authorization Code + PKCE via BFF ;
+- session navigateur opaque en cookie `__Host-` HttpOnly, CSRF et rotation ;
+- Biscuit Ed25519 attenué, court et révocable pour autorisation interne ;
 - tenant obligatoire et RLS en défense en profondeur.
 
 ## Workspaces
