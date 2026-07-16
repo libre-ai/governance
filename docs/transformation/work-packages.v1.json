@@ -281,9 +281,12 @@
       "humanGates": [
         "g2-s01-architecture-relock",
         "hostile-parser-security-review",
+        "notebook-security-review",
         "notebook-cryptography-review",
         "notebook-privacy-review",
         "policy-separation-security-review",
+        "policy-privacy-review",
+        "boussole-security-review",
         "boussole-methodology-review",
         "boussole-privacy-review",
         "missions-orchestrator-contract-review",
