@@ -340,7 +340,7 @@ if (!isRecord(document) || document.schemaVersion !== "libre-ai.engine-golden-ve
 }
 const cases =
   isRecord(document) && Array.isArray(document.cases) ? (document.cases as VectorCase[]) : [];
-if (cases.length < 7 || cases.length > 32) failures.push("expected 7..32 bounded Boussole cases");
+if (cases.length < 10 || cases.length > 32) failures.push("expected 10..32 bounded Boussole cases");
 const inputs = new Map<string, ComparisonInput>();
 const ids = new Set<string>();
 const required = new Set([
@@ -351,6 +351,9 @@ const required = new Set([
   "weighted-with-skipped-and-missing",
   "half-even-boundaries",
   "reject-unknown-statement",
+  "zero-answer-is-not-skip",
+  "intermediate-scale-normalization",
+  "negative-half-even-boundaries",
 ]);
 for (const [index, vector] of cases.entries()) {
   const label = `${vectorPath}#/cases/${index}`;

@@ -13,11 +13,12 @@ verrouillage défini dans `docs/reviews/AGENT-REVIEW-PROTOCOL.md` :
 
 Les passes doivent reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec
 une seconde implémentation, vérifier les digests exacts et confirmer que les deux `reviewerId`
-méthodologie/vie privée sont distincts et liés aux hashes méthode/dataset. Les sept cas exécutables
-couvrent l’échelle non unitaire, le mode neutre, les réponses sautées ou absentes, l’agrégation
-pondérée, les deux directions d’arrondi half-even, le dénominateur nul, le reviewer dupliqué et une
-référence de proposition inconnue. Les cas dérivés utilisent uniquement des patches `replace` JSON
-Pointer bornés et effectivement appliqués par la gate.
+méthodologie/vie privée sont distincts et liés aux hashes méthode/dataset. Les dix cas exécutables
+couvrent la réponse zéro distincte d’un skip, une réponse intermédiaire normalisée par `r/M`, le mode
+neutre, les réponses sautées ou absentes, l’agrégation pondérée, les ties-to-even positifs et
+négatifs, le dénominateur nul, le reviewer dupliqué et une référence de proposition inconnue. Les cas
+dérivés utilisent uniquement des patches `replace` JSON Pointer bornés et effectivement appliqués
+par la gate.
 
 Jusqu’à ces quatre verdicts et leur acceptation humaine, le code, les schémas et les données peuvent
 être testés mais toute fonctionnalité de scoring public reste désactivée à la compilation/release.
