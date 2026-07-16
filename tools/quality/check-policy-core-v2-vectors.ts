@@ -239,6 +239,8 @@ for (const required of [
   "multiple-sources-stale-priority",
   "source-from-future",
   "type-mismatch-unknown",
+  "fractional-number-jcs",
+  "duplicate-rule-id",
   "tenant-mismatch",
   "duplicate-exact-fact",
   "self-approval-refused",

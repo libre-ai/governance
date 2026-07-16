@@ -37,6 +37,15 @@ implementation until separate Architecture, Security and Privacy role passes app
 9. The result is advisory eligibility evidence only. It cannot approve a policy,
    rank suppliers, buy, deploy or trigger a transaction.
 10. `proposedBy` and the human `approval.approverId` are distinct; an agent cannot approve.
+11. `engineVersion` is an immutable component constant and is never caller-controlled.
+12. Rust must preserve the same IEEE-754 binary64 value as TypeScript before RFC 8785 canonicalization.
+
+## Adversarial findings already incorporated
+
+- decimal JCS thresholds and negative zero are explicit cross-runtime test cases;
+- `serde_json/float_roundtrip` is mandatory in the workspace to prevent binary64 parsing drift;
+- schema-valid duplicate rule IDs have a complete `policy.rule_id_duplicate` vector;
+- approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
 ## Required role-separated checks
 
