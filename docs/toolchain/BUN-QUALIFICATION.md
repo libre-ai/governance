@@ -11,18 +11,18 @@
 - verbatim upstream licence and redistribution notice tracked under `toolchains/notices/bun/1.4.0-canary.1+57f349f63/` ;
 - local snapshot remains gitignored under `.tools/snapshots/bun/1.4.0-canary.1+57f349f63/`.
 
-## Bootstrap release procedure
+## Qualified bootstrap release
 
-Before enabling shared CI:
+Release [`toolchain-bun-1.4.0-canary.1-57f349f63`](https://github.com/libre-ai/libre-ai/releases/tag/toolchain-bun-1.4.0-canary.1-57f349f63) contains:
 
-1. create the canonical public GitHub repository ;
-2. publish the two unmodified binaries, exact Bun source archive, checksums and notices in release `toolchain-bun-1.4.0-canary.1-57f349f63` ;
-3. retrieve the Linux asset from that immutable release in CI without `curl | bash` ;
-4. verify SHA-256 before extraction and verify `bun --revision` before dependency installation ;
-5. run `bun install --frozen-lockfile`, all root checks and audits ;
-6. keep Clever Cloud unconfigured until Global Integration.
+1. the two unmodified upstream binaries ;
+2. the exact Bun source archive ;
+3. checksums and the verbatim upstream licence ;
+4. the redistribution/relinking notice and pinned WebKit revision.
 
-The release is a technical compliance and reproducibility record, not legal advice or production approval. External redistribution beyond the public bootstrap archive requires owner or counsel approval.
+Shared CI retrieves the Linux asset from that immutable release without `curl | bash`, verifies SHA-256 before extraction, verifies `bun --revision` before dependency installation, then runs frozen installation, root checks and audits. Initial run [`29491575814`](https://github.com/libre-ai/libre-ai/actions/runs/29491575814) passed both Bun and Rust jobs.
+
+The release is a technical compliance and reproducibility record, not legal advice or production approval. External redistribution beyond the public bootstrap archive requires owner or counsel approval. Clever Cloud remains unconfigured until Global Integration.
 
 ## Acceptance
 
@@ -33,6 +33,8 @@ The release is a technical compliance and reproducibility record, not legal advi
 - artifact remains retrievable after rolling canary changes ;
 - clean runner installs without executing a remote shell script ;
 - `bun install --frozen-lockfile`, `bun run check` and audits pass.
+
+**Bootstrap acceptance:** complete.
 
 ## G2 replacement rule
 

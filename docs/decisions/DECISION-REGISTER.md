@@ -13,7 +13,7 @@
 | D09 | Browser session separated from Biscuit | opaque HttpOnly cookie; Biscuit internal authorization |
 | D10 | Clean naming | no new rumble/gear/portal/wrench/bolt identifiers; no compatibility by default |
 | D11 | Boussole remains in scope | trust/local-first stress-test in a sensitive domain |
-| D12 | Canary is preparation-only until qualified | exact local snapshot now; stable Rust or legally archived canary before shared CI/production |
+| D12 | Canary is bootstrap-only after qualification | durable binary/source/notices archive permits shared CI; first qualified stable Rust release is mandatory at G2 and production remains forbidden meanwhile |
 | D13 | Biome + Ajv + React Aria | one lint/format stack, strict JSON Schema validation, accessible UI primitives |
 | D14 | Playwright remains browser proof | Bun.WebView never replaces multi-engine E2E |
 

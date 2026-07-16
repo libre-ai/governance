@@ -1,6 +1,6 @@
 # Transformation status
 
-**Current phase:** G0 — historical freeze complete; canonical publication pending.
+**Current phase:** G1 — Specification Lock.
 
 ## Completed
 
@@ -17,12 +17,18 @@
 - Design System repository archived after Website consumer reconciliation ;
 - all 18 historical repositories aligned and archived at recorded SHAs ;
 - 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
-- missing Gear remote recreated solely as a verified archive.
+- missing Gear remote recreated solely as a verified archive ;
+- canonical public GitHub repository created and initial history pushed ;
+- Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
+- shared GitHub CI run `29491575814` green for exact Bun and Rust gates.
 
-## Pending before G0 completion
+## Pending in G1
 
-- publish the Bun canary source/binaries/notices as a durable bootstrap release ;
-- create and configure the canonical GitHub repository, CI and branch protections.
+- complete application behavior and refusal specifications ;
+- lock JSON Schema, OpenAPI and WIT contract inventory ;
+- lock data ownership, retention and deletion rules ;
+- lock browser session and Biscuit authorization contracts ;
+- decompose final work packages with no unresolved architecture decision.
 
 ## Explicitly deferred
 

@@ -2,11 +2,15 @@
 
 ## G0 — Legacy cleanup and freeze
 
+**Status:** complete.
+
 Preserve user work, reconcile accepted branches, remove machine-local/generated debris, record final SHAs and archive every historical repository.
 
 **Acceptance:** no unreviewed local change lost; `LEGACY-MANIFEST.yaml` complete; no new work targets historical repos.
 
 ## G1 — Specification Lock
+
+**Status:** in progress.
 
 Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
 
