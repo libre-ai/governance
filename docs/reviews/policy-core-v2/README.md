@@ -40,14 +40,16 @@ implementation until separate Architecture, Security and Privacy role passes app
    rank suppliers, buy, deploy or trigger a transaction.
 10. `proposedBy` and the human `approval.approverId` are distinct; an agent cannot approve.
 11. `engineVersion` is an immutable component constant and is never caller-controlled.
-12. Rust must preserve the same IEEE-754 binary64 value as TypeScript before RFC 8785 canonicalization.
+12. Rust must preserve the same IEEE-754 binary64 value as TypeScript before RFC
+    8785 canonicalization.
 13. Preimplementation ceilings bound semantic work to 1,000,000 rule/occurrence
     evaluations, set lookup to 7 comparisons and peak component memory to 256 MiB.
 
 ## Adversarial findings already incorporated
 
 - decimal JCS thresholds and negative zero are explicit cross-runtime test cases;
-- `serde_json/float_roundtrip` is mandatory in the workspace to prevent binary64 parsing drift;
+- `serde_json/float_roundtrip` is mandatory in the workspace to prevent binary64
+  parsing drift;
 - schema-valid duplicate rule IDs have a complete `policy.rule_id_duplicate` vector;
 - nine byte-exact inputs cover BOM, invalid UTF-8, duplicate decoded keys, isolated
   surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
