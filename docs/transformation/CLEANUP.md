@@ -26,10 +26,10 @@ Produce a reliable final reference of every historical repository, not a new rel
 - provisioning Clever Cloud ;
 - importing Git history into the canonical monorepo.
 
-## Website special case — merge reconciled
+## Website special case — archived
 
-Option B was explicitly approved. The dirty tree was committed directly, then `origin/main` and the six-commit `impl/epic-2-corpus` branch were merged. Conflicts favored local visual work for the first merge and corpus work for the second. Component contracts and publication tests were repaired afterward. Local `main` is clean at `380e4f7`, ten commits ahead of `origin/main`, with build and runtime gates green. Remaining work is Design System consumer-evidence reconciliation, global cleanup, push decision and archive marking.
+Option B was explicitly approved. The dirty tree was committed directly, then `origin/main` and the six-commit `impl/epic-2-corpus` branch were merged. Conflicts favored local visual work for the first merge and corpus work for the second. Component contracts, media provenance, catalogue schema, publication tests and the dependency graph were repaired afterward. GitHub PR #61 passed all four required checks and produced final remote SHA `0318c92`. Local and remote `main` are aligned and the repository is archived.
 
-## Design System special case — committed locally
+## Design System special case — archived
 
-The coherent visual/motion set was regenerated, reviewed and committed at `c8fb246`. Product and motion outputs are reproducible, CI now regenerates both families, licences/provenance are present and the full pinned builder path is green. Local `main` is one commit ahead of `origin/main`. Do not mark the repository archived until Website's two obsolete brand paths and four missing distribution evidence files are reconciled.
+The coherent visual/motion set was regenerated, reviewed and committed at `c8fb246`. Product and motion outputs are reproducible, CI regenerates both families, licences/provenance are present and the full pinned builder path is green. Website consumer evidence was reconciled against this revision, local and remote `main` are aligned and the repository is archived.

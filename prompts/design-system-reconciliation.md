@@ -1,13 +1,13 @@
-# Design System reconciliation — completed locally
+# Design System reconciliation — completed and archived
 
 ## Result
 
 The coherent light-icon and motion work was preserved as one commit on `main`:
 
-- final local revision: `c8fb246c213b2ac962491c316ce807322d692a6e` ;
+- final local and remote revision: `c8fb246c213b2ac962491c316ce807322d692a6e` ;
 - 43 paths committed: generators, tests, documentation, CI, motion manifest and generated SVG variants ;
-- worktree clean ;
-- local `main` one commit ahead of `origin/main`.
+- local and remote `main` aligned, worktree clean ;
+- GitHub repository archived after Website consumer reconciliation.
 
 ## Cleanup added during reconciliation
 
@@ -29,15 +29,8 @@ The coherent light-icon and motion work was preserved as one commit on `main`:
 
 ## Website consumer status
 
-Website already contains byte-identical final visual and motion manifests and all 16 consumed dark/light product variants. Its post-merge consumer evidence remains inconsistent:
-
-- two media-manifest brand paths still use removed `libre-ia-*` filenames ;
-- four distribution evidence files expected by `scripts/verify-design-system.py` are absent ;
-- therefore the verifier currently fails before completing its checks.
+Website consumes byte-identical final visual/motion manifests and all 16 preserved dark/light product variants. Reconciliation aligned local `libre-ai-*` names, retained source provenance under canonical source filenames, removed the intentionally retired Client Kit distribution lock, switched raster generation to the vendored static fonts and added a 58-artefact integrity test. All Website gates passed before both repositories were archived.
 
 ## Remaining G0 work
 
-1. reconcile Website consumer evidence without reintroducing obsolete naming ;
-2. rerun Website gates ;
-3. decide push timing for both local main branches ;
-4. mark Design System archived only after that consumer reconciliation.
+None for Design System.
