@@ -2,9 +2,10 @@
 
 ## Status
 
-This is a contract candidate. It is not approved, locked for release or authorized
-for implementation until independent Architecture, Security and Privacy reviewers accept it.
-The author or future implementer cannot supply any of these acceptances.
+This is a contract candidate. Candidate integration is allowed after a green generic agent review
+and human continuation milestone, but it is not locked for release or authorized for product
+implementation until separate Architecture, Security and Privacy role passes approve it under
+`docs/reviews/AGENT-REVIEW-PROTOCOL.md` and the human lock milestone accepts their evidence.
 
 ## Candidate authorities
 
@@ -37,7 +38,7 @@ The author or future implementer cannot supply any of these acceptances.
    rank suppliers, buy, deploy or trigger a transaction.
 10. `proposedBy` and the human `approval.approverId` are distinct; an agent cannot approve.
 
-## Required independent checks
+## Required role-separated checks
 
 Architecture review must:
 
@@ -62,7 +63,7 @@ Privacy review must confirm tenant-bound minimization, sourced facts without per
 
 ## Promotion rule
 
-Promotion from `candidate` to `locked` requires recorded, independent human
-acceptance from Architecture, Security and Privacy, followed by the full contract,
-generated-projection and cross-runtime conformance gates. A generator, evaluator,
-CI job or author cannot promote this candidate automatically.
+Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
+verdicts from separate review-only passes, followed by the full contract, generated-projection and
+cross-runtime conformance gates and explicit human acceptance. A generator, evaluator or CI job
+cannot promote this candidate automatically.

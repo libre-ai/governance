@@ -22,5 +22,6 @@
 | D18 | Notebook v1 local-only | encrypted export/import replaces server sync and multi-device merge |
 | D19 | Boussole public scoring independently gated | methodological and France/EU legal/privacy approvals are both required and hash-bound |
 | D20 | WP-G2-S01 uses candidate v2 product boundaries plus one bounded Missions simulator | Context and Practices remain unimplemented; the G2 orchestrator only simulates and validates locked v1 events, while real execution requires a separate lock |
+| D21 | Solo G2 uses role-separated agent reviews plus human control milestones | agent review may integrate candidates; complete role evidence and explicit human acceptance remain mandatory before lock, product implementation, public use or deployment |
 
 Changes to this register require an ADR and explicit human approval.

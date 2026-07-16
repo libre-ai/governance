@@ -1,7 +1,7 @@
 # Radar engine v2 — Security review worksheet
 
-This worksheet is not a verdict. The independent Security reviewer should evaluate the candidate at
-the exact commit and attach evidence without editing the candidate to self-approve it.
+This worksheet is not a verdict. A role-scoped Security review agent should evaluate the candidate
+in an isolated review-only pass at the exact commit and attach evidence without editing it.
 
 ## Trust and capability checks
 
@@ -46,4 +46,4 @@ the exact commit and attach evidence without editing the candidate to self-appro
 
 The separate verdict must include reviewed commit, vector-index SHA-256, commands run, blocking and
 non-blocking findings, residual risks, reviewer identity/role and an explicit approve/reject decision.
-No entry may move from `candidate` to `locked` without that external verdict.
+No entry may move from `candidate` to `locked` without that role verdict and the human control milestone.

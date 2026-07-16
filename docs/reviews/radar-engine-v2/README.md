@@ -2,11 +2,12 @@
 
 **State:** `pending-independent-review`
 
-**Required reviewers:** one Security reviewer and one Architecture reviewer, both independent from
-the author of this candidate.
+**Required review roles:** one Security pass and one Architecture pass, isolated from implementation
+and bound to the reviewed commit/hash under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`.
 
-**Decision recorded here:** none. This dossier is a review request and does not approve, release or
-authorize implementation of the contract.
+**Decision recorded here:** no promotion verdict. The generic agent review and human continuation
+milestone authorize candidate integration only; they do not lock, release or authorize implementation
+of the contract.
 
 ## Review subject
 
@@ -28,8 +29,7 @@ Normative artifacts:
 
 The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
 `contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
-independent Security and Architecture verdicts. The implementation author must not perform that
-promotion alone.
+role-separated Security and Architecture verdicts followed by the human control milestone.
 
 ## Contract decisions to review
 
@@ -85,12 +85,13 @@ The vector index itself is intentionally not self-hashed. Its current candidate 
 at the reviewed commit. Its `contractFiles` section binds the WIT, profile and schemas; each case
 binds its own raw inputs and exact output bytes.
 
-## Expected independent evidence
+## Expected role-separated evidence
 
-Security review should return a separate verdict covering `SECURITY.md`. Architecture review should
-return a separate verdict covering `ARCHITECTURE.md`. Each verdict should identify the reviewed Git
-commit and the SHA-256 of `golden-vectors.v1.json`, list blocking findings, and explicitly state
-`approve` or `reject`. A conditional or missing verdict keeps every candidate entry pending.
+A Security review agent should return a separate verdict covering `SECURITY.md`. An Architecture
+review agent should return a separate verdict covering `ARCHITECTURE.md`. Each review-only pass must
+identify its role, the reviewed Git commit and the SHA-256 of `golden-vectors.v1.json`, list blocking
+findings, and explicitly state `approve` or `reject`. A conditional, stale or missing verdict keeps
+every candidate entry pending; complete verdicts still require the human lock milestone.
 
 ## Known residual work (not part of this candidate)
 

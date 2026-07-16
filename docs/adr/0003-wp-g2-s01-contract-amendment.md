@@ -3,7 +3,7 @@
 - **Statut :** accepted-for-candidate-drafting
 - **Date :** 2026-07-16
 - **Portée :** contrats spécialisés et simulateur Missions G2
-- **Décision humaine :** recommandation v2, retrait de Context et maintien du simulateur G2 borné approuvés ; revues spécialisées encore requises
+- **Décision humaine :** recommandation v2, retrait de Context et maintien du simulateur G2 borné approuvés ; le 2026-07-16, le mainteneur solo accepte les revues agent par rôle et les jalons de contrôle définis dans `docs/reviews/AGENT-REVIEW-PROTOCOL.md`
 
 ## Contexte
 
@@ -23,7 +23,7 @@ Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides m
 
 ## Autorité et approbations
 
-Les contrats v2 sont catalogués comme `candidate`. Un agent ne peut pas les promouvoir. Les approbations humaines nommées requises sont : architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole, vie privée France/UE pour Notebook/Policy/Boussole, ainsi que Missions et sécurité budgets/replay pour le simulateur. Les reviewers spécialisés sont distincts des auteurs et futurs implémenteurs.
+Les contrats v2 sont catalogués comme `candidate`. Les rôles requis sont : architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole, vie privée France/UE pour Notebook/Policy/Boussole, ainsi que Missions et sécurité budgets/replay pour le simulateur. En contexte solo, ces rôles peuvent être tenus par des passes agent séparées et review-only, liées au commit et aux hashes conformément à `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. Une revue agent générique permet l’intégration d’un candidat mais ne le promeut pas. La promotion `locked`, l’implémentation produit et toute extension de capacités exigent tous les verdicts par rôle puis un jalon de contrôle humain explicite.
 
 ## Compatibilité
 
@@ -33,7 +33,7 @@ Radar et Notebook changent de signature WIT ; Policy et Boussole changent la sig
 
 Le Specification Lock n’est refermé pour S01 que lorsque :
 
-- chaque candidat est approuvé par ses reviewers requis ;
+- chaque candidat possède les verdicts agent par rôle requis et leur acceptation au jalon humain ;
 - schémas, OpenAPI, WIT, profils et vecteurs passent les gates ;
 - les types générés sont reproductibles ;
 - WP-G2-S01 ne possède que les quatre crates produit et le simulateur/validateur Missions borné ;
