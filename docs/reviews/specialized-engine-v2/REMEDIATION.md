@@ -23,25 +23,29 @@ expected outputs.
 
 ## Closed boundaries
 
-- Every former unconstrained `true` slot uses a recursive JSON value with 65,536-character strings,
-  4,096-item arrays and 512-property objects.
-- The repository gate applies the 8 MiB ceiling before parsing, then depth 64 and 200,000 nodes before
-  content scanning or AJV. A failed aggregate bound short-circuits later work.
+- Every former unconstrained `true` slot uses a recursive JSON value with 65,536-code-point strings,
+  4,096-item arrays, 512-property objects and 128-code-point property names.
+- The repository gate applies the 8 MiB ceiling before parsing, requires strict UTF-8 JSON without
+  BOM, duplicate members, unpaired surrogates or non-finite numbers, then enforces string, container,
+  property-name, depth-64 and 200,000-node limits before content scanning or AJV. A failed bound
+  short-circuits later work.
 - `contractFiles` alone is resolvable: it accepts closed repository-relative `contracts/…` paths and
   lowercase SHA-256 values. The gate rejects traversal, URI/absolute forms, duplicates, missing or
   non-file targets, symlinks, repository escape and hash mismatch.
 - Metadata recursively rejects high-confidence credential/private-key markers, at/percent/ampersand
-  identifier encodings, local file URIs and traversal. Metadata object keys use ASCII machine tokens.
+  identifier encodings, local file URIs and traversal. Metadata object keys use ASCII machine tokens
+  and reject credential-shaped names.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
-  NFKC normalization and bounded repeated decoding of percent octets, `%u` escapes and HTML at-sign
-  entities. It rejects at-sign identifiers and high-confidence credentials in values or property
-  names without echoing rejected content.
+  NFKC normalization, removes default-ignorable code points and performs four bounded decoding rounds
+  over percent octets, `%u` escapes and HTML entities. It rejects email identifiers and
+  high-confidence credentials in values or property names without echoing rejected content; an
+  unrelated `@` machine handle is not reinterpreted as an email.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
-  byte-exact `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is ordinary inert
+  byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is ordinary inert
   payload data and receives no resolver capability or lexical exception.
-- Scanner self-tests reject direct, percent, double-percent, `%u`, HTML-entity and Unicode at-sign
-  identifiers plus credential markers. They preserve `R&D`, `50%`, `https://example.org/a%2Fb`,
-  `Café démonstration` and the exact Radar canary.
+- Scanner self-tests reject direct, Unicode-domain, default-ignorable, percent, nested percent/HTML,
+  `%u`, HTML-entity and Unicode at-sign identifiers plus credential markers. They preserve `R&D`,
+  `50%`, `release@2`, `https://example.org/a%2Fb`, `Café démonstration` and inert attack canaries.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
