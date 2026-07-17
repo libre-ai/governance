@@ -22,6 +22,6 @@
 | D18 | Notebook v1 local-only | encrypted export/import replaces server sync and multi-device merge |
 | D19 | Boussole public scoring independently gated | methodological and France/EU legal/privacy approvals are both required and hash-bound |
 | D20 | WP-G2-S01 relock uses candidate v2 boundaries only | Radar, Notebook, Policy and Boussole move to reviewed v2 contracts; Context, Orchestrator and Practices remain unimplemented |
-| D21 | Solo engineering review is multi-agent | ADR-0003 reviewers are independent agents/sessions, never the authoring agent; product-level human approvals remain unchanged |
+| D21 | Solo engineering review is role-separated | ADR-0003 uses immutable commits and dedicated review-only passes per role; the same agent/session may act serially, while product-level human controls remain unchanged |
 
 Changes to this register require an ADR and explicit human approval.

@@ -38,6 +38,6 @@ These workstreams are organizational groupings, not branch write authority. Exec
 - contrats approuvés avant consommation ;
 - branches courtes ;
 - changements transverses annoncés avant merge ;
-- aucun agent n’approuve sa propre sortie ;
+- toute approbation vient d’une passe review-only distincte de la passe auteur ;
 - toute solution temporaire possède une suppression avant RC ;
 - les gates sécurité précèdent la complétude.

@@ -10,8 +10,8 @@
     "Rust is retained only behind a cataloged WIT, authz, proof, artifact or system-tooling boundary.",
     "Applications never read or write another product database and never query across tenants.",
     "Every branch is bounded by declared write paths and reports security, PII, tests and evidence before integration.",
-    "No agent approves its own schema, authorization, migration, release or deployment output.",
-    "ADR-0003 contract candidates are reviewed by independent agents whose identity and session differ from the authoring agent; CI is evidence, not a verdict.",
+    "Authoring and review are separate passes for every schema, authorization, migration, release or deployment change.",
+    "ADR-0003 contract candidates use dedicated review-only passes per role on immutable commits; the same agent/session may act serially and CI is evidence, not a verdict.",
     "Clever Cloud Paris EU remains the runtime target and production data never enters GitHub.",
     "WP-G3-A01 remains blocked from orchestrator integration until a separate human-approved execution-plan, control-protocol and agent-harness Specification Lock exists."
   ],

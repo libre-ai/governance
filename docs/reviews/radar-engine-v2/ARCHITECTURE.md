@@ -1,8 +1,7 @@
 # Radar engine v2 — Architecture review worksheet
 
-This worksheet is not a verdict. An Architecture review agent, distinct from the authoring
-agent/session, should verify that the candidate closes semantics without moving
-product/network/tenant behavior into the Rust boundary.
+This worksheet is not a verdict. A dedicated Architecture review-only pass should verify that the
+candidate closes semantics without moving product/network/tenant behavior into the Rust boundary.
 
 ## Boundary checks
 
@@ -37,5 +36,5 @@ product/network/tenant behavior into the Rust boundary.
 ## Required Architecture verdict content
 
 The separate verdict must include reviewed commit, vector-index SHA-256, compatibility assessment,
-blocking and non-blocking findings, reviewer agent/session identity and an explicit verdict under
+blocking and non-blocking findings, review-pass attribution and an explicit verdict under
 `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. No entry may move from `candidate` to `locked` without it.

@@ -10,7 +10,7 @@ Preserve user work, reconcile accepted branches, remove machine-local/generated 
 
 ## G1 — Specification Lock
 
-**Status:** complete except the strictly bounded ADR-0003 WP-G2-S01 candidate amendment, pending independent agent reviews.
+**Status:** complete except the strictly bounded ADR-0003 WP-G2-S01 candidate amendment, pending role-separated agent review passes.
 
 Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
 

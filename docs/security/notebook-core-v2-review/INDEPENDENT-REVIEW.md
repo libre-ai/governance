@@ -10,9 +10,9 @@ La Gate A examine le protocole, les schémas et les vecteurs catalogués selon `
 
 À compléter par l’agent reviewer :
 
-- `authorAgentId` et `authorSessionId` : `<required>` ;
-- `reviewerAgentId` et `reviewerSessionId` : `<required>` ;
-- provider et modèle/version du reviewer : `<required>` ;
+- `reviewPassId` et rôle : `<required>` ;
+- mode : `review-only` ;
+- agent/session/provider/modèle quand le harness les expose : `<record-if-available>` ;
 - commit Git du protocole, SHA complet : `<required>` ;
 - arbre Git du dossier protocole : `<required>` ;
 - Gate A — commit moteur/host : `not-yet-implemented` ;
@@ -35,9 +35,9 @@ git status --short
 
 Pour chaque rôle :
 
-- [ ] `reviewerAgentId != authorAgentId` et `reviewerSessionId != authorSessionId` ;
-- [ ] l’agent reviewer opère dans une passe fraîche, review-only, et n'a pas rédigé les artefacts examinés ;
-- [ ] il ne s'auto-approuve pas, ne rend qu'un seul rôle et déclare les conflits éventuels ;
+- [ ] la cible est un commit immuable et le worktree est propre ;
+- [ ] l’agent opère dans une passe dédiée review-only sans modifier les artefacts examinés ;
+- [ ] la passe ne rend qu'un seul rôle et déclare les conflits éventuels ;
 - [ ] ses preuves n'utilisent que le matériel public de test, sans donnée personnelle ni clé réelle ;
 - [ ] l’agent cryptographie utilise une chaîne de reproduction indépendante des implémentations Gate S.
 

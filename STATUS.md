@@ -34,7 +34,7 @@
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
 - ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 48 locked baseline authorities ;
-- solo G2 governance requires attributable technical verdicts from agents whose identity and session differ from the authoring agent; the repository owner remains merge authority but is not the technical reviewer ;
+- solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only; Radar architecture/security and Boussole security verdicts are rejected with blocking findings, Boussole methodology evidence still requires attribution under the current agent protocol, and all other named verdicts remain pending ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - no product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented ;
