@@ -748,6 +748,26 @@ if (
 ) {
   failures.push("OpenAPI: v2 refusal envelope is not closed and redacted");
 }
+try {
+  const validateProblem = ajv.compile(problem);
+  if (
+    !validateProblem({
+      error: { code: "policy.input_invalid", requestId: "req_1234567890abcdef" },
+    }) ||
+    validateProblem({
+      error: {
+        code: "policy.input_invalid",
+        requestId: "req_1234567890abcdef",
+        message: "private diagnostic",
+      },
+    }) ||
+    validateProblem({ error: { code: "policyinput_invalid", requestId: "req_1234567890abcdef" } })
+  ) {
+    failures.push("OpenAPI: v2 refusal codes or redaction envelope do not validate as declared");
+  }
+} catch (error) {
+  failures.push(`OpenAPI: PolicyProblem schema does not compile: ${String(error)}`);
+}
 const paths = isRecord(openApi) && isRecord(openApi.paths) ? openApi.paths : {};
 const diffPath = isRecord(paths["/v2/model-policy/policies/{policyId}/diff"])
   ? paths["/v2/model-policy/policies/{policyId}/diff"]
