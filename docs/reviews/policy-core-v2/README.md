@@ -7,8 +7,10 @@ passes independently approved the exact Policy v2 authorities at immutable commi
 `d47feb96e605263b825f603033e40c3d1b61800c` under
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The
 [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) records the owner milestone and catalog-only
-transition; a separate promotion/integration verdict remains required before merge. No Policy engine,
-real tenant data processing or transaction authority is authorized.
+transition; the separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass approves commit
+`e7bb757`. A final integration check and merge remain required. No Policy engine, real tenant data
+processing or transaction authority is authorized. The package hash cited by the verdict is the exact
+snapshot at `e7bb757`; the non-normative package is then enriched only to link the durable verdict.
 
 ## Recorded role verdicts
 
@@ -111,6 +113,6 @@ data, and that outputs/logs/errors expose neither fact values nor reviewer ident
 
 Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
 verdicts from separate review-only passes, followed by the full contract, generated-projection and
-cross-runtime conformance gates. The package records the role evidence and owner `continue`; the
-immutable promotion commit must still receive its separate `promotion-integration` verdict. A
+cross-runtime conformance gates. The package records the role evidence and owner `continue`, and the
+immutable promotion commit has received its separate favorable `promotion-integration` verdict. A
 successful lock does not authorize implementation, transaction authority or real-data processing.

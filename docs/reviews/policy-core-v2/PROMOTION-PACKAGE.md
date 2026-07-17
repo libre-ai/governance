@@ -4,7 +4,9 @@
 - **Normative reviewed commit:** `d47feb96e605263b825f603033e40c3d1b61800c`
 - **Scope:** exactly six Policy v2 authorities, `candidate → locked`
 - **Implementation / real tenant data:** **NOT AUTHORIZED**
-- **Package state:** pending a separate promotion/integration verdict on the immutable promotion commit
+- **Package state:** approved by the separate
+  [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass on commit `e7bb757`
+- **Promotion verdict SHA-256:** `4d57fa3ead78c4a1ce03b855644e2b0e06683ac1edae15462daab51fa70379c4`
 
 No normative Policy authority changes in this package. The only machine-authoritative transition is
 its catalog review state. `engine-golden-vectors-v1` remains a separate candidate under the shared
