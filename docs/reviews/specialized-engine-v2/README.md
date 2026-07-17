@@ -155,16 +155,21 @@ metadata en ASCII, donc sous NFKC et retrait des default-ignorables, tout en lai
 moteur Unicode et opaques. Les fixtures couvrent les chemins NFKC/default-ignorable ; les
 représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` reste qualifié
 BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise. L'écart de
-chronologie de PR #80 reste historique, sans autorisation rétroactive ; cette nouvelle remédiation
-doit recevoir candidate-integration avant fusion.
+chronologie de PR #80 reste historique, sans autorisation rétroactive.
+
+Candidate-integration a approuvé le merge exact `ccf9d684d9a43ad7236bec905e701e155520e2d6`
+([`CANDIDATE-INTEGRATION-CCF9D68.md`](CANDIDATE-INTEGRATION-CCF9D68.md), SHA-256
+`62d59e751efbe0144d779b3497e55d7494a9d36b5b5ebadc1c22ce69d02ffc4f`). L'avancement ultérieur de
+`main` jusqu'à `48c94aa` ne touche que Notebook Gate B ; les hashes schéma/scanner/catalogue de cette
+autorité restent byte-identical. Cette approbation ne vaut ni rôle Architecture/Security, ni
+promotion, ni contrôle owner.
 
 ## Gates restants
 
-1. obtenir une candidate-integration favorable sur la tête immuable de remédiation combinée ;
-2. fusionner cette remédiation sans autre changement ;
-3. rejouer candidate-integration, Architecture et Security sur le merge immuable ;
-4. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
-5. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. intégrer ce record candidate-integration sans modifier l'autorité ;
+2. rejouer Architecture et Security sur le merge immuable résultant ;
+3. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
+4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
