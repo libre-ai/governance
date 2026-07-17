@@ -270,5 +270,7 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `Notebook vectors structurally verified: ${mutations.length} backup and ${isRecord(context) && Array.isArray(context.mutations) ? context.mutations.length : 0} context mutations; independent role reviews remain required`,
+  `Notebook vectors are structurally verified: ${mutations.length} backup and ${
+    isRecord(context) && Array.isArray(context.mutations) ? context.mutations.length : 0
+  } context mutations. Gate A is locked by the main Notebook checker; Gate B runtime remains required.`,
 );
