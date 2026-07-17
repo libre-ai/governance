@@ -19,6 +19,7 @@
 - 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
 - missing Gear remote recreated solely as a verified archive ;
 - canonical public GitHub repository created and initial history pushed ;
+- differentiated EUPL/Apache/CC BY governance accepted through ADR-0004, with historical grants preserved, REUSE/SPDX scopes, DCO, data provenance and trademark policy ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
 - shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;

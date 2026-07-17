@@ -939,6 +939,10 @@ Règles :
 - AGPL, SSPL, BSL et dépendances propriétaires interdites ;
 - MIT, Apache-2.0, BSD, ISC privilégiées ; MPL-2.0 revue.
 
+Cette liste gouverne les licences **entrantes** des dépendances. Les licences
+**sortantes** du code, des contrats et des contenus Libre AI sont définies par
+`LICENSING.md`, l’ADR-0004 et `REUSE.toml`.
+
 Bun est MIT et lie JavaScriptCore/WebKit sous LGPL-2. L’utilisation comme
 runtime installé est acceptable. La redistribution d’un exécutable Bun ou d’un
 standalone compilé exige une revue de licence dédiée.
