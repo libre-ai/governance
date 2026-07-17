@@ -11,7 +11,8 @@ Les ruptures sont substantielles :
 - `createdAt` est retiré de l'enveloppe claire ; un horodatage produit éventuel appartient au plaintext chiffré ;
 - `open-backup` renvoie le plaintext avec l'identifiant et le digest effectivement authentifiés ;
 - les erreurs string libres deviennent un enum fermé ;
-- les profils host de recovery secret généré (`code.v1`) et textuel (`text.v1`) deviennent normatifs ;
+- le recovery secret v2 devient exactement 16 octets CSPRNG via l'unique profil `code.v1` ; toute saisie libre/textuelle exigera un futur major ;
+- Context v2 remappe les IDs de blocs par export et retire révisions/exclusions du payload partagé ;
 - l'enveloppe ajoute la version Argon2 et la longueur de sortie, renomme `ciphertextDigest` en `digest` et en fixe une nouvelle sémantique ;
 - AAD, JCS, Base64, tailles, tag, digest et comportement anti-oracle deviennent normatifs ;
 - les bornes KDF v1 (`memoryKiB` jusqu'à 1 GiB, `iterations` jusqu'à 20, `parallelism` jusqu'à 16) ne sont pas compatibles avec le budget local v2.
@@ -32,7 +33,7 @@ Après Gate A, une implémentation bornée pourra produire les preuves impossibl
 
 ## Promotion après Gate A seulement
 
-Après verdict favorable de l’agent Gate A consigné dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
+Après quatre verdicts agentiques Gate A favorables et l’autorisation de merge du propriétaire consignés dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
 
 1. vérifier que les copies cataloguées sous `contracts/` sont byte-identiques aux candidats examinés ;
 2. lier les autorités aux commits et preuves exacts de Gate A ;

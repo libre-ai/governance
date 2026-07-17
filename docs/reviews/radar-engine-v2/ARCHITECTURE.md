@@ -6,7 +6,7 @@ product/network/tenant behavior into the Rust boundary.
 
 ## Boundary checks
 
-- WIT has exactly two pure exports and no host import.
+- WIT exports one `api` interface containing exactly the two pure operations and resolves no world import.
 - `parse-feed` output and `evaluate-rules` input/output each name one strict cataloged JSON Schema.
 - Bun remains owner of fetch/decompression, SSRF, authorization, tenant/source scoping, persistence,
   scheduling, retention and public error mapping.
