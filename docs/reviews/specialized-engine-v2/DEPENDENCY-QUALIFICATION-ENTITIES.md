@@ -1,6 +1,6 @@
 # Dependency qualification — `entities@8.0.0`
 
-Status: **technically qualified; explicit owner acceptance still required**.
+Status: **technically qualified and explicitly accepted by the owner with bounded conditions**.
 
 ## Scope
 
@@ -35,6 +35,17 @@ The scanner imports `decodeHTML` and `DecodingMode` and deliberately uses
 forms, while Strict mode requires semicolons. Exact case-sensitive names and unknown-reference
 controls are executable in `tools/quality/public-source-scanner.test.ts`.
 
+## Owner challenge and decision
+
+The owner instructed `review le jalon, challenger et continuer`. The resulting independent challenge
+is recorded in [`OWNER-ACCEPTANCE-ENTITIES.md`](OWNER-ACCEPTANCE-ENTITIES.md), SHA-256
+`0258b4bc9a42950d0488cad8e4ef857384d8f1cf0f09effe1c83d0790227c005`.
+
+The exact package/version/integrity and dev-only quality scope are accepted. Any version, integrity,
+dependency graph, lifecycle hook, import site, runtime/network behavior or data-boundary change
+invalidates that acceptance. npm/GitHub distribution remains a non-blocking build supply-chain risk;
+vendoring is retained as a reversible hardening option if registry independence becomes mandatory.
+
 ## Evidence
 
 With pinned Bun `1.4.0-canary.1+57f349f63`:
@@ -44,5 +55,5 @@ With pinned Bun `1.4.0-canary.1+57f349f63`:
 - `bun audit` reports no vulnerabilities;
 - the scanner's direct, nested, malformed and maximum-size tests pass.
 
-This qualification does not itself approve the new dependency. The repository owner must explicitly
-accept the exact package/version/integrity and its dev-only scope before any catalog promotion.
+This acceptance permits only preparation of the separate catalog-only promotion review. It does not
+authorize product/runtime use, real-data processing, release, infrastructure or deployment.
