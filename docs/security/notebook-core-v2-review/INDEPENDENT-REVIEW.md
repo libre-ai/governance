@@ -54,24 +54,25 @@ Documenter implémentations, versions, commandes et sorties. Au moins une chaîn
 
 Résultats :
 
-- [ ] clé dérivée `e6b35d4e67ec1f04cf571aa3cc441746dadec01406cd82a88ec4ea5708183e1c` ;
+- [ ] clé dérivée `d1c64b3e330a7ac9164db94b4f31eb6b2b1dc3d4864886ca5e873b34eda0f5ff` ;
 - [ ] AAD de 339 octets identiques au golden ;
 - [ ] ciphertext/tag, digest et enveloppe identiques ;
 - [ ] ouverture positive restituant les 45 octets attendus ;
-- [ ] mauvais secret, secrets de 15/1025 octets, nonce, sel, ciphertext, AAD et digest seul modifiés retournent uniquement `authentication-failed` ;
+- [ ] mauvais secret, secrets de 15/17 octets, nonce, sel, ciphertext, AAD et digest seul modifiés retournent uniquement `authentication-failed` ;
 - [ ] paramètres faibles retournent uniquement `invalid-envelope` sans Argon2id et version publique inconnue retourne `unsupported-version` ;
-- [ ] golden Context v2, dix refus adversariaux et vecteurs Unicode sont reproduits ;
+- [ ] golden Context v2, douze refus adversariaux et cas limites matérialisés profondeur/nœuds/liens/nombres sont reproduits ;
 - [ ] aucun plaintext n'est libéré par un cas négatif.
 
 ## Analyse du protocole
 
-- [ ] les IDs backup/contexte encodent exactement 128 bits CSPRNG et restent opaques ; aucun `createdAt` ne fuit dans les artefacts clairs ;
+- [ ] les IDs backup/contexte/blocs encodent exactement 128 bits CSPRNG et restent opaques/export-scoped ; aucun `createdAt` ne fuit dans les artefacts clairs ;
 - [ ] AAD/digest, séparation de domaine, Base64 et JCS sont non ambigus ;
 - [ ] AES-256-GCM, nonce 12 octets, tag 16 octets et `C || T` sont corrects ;
 - [ ] Argon2id v19, `P/S/K/X`, bornes et sortie directe de 32 octets sont corrects ;
 - [ ] limites 16 MiB plaintext/contenus Context, 16 777 232 octets ciphertext et 22 370 044 octets enveloppe/entrée Context, ainsi que parsing hostile, sont bornés ;
-- [ ] tri Context par identifiant, graphe/exclusions, JCS imbriqué, `totalBytes` et digest recalculé sont non ambigus ;
-- [ ] `libre-ai.recovery-secret-code.v1` fixe 16 octets CSPRNG ↔ 32 hexadécimaux et `libre-ai.recovery-secret-text.v1` fixe NFC/UTF-8/BOM/trim/casse/fins de ligne ; leurs vecteurs sont exacts ;
+- [ ] les IDs de blocs sont CSPRNG/export-scoped ; révisions, IDs locaux et exclusions ne quittent pas le host ; tri, graphe, JCS imbriqué, `totalBytes` et digest sont non ambigus ;
+- [ ] profondeur 64, 100 000 nœuds JSON, 16 384 liens et domaine binary64 fini de magnitude `2^53-1` sont vérifiés aux bornes ;
+- [ ] l'unique profil `libre-ai.recovery-secret-code.v1` fixe 16 octets CSPRNG ↔ 32 hexadécimaux ; aucune saisie libre ou heuristique n'est admise ;
 - [ ] digest recalculable ne peut jamais remplacer ni court-circuiter GCM ;
 - [ ] ordre d'ouverture, secret factice et enum d'erreur fermé ne créent pas d'oracle exploitable ;
 - [ ] migration v2 et absence de lecteur v1 heuristique sont justifiées.
@@ -83,8 +84,8 @@ Résultats :
 - [ ] secret, clé, état AES, mémoire Argon2id et plaintexts d'échec sont zéroïsés autant que vérifiable ;
 - [ ] aucune clé/donnée privée n'entre dans persistance, logs, erreurs, métriques, globals ou caches ;
 - [ ] l'interface WIT autonome `api` ne crée aucun import de types ; module et composant WASM ont chacun une liste d'imports vide et le composant s'exécute sans WASI ;
-- [ ] id, sel et nonce proviennent seulement du host local ; tout horodatage produit reste dans le plaintext ;
-- [ ] CSPRNG, unicité id/sel/nonce et profil textuel stable du recovery secret sont testés ;
+- [ ] IDs backup/contexte/blocs, sel et nonce proviennent seulement du host local ; tout horodatage produit reste dans le plaintext ;
+- [ ] CSPRNG, unicité id/sel/nonce/IDs de blocs et décodage strict du recovery code sont testés ;
 - [ ] aucun réseau ni stockage distant ne reçoit contenu, index, secret ou clé ;
 - [ ] mauvais secret et altérations cryptographiques restent observables sous le même code fermé.
 
