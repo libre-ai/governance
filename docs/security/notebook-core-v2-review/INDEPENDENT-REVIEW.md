@@ -93,12 +93,14 @@ git status --short
 
 - [ ] **APPROVED**
 - [ ] **APPROVED WITH MINOR RESERVATIONS**
-- [x] **REJECTED** — dernière passe sur `7df396b8fe6e88e781f44037150e8beda977f05e`
+- [x] **REJECTED** — dernière passe sur `e9970b39736d2c65f57f87955a98891b75384c63`
 
 Rapports attribuables :
 [`5395e45/CRYPTOGRAPHY-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md),
-[`d0f643b/HOST-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/d0f643b/HOST-RUNTIME.md) et
-[`7df396b/HOST-REMEDIATION.md`](../../reviews/notebook-core-v2/gate-b/7df396b/HOST-REMEDIATION.md).
-Le moteur et le host remédié exécutent tous les vecteurs sans import dans trois navigateurs, mais le
-host produit, les chemins OOM/panic/trap et la matrice p95/appareils restent absents. La Gate B demeure
-non approuvée ; aucune sauvegarde utilisateur ou release n’est autorisée.
+[`d0f643b/HOST-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/d0f643b/HOST-RUNTIME.md),
+[`7df396b/HOST-REMEDIATION.md`](../../reviews/notebook-core-v2/gate-b/7df396b/HOST-REMEDIATION.md) et
+[`e9970b3/FAULT-RECOVERY.md`](../../reviews/notebook-core-v2/gate-b/e9970b3/FAULT-RECOVERY.md).
+Le moteur et le host remédié exécutent tous les vecteurs sans import dans trois navigateurs ; le worker
+jetable récupère après trap, plafond mémoire et blocage ABI injectés. Le host produit, les OOM/panic
+internes et la matrice p95/appareils restent absents. La Gate B demeure non approuvée ; aucune
+sauvegarde utilisateur ou release n’est autorisée.
