@@ -29,11 +29,16 @@ Run with the pinned Bun environment, the manifest-matching Node executable, and 
 export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-26.5.0/bin/node
 export NOTEBOOK_QUALIFICATION_ARCHIVE_DIR=/path/to/verified-archives
 export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-high-memory-reference
+export NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=physical-evidence
 bun run qualify:notebook-core-v2:host
 bun run qualify:notebook-core-v2:performance
 ```
 
-For a real 8 GiB host, select `desktop-arm64-constrained-8gib`; for a real 16 or 24 GiB host, select `desktop-arm64-mainstream-16gib`. The checker refuses a high-memory machine claiming either class. Software throttling remains diagnostic-only.
+For a real 8 GiB host, select `desktop-arm64-constrained-8gib`; for a real 16 or 24 GiB host, select `desktop-arm64-mainstream-16gib`. The checker refuses a high-memory machine claiming either class. `physical-evidence` also refuses known virtualization signals from `kern.hv_vmm_present`, `hw.model`, or the processor description.
+
+A macOS guest with 8 or 16 GiB assigned is useful for early diagnostics. Inside the guest, use the corresponding device class and run `bun run diagnose:notebook-core-v2:performance:vm`. VM reports carry `evidenceMode: "vm-diagnostic"`, `promotableEvidence: false`, and can only end in `diagnostic-budgets-pass` or `reject`; they can never emit `qualification-budgets-pass`. Detection is defense in depth: an explicit VM mode remains non-promotable even if the guest hides its virtualization. Software throttling, hosted CI and VMs never replace physical evidence.
+
+The public contribution protocol is documented in [`CONTRIBUTING-DEVICE-QUALIFICATION.md`](CONTRIBUTING-DEVICE-QUALIFICATION.md).
 
 `toolchains/notebook-qualification.json` pins the Node and Playwright versions, platform, archive URLs, archive SHA-256 values, installed executable SHA-256 values, browser revisions, and Playwright descriptor hash. `toolchains/notebook-resource-classes.json` defines the hardware ranges, required browser capabilities, 512 MiB product-storage-quota candidate and evidence status. The build also rejects external Rust flags, target overrides, release-profile overrides, wrappers, and target directories; `.cargo/config.toml` and its recorded SHA-256 are the sole SIMD build configuration. The performance summarizer deliberately exits non-zero after writing the complete matrix when any locked budget is exceeded. The 30-minute Playwright test envelope only prevents suite-level false timeouts; every operation retains its 30-second deadline and every anti-oracle attempt its 15-second deadline, while the locked 5/10-second p95 budgets remain unchanged.
 
