@@ -9,6 +9,8 @@ const reports: Record<string, unknown> = {};
 const sources: Record<string, { path: string; sha256: string }> = {};
 let commit: string | undefined;
 let componentSha256: string | undefined;
+let deviceClass: string | undefined;
+let resourceClassManifestSha256: string | undefined;
 const violations: string[] = [];
 
 for (const browser of browsers) {
@@ -18,6 +20,8 @@ for (const browser of browsers) {
     browserName: string;
     commit: string;
     componentSha256: string;
+    deviceClass: string;
+    resourceClassManifestSha256: string;
     profiles: Array<{
       browserPeakRssDeltaBytes: number;
       memoryBudgetBytes: number;
@@ -30,7 +34,10 @@ for (const browser of browsers) {
   if (
     report.browserName !== browser ||
     (commit !== undefined && report.commit !== commit) ||
-    (componentSha256 !== undefined && report.componentSha256 !== componentSha256)
+    (componentSha256 !== undefined && report.componentSha256 !== componentSha256) ||
+    (deviceClass !== undefined && report.deviceClass !== deviceClass) ||
+    (resourceClassManifestSha256 !== undefined &&
+      report.resourceClassManifestSha256 !== resourceClassManifestSha256)
   ) {
     throw new Error(`Inconsistent ${browser} performance evidence`);
   }
@@ -47,6 +54,8 @@ for (const browser of browsers) {
   }
   commit = report.commit;
   componentSha256 = report.componentSha256;
+  deviceClass = report.deviceClass;
+  resourceClassManifestSha256 = report.resourceClassManifestSha256;
   reports[browser] = report;
   sources[browser] = {
     path: `target/notebook-core-v2-qualification/performance-${browser}.json`,
@@ -58,6 +67,8 @@ const summary = {
   browsers: reports,
   commit,
   componentSha256,
+  deviceClass,
+  resourceClassManifestSha256,
   schemaVersion: "libre-ai.notebook-core-v2-browser-performance-matrix.v1",
   sources,
   verdict: violations.length === 0 ? "qualification-budgets-pass" : "reject",
@@ -68,7 +79,7 @@ await writeFile(
   `${JSON.stringify(summary)}\n`,
 );
 console.log(
-  `Notebook performance matrix: verdict=${summary.verdict} commit=${commit} component=${componentSha256}`,
+  `Notebook performance matrix: verdict=${summary.verdict} class=${deviceClass} commit=${commit} component=${componentSha256}`,
 );
 if (violations.length > 0) {
   console.error(`Performance budget violations: ${violations.join(", ")}`);
