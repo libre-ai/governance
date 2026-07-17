@@ -1,8 +1,8 @@
 # Qualification conservatoire des ressources — Notebook Core v2
 
-> **Statut : preuve de rédaction du candidat, pas approbation Gate A/B.** Ces mesures utilisent
-> uniquement le golden public. Elles justifient une borne plus basse ; elles ne qualifient ni un
-> moteur produit, ni l'ABI WIT, ni un navigateur.
+> **Statut : preuve historique de rédaction, acceptée comme justification de borne par Gate A ;
+> pas approbation Gate B.** Ces mesures utilisent uniquement le golden public. Elles ne qualifient
+> ni le moteur expérimental courant, ni l'ABI WIT exécutée par un host, ni un navigateur.
 
 ## Méthode
 
@@ -23,13 +23,13 @@ Les mesures incluent les copies du harness ; elles servent de majorant comparati
 production. L'ABI composant et le host navigateur ajouteront encore des copies. L'expérience ne mesure
 pas les appareils faibles, les navigateurs, les erreurs d'allocation ou les écarts de temps anti-oracle.
 
-## Décision candidate
+## Décision verrouillée à Gate A
 
 La limite initiale de 100 MiB est refusée : elle dépasse 1 GiB de RSS avant qualification navigateur.
 Le candidat v2 est ramené à **16 MiB** de plaintext, **16 777 232 octets** de `C || T`,
 **22 369 644 caractères** Base64 et **22 370 044 octets** d'enveloppe JCS maximale. La même borne brute s'applique à l'entrée Context v2, dont les contenus cumulés sont aussi limités à 16 MiB.
 
-Cette borne reste prudente mais non approuvée. Gate A doit accepter le budget cible ; Gate B doit
-mesurer le composant réellement livrable dans chaque navigateur et classe d'appareil supportés. Une
-baisse supplémentaire est compatible avant verrouillage. Dépasser 16 MiB exigera un futur format
-chunké, authentifié et revu séparément ; aucune segmentation implicite n'est admise en v2.
+Gate A a accepté cette borne dans le contrat v2 verrouillé. Gate B doit encore mesurer le composant
+réellement livrable avec son host dans chaque navigateur et classe d'appareil supportés. Dépasser
+16 MiB exigerait désormais une nouvelle version de contrat et un futur format chunké, authentifié et
+revu séparément ; aucune segmentation implicite n'est admise en v2.
