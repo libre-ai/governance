@@ -34,7 +34,7 @@ Missions (Bun/TypeScript, autorité humaine)
 
 1. **Missions** possède proposition, risque, approbation du digest exact d’un plan, autorisation d’exécution, décisions humaines et verdict final.
 2. **Agent Orchestrator** compile un corps de plan déterministe à partir des contrats approuvables, puis possède l’état d’un run, l’idempotence, les commandes, la consommation monotone des budgets et l’émission d’événements causaux. Il ne peut pas autoriser son propre plan.
-3. **Agent Harness** possède processus, filesystem, réseau, gateway provider, secrets éphémères, worktrees et collecte d’évidence. Une isolation exigée mais indisponible refuse le démarrage.
+3. **Agent Harness** possède processus, filesystem, réseau, gateway provider, brokers d’outils privilégiés, secrets éphémères, worktrees et collecte d’évidence. Une isolation exigée mais indisponible refuse le démarrage.
 4. **Pi** est lancé comme processus externe derrière un adaptateur RPC versionné. Il ne reçoit que le workspace et les outils autorisés, plus un jeton local court lié au run ; il ne reçoit aucun secret du provider amont.
 5. **Proof/Artifact** possèdent les preuves et artefacts content-addressed. Missions et l’orchestrateur ne conservent que leurs références digérées.
 
@@ -95,14 +95,17 @@ Un futur `HarnessProfile v1` doit décrire et attester séparément :
 - racine du workspace, mounts lecture seule/écriture et chemins interdits ;
 - résolution canonique des chemins et politique symlink ;
 - isolation processus, UID, ressources et durée ;
-- réseau worker désactivé hors socket locale du gateway ; egress gateway limité à des origines exactes via résolution et connexion contrôlées ;
-- credentials éphémères, scope, expiration et variables autorisées, sans secret provider dans l’environnement worker ;
+- réseau worker désactivé hors Unix socket privé monté dans sa sandbox, ou namespace réseau privé équivalent ; peer OS et jeton de run sont tous deux vérifiés ;
+- egress gateway limité à des origines exactes via résolution et connexion contrôlées ;
+- secrets conservés hors de l’environnement et du filesystem worker, avec scope et expiration ;
 - limites de sortie, journal et artefacts ;
 - moteur de sandbox, manifests exécutés et capacités kernel réellement appliquées.
 
 Une sandbox n’est jamais déduite d’un prompt, d’une permission Pi ou d’un worktree. Un profil obligatoire qui ne peut pas être appliqué échoue fermé. Les worktrees isolent les modifications, pas les privilèges. Les fichiers ignorés, répertoires personnels, sockets d’agent et stores de credentials ne sont jamais copiés par défaut.
 
 Une permission shell porte sur un exécutable résolu et ses arguments structurés, jamais sur un simple préfixe de chaîne. Les chaînes, pipes, substitutions, sous-shells et wrappers sont refusés sauf capacité explicite couvrant chaque effet.
+
+Un outil privilégié passe par un broker du harness qui revalide run, plan, outil, arguments, budget, expiration et policy. Le secret est injecté seulement dans le subprocess outil isolé, jamais dans Pi ; la capacité est one-shot et la sortie est redacted ou bloquée avant retour au worker.
 
 ### Autorisation
 
@@ -153,7 +156,9 @@ Pi est un adaptateur remplaçable et doit être qualifié avant usage :
 - aucun package projet auto-installé en mode non interactif ;
 - extensions et skills chargés depuis un manifeste approuvé et digéré ;
 - provider imposé par policy, via un gateway harness vers un endpoint local ou UE autorisé ;
-- secret provider amont conservé dans le gateway ; Pi reçoit seulement un jeton local court inutilisable hors du run ;
+- secret provider amont conservé dans le gateway ; Pi reçoit seulement un jeton local court lié au peer OS, inutilisable hors du run ;
+- transport worker→gateway par Unix socket privé ou namespace réseau privé, jamais par loopback host partagé ;
+- secrets d’outils conservés dans des brokers et injectés seulement aux subprocess isolés ;
 - contenu modèle borné par classification, path scopes, taille et politique de rétention/ZDR du plan ;
 - RPC JSONL validé, borné en taille et traité comme entrée hostile ;
 - aucune confiance accordée aux permissions applicatives Pi comme frontière OS.
@@ -173,6 +178,8 @@ Les futurs vecteurs doivent couvrir au minimum :
 - traversal, symlink et fichier ignoré contenant un secret ;
 - chaîne shell autorisée par préfixe mais contenant un second effet ;
 - sandbox indisponible ou attestation mensongère ;
+- autre processus local tentant d’utiliser le gateway ou un jeton de run ;
+- worker lisant un secret provider ou outil dans son environnement/filesystem ;
 - DNS rebinding, redirect vers adresse spéciale et loopback hébergé ;
 - retry après dépassement de budget ;
 - token expiré/révoqué ou revocation store indisponible ;
