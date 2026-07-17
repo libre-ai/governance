@@ -42,9 +42,15 @@ expected outputs.
   references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser accepts every RFC 6532
   `UTF8-non-ascii` scalar as EAI atext, limits CFWS skipping to ASCII whitespace, preserves non-ASCII
   separators during NFKC and validates RFC-length dot-atom or quoted local-parts, nested comments,
-  IDNA/punycode DNS labels and bounded IPv4/IPv6 literals. It scans the original context before the
-  comment-free projection, requires a whitespace/open-delimiter/`mailto:` local boundary, separates
-  terminal ASCII/Unicode dots and detects URL userinfo independently. A second view removes
+  IDNA/punycode DNS labels and bounded IPv4/IPv6 literals with the RFC `IPv6:` tag matched
+  case-insensitively. It scans the original context, the RFC comment-free projection and two linear
+  wrapper-preserving comment projections. One propagates any nested `@`; the other prioritizes `@` at
+  the direct group level and removes child comments. Their union handles comments that contain a
+  handle without consuming the contextual wrapper. The parser precomputes quote parity and records an
+  opening quote only behind its own valid prose boundary, requires whitespace/open delimiters or an
+  explicit bounded FR/EN email label before `:`, separates terminal ASCII/Unicode dots and
+  independently detects userinfo for every syntactically valid URI scheme, without resolution. A
+  second view removes
   default-ignorables only after the EAI parse. Invalid token boundaries, local-parts over 64 octets,
   empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
   by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
@@ -56,17 +62,23 @@ expected outputs.
   ordinary inert payload data and receives no resolver capability or lexical exception.
 - Exported scanner tests and executable gate self-tests reject direct/encoded/parenthesized dot-atom,
   quoted and EAI local-parts (including private-use, C1, noncharacters and default-ignorables),
-  comments/CFWS, terminal punctuation, Unicode/combining-mark/punycode/IP-literal domains, nested
-  HTML5 references, URL userinfo and credentials. They preserve malformed/overlong/token-invalid
-  address shapes, non-ASCII domain separators, case-unknown references and maximum-length non-emails
-  plus `R&D`, `R&amplitude`, `50%`, `release@2`,
+  nested/escaped/wrapped comments and CFWS, terminal punctuation, Unicode/combining-mark/punycode/
+  IP-literal domains, nested HTML5 references, generic URI userinfo, token credentials and explicit
+  RSA/DSA/EC/OpenSSH/PKCS#8/OpenPGP private-key headers. They preserve malformed/overlong/token-invalid
+  address shapes, unknown colon labels, internal/closing quote suffixes, word-internal quote prefixes,
+  non-ASCII domain separators, case-unknown references and maximum-length non-emails plus `R&D`,
+  `R&amplitude`, `50%`, `release@2`,
   `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
 - TypeScript and Rust static projection treat only the explicitly commented recursive metadata and
-  payload values as opaque. Runtime JSON Schema validation remains authoritative; generated types
-  are not product input boundaries.
+  payload values as opaque. Runtime JSON Schema validation remains authoritative. `metadataString`
+  is ASCII-only, making its local-file/traversal and credential exclusions closed under NFKC and
+  default-ignorable removal; payload strings remain Unicode-capable. Its credential pattern is
+  aligned with the scanner's explicit RSA/DSA/EC/OpenSSH/generic/encrypted-PKCS#8/OpenPGP private-key
+  headers, and negative schema fixtures exercise both marker and normalized-path families. Generated
+  types are not product input boundaries.
 
 ## Scope exclusions
 

@@ -4,13 +4,36 @@ import { domainToASCII } from "node:url";
 import { DecodingMode, decodeHTML } from "entities";
 
 const credentialMarker =
-  /(?:sk_live_[A-Za-z0-9_-]{8,}|sk-(?:proj|svcacct)-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)/;
+  /(?:sk_live_[A-Za-z0-9_-]{8,}|sk-(?:proj|svcacct)-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (?:(?:(?:RSA|DSA|EC|OPENSSH|ENCRYPTED) )?PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----)/;
 const asciiAtext = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]$/;
+const asciiLetter = /^[A-Za-z]$/;
+const uriSchemeCharacter = /^[A-Za-z0-9+.-]$/;
 const whitespace = /^[\t\n\r ]$/;
 const domainCodePoint = /^[\p{L}\p{M}\p{N}.-]$/u;
 const domainBoundaryContinuation = /^[\p{L}\p{M}\p{N}_.-]$/u;
 const textEncoder = new TextEncoder();
 const maximumDecodedCodePoints = 65_536;
+const emailContextLabels = new Set([
+  "adresse",
+  "adresse-email",
+  "bcc",
+  "cc",
+  "contact",
+  "contact-email",
+  "courriel",
+  "destinataire",
+  "e-mail",
+  "email",
+  "expediteur",
+  "expéditeur",
+  "from",
+  "mail",
+  "mailto",
+  "recipient",
+  "reply-to",
+  "sender",
+  "to",
+]);
 
 function decodePercentRuns(value: string): string {
   return value.replace(/(?:%[0-9a-f]{2})+/gi, (run) => {
@@ -114,6 +137,153 @@ function removeEmailComments(value: string): string {
   return output.join("");
 }
 
+function projectEmailContextWithoutComments(value: string): string {
+  const removalDeltas = new Int32Array(value.length + 1);
+  const removedDelimiters = new Uint8Array(value.length);
+  const frames: Array<{ start: number; containsAt: boolean }> = [];
+
+  const removeRange = (start: number, end: number): void => {
+    removalDeltas[start] = (removalDeltas[start] ?? 0) + 1;
+    removalDeltas[end] = (removalDeltas[end] ?? 0) - 1;
+  };
+
+  for (let cursor = 0; cursor < value.length; ) {
+    const end = nextCodePointEnd(value, cursor);
+    const character = value.slice(cursor, end);
+    if (character === "\\" && frames.length > 0 && end < value.length) {
+      const escapedEnd = nextCodePointEnd(value, end);
+      const frame = frames.at(-1);
+      if (frame !== undefined && value.slice(end, escapedEnd) === "@") frame.containsAt = true;
+      cursor = escapedEnd;
+      continue;
+    }
+    if (character === "(") frames.push({ start: cursor, containsAt: false });
+    else if (character === ")") {
+      const frame = frames.pop();
+      if (frame === undefined) removedDelimiters[cursor] = 1;
+      else if (frame.containsAt) {
+        removedDelimiters[frame.start] = 1;
+        removedDelimiters[cursor] = 1;
+        const parent = frames.at(-1);
+        if (parent !== undefined) parent.containsAt = true;
+      } else removeRange(frame.start, end);
+    } else if (character === "@") {
+      const frame = frames.at(-1);
+      if (frame !== undefined) frame.containsAt = true;
+    }
+    cursor = end;
+  }
+
+  while (frames.length > 0) {
+    const frame = frames.pop();
+    if (frame === undefined) break;
+    if (frame.containsAt) {
+      removedDelimiters[frame.start] = 1;
+      const parent = frames.at(-1);
+      if (parent !== undefined) parent.containsAt = true;
+    } else removeRange(frame.start, value.length);
+  }
+
+  const output: string[] = [];
+  let removalDepth = 0;
+  for (let cursor = 0; cursor < value.length; ) {
+    removalDepth += removalDeltas[cursor] ?? 0;
+    const end = nextCodePointEnd(value, cursor);
+    if (removalDepth === 0 && removedDelimiters[cursor] !== 1)
+      output.push(value.slice(cursor, end));
+    cursor = end;
+  }
+  return output.join("");
+}
+
+function projectEmailContextByDirectAt(value: string): string {
+  type Group = {
+    start: number;
+    closing: number | undefined;
+    end: number;
+    parent: number | undefined;
+    directAt: boolean;
+    hasAtDescendant: boolean;
+  };
+
+  const groups: Group[] = [];
+  const stack: number[] = [];
+  const unmatchedClosings = new Uint8Array(value.length);
+  let rootDirectAt = false;
+
+  for (let cursor = 0; cursor < value.length; ) {
+    const end = nextCodePointEnd(value, cursor);
+    const character = value.slice(cursor, end);
+    if (character === "\\" && stack.length > 0 && end < value.length) {
+      cursor = nextCodePointEnd(value, end);
+      continue;
+    }
+    if (character === "(") {
+      const parent = stack.at(-1);
+      groups.push({
+        start: cursor,
+        closing: undefined,
+        end: value.length,
+        parent,
+        directAt: false,
+        hasAtDescendant: false,
+      });
+      stack.push(groups.length - 1);
+    } else if (character === ")") {
+      const index = stack.pop();
+      const group = index === undefined ? undefined : groups[index];
+      if (group === undefined) unmatchedClosings[cursor] = 1;
+      else {
+        group.closing = cursor;
+        group.end = end;
+      }
+    } else if (character === "@") {
+      const index = stack.at(-1);
+      const group = index === undefined ? undefined : groups[index];
+      if (group === undefined) rootDirectAt = true;
+      else group.directAt = true;
+    }
+    cursor = end;
+  }
+
+  for (let index = groups.length - 1; index >= 0; index -= 1) {
+    const group = groups[index];
+    if (group === undefined) continue;
+    group.hasAtDescendant = group.directAt || group.hasAtDescendant;
+    if (!group.hasAtDescendant || group.parent === undefined) continue;
+    const parent = groups[group.parent];
+    if (parent !== undefined) parent.hasAtDescendant = true;
+  }
+
+  const removalDeltas = new Int32Array(value.length + 1);
+  const removedDelimiters = new Uint8Array(value.length);
+  const removeRange = (start: number, end: number): void => {
+    removalDeltas[start] = (removalDeltas[start] ?? 0) + 1;
+    removalDeltas[end] = (removalDeltas[end] ?? 0) - 1;
+  };
+
+  for (const group of groups) {
+    const parentDirectAt =
+      group.parent === undefined ? rootDirectAt : (groups[group.parent]?.directAt ?? false);
+    if (parentDirectAt || !group.hasAtDescendant) removeRange(group.start, group.end);
+    else {
+      removedDelimiters[group.start] = 1;
+      if (group.closing !== undefined) removedDelimiters[group.closing] = 1;
+    }
+  }
+
+  const output: string[] = [];
+  let removalDepth = 0;
+  for (let cursor = 0; cursor < value.length; ) {
+    removalDepth += removalDeltas[cursor] ?? 0;
+    const end = nextCodePointEnd(value, cursor);
+    if (removalDepth === 0 && removedDelimiters[cursor] !== 1 && unmatchedClosings[cursor] !== 1)
+      output.push(value.slice(cursor, end));
+    cursor = end;
+  }
+  return output.join("");
+}
+
 function skipWhitespaceBackward(value: string, end: number): number {
   let cursor = end;
   while (cursor > 0) {
@@ -134,15 +304,51 @@ function skipWhitespaceForward(value: string, start: number): number {
   return cursor;
 }
 
-function hasValidLocalBoundary(value: string, start: number): boolean {
+function hasValidProseQuotePrefix(value: string, quote: number): boolean {
+  if (quote === 0) return true;
+  const previous = previousCodePointStart(value, quote);
+  const character = value.slice(previous, quote);
+  if (isWhitespaceAt(value, previous, quote) || "(<[{".includes(character)) return true;
+  return character === ":" && hasEmailContextLabel(value, previous);
+}
+
+function findOpeningQuoteBoundaries(value: string): ReadonlySet<number> {
+  const openings = new Set<number>();
+  let quoted = false;
+  for (let cursor = 0; cursor < value.length; cursor += 1) {
+    if (!isUnescapedQuote(value, cursor)) continue;
+    if (!quoted && hasValidProseQuotePrefix(value, cursor)) openings.add(cursor);
+    quoted = !quoted;
+  }
+  return openings;
+}
+
+function hasEmailContextLabel(value: string, colon: number): boolean {
+  const match = value
+    .slice(0, colon)
+    .toLowerCase()
+    .match(/(?:^|[\t\n\r ])([\p{L}-]+)$/u);
+  return match !== null && emailContextLabels.has(match[1] ?? "");
+}
+
+function hasValidLocalBoundary(
+  value: string,
+  start: number,
+  openingQuotes: ReadonlySet<number>,
+): boolean {
   if (start === 0) return true;
   const previous = previousCodePointStart(value, start);
   const character = value.slice(previous, start);
   if (isWhitespaceAt(value, previous, start) || "(<[{".includes(character)) return true;
-  return character === ":" && value.slice(0, previous).toLowerCase().endsWith("mailto");
+  if (character === '"') return openingQuotes.has(previous);
+  return character === ":" && hasEmailContextLabel(value, previous);
 }
 
-function hasValidDotAtomLocal(value: string, end: number): boolean {
+function hasValidDotAtomLocal(
+  value: string,
+  end: number,
+  openingQuotes: ReadonlySet<number>,
+): boolean {
   let start = end;
   while (start > 0) {
     const previous = previousCodePointStart(value, start);
@@ -150,7 +356,7 @@ function hasValidDotAtomLocal(value: string, end: number): boolean {
     if (!(character === "." || isAtextAt(value, previous, start))) break;
     start = previous;
   }
-  if (start === end || !hasValidLocalBoundary(value, start)) return false;
+  if (start === end || !hasValidLocalBoundary(value, start, openingQuotes)) return false;
   const candidate = value.slice(start, end);
   if (
     candidate.startsWith(".") ||
@@ -183,12 +389,16 @@ function isAllowedQuotedCodePoint(codePoint: number): boolean {
   );
 }
 
-function hasValidQuotedLocal(value: string, end: number): boolean {
+function hasValidQuotedLocal(
+  value: string,
+  end: number,
+  openingQuotes: ReadonlySet<number>,
+): boolean {
   const closingQuote = end - 1;
   if (!isUnescapedQuote(value, closingQuote)) return false;
   for (let openingQuote = closingQuote - 1; openingQuote >= 0; openingQuote -= 1) {
     if (!isUnescapedQuote(value, openingQuote)) continue;
-    if (!hasValidLocalBoundary(value, openingQuote)) return false;
+    if (!hasValidLocalBoundary(value, openingQuote, openingQuotes)) return false;
     for (let cursor = openingQuote + 1; cursor < closingQuote; ) {
       let codePoint = value.codePointAt(cursor);
       if (codePoint === undefined) return false;
@@ -232,7 +442,7 @@ function hasValidDomainLiteral(value: string, start: number): boolean {
   const boundary = closing < 0 ? closing : skipTrailingDomainDots(value, closing + 1);
   if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, boundary)) return false;
   const literal = value.slice(start + 1, closing);
-  if (literal.startsWith("IPv6:")) return isIP(literal.slice(5)) === 6;
+  if (/^IPv6:/i.test(literal)) return isIP(literal.slice(5)) === 6;
   return isIP(literal) === 4;
 }
 
@@ -270,11 +480,16 @@ function hasValidDomain(value: string, start: number): boolean {
 }
 
 function containsEmailIdentifierWithoutComments(value: string): boolean {
+  const openingQuotes = findOpeningQuoteBoundaries(value);
   for (let at = value.indexOf("@"); at >= 0; at = value.indexOf("@", at + 1)) {
     const localEnd = skipWhitespaceBackward(value, at);
     const domainStart = skipWhitespaceForward(value, at + 1);
     if (!hasValidDomain(value, domainStart)) continue;
-    if (hasValidDotAtomLocal(value, localEnd) || hasValidQuotedLocal(value, localEnd)) return true;
+    if (
+      hasValidDotAtomLocal(value, localEnd, openingQuotes) ||
+      hasValidQuotedLocal(value, localEnd, openingQuotes)
+    )
+      return true;
   }
   return false;
 }
@@ -282,7 +497,13 @@ function containsEmailIdentifierWithoutComments(value: string): boolean {
 export function containsEmailIdentifier(input: string): boolean {
   if (containsEmailIdentifierWithoutComments(input)) return true;
   const withoutComments = removeEmailComments(input);
-  return withoutComments !== input && containsEmailIdentifierWithoutComments(withoutComments);
+  if (withoutComments !== input && containsEmailIdentifierWithoutComments(withoutComments))
+    return true;
+  const projectedContext = projectEmailContextWithoutComments(input);
+  if (projectedContext !== input && containsEmailIdentifierWithoutComments(projectedContext))
+    return true;
+  const directContext = projectEmailContextByDirectAt(input);
+  return directContext !== input && containsEmailIdentifierWithoutComments(directContext);
 }
 
 function exceedsDecodedCodePointLimit(value: string): boolean {
@@ -307,8 +528,16 @@ function normalizePreservingNonAsciiCfws(value: string): string {
 }
 
 function containsUrlUserinfo(value: string): boolean {
-  for (const match of value.matchAll(/(?:https?|ftp):\/\//giu)) {
-    const start = match.index + match[0].length;
+  for (
+    let separator = value.indexOf("://");
+    separator >= 0;
+    separator = value.indexOf("://", separator + 3)
+  ) {
+    let schemeStart = separator;
+    while (schemeStart > 0 && uriSchemeCharacter.test(value[schemeStart - 1] ?? ""))
+      schemeStart -= 1;
+    if (!asciiLetter.test(value[schemeStart] ?? "")) continue;
+    const start = separator + 3;
     let end = start;
     while (end < value.length) {
       const next = nextCodePointEnd(value, end);
@@ -354,10 +583,21 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["encoded trailing-dot email", "alice&commat;example&period;org&period;", true],
   ["domain-literal trailing-dot email", "alice@[127.0.0.1].", true],
   ["parenthesized email", "Contact (alice@example.org).", true],
+  ["double-quoted prose email", '"alice@example.org"', true],
+  ["encoded double-quoted prose email", "&quot;alice&commat;example&period;org&quot;", true],
+  ["labelled quoted prose email", 'contact:"alice@example.org"', true],
+  ["later valid quoted prose email", 'foo"bar" "alice@example.org"', true],
+  ["contact-labelled email", "contact:alice@example.org", true],
+  ["email-labelled email", "Email:alice@example.org", true],
+  ["courriel-labelled email", "courriel:alice@example.org", true],
   ["encoded parenthesized email", "%28alice%40example.org%29", true],
   ["HTML parenthesized email", "&lpar;alice&commat;example&period;org&rpar;", true],
   ["mailto email", "mailto:alice@example.org", true],
   ["URL userinfo identifier", "https://user:secret@example.org/feed.xml", true],
+  ["SSH userinfo identifier", "ssh://user:secret@example.org/repo.git", true],
+  ["Git userinfo identifier", "git://git@example.org/repo.git", true],
+  ["custom-scheme userinfo identifier", "custom+v1://user@example.org/resource", true],
+  ["encoded SSH userinfo identifier", "%73%73%68%3A%2F%2Fuser%40example.org/repo", true],
   ["percent email", "alice%40example.org", true],
   ["double-percent email", "alice%2540example.org", true],
   ["JavaScript escape email", "alice%u0040example.org", true],
@@ -393,19 +633,69 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["CFWS email", "alice (comment) @ example.org", true],
   ["quoted CFWS email", '"alice" (comment) @ example.org', true],
   ["encoded CFWS email", "%22alice%22%28comment%29%40example.org", true],
+  ["parenthesized CFWS email", "(alice (comment) @ example.org)", true],
+  ["whole-quoted CFWS email", '"alice (comment) @ example.org"', true],
+  [
+    "parenthesized nested escaped CFWS email",
+    "(alice (outer(inner\\)x\\(y) tail) @ example.org)",
+    true,
+  ],
+  [
+    "whole-quoted nested escaped CFWS email",
+    '"alice (outer(inner\\)x\\(y) tail) @ example.org"',
+    true,
+  ],
+  [
+    "parenthesized even-backslash CFWS email",
+    "(alice (outer(inner\\\\) tail) @ example.org)",
+    true,
+  ],
+  ["parenthesized at-comment CFWS email", "(alice (foo@bar) @ example.org)", true],
+  ["whole-quoted at-comment CFWS email", '"alice (foo@bar) @ example.org"', true],
+  ["nested-wrapper CFWS email", "((alice (comment) @ example.org))", true],
+  ["email inside comment after handle", "release@2 (alice (comment) @ example.org)", true],
+  ["encoded parenthesized CFWS email", "%28alice%20%28comment%29%20%40%20example.org%29", true],
+  [
+    "HTML whole-quoted CFWS email",
+    "&quot;alice &lpar;comment&rpar; &commat; example&period;org&quot;",
+    true,
+  ],
+  ["parenthesized EAI CFWS email", "(😀 (comment) @ example.org)", true],
+  ["whole-quoted EAI CFWS email", '"😀 (comment) @ example.org"', true],
+  ["parenthesized IDN CFWS email", "(alice (comment) @ example.орг)", true],
+  ["whole-quoted IDN CFWS email", '"alice (comment) @ example.орг"', true],
+  ["parenthesized IPv6 CFWS email", "(alice (comment) @ [IPv6:2001:db8::1])", true],
+  ["whole-quoted IPv6 CFWS email", '"alice (comment) @ [IPv6:2001:db8::1]"', true],
+  ["parentheses in quoted local email", '"ali(ce)"@example.org', true],
   ["Unicode domain email", "alice@example.орг", true],
   ["combining-mark IDN email", "alice@e\u0301xample.org", true],
   ["punycode email", "alice@example.xn--p1ai", true],
   ["IPv4 domain literal", "alice@[127.0.0.1]", true],
   ["IPv6 domain literal", "alice@[IPv6:2001:db8::1]", true],
+  ["lowercase IPv6 domain literal", "alice@[ipv6:2001:db8::1]", true],
+  ["mixed-case IPv6 domain literal", "alice@[iPv6:2001:db8::1]", true],
   [
     "encoded IPv6 domain literal",
     "alice&commat;&lbrack;IPv6&colon;2001&colon;db8&colon;&colon;1&rsqb;",
     true,
   ],
+  [
+    "HTML5 lowercase IPv6 domain literal",
+    "alice&commat;&lbrack;ipv6&colon;2001&colon;db8&colon;&colon;1&rsqb;",
+    true,
+  ],
   ["credential", "sk_live_example_secret", true],
+  ["DSA private-key marker", "-----BEGIN DSA PRIVATE KEY-----", true],
+  ["OpenPGP private-key marker", "-----BEGIN PGP PRIVATE KEY BLOCK-----", true],
+  ["encrypted private-key marker", "-----BEGIN ENCRYPTED PRIVATE KEY-----", true],
+  [
+    "encoded DSA private-key marker",
+    "%2D%2D%2D%2D%2DBEGIN%20DSA%20PRIVATE%20KEY%2D%2D%2D%2D%2D",
+    true,
+  ],
   ["default-ignorable credential", "sk_li\u200bve_example_secret", true],
   ["machine handle", "release@2", false],
+  ["parenthesized machine handle", "(release@2)", false],
   ["quoted machine handle", '"release"@2', false],
   ["legitimate ampersand", "R&D", false],
   ["legitimate amp prefix", "R&amplitude", false],
@@ -421,12 +711,14 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["ideographic-space domain separator", "alice@\u3000example.org", false],
   ["C0-separated local token", "ali\u0000ce@example.org", false],
   ["colon-separated local token", "ali:ce@example.org", false],
+  ["unknown colon label", "unknown:alice@example.org", false],
   ["comma-separated local token", "ali,ce@example.org", false],
   ["RFC slash atext email", "ali/ce@example.org", true],
   ["leading-dot local", ".alice@example.org", false],
   ["trailing-dot local", "alice.@example.org", false],
   ["double-dot local", "alice..ops@example.org", false],
   ["overlong local", `${"a".repeat(65)}@example.org`, false],
+  ["internal prose quote", `foo"alice@example.org"`, false],
   ["prefixed quoted local", `x"alice"@example.org`, false],
   ["suffixed quoted local", `"alice"x@example.org`, false],
   ["leading-hyphen domain", "alice@-example.org", false],

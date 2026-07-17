@@ -100,21 +100,71 @@ terminaux restaient attachés au domaine. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-77A4B1D.md`](CANDIDATE-INTEGRATION-REJECT-77A4B1D.md), SHA-256
 `2fb75ab696ed0ee21682a54a382d431008239afe547fd19f9d0bfe7bfe6ea8a3`.
 
-La remédiation courante préserve les séparateurs non ASCII pendant NFKC, exige une vraie frontière de
-local-part, scanne le contexte original avant sa projection sans commentaires et détache les points
-terminaux ASCII/Unicode. Le slash reste correctement classé RFC atext, tandis que C0, `:` et `,` ne
-créent plus de suffixe. Les URL à userinfo gardent une détection dédiée pour le canary Radar hors de
-son allowlist exacte. `entities@8.0.0` est qualifié BSD-2-Clause, dev-only et sans transitive dans
-[`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md), SHA-256
-`6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae`; un contrôle owner reste
-requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge `6ee4627` a fermé ces quatre bornes. Sa passe d'intégration a encore rejeté les emails de
+prose entourés de guillemets ASCII et les labels collés tels que `contact:alice@example.org`. Le
+record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-6EE4627.md`](CANDIDATE-INTEGRATION-REJECT-6EE4627.md), SHA-256
+`72c470ba92e514415df3b7a92790c55e1a5dae82597ab1c02b657cb73248f247`.
+
+Le merge `0a265ce` a fermé ces deux formes de prose. Sa passe d'intégration a trouvé que la parité des
+guillemets classait encore `foo\"alice@example.org\"` comme citation ouvrante. Le record est conservé
+dans [`CANDIDATE-INTEGRATION-REJECT-0A265CE.md`](CANDIDATE-INTEGRATION-REJECT-0A265CE.md), SHA-256
+`50e47d7f2eb6134f007dbf5fcf0329e874841747200095d698ab201365c1b5c2`.
+
+Sur le merge `da99d31`, candidate-integration a approuvé
+([`CANDIDATE-INTEGRATION-DA99D31.md`](CANDIDATE-INTEGRATION-DA99D31.md), SHA-256
+`2ba341861845547dfca48b2b2f3361b78140aa8b2f6863cb1a225ef48af3a7b5`) et Architecture a approuvé
+avec réserve documentaire ([`ARCHITECTURE-VERDICT-DA99D31.md`](ARCHITECTURE-VERDICT-DA99D31.md),
+SHA-256 `cf988cbcfdb789a9f2d32555e0265919fa74a3c2f98eadac593138ca0add9825`). Security a toutefois
+rejeté les userinfo `ssh://`/`git://` et les en-têtes privés DSA/OpenPGP
+([`SECURITY-VERDICT-DA99D31.md`](SECURITY-VERDICT-DA99D31.md), SHA-256
+`6e885aebf4d1342ea4937da2b7ab9ed4f0ccef4ad187a005b6f2cfdea0c7b922`) ; ce rejet gouverne et rend
+les deux approbations stale après remédiation.
+
+Le merge `ef1e847` a fermé les constats userinfo/credentials dans le gate réel, mais deux passes
+candidate-integration indépendantes ont trouvé des blocages distincts :
+
+- le pattern `metadataString` du schéma canonique acceptait encore DSA, OpenPGP et PKCS#8 chiffré en
+  validation schema-only
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847.md), SHA-256
+  `12ecbf1bd2b0f0add59588fd21e49bbdcd676a01a4b69cd46ceb113104c19b22`) ;
+- les adresses CFWS entièrement parenthésées ou quoted contournaient le scanner parce que la
+  projection RFC supprimait le wrapper complet ou conservait ses commentaires internes
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md),
+  SHA-256 `d0092e478af43e386a8952dac3c199a619b228baa8bc02fa40e0117fb9803d0b`).
+
+Le merge `cea7363` a aligné le schéma. Candidate-integration a ensuite approuvé
+([`CANDIDATE-INTEGRATION-CEA7363.md`](CANDIDATE-INTEGRATION-CEA7363.md), SHA-256
+`7f492b1806091b7c74c20e46eab8ce66bf5410a9ac56900ad554cfb374958061`) et Architecture a approuvé
+avec deux réserves d'audit ([`ARCHITECTURE-VERDICT-CEA7363.md`](ARCHITECTURE-VERDICT-CEA7363.md),
+SHA-256 `0006071a17692cfc295aa706a8645668df63a96ec243fe6d6f134b66e4cd2433`). Security a rejeté le tag
+IPv6 sensible à la casse et les chemins metadata contournant la politique par NFKC/default-ignorable
+([`SECURITY-VERDICT-CEA7363.md`](SECURITY-VERDICT-CEA7363.md), SHA-256
+`64b3ea80000d9eac39c23ca8d5a4f656373d877e1cec68d5d04feabd2e3c16c8`). Ce rejet gouverne ; les
+deux approbations sont stale.
+
+PR #81 a intégré les projections wrapped-CFWS après candidate-integration favorable sur sa tête
+exacte `bec32a7bedb349bad4c3c58afbc878b995d00db8`
+([`CANDIDATE-INTEGRATION-BEC32A7.md`](CANDIDATE-INTEGRATION-BEC32A7.md), SHA-256
+`6aadfbab59d20003d18c5144b2067ac66e32444b8b449a91262338be6de25695`). PR #82 a persisté ce
+record sans modifier le scanner. Cette preuve wrapped-CFWS devient elle aussi stale dès que la
+remédiation combinée change le scanner ou le schéma.
+
+La remédiation combinée traite le tag RFC `IPv6:` sans distinction de casse et ferme le sous-espace
+metadata en ASCII, donc sous NFKC et retrait des default-ignorables, tout en laissant les payloads
+moteur Unicode et opaques. Les fixtures couvrent les chemins NFKC/default-ignorable ; les
+représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` reste qualifié
+BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise. L'écart de
+chronologie de PR #80 reste historique, sans autorisation rétroactive ; cette nouvelle remédiation
+doit recevoir candidate-integration avant fusion.
 
 ## Gates restants
 
-1. intégrer la remédiation de contexte RFC/EAI après candidate-integration favorable ;
-2. rejouer Architecture et Security sur son merge immuable ;
-3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
-4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. obtenir une candidate-integration favorable sur la tête immuable de remédiation combinée ;
+2. fusionner cette remédiation sans autre changement ;
+3. rejouer candidate-integration, Architecture et Security sur le merge immuable ;
+4. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
+5. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
