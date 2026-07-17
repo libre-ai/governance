@@ -121,22 +121,31 @@ rejeté les userinfo `ssh://`/`git://` et les en-têtes privés DSA/OpenPGP
 `6e885aebf4d1342ea4937da2b7ab9ed4f0ccef4ad187a005b6f2cfdea0c7b922`) ; ce rejet gouverne et rend
 les deux approbations stale après remédiation.
 
-Le merge `ef1e847` a fermé ces deux constats dans le gate réel, mais candidate-integration a rejeté
-la divergence du pattern `metadataString` du schéma canonique, qui acceptait encore DSA, OpenPGP et
-PKCS#8 chiffré en validation schema-only. Le record est conservé dans
-[`CANDIDATE-INTEGRATION-REJECT-EF1E847.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847.md), SHA-256
-`12ecbf1bd2b0f0add59588fd21e49bbdcd676a01a4b69cd46ceb113104c19b22`.
+Le merge `ef1e847` a fermé les constats userinfo/credentials dans le gate réel, mais deux passes
+candidate-integration indépendantes ont trouvé des blocages distincts :
 
-La remédiation courante aligne le schéma sur la liste explicite du scanner et ajoute trois mutations
-normatives de fixture. Le gate continue de détecter sans résolution l'userinfo de tout schéma URI
-syntaxique, y compris dans les représentations encodées et les clés JSON. Toutes les bornes EAI/prose
-restent inchangées. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans transitive ; un
-contrôle owner reste requis. Le changement de hash du schéma rend toute preuve antérieure stale ; une
-passe avec Bun épinglé reste obligatoire.
+- le pattern `metadataString` du schéma canonique acceptait encore DSA, OpenPGP et PKCS#8 chiffré en
+  validation schema-only
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847.md), SHA-256
+  `12ecbf1bd2b0f0add59588fd21e49bbdcd676a01a4b69cd46ceb113104c19b22`) ;
+- les adresses CFWS entièrement parenthésées ou quoted contournaient le scanner parce que la
+  projection RFC supprimait le wrapper complet ou conservait ses commentaires internes
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md),
+  SHA-256 `d0092e478af43e386a8952dac3c199a619b228baa8bc02fa40e0117fb9803d0b`).
+
+Le merge `cea7363` a aligné le schéma et ajouté trois mutations normatives. La remédiation courante
+conserve cet alignement et ajoute deux projections linéaires complémentaires : l'une conserve tout
+groupe comportant un `@`, l'autre privilégie les `@` au niveau direct et retire les commentaires
+enfants. Leur union couvre les commentaires qui contiennent eux-mêmes un handle sans devoir choisir
+une interprétation ambiguë. Piles, intervalles et échappements évitent récursion et recopie
+quadratique. Les représentations encodées et les clés JSON utilisent le même gate. Toutes les autres
+bornes EAI/prose restent inchangées. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans
+transitive ; un contrôle owner reste requis. Les changements de hash du schéma puis du scanner
+rendent toute preuve antérieure stale ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer l'alignement schema/scanner après candidate-integration favorable ;
+1. intégrer la remédiation wrapped-CFWS après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
