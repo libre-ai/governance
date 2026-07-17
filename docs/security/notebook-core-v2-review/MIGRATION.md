@@ -27,19 +27,20 @@ Si des prototypes ont néanmoins émis des fichiers v1, aucune adaptation automa
 
 ## Progression après Gate S
 
-La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise uniquement la rédaction et les contrôles machine du candidat. Aucun moteur expérimental n’est autorisé avant reproduction agentique indépendante du protocole et verdict Gate A.
+La Gate S consignée dans [`SOLO-CHALLENGE.md`](SOLO-CHALLENGE.md) autorise la rédaction et les contrôles machine du candidat.
 
-Après Gate A, une implémentation bornée pourra produire les preuves impossibles au seul niveau du contrat : zéroïsation réelle, imports du composant, intégration CSPRNG/secret côté host et budgets navigateur. Elle ne devient jamais un producteur utilisateur avant Gate B et les gates de release.
+L'autorisation de démarrage du **moteur expérimental** n'est acquise qu'après Gate A et décision propriétaire.
+La Gate B reste ensuite obligatoire avant toute sauvegarde utilisateur et release.
 
-## Promotion après Gate A seulement
+## Promotion après Gate A
 
-Après quatre verdicts agentiques Gate A favorables et l’autorisation de merge du propriétaire consignés dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique devra :
+Après quatre verdicts agentiques Gate A favorables et l’autorisation de merge du propriétaire consignés dans [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md), une promotion atomique doit :
 
 1. vérifier que les copies cataloguées sous `contracts/` sont byte-identiques aux candidats examinés ;
 2. lier les autorités aux commits et preuves exacts de Gate A ;
 3. promouvoir explicitement les statuts `candidate` concernés vers `locked` ;
-4. lever le blocage d’implémentation du work package, sans autoriser de sauvegarde utilisateur ;
+4. lever le blocage d’implémentation expérimentale du work package, sans autoriser de sauvegarde utilisateur ;
 5. conserver v1 comme autorité historique dépréciée, sans producteur, jusqu'à preuve qu'aucune donnée v1 n'existe ;
 6. préparer la Gate B attribuable sur le composant construit.
 
-La promotion n'autorise une release qu'après Gate B puis les gates projet `rust-boundary-value-review` et `local-crypto-and-privacy-review`. Avant Gate A, aucune implémentation n’est autorisée ; avant Gate B, aucune sauvegarde utilisateur n’est émise.
+La promotion n'autorise pas encore une release en conditions utilisateur. Avant Gate A, aucune implémentation n’est autorisée ; après Gate A et avant Gate B, le moteur peut tourner dans un périmètre expérimental de vérification ; avant Gate B, aucune sauvegarde utilisateur n’est émise.

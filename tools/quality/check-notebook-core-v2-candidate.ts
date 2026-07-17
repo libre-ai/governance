@@ -147,8 +147,89 @@ type GoldenVectors = {
 };
 
 const root = "docs/security/notebook-core-v2-review";
+const gateACommit = "a28e116b0a3ebf278412650715e03f7050c0aac0";
+const gateATree = "cda41e7f9cc620a87ee0488caa06141614fb5b93";
+const ownerControlUrl = "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998576948";
+const cycleReviewRoot = "docs/reviews/notebook-core-v2/gate-a/a28e116";
 const failures: string[] = [];
 const encoder = new TextEncoder();
+
+type GateARolePass = {
+  role: string;
+  reviewPassId: string;
+  verdict: string;
+  reportPath: string;
+  reviewCommentUrl: string;
+  reportSha: string;
+};
+
+type GateAIntegrationPass = {
+  mode: string;
+  reviewPassId: string;
+  integrator: string;
+  session: string;
+  base: string;
+};
+
+const gateArolePasses: GateARolePass[] = [
+  {
+    role: "architecture",
+    reviewPassId: "notebook-core-v2-a28e116-architecture",
+    verdict: "APPROVE",
+    reportPath: `${cycleReviewRoot}/ARCHITECTURE.md`,
+    reviewCommentUrl: "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998564391",
+    reportSha: "bea5bb969119014d24e797bd51b4f8ccdf832c2a58977bad871d7beb5989abfa",
+  },
+  {
+    role: "sécurité",
+    reviewPassId: "notebook-core-v2-a28e116-security",
+    verdict: "APPROVE",
+    reportPath: `${cycleReviewRoot}/SECURITY.md`,
+    reviewCommentUrl: "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998564393",
+    reportSha: "87610b711d515f3ccbc39aac16217b86610ee4eae98b62d19821fcf03b881a69",
+  },
+  {
+    role: "cryptographie",
+    reviewPassId: "notebook-core-v2-a28e116-cryptography",
+    verdict: "APPROVE",
+    reportPath: `${cycleReviewRoot}/CRYPTOGRAPHY.md`,
+    reviewCommentUrl: "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998564385",
+    reportSha: "591a909f728d6085ba2b70465fc05ff0449993cbf9d6f95c6ce11161f68c9dea",
+  },
+  {
+    role: "vie privée France/UE",
+    reviewPassId: "notebook-core-v2-a28e116-privacy",
+    verdict: "APPROVE",
+    reportPath: `${cycleReviewRoot}/PRIVACY.md`,
+    reviewCommentUrl: "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998564380",
+    reportSha: "d3e690fdd357e27c31b1afc21e6e591103b2b8733f436b359c9b58d053c7e995",
+  },
+];
+
+const gateAIntegrationPass: GateAIntegrationPass = {
+  mode: "promotion-integration",
+  reviewPassId: "notebook-core-v2-a28e116-promotion-integration",
+  integrator: "openai-codex/gpt-5.3-codex-spark",
+  session: "f9f195bf-4492-4d64-bb98-b4c08b0a2084",
+  base: "7ad0695b563745d2c6223f4d2cdcafc9fd9e3d0a",
+};
+
+const synthesisCommentUrl = "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998566929";
+
+const gateAAuthorityShas: Record<string, string> = {
+  "contracts/wit/notebook-core-v2/world.wit":
+    "132d4cec0116352c8cea2c356b6dd6638758e07c7e182dc01042ea5667daa295",
+  "contracts/wit/notebook-core-v2/SEMANTICS.md":
+    "5c17e87e9944f40d1e1e29a3a5bacd85bf9846c4386bc0adb053356dad39b45b",
+  "contracts/schemas/context-document.v2.schema.json":
+    "f205f1a246ce88221a21a16d69d66966ff33c989f915d2879df77e5f7f5f96d4",
+  "contracts/schemas/notebook-backup-seal-request.v2.schema.json":
+    "4beb3e8818f2036f38c44469432d31222191523d621779c8c5b28ab5be760e5a",
+  "contracts/schemas/notebook-backup.v2.schema.json":
+    "e2932bbb2cd2b7062be703aad327ad84e51badf0d4fa9b8ad59b00191e686ad0",
+  "contracts/fixtures/notebook-core-v2/golden-vectors.v1.json":
+    "734eeecefd5c4b70fa1b86f3c389259117087882d2e105ec14dfabae5062ee09",
+};
 
 function fail(message: string): void {
   failures.push(message);
@@ -210,6 +291,10 @@ function sha256Hex(value: Uint8Array): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(value);
   return hasher.digest("hex");
+}
+
+async function fileSha256(path: string): Promise<string> {
+  return sha256Hex(new Uint8Array(await Bun.file(path).arrayBuffer()));
 }
 
 function metadata(envelope: Envelope): Omit<Envelope, "ciphertext" | "digest"> {
@@ -408,7 +493,7 @@ async function decrypt(envelope: Envelope, key: CryptoKey): Promise<Uint8Array |
   }
 }
 
-const candidateArtifacts = [
+const lockedAuthorityArtifacts = [
   "contracts/wit/notebook-core-v2/world.wit",
   "contracts/wit/notebook-core-v2/SEMANTICS.md",
   "contracts/schemas/context-document.v2.schema.json",
@@ -416,8 +501,8 @@ const candidateArtifacts = [
   "contracts/schemas/notebook-backup.v2.schema.json",
   "contracts/fixtures/notebook-core-v2/golden-vectors.v1.json",
 ];
-for (const path of candidateArtifacts) {
-  expect(existsSync(path), `${path}: ADR-0003 candidate artifact is missing`);
+for (const path of lockedAuthorityArtifacts) {
+  expect(existsSync(path), `${path}: ADR-0003 notebook-core-v2 authority is missing`);
 }
 
 const catalog = (await Bun.file("contracts/catalog.v1.json").json()) as {
@@ -432,29 +517,127 @@ const catalog = (await Bun.file("contracts/catalog.v1.json").json()) as {
     };
   }>;
 };
-for (const path of [
+const lockedAuthorityCatalogPaths = [
   "contracts/wit/notebook-core-v2/world.wit",
   "contracts/schemas/context-document.v2.schema.json",
   "contracts/schemas/notebook-backup-seal-request.v2.schema.json",
   "contracts/schemas/notebook-backup.v2.schema.json",
-]) {
+];
+const catalogEntries = (catalog.contracts ?? []).filter(
+  (candidate) =>
+    typeof candidate.path === "string" && lockedAuthorityCatalogPaths.includes(candidate.path),
+);
+expectEqual(
+  catalogEntries.length,
+  lockedAuthorityCatalogPaths.length,
+  "Notebook Core v2 promotion should touch only four locked authorities in catalog",
+);
+for (const path of lockedAuthorityCatalogPaths) {
   const entry = catalog.contracts?.find((candidate) => candidate.path === path);
+  expect(entry?.status === "locked", `${path}: promotion is completed; status must be locked`);
   expect(
-    entry?.status === "candidate",
-    `${path}: independent Gate A is pending; status must remain candidate`,
+    entry?.review === undefined,
+    `${path}: locked catalog entry must not keep pending review metadata`,
   );
+}
+
+const gateAReviewText = await Bun.file(`${root}/INDEPENDENT-REVIEW.md`).text();
+expect(
+  gateAReviewText.includes(`commit Git : \`${gateACommit}\``),
+  "INDEPENDENT-REVIEW.md missing Gate A commit",
+);
+expect(
+  gateAReviewText.includes(`arbre Git : \`${gateATree}\``),
+  "INDEPENDENT-REVIEW.md missing Gate A tree",
+);
+expect(
+  gateAReviewText.includes(ownerControlUrl),
+  "INDEPENDENT-REVIEW.md missing owner-control reference URL",
+);
+expect(
+  gateAReviewText.includes("Gate B") && gateAReviewText.includes("pending"),
+  "INDEPENDENT-REVIEW.md missing Gate B pending state",
+);
+for (const pass of gateArolePasses) {
   expect(
-    entry?.review?.state === "pending-independent-agent-review" &&
-      entry.review.reviewerKind === "agent" &&
-      entry.review.separation === "role-scoped-review-pass",
-    `${path}: pending independent agent review metadata is missing`,
+    gateAReviewText.includes(`| ${pass.role} | \`${pass.reviewPassId}\` | \`${pass.verdict}\``),
+    `${pass.role}: missing role-separated pass metadata`,
   );
-  const required = entry?.review?.required;
+}
+
+const gateAReadme = await Bun.file(`${cycleReviewRoot}/README.md`).text();
+expect(
+  gateAReadme.includes(`Commit Git immuable : \`${gateACommit}\``),
+  "Gate A README missing immutable commit",
+);
+expect(
+  gateAReadme.includes(`Arbre Git immuable : \`${gateATree}\``),
+  "Gate A README missing immutable tree",
+);
+expect(gateAReadme.includes(ownerControlUrl), "Gate A README missing owner-control reference URL");
+expect(
+  gateAReadme.includes("Gate B : **pending") ||
+    gateAReadme.includes("Gate B en attente") ||
+    gateAReadme.includes("Gate B pending"),
+  "Gate A README missing Gate B pending",
+);
+for (const pass of gateArolePasses) {
+  expect(gateAReadme.includes(pass.reviewPassId), `${pass.role}: missing review pass id`);
+  expect(gateAReadme.includes(pass.verdict), `${pass.role}: missing review pass verdict`);
+  expect(
+    gateAReadme.includes(pass.reviewCommentUrl),
+    `${pass.role}: missing review pass comment URL`,
+  );
+}
+
+for (const pass of gateArolePasses) {
   expectEqual(
-    JSON.stringify(required),
-    JSON.stringify(["architecture", "security", "cryptography", "privacy"]),
-    `${path}: Gate A agent roles`,
+    await fileSha256(pass.reportPath),
+    pass.reportSha,
+    `${pass.reportPath}: Gate A report SHA mismatch`,
   );
+}
+
+const reviewText = await Bun.file(`${root}/INDEPENDENT-REVIEW.md`).text();
+const gateAReadmeText = await Bun.file(`${cycleReviewRoot}/README.md`).text();
+expect(
+  reviewText.includes(gateAIntegrationPass.reviewPassId),
+  "INDEPENDENT-REVIEW.md missing promotion integration review pass id",
+);
+expect(
+  reviewText.includes(gateAIntegrationPass.mode),
+  "INDEPENDENT-REVIEW.md missing promotion integration mode",
+);
+expect(
+  reviewText.includes(gateAIntegrationPass.integrator),
+  "INDEPENDENT-REVIEW.md missing promotion integration integrator",
+);
+expect(
+  reviewText.includes(gateAIntegrationPass.session),
+  "INDEPENDENT-REVIEW.md missing promotion integration session",
+);
+expect(
+  reviewText.includes(gateAIntegrationPass.base),
+  "INDEPENDENT-REVIEW.md missing promotion integration base",
+);
+expect(
+  reviewText.includes(synthesisCommentUrl),
+  "INDEPENDENT-REVIEW.md missing integration synthesis comment URL",
+);
+expect(
+  gateAReadmeText.includes(gateAIntegrationPass.reviewPassId),
+  "Gate A cycle README missing promotion integration review pass id",
+);
+
+const reviewFiles = [
+  `${cycleReviewRoot}/README.md`,
+  `${cycleReviewRoot}/ARCHITECTURE.md`,
+  `${cycleReviewRoot}/SECURITY.md`,
+  `${cycleReviewRoot}/CRYPTOGRAPHY.md`,
+  `${cycleReviewRoot}/PRIVACY.md`,
+];
+for (const path of reviewFiles) {
+  expect(existsSync(path), `${path}: Gate A review file is missing`);
 }
 
 const reviewedCopies: ReadonlyArray<readonly [string, string]> = [
@@ -475,6 +658,10 @@ for (const [reviewPath, candidatePath] of reviewedCopies) {
     await Bun.file(reviewPath).text(),
     `${candidatePath} reviewed-source identity`,
   );
+}
+
+for (const [path, expected] of Object.entries(gateAAuthorityShas)) {
+  expectEqual(await fileSha256(path), expected, `${path}: locked authority sha mismatch`);
 }
 
 const requiredFiles = [
@@ -513,8 +700,7 @@ expectEqual(
 );
 
 const readme = await Bun.file(`${root}/README.md`).text();
-expect(readme.includes("GATE S ACCEPTÉE"), "README must expose Gate S status");
-expect(readme.includes("Gate A"), "README must retain the independent pre-implementation gate");
+expect(readme.includes("Gate A") || readme.includes("GATE A"), "README must expose Gate A status");
 expect(readme.includes("Gate B"), "README must retain the independent pre-release gate");
 const semantics = await Bun.file("contracts/wit/notebook-core-v2/SEMANTICS.md").text();
 for (const required of [
@@ -1107,5 +1293,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate S verified: closed WIT, candidate-only copies, schemas, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A remains pending`,
+  `Notebook Core v2 Gate A verified: closed WIT, byte-identical catalog copies and reviewed files, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A is approved and Gate B remains pending`,
 );
