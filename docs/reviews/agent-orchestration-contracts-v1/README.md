@@ -1,6 +1,6 @@
 # Agent orchestration contract candidates v1
 
-Status: `candidate-remediation / fresh candidate-integration required`.
+Status: `candidate-integration-approved / separate promotion-integration required`.
 
 These authorities make the reviewed option-B RFC machine-checkable. They authorize no orchestrator, harness, Pi extension, provider, network, secret, persistence, real mission, merge, release or deployment.
 
@@ -35,8 +35,12 @@ the existing Rust parser gate omitted it. See
 The bounded remediation adds an exact test-only Biscuit engine, actual-policy execution for all 15
 existing vectors, root-key rotation and fail-closed revocation/store-outage checks. Dependency scope
 and supply-chain rationale are recorded in
-[`DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md`](DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md). A fresh
-review-only pass on an immutable remediation commit remains mandatory.
+[`DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md`](DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md).
+
+The fresh review-only pass on immutable commit `d64ad92` closes the major finding and returns
+`approve-with-minor-reservations`; see
+[`CANDIDATE-INTEGRATION-D64AD92.md`](CANDIDATE-INTEGRATION-D64AD92.md). The remaining reservations
+are runtime/privacy implementation evidence and do not authorize or block a catalog-only promotion.
 
 ## Promotion gates
 
