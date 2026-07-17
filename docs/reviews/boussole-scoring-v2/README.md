@@ -1,33 +1,50 @@
 # Revue agentique indépendante — Boussole scoring v2
 
-Statut : **candidate / NO-GO public scoring**. Le verdict méthodologique favorable lié au commit
-`5bcce21` reste une preuve technique liée à son hash. Le verdict sécurité lié à `1d701a2` reste
-`reject` comme trace historique ; sa remédiation normative exige une nouvelle passe sur le commit
-intégré. Architecture et vie privée restent également requises.
+Statut : **candidate / NO-GO public scoring**.
+
+Les verdicts historiques restent immuables :
+
+- `METHODOLOGY-VERDICT.md` rejette le corpus initial ;
+- `METHODOLOGY-VERDICT-2.md` approuve le corpus méthodologique remédié ;
+- `SECURITY-VERDICT.md` rejette l'ancienne frontière de sécurité ;
+- le record attribuable sécurité publié sur la PR #39 approuve la remédiation `1f2628f` ;
+- les passes attribuables publiées sur l'issue #23 ont ensuite rejeté `1f2628f` en architecture et
+  vie privée, tout en approuvant la méthodologie avec réserve mineure.
+
+Le présent incrément remédie ces derniers constats. Tout verdict antérieur à son SHA final devient
+stale pour la promotion, même quand il reste une preuve technique utile.
 
 La promotion exige quatre records issus de passes review-only séparées par rôle, conformément à
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
 
-1. architecture — cohérence WIT/JSON Schema et compatibilité ;
-2. sécurité — bornes, refus, arithmétique et imports WASM ;
+1. architecture — cohérence WIT/JSON Schema, URN kind-specific et catalogue complet ;
+2. sécurité — bornes, refus, arithmétique, publication agrégée et imports WASM ;
 3. méthodologie — formule, échelle, abstention, absents, pondération et arrondi ;
-4. vie privée France/UE — zéro transmission, absence d’identifiant et publication des attestations.
+4. vie privée France/UE — zéro transmission, agrégation fail-closed et attestations consenties.
 
-Les passes doivent reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec
-une seconde implémentation, vérifier les digests exacts et confirmer que les deux `reviewerId`
-méthodologie/vie privée sont distincts et liés aux hashes méthode/dataset. Les dix cas exécutables
-couvrent la réponse zéro distincte d’un skip, une réponse intermédiaire normalisée par `r/M`, le mode
-neutre, les réponses sautées ou absentes, l’agrégation pondérée, les ties-to-even positifs et
-négatifs, le dénominateur nul, le reviewer dupliqué et une référence de proposition inconnue. Les cas
-dérivés utilisent uniquement des patches `replace` JSON Pointer bornés et effectivement appliqués
-par la gate.
+Les autorités normatives comprennent les deux corpus explicitement catalogués :
 
-`contracts/fixtures/boussole-scoring-v2/security-vectors.v1.json` ajoute huit refus
-byte-exacts, les plafonds exact/+1, les huit codes fermés, les canaris de redaction
-et le domaine arithmétique maximal. Le gate Rust exige désormais un monde WIT
-résolu sans import. Ces preuves remédient les constats de `SECURITY-VERDICT.md` mais
-ne constituent pas à elles seules une approbation sécurité.
+- `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` ;
+- `contracts/fixtures/boussole-scoring-v2/security-vectors.v1.json`.
 
-Jusqu’à ces quatre verdicts agentiques et aux approbations produit humaines exigées par les contrats,
-le code, les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public
-reste désactivée à la compilation/release.
+Les passes reproduisent les dix cas méthodologiques avec une seconde implémentation, vérifient les
+digests exacts et confirment que les deux reviewers sont opaques, distincts, associés aux rôles
+professionnels attendus et liés à des attestations HTTPS hashées avec consentement explicite. Les cas
+couvrent la réponse zéro distincte d'un skip, une réponse intermédiaire normalisée par `r/M`, le mode
+neutre, les réponses sautées ou absentes, l'agrégation pondérée, les ties-to-even positifs et
+négatifs, le dénominateur nul, le reviewer dupliqué et une référence de proposition inconnue.
+
+Le corpus sécurité couvre huit refus byte-exacts, les plafonds exact/+1, les huit codes fermés, les
+canaris de non-divulgation, le domaine arithmétique maximal, le seuil minimal d'agrégation et
+l'expiration de la revue de publication. Le gate Rust exige un monde WIT résolu sans import.
+
+La politique de publication est hash-bound : seuil déclaré supérieur ou égal à 5, exclusion des
+petits groupes, aucune identité individuelle, sources roll-call uniquement agrégées et échéance de
+revue explicite. Un dataset réel peut imposer un seuil supérieur ou refuser une source ; il ne peut
+jamais relâcher ce plancher contractuel. Les identités professionnelles restent hors payload sous
+forme d'attestations publiques consenties et vérifiées par le caller de release, jamais par le
+composant pur.
+
+Jusqu'aux quatre verdicts, à une passe de promotion séparée et au contrôle humain explicite, le code,
+les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public reste
+désactivée à la compilation/release.

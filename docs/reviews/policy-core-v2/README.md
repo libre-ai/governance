@@ -2,10 +2,11 @@
 
 ## Status
 
-This is a contract candidate. It is not locked for release or authorized for product implementation
-until separate Architecture, Security and Privacy review-only passes approve it under
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). In solo work those passes may use the
-same agent/session as authoring, but each role remains isolated and bound to the immutable commit.
+This is a contract candidate. The final Architecture, Security and Privacy review-only passes are
+recorded in [`FINAL-REVIEW-RECORDS.md`](FINAL-REVIEW-RECORDS.md) against immutable commit `dfb1beb3`.
+It remains neither locked for release nor authorized for product implementation: a separate promotion
+pass and the repository owner's explicit control milestone are still required under
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
 
 ## Candidate authorities
 
