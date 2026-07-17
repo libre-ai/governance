@@ -67,15 +67,17 @@ Le corps est immuable après autorisation. Toute expansion de capacité, chemin,
 Un futur `AgentReview v1` atteste une review lecture seule d’un plan ou d’un résultat :
 
 - `subjectType`, digest du sujet et digests des preuves examinées ;
-- `contributorAgentIds`, `reviewerAgentId` et `reviewerRunId` issus d’identités attestées par le harness, jamais autodéclarées par le worker ;
-- verdict fermé `approve` ou `reject`, findings classés et raison structurée ;
-- manifest du reviewer, profil d’isolation et timestamp.
+- référence et digest de la lignée `contributorAgentIds`, construite par le harness depuis ses événements attestés de write/hunk/correction, jamais fournie par le worker ;
+- `reviewerAgentId` et `reviewerRunId` issus d’identités attestées par le harness ;
+- verdict fermé `approve` ou `reject`, résumé borné de codes/sévérités fermés et référence digérée vers les findings détaillés tenant-private ;
+- manifest du reviewer, profil d’isolation, claim de blind review, nonce one-shot, expiration et timestamp ;
+- digest d’une préimage canonique et signature avec identifiant de clé.
 
-Le seuil canonique est de deux reviews favorables provenant de deux `reviewerAgentId` distincts. Chacun diffère de tout agent ayant produit, modifié ou corrigé le digest revu. Les reviewers opèrent dans des worktrees ou projections read-only séparés, ne partagent aucun état mutable avec l’exécution et ne voient pas le verdict de l’autre avant d’avoir soumis le leur. Un reviewer qui modifie l’objet devient contributeur du nouveau digest et perd son éligibilité à le reviewer.
+Le seuil canonique est de deux reviews favorables provenant de deux `reviewerAgentId` distincts. Chacun diffère de tout agent de la lignée ayant produit, modifié ou corrigé le digest revu. Les reviewers opèrent dans des worktrees ou projections read-only séparés et ne partagent aucun état mutable avec l’exécution. Missions et le harness masquent toute review sœur jusqu’à soumission irrévocable du verdict ; cette non-disclosure est attestée, jamais confiée au prompt. Un reviewer qui modifie l’objet devient contributeur du nouveau digest et perd son éligibilité à le reviewer.
 
-Un rejet empêche le quorum. Toute modification du plan, résultat, artefact ou preuve produit un nouveau digest et invalide toutes les reviews antérieures. Missions calcule le quorum à partir des attestations vérifiées ; ni le worker, ni l’orchestrateur ne peuvent déclarer eux-mêmes `validated`.
+Un rejet empêche le quorum. Toute modification du plan, résultat, artefact ou preuve produit un nouveau digest et invalide toutes les reviews antérieures. Missions calcule le quorum à partir de la lignée et des attestations dont signature, clé, nonce, expiration, claim one-shot et isolation sont vérifiés ; toute absence ou divergence refuse le quorum. Ni le worker, ni l’orchestrateur ne peuvent déclarer eux-mêmes `validated`.
 
-Après exécution, le résultat et ses preuves suivent le même protocole. Deux approvals sur le même digest permettent la transition technique `validated`. Les domaines protégés — contrats canoniques, auth, migrations, releases et déploiements — conservent en plus le jalon humain exigé par les règles du dépôt.
+Après exécution, le résultat et ses preuves suivent le même protocole. Deux approvals sur le même digest permettent la transition technique `validated`. Pour les missions à risque élevé, la policy peut en plus imposer des pools, runtimes ou familles de modèles distincts. Les domaines protégés — contrats canoniques, auth, migrations, releases et déploiements — conservent le jalon humain exigé par les règles du dépôt.
 
 ### Commandes de contrôle
 
@@ -131,7 +133,8 @@ Biscuit reste deny-by-default avec tenant obligatoire :
 - l’orchestrateur peut contrôler un run et émettre ses événements ;
 - le harness peut invoquer uniquement les outils du plan ;
 - le worker peut utiliser une capacité locale atténuée à un run, un outil et une expiration ; le gateway conserve seul le secret provider amont ;
-- aucun token individuel d’auteur, worker, reviewer, orchestrateur ou harness ne peut fabriquer le quorum, merger, releaser ou déployer.
+- aucun token individuel d’auteur, worker, reviewer, orchestrateur ou harness ne peut fabriquer le quorum, merger, releaser ou déployer ;
+- chaque attestation de review est signée, expirante, one-shot et liée au digest du sujet, des preuves et de la lignée des contributeurs.
 
 Une panne de révocation, une clé inconnue, un tenant absent ou un digest divergent refuse l’opération. Les octets des tokens ne sont jamais journalisés.
 
@@ -145,9 +148,9 @@ Tout dépassement bloque les nouveaux effets, termine ou bloque le run selon le 
 
 Les événements causaux v2 sont des enregistrements métier tenant-private : ils portent les identifiants nécessaires au protocole, suivent l’autorité et la rétention Missions et ne sont pas recopiés comme logs ou attributs OTEL.
 
-Le journal opérationnel contient uniquement versions, catégories fermées, compteurs, décisions de policy et un identifiant de corrélation éphémère non réversible, sans table d’association persistée après le run. Sont exclus par défaut : `tenantId`, `missionId`, `runId` stable, identifiants utilisateur, références d’artefact, prompts, code, diff, chemins, commandes shell, arguments outils, emails, tokens et messages d’erreur bruts. Sa rétention courte et son niveau de précision temporelle sont fixés par le futur contrat de harness. Les métriques sont agrégées par défaut.
+Le journal opérationnel contient uniquement versions, catégories fermées, compteurs, décisions de policy et un identifiant de corrélation éphémère non réversible, sans table d’association persistée après le run. Sont exclus par défaut : `tenantId`, `missionId`, `runId` stable, identifiants utilisateur ou agent/reviewer, références d’artefact ou de review, prompts, code, diff, findings, chemins, commandes shell, arguments outils, emails, tokens et messages d’erreur bruts. Sa rétention courte et son niveau de précision temporelle sont fixés par le futur contrat de harness. Les métriques sont agrégées par défaut.
 
-Le contenu nécessaire à une preuve est stocké séparément comme artefact privé, avec classification, digest et classe de cycle de vie approuvée. Cette classe impose plafond de rétention, suppression/anonymisation et non-résurrection après restore selon `DATA-LIFECYCLE.md`. OpenTelemetry externe reste désactivé par défaut et sans contenu.
+Le contenu nécessaire à une preuve, y compris les findings détaillés de review, est stocké séparément comme artefact privé tenant-scoped, avec classification, digest et classe de cycle de vie approuvée. Cette classe impose vues/exports au besoin d’en connaître, plafond de rétention, suppression/anonymisation et non-résurrection après restore selon `DATA-LIFECYCLE.md`. OpenTelemetry externe reste désactivé par défaut et sans contenu.
 
 ## Adaptation sélective de Grok Build
 
@@ -189,7 +192,8 @@ Les futurs vecteurs doivent couvrir au minimum :
 
 - handoff planning-only utilisé comme autorisation d’exécution ;
 - plan, résultat, preuve ou review substitué après signature ;
-- auteur/exécuteur reviewant son propre digest, deux reviews du même agent ou reviewer autodéclaré ;
+- auteur/exécuteur reviewant son propre digest, contributeur omis de la lignée, deux reviews du même agent ou reviewer autodéclaré ;
+- review sans signature valide, nonce rejoué, attestation expirée ou verdict frère divulgué avant soumission ;
 - ancien quorum réutilisé après modification du digest ;
 - commande rejouée ou à révision obsolète ;
 - événement dupliqué divergent, séquence manquante ou cause inconnue ;
@@ -213,14 +217,14 @@ Les futurs vecteurs doivent couvrir au minimum :
 Cette RFC ne crée pas encore d’autorité. Après revues favorables, un incrément contractuel séparé devra proposer :
 
 1. `execution-plan-body.v1.schema.json` ;
-2. `agent-review.v1.schema.json` et règles de quorum à deux reviewers distincts ;
+2. `agent-review.v1.schema.json`, préimage/signature, lignée attestée et règles de quorum à deux reviewers distincts ;
 3. `execution-authorization.v1.schema.json` ;
 4. `orchestrator-control.v1.schema.json` ;
 5. `orchestrator-event.v2.schema.json` ;
 6. `harness-profile.v1.schema.json` ;
 7. `mission-record.v2.schema.json` et `missions.v2.yaml`, sans modifier les autorités v1 ;
 8. une politique Biscuit dédiée aux auteurs, reviewers et runs, sans droit individuel de fabriquer un quorum ;
-9. fixtures positives et négatives pour chaque invariant et séparation d’identités ;
+9. fixtures positives et négatives pour chaque invariant, séparation d’identités, non-disclosure, signature, expiration et replay ;
 10. projections TypeScript/Rust reproductibles ;
 11. dossier de revues architecture, sécurité et vie privée France/UE.
 
