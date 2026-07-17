@@ -49,9 +49,15 @@ rejet est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-39F776E.md`](CANDIDATE-INTEGRATION-REJECT-39F776E.md), SHA-256
 `6e9dc13e5f11d57a75df483c57cd38b623ea429db4511c43bb4d9bfef5eda84d`.
 
-La remédiation courante couvre la liste complète des aliases HTML5 dont le scalaire exact est un
-caractère ASCII RFC atext, `@` ou `period`, sans réécrire les entités inconnues ni les ampersands du
-payload. Aucune autorité normative moteur n'est modifiée.
+La troisième remédiation sur `e6df443` a complété ces aliases, mais sa passe d'intégration a rejeté
+l'alias non-HTML5 `&at;` et le coût quadratique de la regex e-mail sans `@`. Ce quatrième rejet est
+conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-E6DF443.md`](CANDIDATE-INTEGRATION-REJECT-E6DF443.md), SHA-256
+`59607db595d156db37723e1bbe47130db2b9c0a9263055a958a4925b4f487967`.
+
+La remédiation courante couvre exactement les aliases HTML5 dont le scalaire est un caractère ASCII
+RFC atext, `@` ou `period`, laisse `&at;` inconnu et remplace la regex rétroactive par un scan linéaire
+du domaine puis du local-part. Aucune autorité normative moteur n'est modifiée.
 
 ## Gates restants
 

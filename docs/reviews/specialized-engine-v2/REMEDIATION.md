@@ -39,18 +39,18 @@ expected outputs.
   NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
   marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
   numeric HTML markers and the complete lowercased HTML5 alias set whose exact scalar is ASCII RFC
-  atext, `@` or `period`; unknown named entities remain unchanged. Only decoded email identifiers or
-  high-confidence credentials are
-  rejected in values or property names, without echoing rejected content; unrelated `@`, `&#` or `%`
-  payload text is not reinterpreted as private data.
+  atext, `@` or `period`; unknown named entities, including non-HTML5 `at`, remain unchanged. The
+  detector finds a domain suffix from `@` then scans the local-part backwards by code point, keeping
+  work linear in input length. Only decoded email identifiers or high-confidence credentials are
+  rejected, without echoing content; unrelated `@`, `&#` or `%` text is not reinterpreted.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
 - Scanner self-tests reject direct, RFC local-parts containing `&`, Unicode-domain,
   default-ignorable, percent, over-nested percent, `%u`, numeric/named/mixed HTML and Unicode
-  identifiers plus credential markers. They preserve `R&D`, `R&amplitude`, literal unresolved
-  markers, `50%`, `release@2`,
-  `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
+  identifiers plus credential markers. They preserve a maximum-length no-`@` string, `R&D`,
+  `R&amplitude`, literal unresolved markers, `50%`, `release@2`, `https://example.org/a%2Fb`,
+  `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
