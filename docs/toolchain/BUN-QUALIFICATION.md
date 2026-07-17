@@ -1,5 +1,11 @@
 # Bun toolchain qualification
 
+## Runtime policy
+
+- minimum accepted runtime across the root workspace, packages and generated application template: `>=1.4.0` ;
+- `engines.bun`, lifecycle guards and the root toolchain gate reject every `1.3.x` runtime ;
+- the exact qualified revision remains mandatory in shared CI and reproducibility evidence ; a newer `1.4+` runtime is acceptable for development only, not automatically supply-chain-qualified.
+
 ## Current observation
 
 - stable: `1.3.14`, which predates the selected Rust line ;
@@ -26,7 +32,8 @@ The release is a technical compliance and reproducibility record, not legal advi
 
 ## Acceptance
 
-- exact version/revision verified ;
+- global minimum `1.4.0` declared and executable in every Bun package/template ;
+- exact CI version/revision verified ;
 - Darwin ARM64 and Linux x64 checksums recorded ;
 - exact application source and upstream relinking instructions archived ;
 - WebKit source revision recorded ;

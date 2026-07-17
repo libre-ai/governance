@@ -30,6 +30,8 @@ ecosystem-engine ↛ logique métier produit
 
 ## Application Bun
 
+Toute application et tout package exécutable déclarent `engines.bun: ">=1.4.0"`. Le manifeste racine sélectionne la révision qualifiée par défaut et les lifecycle guards refusent Bun 1.3. Les qualifications qui exigent explicitement Node restent isolées de la stack applicative Bun.
+
 ```text
 Browser
   ↓ HTTPS
