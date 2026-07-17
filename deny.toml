@@ -7,6 +7,9 @@ yanked = "deny"
 [licenses]
 confidence-threshold = 0.8
 unused-allowed-license = "allow"
+# Outbound workspace licences are governed by LICENSING.md; this allowlist is
+# intentionally restricted to inbound dependencies.
+private = { ignore = true }
 allow = [
   "MIT",
   "MIT-0",
