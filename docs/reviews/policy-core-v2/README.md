@@ -2,10 +2,20 @@
 
 ## Status
 
-This is a contract candidate. It is not locked for release or authorized for product implementation
-until separate Architecture, Security and Privacy review-only passes approve it under
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). In solo work those passes may use the
-same agent/session as authoring, but each role remains isolated and bound to the immutable commit.
+This is a contract candidate. Architecture, Security and Privacy review-only passes independently
+approved the exact Policy v2 authorities at immutable commit
+`d47feb96e605263b825f603033e40c3d1b61800c` under
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). These role verdicts do not promote the
+candidate or authorize implementation; a separate promotion pass and owner control milestone remain
+required.
+
+## Recorded role verdicts
+
+| Role | Durable record | Verdict | Report SHA-256 |
+| --- | --- | --- | --- |
+| Architecture | [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) | `APPROVE` | `2677d8fae983c010ed2a088014941627c102fb815642b9a62f28a404746d021a` |
+| Security | [`SECURITY-VERDICT.md`](SECURITY-VERDICT.md) | `APPROVE` | `9098a409a0fd7027c50038174035a8510ddd850b2f5c466ae768411572c60ff0` |
+| Privacy | [`PRIVACY-VERDICT.md`](PRIVACY-VERDICT.md) | `APPROVE` | `da21ce6147f0c2c53153f6721e33abccfbb7b1f49890a4459f7d1b1f75d31175` |
 
 ## Candidate authorities
 
