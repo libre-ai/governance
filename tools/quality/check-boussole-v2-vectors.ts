@@ -41,6 +41,30 @@ const byteLimits = {
 const isRecord = (value: unknown): value is RecordValue =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+function checkVectorEnvelopeBounds(
+  value: unknown,
+  state = { nodes: 0, overflowReported: false },
+  depth = 0,
+): void {
+  state.nodes += 1;
+  if (depth > 64) {
+    failures.push("Boussole vector envelope depth exceeds 64");
+    return;
+  }
+  if (state.nodes > 200_000) {
+    if (!state.overflowReported) {
+      failures.push("Boussole vector envelope node count exceeds 200000");
+      state.overflowReported = true;
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) checkVectorEnvelopeBounds(item, state, depth + 1);
+  } else if (isRecord(value)) {
+    for (const item of Object.values(value)) checkVectorEnvelopeBounds(item, state, depth + 1);
+  }
+}
+
 function sorted(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sorted);
   if (!isRecord(value)) return value;
@@ -467,6 +491,7 @@ const validators = {
   responses: validator("boussole-response-set.v2.schema.json"),
   output: validator("local-comparison.v2.schema.json"),
 };
+const vectorEnvelopeValidator = validator("engine-golden-vectors.v1.schema.json");
 
 const methodSchema = (await Bun.file(
   "contracts/schemas/boussole-method.v2.schema.json",
@@ -494,10 +519,18 @@ if (
   failures.push("Boussole catalog authority does not bind both normative vector corpora");
 }
 
-const document: unknown = await Bun.file(vectorPath).json();
-if (!isRecord(document) || document.schemaVersion !== "libre-ai.engine-golden-vectors.v1") {
+const vectorFile = Bun.file(vectorPath);
+if (vectorFile.size > 8 * 1024 * 1024) failures.push("Boussole vector envelope exceeds 8 MiB");
+const document: unknown = await vectorFile.json();
+if (
+  !isRecord(document) ||
+  document.schemaVersion !== "libre-ai.engine-golden-vectors.v1" ||
+  document.world !== "boussole-scoring-v2" ||
+  !vectorEnvelopeValidator(document)
+) {
   failures.push("invalid vector envelope");
 }
+checkVectorEnvelopeBounds(document);
 const cases =
   isRecord(document) && Array.isArray(document.cases) ? (document.cases as VectorCase[]) : [];
 if (cases.length < 10 || cases.length > 32) failures.push("expected 10..32 bounded Boussole cases");
