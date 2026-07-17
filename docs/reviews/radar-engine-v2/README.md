@@ -28,7 +28,8 @@ Normative artifacts:
 - `contracts/schemas/curation-rule-set.v2.schema.json`;
 - `contracts/schemas/curated-item-export.v2.schema.json`;
 - `contracts/openapi/radar.v2.yaml`;
-- `contracts/fixtures/radar-engine-v2/golden-vectors.v1.json`.
+- `contracts/fixtures/radar-engine-v2/golden-vectors.v1.json`;
+- `contracts/fixtures/radar-engine-v2/security-vectors.v1.json`.
 
 The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
 `contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
@@ -51,8 +52,9 @@ that promotion alone.
    final base URL defines relative-link resolution and `sourceHost`.
 7. Rule comparison is case-sensitive and locale-free; first matching rule decides, all rules report,
    and no match rejects by default.
-8. Errors contain only the closed WIT enum. They cannot reproduce hostile bytes, tenant values or
-   parser diagnostics.
+8. Component errors contain only the closed WIT enum; the API maps them to closed reason codes and a
+   static content-free message. Neither boundary can reproduce hostile bytes, tenant values or parser
+   diagnostics.
 9. RFC 8785 JCS bytes and SHA-256 bind items, rule sets and outputs. No clock enters evaluation.
 
 ## Deterministic verification recipe
@@ -73,7 +75,10 @@ cargo test -p libre-ai-contract-types --test schema_fixtures
 - exact JCS bytes (no final newline) for every golden success;
 - JSON Schema conformance of outputs;
 - normalized identifier/deduplication hashes, item/tag ordering and evaluation input digests;
-- one vector for every closed refusal code;
+- 43 parser cases and 16 rule-evaluation cases, including BOM/UTF-8/XML references, duplicate keys,
+  UTC rollovers, content identity, operator/date matrices and refusal precedence;
+- 18 generated exact/over resource boundaries and one vector for every closed refusal code;
+- exact content-free public refusal mappings plus diagnostic canaries;
 - refusal expectations containing only `kind` and `code`;
 - absence of orphan Radar fixture files.
 
@@ -84,16 +89,23 @@ shasum -a 256 contracts/fixtures/radar-engine-v2/positive/rss-2.0.xml
 shasum -a 256 contracts/fixtures/radar-engine-v2/golden/rss-2.0.normalized.json
 ```
 
-The vector index itself is intentionally not self-hashed. Reviewers must recompute its SHA-256 at
-the reviewed commit. Its `contractFiles` section binds the WIT, profile and schemas; each case binds
-its own raw inputs and exact output bytes.
+The indexes are intentionally not self-hashed. Their current candidate SHA-256 values are:
+
+- golden vectors: `1e8c0f446b254d6b2a15ee68cee8b4485f9fdbe73d38f894bf3464e32ab11365`;
+- security vectors: `a092dabcd81afdac4eaeb57aafc4bf9c26cec89aa514f05e48e56bfe1b0804a6`.
+
+Reviewers must recompute both at the reviewed commit. The golden `contractFiles` section binds the
+WIT, profile, engine schemas, export schema and OpenAPI; each file-backed case binds its raw inputs and
+exact output bytes. The security index binds required case inventories, generated ceilings, closed
+public mappings and non-disclosure canaries.
 
 ## Expected independent evidence
 
 Security and Architecture review agents return separate verdicts covering `SECURITY.md` and
-`ARCHITECTURE.md`. Each record includes the agent/session identity required by the shared protocol,
-the reviewed Git commit, the SHA-256 of `golden-vectors.v1.json`, findings and an explicit verdict.
-A self-review, conditional verdict or missing record keeps every candidate entry pending.
+`ARCHITECTURE.md`. Each record includes the independent agent/session identity required by the shared
+protocol, the reviewed Git commit, the SHA-256 values of both vector indexes, findings by severity and
+one allowed explicit verdict. A self-review, conditional verdict, stale hash or missing record keeps
+every candidate entry pending.
 
 ## Known residual work (not part of this candidate)
 
