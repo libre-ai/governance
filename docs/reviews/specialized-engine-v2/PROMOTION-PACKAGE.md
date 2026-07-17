@@ -37,6 +37,18 @@ site, runtime/network behavior or data-boundary change. The exact declaration re
 lock remains dependency-free with integrity
 `sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==`.
 
+## Final owner merge control
+
+- **Decision:** `continue`, scoped to merge of this single catalog transition after the favorable
+  promotion-integration verdict and green final CI;
+- **Governing instruction:** `review le jalon, challenger et continuer`;
+- **Durable reference:** `https://github.com/libre-ai/libre-ai/pull/89#issuecomment-5007164051`;
+- **UTF-8 body SHA-256:** `e5df615b114844c3bdef09e50cddf0810ef94fcb20b57699534c8ac52413ab2a`.
+
+Any drift in the schema, scanner, corpus, WIT, dependency version/integrity/import scope or catalog
+transition changes this decision to `hold`. The control explicitly excludes product/runtime/scoring,
+real/personal/tenant data, capabilities, release, infrastructure and deployment.
+
 ## Proposed transition
 
 Before promotion:
