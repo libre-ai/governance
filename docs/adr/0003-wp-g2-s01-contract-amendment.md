@@ -23,7 +23,7 @@ Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides m
 
 ## Autorité et approbations
 
-Les contrats v2 sont catalogués comme `candidate`. Les verdicts requis sont produits par des agents spécialisés en architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole et vie privée France/UE pour Notebook/Policy/Boussole. Chaque reviewer utilise un identifiant et une session distincts de l’agent auteur, sur un commit immuable, conformément à `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. L’agent auteur ne peut ni reviewer ni promouvoir seul son candidat ; un agent intégrateur séparé prépare la promotion après tous les verdicts.
+Les contrats v2 sont catalogués comme `candidate`. Les verdicts requis sont produits par des passes spécialisées en architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole et vie privée France/UE pour Notebook/Policy/Boussole. En contexte solo, un même agent/session peut enchaîner une passe auteur puis des passes review-only séparées par rôle, sur un commit immuable et sans modifier les autorités revues, conformément à `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. Une passe de promotion séparée vérifie tous les verdicts avant le jalon de contrôle humain.
 
 ## Compatibilité
 

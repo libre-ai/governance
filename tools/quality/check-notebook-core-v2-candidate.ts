@@ -446,7 +446,7 @@ for (const path of [
   expect(
     entry?.review?.state === "pending-independent-agent-review" &&
       entry.review.reviewerKind === "agent" &&
-      entry.review.separation === "different-agent-and-session",
+      entry.review.separation === "role-scoped-review-pass",
     `${path}: pending independent agent review metadata is missing`,
   );
   const required = entry?.review?.required;

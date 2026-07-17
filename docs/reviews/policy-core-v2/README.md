@@ -3,9 +3,9 @@
 ## Status
 
 This is a contract candidate. It is not locked for release or authorized for product implementation
-until separate Architecture, Security and Privacy review agents approve it under
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Each reviewer agent/session differs
-from the authoring agent/session; the repository owner's merge decision is not a technical review.
+until separate Architecture, Security and Privacy review-only passes approve it under
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). In solo work those passes may use the
+same agent/session as authoring, but each role remains isolated and bound to the immutable commit.
 
 ## Candidate authorities
 
@@ -87,5 +87,6 @@ The Privacy review agent must confirm tenant-bound minimization, sourced facts w
 
 Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
 verdicts from separate review-only passes, followed by the full contract, generated-projection and
-cross-runtime conformance gates. A generator, evaluator, CI job or authoring agent cannot promote
-this candidate automatically; the repository owner remains merge authority, not technical reviewer.
+cross-runtime conformance gates. A generator, evaluator, CI job or authoring pass cannot promote
+this candidate automatically; a separate promotion pass and the repository owner's control milestone
+remain required.

@@ -1,7 +1,7 @@
 # Radar engine v2 — Security review worksheet
 
-This worksheet is not a verdict. A Security review agent, distinct from the authoring agent/session,
-should evaluate the exact commit and attach evidence under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`.
+This worksheet is not a verdict. A dedicated Security review-only pass should evaluate the exact
+commit and attach evidence under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`.
 
 ## Trust and capability checks
 
@@ -45,5 +45,5 @@ should evaluate the exact commit and attach evidence under `docs/reviews/AGENT-R
 ## Required Security verdict content
 
 The separate verdict must include reviewed commit, vector-index SHA-256, commands run, blocking and
-non-blocking findings, residual risks, reviewer agent/session identity and an explicit verdict.
+non-blocking findings, residual risks, review-pass attribution and an explicit verdict.
 No entry may move from `candidate` to `locked` without that independent agent verdict.
