@@ -81,14 +81,22 @@ legacy et contrôles littéraux, mais elle a dû rejeter l'intégration car son 
 [`CANDIDATE-INTEGRATION-REJECT-453B0A6.md`](CANDIDATE-INTEGRATION-REJECT-453B0A6.md), SHA-256
 `116a09b818bc33a8cc37b649a74040f9d35ebe3d14c010212e0d6f28c3813c58`.
 
-La remédiation courante exige `;` pour toute entité nommée HTML5 ; seul le préfixe legacy `&amp` peut
-être sans point-virgule lorsqu'il encapsule ensuite une entité e-mail connue. Les local-parts
-dot-atom/quoted, domaines DNS/punycode/literals et scans bornés restent couverts. Aucune autorité
-normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge parallèle `1523bcd` a fermé les chaînes quoted et legacy alors connues. Sa passe
+d'intégration stricte a cependant rejeté les bypass EAI/IDN/CFWS et les faux positifs sur dot-atoms,
+domaines et casse HTML5 non valides. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-1523BCD.md`](CANDIDATE-INTEGRATION-REJECT-1523BCD.md), SHA-256
+`9f401d8d3caad8dbe9df2abbc784b54738001cb1292ddfeb4467fa4cca379206`.
+
+La remédiation courante remplace le sous-ensemble d'aliases ad hoc par le décodeur HTML5 exact
+`entities` BSD-2-Clause, puis applique un parseur local borné : dot-atom et quoted local-parts,
+EAI UTF-8, commentaires/CFWS, domaines IDNA/punycode et IP literals. Longueurs RFC, labels DNS et
+frontières de tokens sont validés avant le refus, afin de préserver les formes non-email. Les tests
+exportés couvrent valeurs, clés, encodages imbriqués, cas invalides et entrées maximales. Aucune
+autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation des aliases nommés après candidate-integration favorable ;
+1. intégrer la remédiation du scanner RFC/EAI après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
