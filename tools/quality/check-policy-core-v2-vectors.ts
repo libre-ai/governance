@@ -567,6 +567,30 @@ if (!boundaryBase?.expectedEvaluation) {
       },
     ],
     [
+      "cross-kind policy id",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        value.id = "urn:libre-ai:snapshot:wrong-kind";
+      },
+    ],
+    [
+      "cross-kind snapshot id",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        value.id = "urn:libre-ai:evaluation:wrong-kind";
+      },
+    ],
+    [
+      "cross-kind need id",
+      boundaryBase.need,
+      needValidator,
+      (value) => {
+        value.id = "urn:libre-ai:policy:wrong-kind";
+      },
+    ],
+    [
       "non-opaque model id",
       boundaryBase.snapshot,
       snapshotValidator,
@@ -613,6 +637,15 @@ if (!boundaryBase?.expectedEvaluation) {
     const candidate = structuredClone(base);
     mutate(candidate);
     if (validate(candidate)) failures.push(`privacy qualification: accepted ${label}`);
+  }
+  for (const [field, value] of [
+    ["policyId", "urn:libre-ai:snapshot:wrong-kind"],
+    ["snapshotId", "urn:libre-ai:policy:wrong-kind"],
+  ] as const) {
+    const candidate = structuredClone(boundaryBase.expectedEvaluation);
+    candidate[field] = value;
+    if (evaluationValidator(candidate))
+      failures.push(`privacy qualification: accepted cross-kind evaluation ${field}`);
   }
 }
 
@@ -695,10 +728,44 @@ if ((operators.invalidPolicyVectors?.length ?? 0) < 10) {
   failures.push("operator vectors: incomplete forbidden-type coverage");
 }
 
+const openApiText = await readFile("contracts/openapi/model-policy.v2.yaml", "utf8");
+const openApi = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML.parse(
+  openApiText,
+);
+const components = isRecord(openApi) && isRecord(openApi.components) ? openApi.components : {};
+const componentSchemas = isRecord(components.schemas) ? components.schemas : {};
+const problem = isRecord(componentSchemas.PolicyProblem) ? componentSchemas.PolicyProblem : {};
+const problemProperties = isRecord(problem.properties) ? problem.properties : {};
+const problemError = isRecord(problemProperties.error) ? problemProperties.error : {};
+const problemErrorProperties = isRecord(problemError.properties) ? problemError.properties : {};
+if (
+  problem.additionalProperties !== false ||
+  problemError.additionalProperties !== false ||
+  !("code" in problemErrorProperties) ||
+  !("requestId" in problemErrorProperties) ||
+  "message" in problemErrorProperties ||
+  openApiText.includes("problem-details.v1.schema.json")
+) {
+  failures.push("OpenAPI: v2 refusal envelope is not closed and redacted");
+}
+const paths = isRecord(openApi) && isRecord(openApi.paths) ? openApi.paths : {};
+const diffPath = isRecord(paths["/v2/model-policy/policies/{policyId}/diff"])
+  ? paths["/v2/model-policy/policies/{policyId}/diff"]
+  : {};
+const diffGet = isRecord(diffPath.get) ? diffPath.get : {};
+const diffResponses = isRecord(diffGet.responses) ? diffGet.responses : {};
+const diffSuccess = isRecord(diffResponses["200"]) ? diffResponses["200"] : {};
+if (
+  !JSON.stringify(diffSuccess).includes("#/components/schemas/PolicyDiff") ||
+  !isRecord(componentSchemas.PolicyDiff)
+) {
+  failures.push("OpenAPI: policy diff projection is not schema-bound");
+}
+
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries with valid exact ceilings, depth ${maximumJsonDepth}, privacy-minimized sources and principals, bounded for preimplementation`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries with valid exact ceilings, depth ${maximumJsonDepth}, privacy-minimized sources and principals, typed URNs and closed HTTP refusals, bounded for preimplementation`,
 );

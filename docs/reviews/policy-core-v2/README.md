@@ -59,8 +59,11 @@ from the authoring agent/session; the repository owner's merge decision is not a
   and Rust before any product engine exists; exact inputs remain schema-valid and
   the exact 2 MiB output remains valid, digest-bound JCS;
 - source URIs are bounded sanitized public HTTPS citations with DNS-shaped hosts,
-  no localhost/IP/userinfo/query/fragment; principal/model IDs are opaque and
-  textual facts are bounded machine tokens with executable privacy negatives;
+  no localhost/IP/userinfo/query/fragment; principal/model IDs are opaque,
+  artifact URNs are kind-specific, and textual facts are bounded machine tokens
+  with executable privacy negatives;
+- the v2 HTTP refusal envelope carries only a stable code and opaque request ID,
+  never a free-form message, input value or reviewer identity;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
 ## Required independent agent checks
