@@ -15,9 +15,7 @@ minification are disabled. Fault-module generation reuses the already pinned Rus
 without adding a dependency; each modified module is validated before browser execution and remains
 under ignored `target/`.
 
-The existing `@playwright/test 1.61.1` dependency executes local Chromium, Firefox, and WebKit. The
-harness blocks every non-loopback request and uses only public deterministic fixtures. Browser binary
-provenance/archival is still required before a final Gate B approval or CI gate.
+The existing `@playwright/test 1.61.1` dependency executes local Chromium, Firefox, and WebKit. The harness blocks every non-loopback request and uses only public deterministic fixtures. `toolchains/notebook-qualification.json` pins the Playwright descriptor plus the official Chromium 149/revision 1228, Firefox 151/revision 1532, and WebKit 26.5/revision 2311 archives and installed executables for Darwin arm64. `check-toolchain.ts` verifies the installed files on every run and verifies archive SHA-256 values when `NOTEBOOK_QUALIFICATION_ARCHIVE_DIR` is supplied.
 
 ## Rejected alternative
 
@@ -28,8 +26,4 @@ transpiler has no reported vulnerability.
 
 ## Residual toolchain limits
 
-The transpiler currently requires Node for its worker implementation because the pinned Bun can emit a
-spurious `process.binding("tcp_wrap")` worker error after successful library execution. Node 26.5.0 was
-used for the recorded local evidence but is not yet a project-pinned toolchain. Generated artifacts are
-therefore rebuilt twice and compared, never committed, and cannot become release evidence until Node
-and browser archives are pinned with hashes.
+The transpiler currently requires Node for its worker implementation because the pinned Bun can emit a spurious `process.binding("tcp_wrap")` worker error after successful library execution. Node 26.5.0 for Darwin arm64 is now pinned by official archive URL, archive SHA-256, and installed executable SHA-256 in the qualification manifest. It remains qualification-only rather than a repository-wide runtime. Generated component artifacts are rebuilt twice and compared and are never committed. Archive verification and raw browser evidence must be retained with each immutable Gate B review; the manifest alone is not proof that a reviewer possessed the archives.
