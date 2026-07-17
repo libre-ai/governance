@@ -159,17 +159,23 @@ chronologie de PR #80 reste historique, sans autorisation rétroactive.
 
 Candidate-integration a approuvé le merge exact `ccf9d684d9a43ad7236bec905e701e155520e2d6`
 ([`CANDIDATE-INTEGRATION-CCF9D68.md`](CANDIDATE-INTEGRATION-CCF9D68.md), SHA-256
-`62d59e751efbe0144d779b3497e55d7494a9d36b5b5ebadc1c22ce69d02ffc4f`). L'avancement ultérieur de
-`main` jusqu'à `48c94aa` ne touche que Notebook Gate B ; les hashes schéma/scanner/catalogue de cette
-autorité restent byte-identical. Cette approbation ne vaut ni rôle Architecture/Security, ni
-promotion, ni contrôle owner.
+`62d59e751efbe0144d779b3497e55d7494a9d36b5b5ebadc1c22ce69d02ffc4f`). Sur ce même SHA,
+Architecture approuve avec une réserve documentaire désormais réconciliée
+([`ARCHITECTURE-VERDICT-CCF9D68.md`](ARCHITECTURE-VERDICT-CCF9D68.md), SHA-256
+`99d5887946a1ae23cc11cc14dd5244a61c46b6635aeba86f3a402e4abd5b5edb`) et Security approuve sans
+constat bloquant ([`SECURITY-VERDICT-CCF9D68.md`](SECURITY-VERDICT-CCF9D68.md), SHA-256
+`e4e9910c4872206a9762f580f538a4bd76fc885ca051562873151b437e066cfb`).
+
+L'avancement ultérieur de `main` par PR #84 ne touche que la qualification Notebook Gate B, puis PR
+#85 persiste la preuve candidate-integration ; les hashes schéma/scanner/catalogue/corpus/WIT de
+cette autorité restent byte-identical. Les trois rôles gouvernent donc les mêmes octets d'autorité.
+Ils ne valent ni promotion, ni contrôle owner, ni autorisation produit/runtime/data/release.
 
 ## Gates restants
 
-1. intégrer ce record candidate-integration sans modifier l'autorité ;
-2. rejouer Architecture et Security sur le merge immuable résultant ;
-3. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
-4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. intégrer ces records Architecture/Security sans modifier l'autorité ;
+2. enregistrer l'acceptation owner explicite de `entities@8.0.0` ;
+3. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
