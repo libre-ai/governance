@@ -7,7 +7,7 @@
 
 ## Contexte
 
-`vision.md` diffère explicitement l’orchestration agentique tant qu’un RFC, des contrats d’exécution et de contrôle, un harness et un work package séparé ne sont pas approuvés. `apps/missions` reste l’autorité du workflow humain ; aucun runtime agentique ne peut approuver une mission, accepter un résultat, merger, releaser ou déployer.
+`vision.md` diffère explicitement l’orchestration agentique tant qu’un RFC, des contrats d’exécution et de contrôle, un harness et un work package séparé ne sont pas approuvés. `apps/missions` reste l’autorité du workflow et des preuves, mais la validation technique n’est pas réservée à un humain : le plan puis le résultat d’un agent doivent chacun recevoir deux reviews favorables d’autres agents sur le même digest immuable. Aucun agent ne peut reviewer sa propre contribution, ni merger, releaser ou déployer.
 
 L’étude de `xai-org/grok-build` confirme l’intérêt de plusieurs patterns — plan lecture seule, sous-agents, worktrees, budgets, suivi des changements, sandbox, redaction et harness déterministe — mais son workspace complet n’est pas une base acceptable pour Libre AI : taille et closure de dépendances élevées, couplages xAI/Mixpanel/Sentry/GCS et sémantiques fail-open incompatibles avec la cible.
 
@@ -25,15 +25,15 @@ Pi couvre déjà l’interaction terminal, les sessions, la compaction, les prov
 Adopter une architecture à quatre frontières :
 
 ```text
-Missions (Bun/TypeScript, autorité humaine)
-  └── autorisation d’exécution liée au digest du plan
+Missions (Bun/TypeScript, autorité workflow + quorum)
+  └── 2 reviews agents du digest du plan → autorisation d’exécution
       └── Agent Orchestrator (Rust spécialisé, contrôle et budgets)
           └── Agent Harness (Rust système, sandbox et preuves)
               └── adaptateur worker Pi par RPC JSONL
 ```
 
-1. **Missions** possède proposition, risque, approbation du digest exact d’un plan, autorisation d’exécution, décisions humaines et verdict final.
-2. **Agent Orchestrator** compile un corps de plan déterministe à partir des contrats approuvables, puis possède l’état d’un run, l’idempotence, les commandes, la consommation monotone des budgets et l’émission d’événements causaux. Il ne peut pas autoriser son propre plan.
+1. **Missions** possède proposition, risque, collecte des reviews, calcul du quorum, autorisation d’exécution et validation finale. Deux agents reviewers distincts de l’auteur/exécuteur doivent approuver le même digest ; les jalons humains restent additifs uniquement lorsque la doctrine canonique les impose.
+2. **Agent Orchestrator** compile un corps de plan déterministe à partir des contrats approuvables, puis possède l’état d’un run, l’idempotence, les commandes, la consommation monotone des budgets et l’émission d’événements causaux. Il ne peut ni autoriser son propre plan, ni produire une review de quorum.
 3. **Agent Harness** possède processus, filesystem, réseau, gateway provider, brokers d’outils privilégiés, secrets éphémères, worktrees et collecte d’évidence. Une isolation exigée mais indisponible refuse le démarrage.
 4. **Pi** est lancé comme processus externe derrière un adaptateur RPC versionné. Il ne reçoit que le workspace et les outils autorisés, plus un jeton local court lié au run ; il ne reçoit aucun secret du provider amont.
 5. **Proof/Artifact** possèdent les preuves et artefacts content-addressed. Missions et l’orchestrateur ne conservent que leurs références digérées.
@@ -56,11 +56,26 @@ Un futur `ExecutionPlanBody v1`, produit par l’orchestrateur sans droit de l�
 - digest du profil de sandbox, manifests worker/extensions/skills et politique provider ;
 - destinations Proof/Artifact autorisées.
 
-La préimage et la sérialisation canonique sont définies par le profil du contrat. Elles n’incluent ni approbation, ni autorisation, ni identifiant de run. Missions présente le corps et son digest à l’approbateur, puis `MissionRecord v2` conserve ce digest et les références d’approbation.
+La préimage et la sérialisation canonique sont définies par le profil du contrat. Elles n’incluent ni review, ni autorisation, ni identifiant de run. Missions soumet le corps et son digest à deux agents reviewers éligibles, puis `MissionRecord v2` conserve ce digest et leurs attestations favorables. Toute review porte sur les mêmes octets et le même digest.
 
-Après la transition humaine, Missions émet une `ExecutionAuthorization v1` séparée qui lie `tenantId`, `missionId`, révision et digest du `MissionRecord v2`, digest du corps de plan, approbations, expiration et identifiant de révocation. Le Biscuit de démarrage est atténué aux mêmes faits. Cette séparation évite toute préimage circulaire. L’orchestrateur valide le corps, l’autorisation, le token et leurs digests avant de créer `runId` et la clé d’idempotence.
+Après quorum, Missions émet une `ExecutionAuthorization v1` séparée qui lie `tenantId`, `missionId`, révision et digest du `MissionRecord v2`, digest du corps de plan, deux attestations de review, expiration et identifiant de révocation. Un jalon humain supplémentaire est référencé lorsque la mission touche un domaine protégé par la doctrine canonique. Le Biscuit de démarrage est atténué aux mêmes faits. Cette séparation évite toute préimage circulaire. L’orchestrateur valide le corps, l’autorisation, le token, l’éligibilité des reviewers et leurs digests avant de créer `runId` et la clé d’idempotence.
 
-Le corps est immuable après autorisation. Toute expansion de capacité, chemin, données, réseau, budget ou provider exige un nouveau corps et une nouvelle autorisation liée à son digest. Un `agent-handoff.v1` reste planning-only et ne peut pas être transformé implicitement en droit d’exécution.
+Le corps est immuable après autorisation. Toute expansion de capacité, chemin, données, réseau, budget ou provider produit un nouveau digest, invalide les reviews précédentes et exige deux nouvelles reviews puis une nouvelle autorisation. Un `agent-handoff.v1` reste planning-only et ne peut pas être transformé implicitement en droit d’exécution.
+
+### Quorum de reviews agentiques
+
+Un futur `AgentReview v1` atteste une review lecture seule d’un plan ou d’un résultat :
+
+- `subjectType`, digest du sujet et digests des preuves examinées ;
+- `contributorAgentIds`, `reviewerAgentId` et `reviewerRunId` issus d’identités attestées par le harness, jamais autodéclarées par le worker ;
+- verdict fermé `approve` ou `reject`, findings classés et raison structurée ;
+- manifest du reviewer, profil d’isolation et timestamp.
+
+Le seuil canonique est de deux reviews favorables provenant de deux `reviewerAgentId` distincts. Chacun diffère de tout agent ayant produit, modifié ou corrigé le digest revu. Les reviewers opèrent dans des worktrees ou projections read-only séparés, ne partagent aucun état mutable avec l’exécution et ne voient pas le verdict de l’autre avant d’avoir soumis le leur. Un reviewer qui modifie l’objet devient contributeur du nouveau digest et perd son éligibilité à le reviewer.
+
+Un rejet empêche le quorum. Toute modification du plan, résultat, artefact ou preuve produit un nouveau digest et invalide toutes les reviews antérieures. Missions calcule le quorum à partir des attestations vérifiées ; ni le worker, ni l’orchestrateur ne peuvent déclarer eux-mêmes `validated`.
+
+Après exécution, le résultat et ses preuves suivent le même protocole. Deux approvals sur le même digest permettent la transition technique `validated`. Les domaines protégés — contrats canoniques, auth, migrations, releases et déploiements — conservent en plus le jalon humain exigé par les règles du dépôt.
 
 ### Commandes de contrôle
 
@@ -111,11 +126,12 @@ Un outil privilégié passe par un broker du harness qui revalide run, plan, out
 
 Biscuit reste deny-by-default avec tenant obligatoire :
 
-- le contrôleur humain peut autoriser une commande sur une mission et un digest de plan exacts ;
+- un reviewer agent peut soumettre une review pour un digest exact, sans droit d’exécuter ou modifier ce sujet ;
+- Missions peut émettre l’autorisation seulement après vérification de deux reviewers éligibles et distincts ;
 - l’orchestrateur peut contrôler un run et émettre ses événements ;
 - le harness peut invoquer uniquement les outils du plan ;
 - le worker peut utiliser une capacité locale atténuée à un run, un outil et une expiration ; le gateway conserve seul le secret provider amont ;
-- aucun token orchestrateur/harness/worker ne peut approuver une mission, accepter un résultat, merger, releaser ou déployer.
+- aucun token individuel d’auteur, worker, reviewer, orchestrateur ou harness ne peut fabriquer le quorum, merger, releaser ou déployer.
 
 Une panne de révocation, une clé inconnue, un tenant absent ou un digest divergent refuse l’opération. Les octets des tokens ne sont jamais journalisés.
 
@@ -172,7 +188,9 @@ L’adaptateur ne dépend pas des types internes de Pi. Un changement de worker 
 Les futurs vecteurs doivent couvrir au minimum :
 
 - handoff planning-only utilisé comme autorisation d’exécution ;
-- plan ou approbation substitué après signature ;
+- plan, résultat, preuve ou review substitué après signature ;
+- auteur/exécuteur reviewant son propre digest, deux reviews du même agent ou reviewer autodéclaré ;
+- ancien quorum réutilisé après modification du digest ;
 - commande rejouée ou à révision obsolète ;
 - événement dupliqué divergent, séquence manquante ou cause inconnue ;
 - run cross-tenant ;
@@ -188,22 +206,23 @@ Les futurs vecteurs doivent couvrir au minimum :
 - tenant, mission, run stable, prompt, code, chemin, commande, PII ou secret dans logs/OTEL ;
 - preuve privée conservée au-delà de sa classe de rétention ou ressuscitée après restore ;
 - worker déclarant un succès sans preuves digérées ;
-- tentative d’auto-approbation, merge, release ou déploiement.
+- tentative d’auto-validation, fabrication de quorum, merge, release ou déploiement.
 
 ## Contrats candidats requis
 
 Cette RFC ne crée pas encore d’autorité. Après revues favorables, un incrément contractuel séparé devra proposer :
 
 1. `execution-plan-body.v1.schema.json` ;
-2. `execution-authorization.v1.schema.json` ;
-3. `orchestrator-control.v1.schema.json` ;
-4. `orchestrator-event.v2.schema.json` ;
-5. `harness-profile.v1.schema.json` ;
-6. `mission-record.v2.schema.json` et `missions.v2.yaml`, sans modifier les autorités v1 ;
-7. une politique Biscuit dédiée au run, sans élargir les droits Missions ;
-8. fixtures positives et négatives pour chaque invariant ;
-9. projections TypeScript/Rust reproductibles ;
-10. dossier de revues architecture, sécurité et vie privée France/UE.
+2. `agent-review.v1.schema.json` et règles de quorum à deux reviewers distincts ;
+3. `execution-authorization.v1.schema.json` ;
+4. `orchestrator-control.v1.schema.json` ;
+5. `orchestrator-event.v2.schema.json` ;
+6. `harness-profile.v1.schema.json` ;
+7. `mission-record.v2.schema.json` et `missions.v2.yaml`, sans modifier les autorités v1 ;
+8. une politique Biscuit dédiée aux auteurs, reviewers et runs, sans droit individuel de fabriquer un quorum ;
+9. fixtures positives et négatives pour chaque invariant et séparation d’identités ;
+10. projections TypeScript/Rust reproductibles ;
+11. dossier de revues architecture, sécurité et vie privée France/UE.
 
 Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et au jalon humain. Le work package d’implémentation est ajouté seulement après le Specification Lock et ne partage aucun `writePath` avec Missions.
 
@@ -212,7 +231,7 @@ Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et 
 - implémenter l’orchestrateur, le harness ou une extension Pi dans cette RFC ;
 - autoriser une mission réelle, un provider, un secret, une persistance ou du réseau ;
 - créer un marketplace, une mémoire agentique ou un moteur agentique généraliste ;
-- donner au runtime des droits de merge, release, migration ou déploiement ;
+- donner à un agent individuel des droits de quorum, merge, release, migration ou déploiement ;
 - modifier `agent-handoff.v1`, `MissionRecord v1` ou l’API Missions v1 en place ; une famille v2 candidate est requise ;
 - importer l’historique Git ou le workspace Grok Build.
 
@@ -221,7 +240,7 @@ Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et 
 La RFC peut passer à l’écriture des contrats candidats seulement si :
 
 - architecture confirme les quatre frontières et l’absence de seconde autorité Missions ;
-- sécurité approuve le modèle fail-closed, les budgets et l’atténuation ;
+- sécurité approuve le modèle fail-closed, les budgets, l’atténuation et la non-collusion minimale du quorum ;
 - vie privée France/UE approuve journal, preuves, rétention et provider policy ;
 - la qualification supply-chain de Pi est définie sans modifier le lockfile racine ;
 - chaque ambiguïté de contrôle, causalité et comptage reçoit une sémantique testable.
