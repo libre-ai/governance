@@ -43,6 +43,13 @@
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; contract review/promotion milestones do not authorize implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
+## Next controlled milestone
+
+- **Owner choice:** close Notebook Core v2 Gate B before authorizing any first Radar, Policy or Boussole product engine ;
+- **Authorized scope:** Gate B host/qualification remediation and reproducible evidence using public fixtures, including physical macOS arm64 classes at 8 Gio and 16–24 Gio ;
+- **Exit evidence:** exact product host, real IndexedDB cycle, process-level OOM/panic handling, memory-erasure evidence, three-browser budgets and a fresh review-only Gate B verdict on an immutable commit ;
+- **Still blocked:** user backups, personal/tenant data, production, release, infrastructure, deployment and every new product engine. A later engine requires its own explicit owner milestone.
+
 ## Explicitly deferred
 
 - Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
