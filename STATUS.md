@@ -35,7 +35,7 @@
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
 - ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar v2 is now locked after its role verdicts, promotion pass and owner milestone; 16 Notebook/Policy/Boussole/shared authorities remain candidate ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
-- Radar v2 Architecture and Security are approved and its seven authorities are locked; Notebook, Policy and Boussole remain candidate-only pending their own complete role and promotion evidence ;
+- Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on commit `d47feb9` with promotion still pending; Notebook and Boussole remain candidate-only pending durable promotion evidence ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - no Radar product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; the Radar promotion milestone did not authorize implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
