@@ -36,23 +36,25 @@ expected outputs.
   identifier encodings, local file URIs and traversal. Metadata object keys use ASCII machine tokens
   and reject credential-shaped names.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
-  NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
-  marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
-  numeric HTML markers and the complete lowercased HTML5 alias set whose exact scalar is ASCII RFC
-  atext, `@`, `period`, quote, bracket or colon; unknown named entities, including non-HTML5 `at`,
-  remain unchanged. The detector finds a DNS, punycode or bounded IP-literal domain suffix from `@`,
-  then scans an atext or quoted local-part by code point. Work remains bounded by the preflight
-  string limit and linear adversarial controls. Only decoded email identifiers or high-confidence
-  credentials are
-  rejected, without echoing content; unrelated `@`, `&#` or `%` text is not reinterpreted.
+  NFKC normalization, removes default-ignorable code points and performs four bounded decoding rounds
+  over percent octets, `%u` escapes and exact HTML5 references. The BSD-2-Clause `entities` decoder
+  follows case-sensitive HTML5 names, including legacy semicolonless forms, and preserves unknown
+  references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser then validates RFC-length
+  dot-atom or quoted EAI local-parts, nested comments/CFWS, IDNA/punycode DNS labels and bounded IPv4/
+  IPv6 literals before classifying an email. Invalid token boundaries, local-parts over 64 octets,
+  empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
+  by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
+  same 65,536-code-point ceiling fails closed. Only decoded email identifiers or
+  high-confidence credentials are rejected, without echoing content; unrelated `@`, `&#` or `%` text
+  is not reinterpreted.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
-- Scanner self-tests reject direct, atext/quoted/Unicode RFC local-parts, Unicode/punycode/IP-literal
-  domains, default-ignorable, percent, over-nested percent, `%u`, numeric/named/mixed HTML and
-  credential markers. They preserve maximum-length non-email controls, `R&D`, `R&amplitude`, literal
-  unresolved markers, `50%`, `release@2`, `https://example.org/a%2Fb`,
-  `Café démonstration` and inert path payloads.
+- Exported scanner tests and executable gate self-tests reject direct/encoded dot-atom, quoted and EAI
+  local-parts, comments/CFWS, Unicode/combining-mark/punycode/IP-literal domains, default-ignorables,
+  nested HTML5 references and credentials. They preserve malformed/overlong address shapes,
+  case-unknown references and maximum-length non-emails plus `R&D`, `R&amplitude`, `50%`, `release@2`,
+  `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.

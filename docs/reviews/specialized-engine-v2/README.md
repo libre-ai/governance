@@ -65,16 +65,27 @@ conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-E6DF443.md`](CANDIDATE-INTEGRATION-REJECT-E6DF443.md), SHA-256
 `59607db595d156db37723e1bbe47130db2b9c0a9263055a958a4925b4f487967`.
 
-La remédiation courante couvre exactement les aliases HTML5 dont le scalaire est un caractère ASCII
-RFC atext, `@`, `period`, un délimiteur de local-part entre guillemets ou un séparateur de domaine
-littéral. Elle laisse `&at;` inconnu, reconnaît les local-parts quoted, les domaines punycode/IP et
-remplace la regex rétroactive par un scan borné du domaine puis du local-part. Les tests incluent les
-encodages directs, percent, numeric, named et nested ainsi que des contrôles à la longueur maximale.
-Aucune autorité normative moteur n'est modifiée.
+La remédiation sur `9e74bab` a supprimé le coût quadratique, mais sa passe d'intégration a trouvé les
+chaînes `&ampAlias;` sans point-virgule. Ce cinquième rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-9E74BAB.md`](CANDIDATE-INTEGRATION-REJECT-9E74BAB.md), SHA-256
+`e27011a3f008bac8518e7cce83641530a05cb346cd6df3e1081e8aa8383b8432`.
+
+Le merge `1523bcd` a fermé cette famille et les local-parts quoted. Sa passe d'intégration stricte a
+cependant rejeté les bypass EAI/IDN/CFWS et les faux positifs sur dot-atoms, domaines et casse HTML5
+non valides. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-1523BCD.md`](CANDIDATE-INTEGRATION-REJECT-1523BCD.md), SHA-256
+`9f401d8d3caad8dbe9df2abbc784b54738001cb1292ddfeb4467fa4cca379206`.
+
+La remédiation courante remplace le sous-ensemble d'aliases ad hoc par le décodeur HTML5 exact
+`entities` BSD-2-Clause, puis applique un parseur local borné : dot-atom et quoted local-parts,
+EAI UTF-8, commentaires/CFWS, domaines IDNA/punycode et IP literals. Longueurs RFC, labels DNS et
+frontières de tokens sont validés avant le refus, afin de préserver les formes non-email. Les tests
+exportés couvrent valeurs, clés, encodages imbriqués, cas invalides et entrées maximales. Aucune
+autorité normative moteur n'est modifiée.
 
 ## Gates restants
 
-1. intégrer la remédiation des aliases nommés après candidate-integration favorable ;
+1. intégrer la remédiation du scanner RFC/EAI après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
