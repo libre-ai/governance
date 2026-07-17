@@ -138,12 +138,13 @@ export function sealOwned(
   request: SealBackupRequest,
   recoverySecret: Uint8Array,
 ): Uint8Array {
+  const ownedPlaintext = request.plaintext;
   try {
     return api.sealBackup(request, recoverySecret);
   } catch (error) {
     throw closedRefusal(error);
   } finally {
-    request.plaintext.fill(0);
+    ownedPlaintext.fill(0);
     recoverySecret.fill(0);
   }
 }
@@ -192,10 +193,11 @@ export async function openForUse<Result>(
     recoverySecret.fill(0);
   }
 
+  const ownedPlaintext = opened.plaintext;
   try {
     return await consume(opened);
   } finally {
-    opened.plaintext.fill(0);
+    ownedPlaintext.fill(0);
   }
 }
 
@@ -219,10 +221,15 @@ function decodeRecoveryAttempt(value: string): Uint8Array {
 
 function closedRefusal(error: unknown): NotebookHostRefusal {
   if (error instanceof NotebookHostRefusal) return error;
-  const message =
-    typeof error === "object" && error !== null && "message" in error
-      ? Reflect.get(error, "message")
-      : undefined;
+  let message: unknown;
+  try {
+    message =
+      typeof error === "object" && error !== null && "message" in error
+        ? Reflect.get(error, "message")
+        : undefined;
+  } catch {
+    message = undefined;
+  }
   const code: ErrorCode | null =
     typeof message === "string" && ERROR_CODES.has(message as ErrorCode)
       ? (message as ErrorCode)

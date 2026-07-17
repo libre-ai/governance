@@ -118,6 +118,80 @@ describe("Notebook qualification host", () => {
     expect(zeros(document)).toBe(true);
   });
 
+  test("fails closed for hostile error accessors", () => {
+    const document = new TextEncoder().encode("private Context");
+    const hostileError = Object.create(null, {
+      message: {
+        get() {
+          throw new Error("private accessor detail");
+        },
+      },
+    });
+    const api = {
+      canonicalizeContext() {
+        throw hostileError;
+      },
+      sealBackup: () => new Uint8Array(),
+      openBackup() {
+        throw new Error("unreachable");
+      },
+    } satisfies NotebookCoreApi;
+
+    const error = refusal(() => canonicalizeOwned(api, document));
+    expect(error.code).toBe("internal-failure");
+    expect(error.message).toBe(ERROR_MESSAGES["internal-failure"]);
+    expect(error.message).not.toContain("private accessor detail");
+    expect(zeros(document)).toBe(true);
+  });
+
+  test("retains stable references to every owned plaintext buffer", async () => {
+    const sealPlaintext = new TextEncoder().encode("private seal plaintext");
+    const secret = new Uint8Array(16).fill(7);
+    const replacementSealPlaintext = new Uint8Array([9]);
+    const openedPlaintext = new TextEncoder().encode("private opened plaintext");
+    const replacementOpenedPlaintext = new Uint8Array([8]);
+    const api = {
+      canonicalizeContext: (document: Uint8Array) => document,
+      sealBackup(request: SealBackupRequest) {
+        request.plaintext = replacementSealPlaintext;
+        throw new Error("internal-failure");
+      },
+      openBackup() {
+        return {
+          schemaVersion: "libre-ai.notebook-backup.v2",
+          id: "urn:libre-ai:backup:000102030405060708090a0b0c0d0e0f",
+          digest: "0".repeat(64),
+          plaintext: openedPlaintext,
+        };
+      },
+    } satisfies NotebookCoreApi;
+    const request = {
+      schemaVersion: "libre-ai.notebook-backup-seal-request.v2",
+      id: "urn:libre-ai:backup:000102030405060708090a0b0c0d0e0f",
+      cipher: "aes-256-gcm",
+      kdf: {
+        algorithm: "argon2id",
+        version: 19,
+        memoryKib: 65_536,
+        iterations: 3,
+        parallelism: 1,
+        outputLengthBytes: 32,
+        salt: new Uint8Array(16),
+      },
+      nonce: new Uint8Array(12),
+      plaintext: sealPlaintext,
+    } satisfies SealBackupRequest;
+
+    refusal(() => sealOwned(api, request, secret));
+    expect(zeros(sealPlaintext)).toBe(true);
+    expect(zeros(secret)).toBe(true);
+
+    await openForUse(api, new Uint8Array([1]), "202122232425262728292a2b2c2d2e2f", (opened) => {
+      opened.plaintext = replacementOpenedPlaintext;
+    });
+    expect(zeros(openedPlaintext)).toBe(true);
+  });
+
   test("wipes decoded recovery and opened plaintext on error and success", async () => {
     let failedSecret: Uint8Array | undefined;
     const failedApi = {
