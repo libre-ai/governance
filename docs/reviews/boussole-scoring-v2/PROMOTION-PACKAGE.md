@@ -5,7 +5,9 @@
 - **Scope:** exactly five Boussole v2 authorities, `candidate → locked`
 - **Public scoring:** **NO-GO**
 - **Product implementation:** **NOT AUTHORIZED**
-- **Package state:** pending a separate promotion/integration verdict on the immutable promotion commit
+- **Package state:** approved by the separate
+  [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass on commit `1a3f37d`
+- **Promotion verdict SHA-256:** `4da24f969b9beec8702c9967b173a9d2cbe74abcd58b3fa4bf1921a64c51d1d2`
 
 No normative Boussole authority changes in this package. The only machine-authoritative transition is
 its catalog review state. `engine-golden-vectors-v1` remains a separate candidate under the shared

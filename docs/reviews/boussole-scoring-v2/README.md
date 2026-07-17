@@ -25,9 +25,12 @@ antérieur reste une trace utile mais est stale pour la promotion.
 
 Les quatre rôles sont techniquement complets. Le
 [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) enregistre le jalon explicite du propriétaire et la
-transition catalog-only proposée ; sa passe `promotion-integration` séparée reste obligatoire avant
-merge selon [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Le scoring public demeure
-NO-GO.
+transition catalog-only ; la passe séparée
+[`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) l’approuve sur le commit immuable `1a3f37d`. Une
+vérification d’intégration finale et le merge restent requis selon
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Le scoring public demeure NO-GO.
+Le hash du package cité dans le verdict est le snapshot exact du commit revu `1a3f37d` ; le package
+non normatif est ensuite enrichi uniquement pour référencer ce verdict durable.
 
 Les quatre rôles couvrent séparément :
 
