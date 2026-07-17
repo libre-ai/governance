@@ -11,7 +11,9 @@ and is absent from product/browser runtime output. `bun audit` reports no adviso
 Its preview shims share the same permissive licence but are not imported into the generated component:
 the build sets `wasiShim: false`, requires an empty transpiler import list, and verifies the generated
 core module has zero imports. Binaryen/OXC are build-only transitive packages; optimization and
-minification are disabled.
+minification are disabled. Fault-module generation reuses the already pinned Rust `wasmparser`
+without adding a dependency; each modified module is validated before browser execution and remains
+under ignored `target/`.
 
 The existing `@playwright/test 1.61.1` dependency executes local Chromium, Firefox, and WebKit. The
 harness blocks every non-loopback request and uses only public deterministic fixtures. Browser binary

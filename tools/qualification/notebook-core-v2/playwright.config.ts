@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: "line",
   retries: 0,
   testDir: ".",
-  testMatch: "browser.playwright.ts",
+  testMatch: ["browser.playwright.ts", "faults.playwright.ts"],
   timeout: 180_000,
   use: {
     baseURL: "http://127.0.0.1:41773",

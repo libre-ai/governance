@@ -12,7 +12,9 @@ Covered:
 - strict lowercase 32-hex recovery decoding while invalid 15/17-byte attempts still traverse the component anti-oracle path;
 - fresh Web Crypto IDs, salt, nonce, and recovery bytes with an executable uniqueness sample;
 - best-effort wiping of host-owned recovery, plaintext, opened plaintext, and Context input buffers;
-- zero component/core imports, no WASI shim, no storage, logs, telemetry, clock, or network;
+- ownership transfer to a one-operation worker, closed worker protocol, mandatory termination on success, refusal, startup/clone error, malformed response, trap, OOM, or timeout;
+- validated trap copies of each real ABI export, plus real `memory.grow` failure beyond the 512 MiB cap after ABI input copies, across all three operations and browsers;
+- zero component/core imports and no WASI shim; no storage, logs, telemetry, or external network; the host clock is used only for the worker termination deadline;
 - generated artifacts confined to ignored `target/notebook-core-v2-qualification/`.
 
 Run with the pinned Bun environment and locally installed Playwright browsers:
@@ -26,6 +28,9 @@ CLI: the full package was rejected because its unused componentization dependenc
 archive-extraction advisory. The transpiler is local build tooling under Apache-2.0 with LLVM
 exception; the Component Model remains an open boundary and no generated binding is committed.
 
-This increment does not qualify OOM/panic/trap handling, browser p95 performance, constrained device
-classes, physical memory erasure, neutral download filenames, or any persistence/UI behavior. Gate B
-therefore remains rejected until those separate proofs are complete on an immutable commit.
+The fault harness proves the host policy and disposable-instance recovery with qualification-injected
+traps, memory-cap failures, and hangs. It does **not** induce an allocation failure inside Rust,
+`serde_json`, JCS, Argon2id, or the browser process, and cannot prove physical memory erasure.
+Browser p95 performance, constrained device classes, neutral download filenames, and all product
+persistence/UI behavior also remain unqualified. Gate B therefore remains rejected until those
+separate proofs are complete on an immutable commit.

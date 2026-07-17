@@ -219,8 +219,11 @@ function decodeRecoveryAttempt(value: string): Uint8Array {
   return new Uint8Array(15);
 }
 
-function closedRefusal(error: unknown): NotebookHostRefusal {
+export function closedRefusal(error: unknown): NotebookHostRefusal {
   if (error instanceof NotebookHostRefusal) return error;
+  if (error instanceof RangeError) {
+    return new NotebookHostRefusal("resource-limit-exceeded");
+  }
   let message: unknown;
   try {
     message =
