@@ -6,6 +6,12 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
+import {
+  type NotebookHardwareResources,
+  parseResourceClassManifest,
+  selectResourceClass,
+} from "./resource-class";
+
 const ITERATIONS = 20;
 const WARMUPS = 2;
 const MIB = 1024 * 1024;
@@ -54,6 +60,15 @@ type Vectors = {
 
 const repositoryRoot = process.cwd();
 const outputDirectory = resolve(repositoryRoot, "target/notebook-core-v2-qualification");
+const resourceClassManifestBytes = readFileSync(
+  resolve(repositoryRoot, "toolchains/notebook-resource-classes.json"),
+);
+const resourceClassManifest = parseResourceClassManifest(
+  JSON.parse(resourceClassManifestBytes.toString("utf8")),
+);
+const resourceClassManifestSha256 = createHash("sha256")
+  .update(resourceClassManifestBytes)
+  .digest("hex");
 const toolchain = JSON.parse(
   readFileSync(resolve(repositoryRoot, "toolchains/notebook-qualification.json"), "utf8"),
 ) as {
@@ -72,6 +87,18 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   test.skip(process.platform !== "darwin" || process.arch !== "arm64");
   const engine = toolchain.playwright.engines[browserName];
   expect(engine).toBeDefined();
+  const hardware: NotebookHardwareResources = {
+    architecture: process.arch,
+    logicalCpu: Number(command("sysctl", ["-n", "hw.logicalcpu"])),
+    memoryBytes: Number(command("sysctl", ["-n", "hw.memsize"])),
+    operatingSystem: process.platform,
+    processor: command("sysctl", ["-n", "machdep.cpu.brand_string"]),
+  };
+  const resourceClass = selectResourceClass(
+    resourceClassManifest,
+    process.env.NOTEBOOK_QUALIFICATION_DEVICE_CLASS,
+    hardware,
+  );
   const blockedRequests: string[] = [];
   const consoleMessages: string[] = [];
   const pageErrors: string[] = [];
@@ -79,6 +106,49 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   page.on("console", (message) => consoleMessages.push(`${message.type()}:${message.text()}`));
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto("/");
+  const browserResourcePreflight = await page.evaluate(async () => {
+    const source = new Uint8Array([0x5a]);
+    const transferred = structuredClone(source, { transfer: [source.buffer] });
+    const estimate = await navigator.storage.estimate();
+    if (
+      typeof estimate.quota !== "number" ||
+      typeof estimate.usage !== "number" ||
+      !Number.isFinite(estimate.quota) ||
+      !Number.isFinite(estimate.usage)
+    ) {
+      throw new Error("browser storage estimate is unavailable");
+    }
+    return {
+      availableStorageQuotaBytes: Math.max(0, estimate.quota - estimate.usage),
+      dedicatedWorker: typeof Worker === "function",
+      indexedDb: typeof indexedDB === "object",
+      secureContext: isSecureContext,
+      transferredArrayBuffer:
+        source.byteLength === 0 && transferred.byteLength === 1 && transferred[0] === 0x5a,
+      webCrypto:
+        typeof crypto.getRandomValues === "function" && typeof crypto.subtle?.digest === "function",
+    };
+  });
+  expect(browserResourcePreflight).toMatchObject({
+    dedicatedWorker: true,
+    indexedDb: true,
+    secureContext: true,
+    transferredArrayBuffer: true,
+    webCrypto: true,
+  });
+  expect(browserResourcePreflight.availableStorageQuotaBytes).toBeGreaterThanOrEqual(
+    resourceClassManifest.productStorageQuotaCandidateBytes,
+  );
+  const verifiedBrowserCapabilities = [
+    "webassembly-simd128",
+    "dedicated-worker",
+    "arraybuffer-transfer",
+    "web-crypto",
+    "indexeddb",
+  ].sort();
+  expect(verifiedBrowserCapabilities).toEqual(
+    [...resourceClassManifest.requiredBrowserCapabilities].sort(),
+  );
 
   const rss = new BrowserRssSampler(engine?.cacheDirectory ?? "");
   const reuseCompiledModule = browserName === "firefox";
@@ -391,6 +461,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     antiOraclePeakRssBytes: antiOracleRss.peakBytes,
     antiOraclePeakRssDeltaBytes: antiOracleRss.peakDeltaBytes,
     browserName,
+    browserResourcePreflight,
     browserVersion: browser.version(),
     commit: command("git", ["rev-parse", "HEAD"]),
     compiledModuleLifecycle: reuseCompiledModule
@@ -401,12 +472,13 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       : "per-worker-compilation-measured-directly",
     componentSha256: manifest.component.sha256,
     coreModuleSha256: manifest.coreModule.sha256,
-    deviceClass: "desktop-arm64-high-memory-reference",
+    deviceClass: resourceClass.id,
     hardware: {
-      logicalCpu: Number(command("sysctl", ["-n", "hw.logicalcpu"])),
-      memoryBytes: Number(command("sysctl", ["-n", "hw.memsize"])),
-      processor: command("sysctl", ["-n", "machdep.cpu.brand_string"]),
+      logicalCpu: hardware.logicalCpu,
+      memoryBytes: hardware.memoryBytes,
+      processor: hardware.processor,
     },
+    minimumProductCandidateClassId: resourceClassManifest.minimumProductCandidateClassId,
     iterations: ITERATIONS,
     node: process.versions.node,
     operatingSystem: {
@@ -416,11 +488,24 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       version: command("sw_vers", ["-productVersion"]),
     },
     profiles: profileResults,
+    requiredBrowserCapabilities: resourceClassManifest.requiredBrowserCapabilities,
+    resourceClassEvidenceStatus: resourceClass.evidenceStatus,
+    resourceClassManifestSha256,
+    resourceClassRequirements: {
+      architecture: resourceClass.architecture,
+      maximumLogicalCpuExclusive: resourceClass.maximumLogicalCpuExclusive,
+      maximumPhysicalMemoryBytesExclusive: resourceClass.maximumPhysicalMemoryBytesExclusive,
+      minimumLogicalCpu: resourceClass.minimumLogicalCpu,
+      minimumPhysicalMemoryBytes: resourceClass.minimumPhysicalMemoryBytes,
+      operatingSystem: resourceClass.operatingSystem,
+      purpose: resourceClass.purpose,
+    },
     schemaVersion: "libre-ai.notebook-core-v2-browser-performance.v1",
     toolchainManifestSha256: createHash("sha256")
       .update(await readFile(resolve(repositoryRoot, "toolchains/notebook-qualification.json")))
       .digest("hex"),
     userAgent,
+    verifiedBrowserCapabilities,
     warmups: WARMUPS,
   };
   await mkdir(outputDirectory, { recursive: true });
