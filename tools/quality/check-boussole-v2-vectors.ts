@@ -138,15 +138,67 @@ function approvalIsValid(value: RecordValue, subjectDigest: string): boolean {
     return false;
   const roles = new Set(approvals.map((approval) => approval.role));
   const reviewers = new Set(approvals.map((approval) => approval.reviewerId));
+  const expectedCapacity = new Map([
+    ["methodological-review", "methodology-expert"],
+    ["legal-privacy-review", "privacy-legal-expert"],
+  ]);
   return (
     roles.size === 2 &&
     roles.has("methodological-review") &&
     roles.has("legal-privacy-review") &&
     reviewers.size === 2 &&
-    approvals.every(
-      (approval) => approval.actorKind === "human" && approval.subjectDigest === subjectDigest,
-    )
+    approvals.every((approval) => {
+      const attestation = approval.attestation;
+      return (
+        approval.actorKind === "human" &&
+        approval.subjectDigest === subjectDigest &&
+        approval.professionalCapacity === expectedCapacity.get(String(approval.role)) &&
+        isRecord(attestation) &&
+        attestation.publicationBasis === "explicit-publication-consent" &&
+        attestation.identityBoundary === "professional-attestation-only"
+      );
+    })
   );
+}
+
+function publicationPolicyError(
+  input: ComparisonInput,
+): "input-invalid" | "approval-invalid" | undefined {
+  const policy = input.dataset.publicationPolicy;
+  const statements = input.dataset.statements;
+  if (
+    !isRecord(policy) ||
+    !Number.isSafeInteger(policy.minimumGroupSize) ||
+    !Array.isArray(statements)
+  ) {
+    return "input-invalid";
+  }
+  const minimum = BigInt(policy.minimumGroupSize as number);
+  for (const statement of statements) {
+    if (!isRecord(statement)) return "input-invalid";
+    const counters = [
+      statement.votesFor,
+      statement.votesAgainst,
+      statement.abstentions,
+      statement.absent,
+    ];
+    if (!counters.every((counter) => Number.isSafeInteger(counter) && Number(counter) >= 0))
+      return "input-invalid";
+    let groupSize = 0n;
+    for (const counter of counters) groupSize += BigInt(counter as number);
+    if (groupSize < minimum) return "input-invalid";
+  }
+  if (
+    typeof policy.publicationReviewExpiresAt !== "string" ||
+    !isUtcSeconds(policy.publicationReviewExpiresAt) ||
+    typeof input.dataset.publishedAt !== "string" ||
+    !isUtcSeconds(input.dataset.publishedAt) ||
+    input.dataset.publishedAt >= policy.publicationReviewExpiresAt
+  ) {
+    return "input-invalid";
+  }
+  if (input.computedAt > policy.publicationReviewExpiresAt) return "approval-invalid";
+  return undefined;
 }
 
 function canonicalMethodDigest(method: RecordValue): string {
@@ -209,6 +261,8 @@ function evaluate(
 ): Evaluation {
   if (!validateInputSchemas(input, validators)) return { error: "input-invalid" };
   if (!isUtcSeconds(input.computedAt)) return { error: "computed-at-invalid" };
+  const publicationError = publicationPolicyError(input);
+  if (publicationError) return { error: publicationError };
 
   const scale = validScale(input.method);
   if (!scale) return { error: "method-unsupported" };
@@ -413,6 +467,32 @@ const validators = {
   responses: validator("boussole-response-set.v2.schema.json"),
   output: validator("local-comparison.v2.schema.json"),
 };
+
+const methodSchema = (await Bun.file(
+  "contracts/schemas/boussole-method.v2.schema.json",
+).json()) as RecordValue;
+const datasetSchema = (await Bun.file(
+  "contracts/schemas/public-vote-dataset.v2.schema.json",
+).json()) as RecordValue;
+if (
+  jcs((methodSchema.$defs as RecordValue)?.reviewApproval) !==
+  jcs((datasetSchema.$defs as RecordValue)?.reviewApproval)
+) {
+  failures.push("Boussole reviewer attestation definitions differ");
+}
+const catalog = (await Bun.file("contracts/catalog.v1.json").json()) as RecordValue;
+const catalogContracts = Array.isArray(catalog.contracts) ? catalog.contracts : [];
+const scoringAuthority = catalogContracts.find(
+  (entry) => isRecord(entry) && entry.id === "boussole-scoring-v2",
+);
+if (
+  !isRecord(scoringAuthority) ||
+  !Array.isArray(scoringAuthority.vectors) ||
+  !scoringAuthority.vectors.includes(vectorPath) ||
+  !scoringAuthority.vectors.includes(securityVectorPath)
+) {
+  failures.push("Boussole catalog authority does not bind both normative vector corpora");
+}
 
 const document: unknown = await Bun.file(vectorPath).json();
 if (!isRecord(document) || document.schemaVersion !== "libre-ai.engine-golden-vectors.v1") {
@@ -643,6 +723,8 @@ const expectedSemanticCases = {
   "duplicate-statement-id": ["duplicate-statement-id-with-valid-digests", "response-invalid"],
   "duplicate-response-id": ["duplicate-response-id", "response-invalid"],
   "dataset-id-mismatch": ["responses-dataset-id-mismatch", "digest-mismatch"],
+  "aggregation-threshold": ["statement-below-publication-threshold", "input-invalid"],
+  "publication-review-expired": ["publication-review-expired", "approval-invalid"],
   "redacted-approval": ["duplicate-private-reviewer-canary", "approval-invalid"],
 } as const;
 requireExactCaseIds(semanticCases, Object.keys(expectedSemanticCases), "semantic refusal vectors");
@@ -664,7 +746,7 @@ for (const [index, semanticCase] of semanticCases.entries()) {
   if (
     semanticCase.id === "redacted-approval" &&
     (!Array.isArray(semanticCase.forbiddenDiagnosticValues) ||
-      !semanticCase.forbiddenDiagnosticValues.includes("private_reviewer_canary") ||
+      !semanticCase.forbiddenDiagnosticValues.includes("rev_3333333333333333") ||
       !semanticCase.forbiddenDiagnosticValues.includes("private_response_canary"))
   ) {
     failures.push(`${label}: redaction canaries missing`);
@@ -705,6 +787,23 @@ for (const [index, semanticCase] of semanticCases.entries()) {
     case "responses-dataset-id-mismatch":
       input.responses.datasetId = "urn:libre-ai:dataset:other";
       break;
+    case "statement-below-publication-threshold": {
+      const publicationPolicy = input.dataset.publicationPolicy;
+      if (!isRecord(publicationPolicy)) {
+        failures.push(`${label}: missing publication policy mutation base`);
+        continue;
+      }
+      publicationPolicy.minimumGroupSize = 19;
+      const datasetDigest = canonicalDatasetDigest(input.dataset);
+      input.dataset.digest = datasetDigest;
+      for (const approval of input.dataset.approvals as RecordValue[])
+        approval.subjectDigest = datasetDigest;
+      input.responses.datasetDigest = datasetDigest;
+      break;
+    }
+    case "publication-review-expired":
+      input.computedAt = "2027-07-16T00:00:01Z";
+      break;
     case "duplicate-private-reviewer-canary": {
       const approvals = input.method.approvals as RecordValue[];
       const first = approvals[0];
@@ -713,8 +812,8 @@ for (const [index, semanticCase] of semanticCases.entries()) {
         failures.push(`${label}: missing approval mutation base`);
         continue;
       }
-      first.reviewerId = "private_reviewer_canary";
-      second.reviewerId = "private_reviewer_canary";
+      first.reviewerId = "rev_3333333333333333";
+      second.reviewerId = "rev_3333333333333333";
       input.dataset.scope = "private_response_canary";
       const datasetDigest = canonicalDatasetDigest(input.dataset);
       input.dataset.digest = datasetDigest;

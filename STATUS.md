@@ -32,12 +32,13 @@
 ## Current G2 entry
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
-- `WP-G2-C01` contract SDK and boundary validators is unlocked ;
+- `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
 - ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar v2 is now locked after its role verdicts, promotion pass and owner milestone; 16 Notebook/Policy/Boussole/shared authorities remain candidate ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
-- Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on commit `d47feb9` with promotion still pending; Notebook and Boussole remain candidate-only pending durable promotion evidence ;
+- Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on commit `d47feb9` with promotion still pending; Notebook remains candidate pending durable promotion evidence ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
-- no Radar product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; the Radar promotion milestone did not authorize implementation ;
+- Boussole v2 security is historically remediated, while the latest Architecture/Privacy rejects require fresh verdicts on the aggregation, attestation, typed-URN and catalog remediation; public scoring remains NO-GO ;
+- no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; contract review/promotion milestones do not authorize implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
 ## Explicitly deferred
