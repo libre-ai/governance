@@ -100,18 +100,23 @@ terminaux restaient attachés au domaine. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-77A4B1D.md`](CANDIDATE-INTEGRATION-REJECT-77A4B1D.md), SHA-256
 `2fb75ab696ed0ee21682a54a382d431008239afe547fd19f9d0bfe7bfe6ea8a3`.
 
-La remédiation courante préserve les séparateurs non ASCII pendant NFKC, exige une vraie frontière de
-local-part, scanne le contexte original avant sa projection sans commentaires et détache les points
-terminaux ASCII/Unicode. Le slash reste correctement classé RFC atext, tandis que C0, `:` et `,` ne
-créent plus de suffixe. Les URL à userinfo gardent une détection dédiée pour le canary Radar hors de
-son allowlist exacte. `entities@8.0.0` est qualifié BSD-2-Clause, dev-only et sans transitive dans
-[`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md), SHA-256
-`6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae`; un contrôle owner reste
+Le merge `6ee4627` a fermé ces quatre bornes. Sa passe d'intégration a encore rejeté les emails de
+prose entourés de guillemets ASCII et les labels collés tels que `contact:alice@example.org`. Le
+record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-6EE4627.md`](CANDIDATE-INTEGRATION-REJECT-6EE4627.md), SHA-256
+`72c470ba92e514415df3b7a92790c55e1a5dae82597ab1c02b657cb73248f247`.
+
+La remédiation courante pré-calcule linéairement les guillemets ouvrants et reconnaît un vocabulaire
+borné de labels email FR/EN (`contact`, `email`, `courriel`, `adresse`, `to`, `from`, etc.). Elle
+préserve `ali:ce@example.org`, les labels inconnus et les quotes internes/fermantes invalides. Le
+slash reste correctement classé RFC atext. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et
+sans transitive dans [`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md),
+SHA-256 `6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae`; un contrôle owner reste
 requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation de contexte RFC/EAI après candidate-integration favorable ;
+1. intégrer la remédiation des délimiteurs de prose après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
