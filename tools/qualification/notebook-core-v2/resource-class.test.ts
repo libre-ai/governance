@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 import {
   type NotebookHardwareResources,
   parseResourceClassManifest,
+  performanceEvidenceVerdict,
+  selectEvidenceEnvironment,
   selectResourceClass,
 } from "./resource-class";
 
@@ -17,6 +19,8 @@ const GIB = 1024 ** 3;
 function hardware(memoryGib: number, logicalCpu: number): NotebookHardwareResources {
   return {
     architecture: "arm64",
+    hardwareModel: "Mac14,2",
+    hypervisorPresent: false,
     logicalCpu,
     memoryBytes: memoryGib * GIB,
     operatingSystem: "darwin",
@@ -55,6 +59,53 @@ describe("Notebook qualification resource classes", () => {
     expect(() =>
       selectResourceClass(manifest, "desktop-arm64-constrained-8gib", hardware(36, 14)),
     ).toThrow("memory is outside");
+  });
+
+  test("separates promotable physical evidence from VM diagnostics", () => {
+    expect(selectEvidenceEnvironment("physical-evidence", hardware(8, 8))).toEqual({
+      mode: "physical-evidence",
+      promotable: true,
+      virtualizationDetected: false,
+      virtualizationSignals: [],
+    });
+    const virtualMachine = {
+      ...hardware(8, 8),
+      hardwareModel: "VirtualMac2,1",
+      hypervisorPresent: true,
+    };
+    expect(selectEvidenceEnvironment("vm-diagnostic", virtualMachine)).toEqual({
+      mode: "vm-diagnostic",
+      promotable: false,
+      virtualizationDetected: true,
+      virtualizationSignals: ["kern.hv_vmm_present", "hw.model"],
+    });
+    expect(() => selectEvidenceEnvironment("physical-evidence", virtualMachine)).toThrow(
+      "cannot produce physical evidence",
+    );
+    expect(() => selectEvidenceEnvironment(undefined, hardware(8, 8))).toThrow(
+      "NOTEBOOK_QUALIFICATION_EVIDENCE_MODE",
+    );
+  });
+
+  test("keeps explicit VM diagnostics non-promotable when a guest hides virtualization", () => {
+    expect(selectEvidenceEnvironment("vm-diagnostic", hardware(8, 8))).toMatchObject({
+      mode: "vm-diagnostic",
+      promotable: false,
+      virtualizationDetected: false,
+    });
+  });
+
+  test("never emits a qualification verdict for VM diagnostics", () => {
+    expect(performanceEvidenceVerdict("vm-diagnostic", false, true)).toBe(
+      "diagnostic-budgets-pass",
+    );
+    expect(performanceEvidenceVerdict("vm-diagnostic", false, false)).toBe("reject");
+    expect(performanceEvidenceVerdict("physical-evidence", true, true)).toBe(
+      "qualification-budgets-pass",
+    );
+    expect(() => performanceEvidenceVerdict("vm-diagnostic", true, true)).toThrow(
+      "must not be promotable",
+    );
   });
 
   test("fails closed outside memory, CPU, platform, architecture, or known class boundaries", () => {

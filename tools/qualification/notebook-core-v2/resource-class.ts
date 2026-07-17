@@ -1,9 +1,20 @@
+export type NotebookEvidenceMode = "physical-evidence" | "vm-diagnostic";
+
 export type NotebookHardwareResources = {
   architecture: string;
+  hardwareModel: string;
+  hypervisorPresent: boolean;
   logicalCpu: number;
   memoryBytes: number;
   operatingSystem: string;
   processor: string;
+};
+
+export type NotebookEvidenceEnvironment = {
+  mode: NotebookEvidenceMode;
+  promotable: boolean;
+  virtualizationDetected: boolean;
+  virtualizationSignals: string[];
 };
 
 export type NotebookResourceClass = {
@@ -107,6 +118,53 @@ export function parseResourceClassManifest(value: unknown): NotebookResourceClas
     requiredBrowserCapabilities,
     schemaVersion: "libre-ai.notebook-resource-classes.v1",
   };
+}
+
+export function selectEvidenceEnvironment(
+  requestedMode: string | undefined,
+  hardware: NotebookHardwareResources,
+): NotebookEvidenceEnvironment {
+  if (requestedMode !== "physical-evidence" && requestedMode !== "vm-diagnostic") {
+    throw new Error(
+      "NOTEBOOK_QUALIFICATION_EVIDENCE_MODE must be physical-evidence or vm-diagnostic",
+    );
+  }
+  const virtualizationSignals: string[] = [];
+  if (hardware.hypervisorPresent) virtualizationSignals.push("kern.hv_vmm_present");
+  if (/virtual|vmware|parallels|qemu/i.test(hardware.hardwareModel)) {
+    virtualizationSignals.push("hw.model");
+  }
+  if (/virtual|vmware|parallels|qemu/i.test(hardware.processor)) {
+    virtualizationSignals.push("processor");
+  }
+  const virtualizationDetected = virtualizationSignals.length > 0;
+  if (requestedMode === "physical-evidence" && virtualizationDetected) {
+    throw new Error("virtualized Notebook host cannot produce physical evidence");
+  }
+  return {
+    mode: requestedMode,
+    promotable: requestedMode === "physical-evidence" && !virtualizationDetected,
+    virtualizationDetected,
+    virtualizationSignals,
+  };
+}
+
+export function performanceEvidenceVerdict(
+  mode: string | undefined,
+  promotable: boolean | undefined,
+  budgetPass: boolean,
+): "diagnostic-budgets-pass" | "qualification-budgets-pass" | "reject" {
+  if (mode !== "physical-evidence" && mode !== "vm-diagnostic") {
+    throw new Error("Notebook performance evidence mode is missing or invalid");
+  }
+  if (mode === "physical-evidence" && promotable !== true) {
+    throw new Error("Physical Notebook performance evidence is not promotable");
+  }
+  if (mode === "vm-diagnostic" && promotable !== false) {
+    throw new Error("VM Notebook diagnostics must not be promotable");
+  }
+  if (!budgetPass) return "reject";
+  return mode === "physical-evidence" ? "qualification-budgets-pass" : "diagnostic-budgets-pass";
 }
 
 export function selectResourceClass(
