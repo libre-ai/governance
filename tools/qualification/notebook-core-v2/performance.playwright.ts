@@ -9,6 +9,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
   type NotebookHardwareResources,
   parseResourceClassManifest,
+  selectEvidenceEnvironment,
   selectResourceClass,
 } from "./resource-class";
 
@@ -89,11 +90,17 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   expect(engine).toBeDefined();
   const hardware: NotebookHardwareResources = {
     architecture: process.arch,
+    hardwareModel: command("sysctl", ["-n", "hw.model"]),
+    hypervisorPresent: command("sysctl", ["-n", "kern.hv_vmm_present"]) !== "0",
     logicalCpu: Number(command("sysctl", ["-n", "hw.logicalcpu"])),
     memoryBytes: Number(command("sysctl", ["-n", "hw.memsize"])),
     operatingSystem: process.platform,
     processor: command("sysctl", ["-n", "machdep.cpu.brand_string"]),
   };
+  const evidenceEnvironment = selectEvidenceEnvironment(
+    process.env.NOTEBOOK_QUALIFICATION_EVIDENCE_MODE,
+    hardware,
+  );
   const resourceClass = selectResourceClass(
     resourceClassManifest,
     process.env.NOTEBOOK_QUALIFICATION_DEVICE_CLASS,
@@ -473,7 +480,10 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     componentSha256: manifest.component.sha256,
     coreModuleSha256: manifest.coreModule.sha256,
     deviceClass: resourceClass.id,
+    evidenceMode: evidenceEnvironment.mode,
     hardware: {
+      hardwareModel: hardware.hardwareModel,
+      hypervisorPresent: hardware.hypervisorPresent,
       logicalCpu: hardware.logicalCpu,
       memoryBytes: hardware.memoryBytes,
       processor: hardware.processor,
@@ -489,6 +499,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     },
     profiles: profileResults,
     requiredBrowserCapabilities: resourceClassManifest.requiredBrowserCapabilities,
+    promotableEvidence: evidenceEnvironment.promotable,
     resourceClassEvidenceStatus: resourceClass.evidenceStatus,
     resourceClassManifestSha256,
     resourceClassRequirements: {
@@ -500,12 +511,14 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       operatingSystem: resourceClass.operatingSystem,
       purpose: resourceClass.purpose,
     },
-    schemaVersion: "libre-ai.notebook-core-v2-browser-performance.v1",
+    schemaVersion: "libre-ai.notebook-core-v2-browser-performance.v2",
     toolchainManifestSha256: createHash("sha256")
       .update(await readFile(resolve(repositoryRoot, "toolchains/notebook-qualification.json")))
       .digest("hex"),
     userAgent,
     verifiedBrowserCapabilities,
+    virtualizationDetected: evidenceEnvironment.virtualizationDetected,
+    virtualizationSignals: evidenceEnvironment.virtualizationSignals,
     warmups: WARMUPS,
   };
   await mkdir(outputDirectory, { recursive: true });
