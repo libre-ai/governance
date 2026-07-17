@@ -28,8 +28,9 @@ Implementation-only commit: `ddebf01b86854c1a8737a7c2f475352fb0214332`.
 | Security result | `approve` | [`RESULT-SECURITY-VERDICT.md`](RESULT-SECURITY-VERDICT.md) |
 | France/EU Privacy result | `approve` | [`RESULT-PRIVACY-VERDICT.md`](RESULT-PRIVACY-VERDICT.md) |
 | Simulation-only conformance | `approve` | [`SIMULATION-ONLY-CONFORMANCE-ACCEPTANCE.md`](SIMULATION-ONLY-CONFORMANCE-ACCEPTANCE.md) |
+| Post-main candidate integration | `approve` | [`POST-MAIN-INTEGRATION-VERDICT.md`](POST-MAIN-INTEGRATION-VERDICT.md) |
 
-The result binds crate tree `b4b274442ae3a6b9917cda037f00937de9c2a599`, verification tree
+The post-main integration target is `0cf5780f44d934a46377a8694c1395605fcfb2b4`. The result binds crate tree `b4b274442ae3a6b9917cda037f00937de9c2a599`, verification tree
 `0e89ceedd0dece8d12079a578b947ab57762828f` and the unchanged 21-authority hash list
 `de70d36761d275bb3e145d60232e964f038f928f2594b38b60ea3ce7efa3beb2`.
 
