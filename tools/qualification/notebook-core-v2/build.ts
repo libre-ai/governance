@@ -10,6 +10,31 @@ import { componentNew, componentWit } from "@bytecodealliance/jco-transpile/wasm
 const qualificationDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(qualificationDirectory, "../../..");
 const outputDirectory = resolve(repositoryRoot, "target/notebook-core-v2-qualification");
+const wasmBuildConfigurationPath = resolve(repositoryRoot, ".cargo/config.toml");
+const forbiddenRustBuildEnvironment = Object.keys(process.env).filter(
+  (name) =>
+    Boolean(process.env[name]) &&
+    ([
+      "CARGO_BUILD_RUSTC",
+      "CARGO_BUILD_RUSTC_WRAPPER",
+      "CARGO_BUILD_RUSTFLAGS",
+      "CARGO_ENCODED_RUSTFLAGS",
+      "CARGO_INCREMENTAL",
+      "CARGO_TARGET_DIR",
+      "RUSTC",
+      "RUSTC_BOOTSTRAP",
+      "RUSTC_WRAPPER",
+      "RUSTC_WORKSPACE_WRAPPER",
+      "RUSTFLAGS",
+    ].includes(name) ||
+      name.startsWith("CARGO_PROFILE_RELEASE_") ||
+      name.startsWith("CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_")),
+);
+if (forbiddenRustBuildEnvironment.length > 0) {
+  throw new Error(
+    `Notebook qualification forbids external Rust build controls: ${forbiddenRustBuildEnvironment.join(", ")}`,
+  );
+}
 const coreModule = resolve(
   repositoryRoot,
   "target/wasm32-unknown-unknown/release/libre_ai_notebook_core.wasm",
@@ -267,6 +292,7 @@ const generated = Object.fromEntries(
     }),
   ),
 );
+const wasmBuildConfiguration = new Uint8Array(await readFile(wasmBuildConfigurationPath));
 const manifest = {
   component: { bytes: componentBytes.length, sha256: sha256(componentBytes) },
   coreModule: { bytes: coreBytes.length, sha256: sha256(coreBytes) },
@@ -281,6 +307,11 @@ const manifest = {
   generated,
   schemaVersion: "libre-ai.notebook-core-v2-qualification-manifest.v1",
   transpiler: "@bytecodealliance/jco-transpile@0.4.2",
+  wasmBuildConfiguration: {
+    path: ".cargo/config.toml",
+    requiredTargetFeature: "simd128",
+    sha256: sha256(wasmBuildConfiguration),
+  },
 };
 await writeFile(resolve(outputDirectory, "manifest.json"), `${JSON.stringify(manifest)}\n`);
 

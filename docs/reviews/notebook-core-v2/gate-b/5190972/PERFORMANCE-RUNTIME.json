@@ -1,0 +1,2828 @@
+{
+  "browsers": {
+    "chromium": {
+      "antiOracle": {
+        "digest-modified": {
+          "endToEndP50Ms": 334.40000000596046,
+          "endToEndP95Ms": 340.7000000178814,
+          "operationP50Ms": 121.2000000178814,
+          "operationP95Ms": 122.19999998807907,
+          "samples": [
+            {
+              "endToEndMs": 342,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.80000001192093,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 334.40000000596046,
+              "operationMs": 121.7000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 338.7999999821186,
+              "operationMs": 122.19999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.69999998807907,
+              "operationMs": 121.2000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335.90000000596046,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.69999998807907,
+              "operationMs": 121.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.80000001192093,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.5,
+              "operationMs": 120.80000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 332.59999999403954,
+              "operationMs": 120.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.30000001192093,
+              "operationMs": 120.89999997615814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 329.59999999403954,
+              "operationMs": 121.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 328.09999999403954,
+              "operationMs": 120.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.19999998807907,
+              "operationMs": 122.19999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.7000000178814,
+              "operationMs": 121.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 336.69999998807907,
+              "operationMs": 121.30000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337,
+              "operationMs": 121.69999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335.10000002384186,
+              "operationMs": 121.30000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 336.40000000596046,
+              "operationMs": 121.5,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "recovery-secret-too-short": {
+          "endToEndP50Ms": 334,
+          "endToEndP95Ms": 338.90000000596046,
+          "operationP50Ms": 121.30000001192093,
+          "operationP95Ms": 122.59999999403954,
+          "samples": [
+            {
+              "endToEndMs": 337.19999998807907,
+              "operationMs": 120.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 334,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 328.7000000178814,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 329.5,
+              "operationMs": 122.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.69999998807907,
+              "operationMs": 121.69999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 338.90000000596046,
+              "operationMs": 121.30000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337.2999999821186,
+              "operationMs": 122.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335.5,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 343,
+              "operationMs": 121.7999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335.40000000596046,
+              "operationMs": 121.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 332.80000001192093,
+              "operationMs": 121.40000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337.69999998807907,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.40000000596046,
+              "operationMs": 123.60000002384186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337.80000001192093,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.2999999821186,
+              "operationMs": 121.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 336,
+              "operationMs": 120.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 334.80000001192093,
+              "operationMs": 121.40000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.69999998807907,
+              "operationMs": 120.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 332.80000001192093,
+              "operationMs": 120.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 332,
+              "operationMs": 121.30000001192093,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "tag-modified": {
+          "endToEndP50Ms": 333.5,
+          "endToEndP95Ms": 348.80000001192093,
+          "operationP50Ms": 121.2999999821186,
+          "operationP95Ms": 122.90000000596046,
+          "samples": [
+            {
+              "endToEndMs": 335.69999998807907,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 336.2000000178814,
+              "operationMs": 121.30000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 335.09999999403954,
+              "operationMs": 121.5,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.90000000596046,
+              "operationMs": 120.80000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.09999999403954,
+              "operationMs": 121.2000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333,
+              "operationMs": 120.60000002384186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.40000000596046,
+              "operationMs": 121.2000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337.19999998807907,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 331.5,
+              "operationMs": 120.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 338.40000000596046,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 341.09999999403954,
+              "operationMs": 121.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.5,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.40000000596046,
+              "operationMs": 121.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.59999999403954,
+              "operationMs": 120.69999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 333.09999999403954,
+              "operationMs": 121.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 326.5,
+              "operationMs": 120.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 324.80000001192093,
+              "operationMs": 121.5,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.19999998807907,
+              "operationMs": 121.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 348.80000001192093,
+              "operationMs": 122.90000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 353.80000001192093,
+              "operationMs": 124.5,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "wrong-recovery-secret": {
+          "endToEndP50Ms": 342,
+          "endToEndP95Ms": 376.2999999821186,
+          "operationP50Ms": 123.60000002384186,
+          "operationP95Ms": 129.30000001192093,
+          "samples": [
+            {
+              "endToEndMs": 340.89999997615814,
+              "operationMs": 122.5,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 342,
+              "operationMs": 122.40000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 343,
+              "operationMs": 123.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 363.60000002384186,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 337.39999997615814,
+              "operationMs": 123.59999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 338.80000001192093,
+              "operationMs": 123.2000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 345.69999998807907,
+              "operationMs": 125.39999997615814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 342.2000000178814,
+              "operationMs": 123.60000002384186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.09999999403954,
+              "operationMs": 124.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 341.80000001192093,
+              "operationMs": 122.89999997615814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 332,
+              "operationMs": 121.7999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.59999999403954,
+              "operationMs": 120.7000000178814,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 330.2999999821186,
+              "operationMs": 121.19999998807907,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340.40000000596046,
+              "operationMs": 126.2999999821186,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 385.30000001192093,
+              "operationMs": 129.30000001192093,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 376.2999999821186,
+              "operationMs": 129.40000000596046,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 353.10000002384186,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 366.5,
+              "operationMs": 125.5,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 368.7999999821186,
+              "operationMs": 125.09999999403954,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 357.2000000178814,
+              "operationMs": 127.30000001192093,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        }
+      },
+      "antiOraclePeakRssBytes": 387710976,
+      "antiOraclePeakRssDeltaBytes": 125337600,
+      "browserName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "commit": "51909729b40320c02287e5b4d675682fcabcd20d",
+      "compiledModuleLifecycle": "one-per-disposable-worker",
+      "endToEndCompilationAccounting": "per-worker-compilation-measured-directly",
+      "componentSha256": "cdee672768945bd261100e52d4e6f7380b79969c5580c492b29a0d19c71ce13b",
+      "coreModuleSha256": "a4c968ccb98eea35e5e92166d801b71f0bcf1fd0284af7c47b3406f83dd881dc",
+      "deviceClass": "desktop-arm64-high-memory-reference",
+      "hardware": {
+        "logicalCpu": 14,
+        "memoryBytes": 38654705664,
+        "processor": "Apple M4 Max"
+      },
+      "iterations": 20,
+      "node": "26.5.0",
+      "operatingSystem": {
+        "architecture": "arm64",
+        "build": "25F84",
+        "name": "macOS",
+        "version": "26.5.2"
+      },
+      "profiles": [
+        {
+          "iterations": 3,
+          "memoryBudgetBytes": 268435456,
+          "memoryKib": 65536,
+          "name": "producer-16mib",
+          "parallelism": 1,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 5000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 436944896,
+          "browserPeakRssDeltaBytes": 174571520,
+          "browserRssBaselineBytes": 262373376,
+          "moduleCompilationMs": 0,
+          "open": {
+            "endToEndP50Ms": 808.4000000059605,
+            "endToEndP95Ms": 832,
+            "operationP50Ms": 570.7000000178814,
+            "operationP95Ms": 581.4000000059605,
+            "samples": [
+              {
+                "endToEndMs": 832,
+                "operationMs": 581.0999999940395,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 925.9000000059605,
+                "operationMs": 581.4000000059605,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 831.5,
+                "operationMs": 586.6999999880791,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 809.7999999821186,
+                "operationMs": 569.3000000119209,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 815.6999999880791,
+                "operationMs": 570,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 803.9000000059605,
+                "operationMs": 576.4000000059605,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 796,
+                "operationMs": 566.0999999940395,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 790.4000000059605,
+                "operationMs": 566,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 797.2000000178814,
+                "operationMs": 571.1999999880791,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 807,
+                "operationMs": 572.0999999940395,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 812.9000000059605,
+                "operationMs": 573.0999999940395,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 812.2999999821186,
+                "operationMs": 570.4000000059605,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 801.0999999940395,
+                "operationMs": 572.7999999821186,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 808.4000000059605,
+                "operationMs": 571.7999999821186,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 813.6999999880791,
+                "operationMs": 570.7000000178814,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 809.5,
+                "operationMs": 566,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 798.8000000119209,
+                "operationMs": 567.9000000059605,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 780.7000000178814,
+                "operationMs": 564.0999999940395,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 792.7000000178814,
+                "operationMs": 570.7000000178814,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 820.8999999761581,
+                "operationMs": 571.0999999940395,
+                "wasmMemoryBytes": 90701824
+              }
+            ],
+            "wasmMemoryPeakBytes": 90701824
+          },
+          "seal": {
+            "endToEndP50Ms": 760.4000000059605,
+            "endToEndP95Ms": 832,
+            "operationP50Ms": 541.4000000059605,
+            "operationP95Ms": 548.7999999821186,
+            "samples": [
+              {
+                "endToEndMs": 799.3000000119209,
+                "operationMs": 545.5,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 821.7999999821186,
+                "operationMs": 559.2999999821186,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 832,
+                "operationMs": 548.7999999821186,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 880.1000000238419,
+                "operationMs": 545.0999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 781.2000000178814,
+                "operationMs": 540.9000000059605,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 753.3000000119209,
+                "operationMs": 539.0999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 788.8999999761581,
+                "operationMs": 545.2999999821186,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 755.4000000059605,
+                "operationMs": 539.0999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 752.0999999940395,
+                "operationMs": 539.8000000119209,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 755.2999999821186,
+                "operationMs": 542,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 771.9000000059605,
+                "operationMs": 545.4000000059605,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 757.9000000059605,
+                "operationMs": 539.6999999880791,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 772.4000000059605,
+                "operationMs": 542.4000000059605,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 758.9000000059605,
+                "operationMs": 542.0999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 764.4000000059605,
+                "operationMs": 541.7000000178814,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 777.5999999940395,
+                "operationMs": 541.4000000059605,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 759.1999999880791,
+                "operationMs": 538.5999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 750.1999999880791,
+                "operationMs": 534.5999999940395,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 751.6999999880791,
+                "operationMs": 535.4000000059605,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 760.4000000059605,
+                "operationMs": 540.8000000119209,
+                "wasmMemoryBytes": 85196800
+              }
+            ],
+            "wasmMemoryPeakBytes": 85196800
+          }
+        },
+        {
+          "iterations": 4,
+          "memoryBudgetBytes": 536870912,
+          "memoryKib": 131072,
+          "name": "maximum-16mib",
+          "parallelism": 4,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 10000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 510984192,
+          "browserPeakRssDeltaBytes": 248610816,
+          "browserRssBaselineBytes": 262373376,
+          "moduleCompilationMs": 0,
+          "open": {
+            "endToEndP50Ms": 990.5,
+            "endToEndP95Ms": 1004.7999999821186,
+            "operationP50Ms": 765.3000000119209,
+            "operationP95Ms": 768.6999999880791,
+            "samples": [
+              {
+                "endToEndMs": 1004.7999999821186,
+                "operationMs": 769.9000000059605,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 994.2000000178814,
+                "operationMs": 766.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 990,
+                "operationMs": 766.8000000119209,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 991.3000000119209,
+                "operationMs": 768.6999999880791,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 998.9000000059605,
+                "operationMs": 765.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 1002.0999999940395,
+                "operationMs": 767.4000000059605,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 995.6999999880791,
+                "operationMs": 765.3000000119209,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 984.6999999880791,
+                "operationMs": 765.3000000119209,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 995.1000000238419,
+                "operationMs": 764.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 1000.9000000059605,
+                "operationMs": 767.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 990.5,
+                "operationMs": 768.6999999880791,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 1001.6000000238419,
+                "operationMs": 766.3000000119209,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 1008.2000000178814,
+                "operationMs": 762.6999999880791,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 974.7999999821186,
+                "operationMs": 764.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 976.3000000119209,
+                "operationMs": 766,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 970.5,
+                "operationMs": 762.1999999880791,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 977.6999999880791,
+                "operationMs": 761.5,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 980.9000000059605,
+                "operationMs": 757.7000000178814,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 967.3000000119209,
+                "operationMs": 758.1999999880791,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 983.0999999940395,
+                "operationMs": 760.6999999880791,
+                "wasmMemoryBytes": 157810688
+              }
+            ],
+            "wasmMemoryPeakBytes": 157810688
+          },
+          "seal": {
+            "endToEndP50Ms": 948.3000000119209,
+            "endToEndP95Ms": 967,
+            "operationP50Ms": 734.4000000059605,
+            "operationP95Ms": 741,
+            "samples": [
+              {
+                "endToEndMs": 967,
+                "operationMs": 744.5,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 953.3999999761581,
+                "operationMs": 734.4000000059605,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 955.5,
+                "operationMs": 735.1999999880791,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 953.2000000178814,
+                "operationMs": 733.6999999880791,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 951.6999999880791,
+                "operationMs": 740.9000000059605,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 965.7999999821186,
+                "operationMs": 741,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 953.5,
+                "operationMs": 735.4000000059605,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 948.3000000119209,
+                "operationMs": 734.1999999880791,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 955,
+                "operationMs": 735.5999999940395,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 944.6999999880791,
+                "operationMs": 735.1999999880791,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 967.8000000119209,
+                "operationMs": 738,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 961.3999999761581,
+                "operationMs": 736.3000000119209,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 942.5999999940395,
+                "operationMs": 737,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 944.2000000178814,
+                "operationMs": 734.3000000119209,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 944,
+                "operationMs": 727.5999999940395,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 933.9000000059605,
+                "operationMs": 733.2000000178814,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 940.2000000178814,
+                "operationMs": 734.4000000059605,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 929.7999999821186,
+                "operationMs": 730,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 924.9000000059605,
+                "operationMs": 727.7000000178814,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 934.3000000119209,
+                "operationMs": 726.9000000059605,
+                "wasmMemoryBytes": 152305664
+              }
+            ],
+            "wasmMemoryPeakBytes": 152305664
+          }
+        }
+      ],
+      "schemaVersion": "libre-ai.notebook-core-v2-browser-performance.v1",
+      "toolchainManifestSha256": "38a17615f5c8a0baf5e0a9fd747ff165a5e2e31f34a73f568a859f64143fde40",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+      "warmups": 2
+    },
+    "firefox": {
+      "antiOracle": {
+        "digest-modified": {
+          "endToEndP50Ms": 1664,
+          "endToEndP95Ms": 2674,
+          "operationP50Ms": 1521,
+          "operationP95Ms": 2487,
+          "samples": [
+            {
+              "endToEndMs": 1664,
+              "operationMs": 1521,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1621,
+              "operationMs": 1464,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1654,
+              "operationMs": 1504,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1659,
+              "operationMs": 1486,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1687,
+              "operationMs": 1530,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1868,
+              "operationMs": 1706,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1893,
+              "operationMs": 1721,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1637,
+              "operationMs": 1481,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1614,
+              "operationMs": 1462,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1634,
+              "operationMs": 1471,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1610,
+              "operationMs": 1467,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1596,
+              "operationMs": 1451,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1593,
+              "operationMs": 1444,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1681,
+              "operationMs": 1541,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 3036,
+              "operationMs": 2780,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 2132,
+              "operationMs": 1927,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 2281,
+              "operationMs": 2109,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 2674,
+              "operationMs": 2487,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 2205,
+              "operationMs": 2031,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1713,
+              "operationMs": 1547,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "recovery-secret-too-short": {
+          "endToEndP50Ms": 1615,
+          "endToEndP95Ms": 1697,
+          "operationP50Ms": 1459,
+          "operationP95Ms": 1544,
+          "samples": [
+            {
+              "endToEndMs": 1662,
+              "operationMs": 1498,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1596,
+              "operationMs": 1459,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1602,
+              "operationMs": 1453,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1621,
+              "operationMs": 1476,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1697,
+              "operationMs": 1544,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1674,
+              "operationMs": 1513,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1597,
+              "operationMs": 1458,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1620,
+              "operationMs": 1460,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1621,
+              "operationMs": 1466,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1616,
+              "operationMs": 1467,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1611,
+              "operationMs": 1456,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1627,
+              "operationMs": 1466,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1615,
+              "operationMs": 1457,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1585,
+              "operationMs": 1442,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1604,
+              "operationMs": 1449,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1584,
+              "operationMs": 1443,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1592,
+              "operationMs": 1452,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1598,
+              "operationMs": 1444,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1632,
+              "operationMs": 1495,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1701,
+              "operationMs": 1545,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "tag-modified": {
+          "endToEndP50Ms": 1616,
+          "endToEndP95Ms": 1820,
+          "operationP50Ms": 1473,
+          "operationP95Ms": 1671,
+          "samples": [
+            {
+              "endToEndMs": 1623,
+              "operationMs": 1463,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1604,
+              "operationMs": 1454,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1716,
+              "operationMs": 1565,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1633,
+              "operationMs": 1493,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1640,
+              "operationMs": 1478,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1820,
+              "operationMs": 1671,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 2163,
+              "operationMs": 1959,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1690,
+              "operationMs": 1539,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1588,
+              "operationMs": 1451,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1604,
+              "operationMs": 1458,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1605,
+              "operationMs": 1457,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1613,
+              "operationMs": 1463,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1596,
+              "operationMs": 1458,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1663,
+              "operationMs": 1506,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1618,
+              "operationMs": 1476,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1616,
+              "operationMs": 1474,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1640,
+              "operationMs": 1493,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1611,
+              "operationMs": 1473,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1601,
+              "operationMs": 1458,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1600,
+              "operationMs": 1456,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "wrong-recovery-secret": {
+          "endToEndP50Ms": 1599,
+          "endToEndP95Ms": 1613,
+          "operationP50Ms": 1449,
+          "operationP95Ms": 1458,
+          "samples": [
+            {
+              "endToEndMs": 1623,
+              "operationMs": 1460,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1594,
+              "operationMs": 1457,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1596,
+              "operationMs": 1447,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1605,
+              "operationMs": 1453,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1599,
+              "operationMs": 1451,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1601,
+              "operationMs": 1449,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1584,
+              "operationMs": 1443,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1592,
+              "operationMs": 1448,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1613,
+              "operationMs": 1458,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1600,
+              "operationMs": 1447,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1600,
+              "operationMs": 1452,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1597,
+              "operationMs": 1444,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1602,
+              "operationMs": 1450,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1600,
+              "operationMs": 1446,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1578,
+              "operationMs": 1441,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1603,
+              "operationMs": 1456,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1599,
+              "operationMs": 1448,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1595,
+              "operationMs": 1449,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1606,
+              "operationMs": 1454,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 1599,
+              "operationMs": 1449,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        }
+      },
+      "antiOraclePeakRssBytes": 1096990720,
+      "antiOraclePeakRssDeltaBytes": 202588160,
+      "browserName": "firefox",
+      "browserVersion": "151.0",
+      "commit": "51909729b40320c02287e5b4d675682fcabcd20d",
+      "compiledModuleLifecycle": "one-per-page-cloned-to-disposable-workers",
+      "endToEndCompilationAccounting": "measured-page-compilation-added-to-every-sample",
+      "componentSha256": "cdee672768945bd261100e52d4e6f7380b79969c5580c492b29a0d19c71ce13b",
+      "coreModuleSha256": "a4c968ccb98eea35e5e92166d801b71f0bcf1fd0284af7c47b3406f83dd881dc",
+      "deviceClass": "desktop-arm64-high-memory-reference",
+      "hardware": {
+        "logicalCpu": 14,
+        "memoryBytes": 38654705664,
+        "processor": "Apple M4 Max"
+      },
+      "iterations": 20,
+      "node": "26.5.0",
+      "operatingSystem": {
+        "architecture": "arm64",
+        "build": "25F84",
+        "name": "macOS",
+        "version": "26.5.2"
+      },
+      "profiles": [
+        {
+          "iterations": 3,
+          "memoryBudgetBytes": 268435456,
+          "memoryKib": 65536,
+          "name": "producer-16mib",
+          "parallelism": 1,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 5000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 1136263168,
+          "browserPeakRssDeltaBytes": 241860608,
+          "browserRssBaselineBytes": 894402560,
+          "moduleCompilationMs": 79,
+          "open": {
+            "endToEndP50Ms": 4293,
+            "endToEndP95Ms": 4468,
+            "operationP50Ms": 4130,
+            "operationP95Ms": 4319,
+            "samples": [
+              {
+                "endToEndMs": 4293,
+                "operationMs": 4118,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4238,
+                "operationMs": 4093,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4238,
+                "operationMs": 4076,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4239,
+                "operationMs": 4075,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4200,
+                "operationMs": 4057,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4468,
+                "operationMs": 4319,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4406,
+                "operationMs": 4246,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4512,
+                "operationMs": 4330,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4259,
+                "operationMs": 4113,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4250,
+                "operationMs": 4090,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4231,
+                "operationMs": 4074,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4333,
+                "operationMs": 4164,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4315,
+                "operationMs": 4150,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4316,
+                "operationMs": 4156,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4347,
+                "operationMs": 4173,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4281,
+                "operationMs": 4132,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4241,
+                "operationMs": 4093,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4385,
+                "operationMs": 4242,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4299,
+                "operationMs": 4130,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 4321,
+                "operationMs": 4169,
+                "wasmMemoryBytes": 90701824
+              }
+            ],
+            "wasmMemoryPeakBytes": 90701824
+          },
+          "seal": {
+            "endToEndP50Ms": 4205,
+            "endToEndP95Ms": 4600,
+            "operationP50Ms": 4057,
+            "operationP95Ms": 4443,
+            "samples": [
+              {
+                "endToEndMs": 4253,
+                "operationMs": 4103,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4205,
+                "operationMs": 4045,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4153,
+                "operationMs": 4009,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4162,
+                "operationMs": 4005,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4157,
+                "operationMs": 4007,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4137,
+                "operationMs": 3995,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4226,
+                "operationMs": 4083,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4306,
+                "operationMs": 4151,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4190,
+                "operationMs": 4049,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4211,
+                "operationMs": 4067,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4155,
+                "operationMs": 4011,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4213,
+                "operationMs": 4057,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4228,
+                "operationMs": 4084,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4363,
+                "operationMs": 4209,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4600,
+                "operationMs": 4443,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4240,
+                "operationMs": 4090,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4201,
+                "operationMs": 4060,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4167,
+                "operationMs": 4012,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 5068,
+                "operationMs": 4916,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 4196,
+                "operationMs": 4047,
+                "wasmMemoryBytes": 85196800
+              }
+            ],
+            "wasmMemoryPeakBytes": 85196800
+          }
+        },
+        {
+          "iterations": 4,
+          "memoryBudgetBytes": 536870912,
+          "memoryKib": 131072,
+          "name": "maximum-16mib",
+          "parallelism": 4,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 10000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 1216708608,
+          "browserPeakRssDeltaBytes": 322306048,
+          "browserRssBaselineBytes": 894402560,
+          "moduleCompilationMs": 79,
+          "open": {
+            "endToEndP50Ms": 6676,
+            "endToEndP95Ms": 9653,
+            "operationP50Ms": 6513,
+            "operationP95Ms": 9489,
+            "samples": [
+              {
+                "endToEndMs": 6696,
+                "operationMs": 6545,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6676,
+                "operationMs": 6511,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6661,
+                "operationMs": 6500,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 7645,
+                "operationMs": 7481,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 9927,
+                "operationMs": 9667,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 9653,
+                "operationMs": 9489,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6641,
+                "operationMs": 6489,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6676,
+                "operationMs": 6513,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6656,
+                "operationMs": 6490,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6802,
+                "operationMs": 6642,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6681,
+                "operationMs": 6524,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6590,
+                "operationMs": 6443,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6645,
+                "operationMs": 6480,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6681,
+                "operationMs": 6515,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6581,
+                "operationMs": 6418,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6690,
+                "operationMs": 6528,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6627,
+                "operationMs": 6467,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6710,
+                "operationMs": 6550,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6795,
+                "operationMs": 6630,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 6602,
+                "operationMs": 6449,
+                "wasmMemoryBytes": 157810688
+              }
+            ],
+            "wasmMemoryPeakBytes": 157810688
+          },
+          "seal": {
+            "endToEndP50Ms": 6581,
+            "endToEndP95Ms": 9035,
+            "operationP50Ms": 6432,
+            "operationP95Ms": 8813,
+            "samples": [
+              {
+                "endToEndMs": 7576,
+                "operationMs": 7407,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6714,
+                "operationMs": 6573,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6534,
+                "operationMs": 6397,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6552,
+                "operationMs": 6409,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 7498,
+                "operationMs": 7322,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 9035,
+                "operationMs": 8813,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6880,
+                "operationMs": 6691,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6567,
+                "operationMs": 6420,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6581,
+                "operationMs": 6424,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6665,
+                "operationMs": 6507,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6592,
+                "operationMs": 6432,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6552,
+                "operationMs": 6408,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6550,
+                "operationMs": 6410,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6525,
+                "operationMs": 6371,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6609,
+                "operationMs": 6467,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6557,
+                "operationMs": 6416,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6578,
+                "operationMs": 6438,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6542,
+                "operationMs": 6393,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 10043,
+                "operationMs": 9879,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 6948,
+                "operationMs": 6788,
+                "wasmMemoryBytes": 152305664
+              }
+            ],
+            "wasmMemoryPeakBytes": 152305664
+          }
+        }
+      ],
+      "schemaVersion": "libre-ai.notebook-core-v2-browser-performance.v1",
+      "toolchainManifestSha256": "38a17615f5c8a0baf5e0a9fd747ff165a5e2e31f34a73f568a859f64143fde40",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0",
+      "warmups": 2
+    },
+    "webkit": {
+      "antiOracle": {
+        "digest-modified": {
+          "endToEndP50Ms": 355,
+          "endToEndP95Ms": 370,
+          "operationP50Ms": 122,
+          "operationP95Ms": 125,
+          "samples": [
+            {
+              "endToEndMs": 332,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 344,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 345,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 350,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 349,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 349,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 344,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 354,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 363,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 361,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 359,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 352,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 355,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 363,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 357,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 369,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 368,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 367,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 372,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 370,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "recovery-secret-too-short": {
+          "endToEndP50Ms": 370,
+          "endToEndP95Ms": 375,
+          "operationP50Ms": 123,
+          "operationP95Ms": 125,
+          "samples": [
+            {
+              "endToEndMs": 373,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 344,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 365,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 368,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 367,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 367,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 373,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 373,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 371,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 371,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 364,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 370,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 372,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 372,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 369,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 375,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 378,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 369,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 370,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 374,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "tag-modified": {
+          "endToEndP50Ms": 360,
+          "endToEndP95Ms": 372,
+          "operationP50Ms": 122,
+          "operationP95Ms": 126,
+          "samples": [
+            {
+              "endToEndMs": 370,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 369,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 365,
+              "operationMs": 118,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 350,
+              "operationMs": 120,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 382,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 354,
+              "operationMs": 120,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 353,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 360,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 359,
+              "operationMs": 119,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 368,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 371,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 372,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 349,
+              "operationMs": 119,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 340,
+              "operationMs": 119,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 350,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 365,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 352,
+              "operationMs": 120,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 364,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 359,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 364,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        },
+        "wrong-recovery-secret": {
+          "endToEndP50Ms": 364,
+          "endToEndP95Ms": 382,
+          "operationP50Ms": 123,
+          "operationP95Ms": 126,
+          "samples": [
+            {
+              "endToEndMs": 352,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 370,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 365,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 359,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 360,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 371,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 359,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 377,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 365,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 366,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 361,
+              "operationMs": 123,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 355,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 375,
+              "operationMs": 125,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 364,
+              "operationMs": 133,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 370,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 360,
+              "operationMs": 121,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 382,
+              "operationMs": 126,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 383,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 362,
+              "operationMs": 124,
+              "wasmMemoryBytes": 68354048
+            },
+            {
+              "endToEndMs": 362,
+              "operationMs": 122,
+              "wasmMemoryBytes": 68354048
+            }
+          ],
+          "wasmMemoryPeakBytes": 68354048
+        }
+      },
+      "antiOraclePeakRssBytes": 641417216,
+      "antiOraclePeakRssDeltaBytes": 326565888,
+      "browserName": "webkit",
+      "browserVersion": "26.5",
+      "commit": "51909729b40320c02287e5b4d675682fcabcd20d",
+      "compiledModuleLifecycle": "one-per-disposable-worker",
+      "endToEndCompilationAccounting": "per-worker-compilation-measured-directly",
+      "componentSha256": "cdee672768945bd261100e52d4e6f7380b79969c5580c492b29a0d19c71ce13b",
+      "coreModuleSha256": "a4c968ccb98eea35e5e92166d801b71f0bcf1fd0284af7c47b3406f83dd881dc",
+      "deviceClass": "desktop-arm64-high-memory-reference",
+      "hardware": {
+        "logicalCpu": 14,
+        "memoryBytes": 38654705664,
+        "processor": "Apple M4 Max"
+      },
+      "iterations": 20,
+      "node": "26.5.0",
+      "operatingSystem": {
+        "architecture": "arm64",
+        "build": "25F84",
+        "name": "macOS",
+        "version": "26.5.2"
+      },
+      "profiles": [
+        {
+          "iterations": 3,
+          "memoryBudgetBytes": 268435456,
+          "memoryKib": 65536,
+          "name": "producer-16mib",
+          "parallelism": 1,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 5000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 545210368,
+          "browserPeakRssDeltaBytes": 230359040,
+          "browserRssBaselineBytes": 314851328,
+          "moduleCompilationMs": 0,
+          "open": {
+            "endToEndP50Ms": 563,
+            "endToEndP95Ms": 587,
+            "operationP50Ms": 332,
+            "operationP95Ms": 336,
+            "samples": [
+              {
+                "endToEndMs": 558,
+                "operationMs": 333,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 557,
+                "operationMs": 331,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 543,
+                "operationMs": 331,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 563,
+                "operationMs": 329,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 558,
+                "operationMs": 336,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 567,
+                "operationMs": 330,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 563,
+                "operationMs": 334,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 552,
+                "operationMs": 327,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 563,
+                "operationMs": 330,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 576,
+                "operationMs": 335,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 564,
+                "operationMs": 332,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 560,
+                "operationMs": 327,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 593,
+                "operationMs": 336,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 567,
+                "operationMs": 331,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 563,
+                "operationMs": 333,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 547,
+                "operationMs": 331,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 581,
+                "operationMs": 337,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 587,
+                "operationMs": 333,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 551,
+                "operationMs": 334,
+                "wasmMemoryBytes": 90701824
+              },
+              {
+                "endToEndMs": 570,
+                "operationMs": 333,
+                "wasmMemoryBytes": 90701824
+              }
+            ],
+            "wasmMemoryPeakBytes": 90701824
+          },
+          "seal": {
+            "endToEndP50Ms": 521,
+            "endToEndP95Ms": 547,
+            "operationP50Ms": 294,
+            "operationP95Ms": 302,
+            "samples": [
+              {
+                "endToEndMs": 530,
+                "operationMs": 295,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 534,
+                "operationMs": 292,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 507,
+                "operationMs": 293,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 511,
+                "operationMs": 295,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 514,
+                "operationMs": 294,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 521,
+                "operationMs": 294,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 507,
+                "operationMs": 291,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 525,
+                "operationMs": 295,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 502,
+                "operationMs": 292,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 502,
+                "operationMs": 295,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 531,
+                "operationMs": 296,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 507,
+                "operationMs": 291,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 497,
+                "operationMs": 291,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 530,
+                "operationMs": 294,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 513,
+                "operationMs": 294,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 525,
+                "operationMs": 295,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 547,
+                "operationMs": 296,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 523,
+                "operationMs": 301,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 544,
+                "operationMs": 302,
+                "wasmMemoryBytes": 85196800
+              },
+              {
+                "endToEndMs": 548,
+                "operationMs": 312,
+                "wasmMemoryBytes": 85196800
+              }
+            ],
+            "wasmMemoryPeakBytes": 85196800
+          }
+        },
+        {
+          "iterations": 4,
+          "memoryBudgetBytes": 536870912,
+          "memoryKib": 131072,
+          "name": "maximum-16mib",
+          "parallelism": 4,
+          "plaintextBytes": 16777216,
+          "plaintextSha256": "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
+          "p95BudgetMs": 10000,
+          "budgetPass": true,
+          "browserPeakRssBytes": 641417216,
+          "browserPeakRssDeltaBytes": 326565888,
+          "browserRssBaselineBytes": 314851328,
+          "moduleCompilationMs": 0,
+          "open": {
+            "endToEndP50Ms": 771,
+            "endToEndP95Ms": 788,
+            "operationP50Ms": 529,
+            "operationP95Ms": 535,
+            "samples": [
+              {
+                "endToEndMs": 763,
+                "operationMs": 525,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 774,
+                "operationMs": 529,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 771,
+                "operationMs": 533,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 779,
+                "operationMs": 531,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 770,
+                "operationMs": 529,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 783,
+                "operationMs": 529,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 777,
+                "operationMs": 533,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 770,
+                "operationMs": 527,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 794,
+                "operationMs": 533,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 786,
+                "operationMs": 536,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 770,
+                "operationMs": 527,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 774,
+                "operationMs": 531,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 769,
+                "operationMs": 524,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 766,
+                "operationMs": 526,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 785,
+                "operationMs": 532,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 788,
+                "operationMs": 533,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 773,
+                "operationMs": 535,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 760,
+                "operationMs": 527,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 744,
+                "operationMs": 522,
+                "wasmMemoryBytes": 157810688
+              },
+              {
+                "endToEndMs": 759,
+                "operationMs": 521,
+                "wasmMemoryBytes": 157810688
+              }
+            ],
+            "wasmMemoryPeakBytes": 157810688
+          },
+          "seal": {
+            "endToEndP50Ms": 731,
+            "endToEndP95Ms": 750,
+            "operationP50Ms": 491,
+            "operationP95Ms": 502,
+            "samples": [
+              {
+                "endToEndMs": 696,
+                "operationMs": 481,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 730,
+                "operationMs": 490,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 734,
+                "operationMs": 491,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 737,
+                "operationMs": 496,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 750,
+                "operationMs": 504,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 754,
+                "operationMs": 500,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 735,
+                "operationMs": 494,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 737,
+                "operationMs": 492,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 724,
+                "operationMs": 495,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 742,
+                "operationMs": 495,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 729,
+                "operationMs": 492,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 733,
+                "operationMs": 491,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 731,
+                "operationMs": 487,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 731,
+                "operationMs": 489,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 725,
+                "operationMs": 490,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 733,
+                "operationMs": 494,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 750,
+                "operationMs": 502,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 714,
+                "operationMs": 491,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 714,
+                "operationMs": 484,
+                "wasmMemoryBytes": 152305664
+              },
+              {
+                "endToEndMs": 711,
+                "operationMs": 486,
+                "wasmMemoryBytes": 152305664
+              }
+            ],
+            "wasmMemoryPeakBytes": 152305664
+          }
+        }
+      ],
+      "schemaVersion": "libre-ai.notebook-core-v2-browser-performance.v1",
+      "toolchainManifestSha256": "38a17615f5c8a0baf5e0a9fd747ff165a5e2e31f34a73f568a859f64143fde40",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "warmups": 2
+    }
+  },
+  "commit": "51909729b40320c02287e5b4d675682fcabcd20d",
+  "componentSha256": "cdee672768945bd261100e52d4e6f7380b79969c5580c492b29a0d19c71ce13b",
+  "schemaVersion": "libre-ai.notebook-core-v2-browser-performance-matrix.v1",
+  "sources": {
+    "chromium": {
+      "path": "target/notebook-core-v2-qualification/performance-chromium.json",
+      "sha256": "a7ffece7c10b6962e9c15a0a294a4421b343484e54242b52668b9843e1b61038"
+    },
+    "firefox": {
+      "path": "target/notebook-core-v2-qualification/performance-firefox.json",
+      "sha256": "db4546ba61e163561c9c3aafa12ca22538f0ac4d070ff3368f15f3d11963e3f5"
+    },
+    "webkit": {
+      "path": "target/notebook-core-v2-qualification/performance-webkit.json",
+      "sha256": "8683f65f5605afbeb7ae10b06e125d26effe7aa6b5ece6931a391f7d90d27e48"
+    }
+  },
+  "verdict": "qualification-budgets-pass",
+  "violations": []
+}
