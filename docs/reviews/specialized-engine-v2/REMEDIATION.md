@@ -69,8 +69,10 @@ expected outputs.
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
 - TypeScript and Rust static projection treat only the explicitly commented recursive metadata and
-  payload values as opaque. Runtime JSON Schema validation remains authoritative; generated types
-  are not product input boundaries.
+  payload values as opaque. Runtime JSON Schema validation remains authoritative. Its
+  `metadataString` credential pattern is aligned with the scanner's explicit
+  RSA/DSA/EC/OpenSSH/generic/encrypted-PKCS#8/OpenPGP private-key headers and exercised by negative
+  schema fixtures. Generated types are not product input boundaries.
 
 ## Scope exclusions
 

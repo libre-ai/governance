@@ -121,15 +121,22 @@ rejeté les userinfo `ssh://`/`git://` et les en-têtes privés DSA/OpenPGP
 `6e885aebf4d1342ea4937da2b7ab9ed4f0ccef4ad187a005b6f2cfdea0c7b922`) ; ce rejet gouverne et rend
 les deux approbations stale après remédiation.
 
-La remédiation courante détecte sans résolution l'userinfo de tout schéma URI syntaxique et étend les
-marqueurs privés explicites à DSA, OpenPGP et PKCS#8 chiffré. Les représentations encodées et les clés
-JSON utilisent le même gate. Toutes les bornes EAI/prose restent inchangées. `entities@8.0.0` reste
-qualifié BSD-2-Clause, dev-only et sans transitive ; un contrôle owner reste requis. Aucune autorité
-normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge `ef1e847` a fermé ces deux constats dans le gate réel, mais candidate-integration a rejeté
+la divergence du pattern `metadataString` du schéma canonique, qui acceptait encore DSA, OpenPGP et
+PKCS#8 chiffré en validation schema-only. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-EF1E847.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847.md), SHA-256
+`12ecbf1bd2b0f0add59588fd21e49bbdcd676a01a4b69cd46ceb113104c19b22`.
+
+La remédiation courante aligne le schéma sur la liste explicite du scanner et ajoute trois mutations
+normatives de fixture. Le gate continue de détecter sans résolution l'userinfo de tout schéma URI
+syntaxique, y compris dans les représentations encodées et les clés JSON. Toutes les bornes EAI/prose
+restent inchangées. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans transitive ; un
+contrôle owner reste requis. Le changement de hash du schéma rend toute preuve antérieure stale ; une
+passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation des marqueurs credential après candidate-integration favorable ;
+1. intégrer l'alignement schema/scanner après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
