@@ -1,6 +1,6 @@
 # Agent orchestration contract candidates v1
 
-Status: `candidate-reviewed / human milestone and promotion lock required`.
+Status: `candidate-remediation / fresh candidate-integration required`.
 
 These authorities make the reviewed option-B RFC machine-checkable. They authorize no orchestrator, harness, Pi extension, provider, network, secret, persistence, real mission, merge, release or deployment.
 
@@ -25,6 +25,19 @@ Every candidate requires separate review-only passes on one immutable commit:
 
 Reviews follow [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The two-agent quorum defined for product missions is distinct from this repository engineering-review protocol.
 
+## Candidate-integration history
+
+The dedicated pass on `b80d4eb` rejected promotion readiness because the candidate Biscuit policy
+was checked through a handwritten TypeScript mirror but never executed by a Biscuit authorizer, and
+the existing Rust parser gate omitted it. See
+[`CANDIDATE-INTEGRATION-REJECT-B80D4EB.md`](CANDIDATE-INTEGRATION-REJECT-B80D4EB.md).
+
+The bounded remediation adds an exact test-only Biscuit engine, actual-policy execution for all 15
+existing vectors, root-key rotation and fail-closed revocation/store-outage checks. Dependency scope
+and supply-chain rationale are recorded in
+[`DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md`](DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md). A fresh
+review-only pass on an immutable remediation commit remains mandatory.
+
 ## Promotion gates
 
 - strict JSON Schema and OpenAPI validation ;
@@ -33,7 +46,7 @@ Reviews follow [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The
 - reproducible generated projections ;
 - all three role verdicts favorable on unchanged authority hashes ;
 - separate promotion/integration pass ;
-- explicit owner control milestone.
+- scoped owner instruction recorded durably in the promotion package.
 
 ## Review outcome
 
@@ -43,6 +56,6 @@ Exact authority commit `e93da197804c013dff2eb250a58bf7525ccd3658`:
 - security: `approve-with-minor-reservations` ;
 - France/EU privacy: `approve-with-minor-reservations`.
 
-Historical rejects remain in this dossier. Catalog entries intentionally remain `candidate` / `pending-independent-agent-review` until a separate promotion/integration pass and explicit human control milestone.
+Historical rejects remain in this dossier. Catalog entries intentionally remain `candidate` / `pending-independent-agent-review` until a fresh candidate-integration verdict and a separate promotion/integration pass. The current owner instruction permits continuing without another interactive pause but does not replace or waive any technical role verdict.
 
 `candidate` is not an implementation approval. A work package may be added only after Specification Lock.
