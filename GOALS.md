@@ -10,7 +10,7 @@ Preserve user work, reconcile accepted branches, remove machine-local/generated 
 
 ## G1 — Specification Lock
 
-**Status:** complete except the strictly bounded ADR-0003 WP-G2-S01 candidate amendment, pending role-separated agent review passes.
+**Status:** complete. The bounded ADR-0003 `WP-G2-S01` amendment is closed; all 71 catalog authorities are locked after role-separated reviews, promotion passes and owner controls.
 
 Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
 
@@ -18,11 +18,13 @@ Complete contracts, data ownership, auth, refusal behavior, application specific
 
 ## G2 — Canonical foundations
 
-**Status:** in progress; entry package `WP-G2-T01`.
+**Status:** in progress. `WP-G2-T01`, `WP-G2-C01` and the `WP-G2-S01` contract lock are complete. The next owner-selected milestone is closure of Notebook Core v2 Gate B before authorization of any first Radar, Policy or Boussole product engine.
 
 Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized Rust boundaries, contracts, Proof, Artifact and a qualified Bun template.
 
-**Acceptance:** reference chain builds and verifies from a clean checkout without Clever Cloud.
+**Current control:** Gate B qualification/remediation may use public fixtures and physical-device evidence only. User backups, personal/tenant data, production, release and product-engine implementation remain unauthorized.
+
+**Acceptance:** reference chain builds and verifies from a clean checkout without Clever Cloud; Notebook Gate B must separately approve the exact product host and supported physical resource classes before any user backup or release.
 
 ## G3 — Parallel reconstruction
 
