@@ -1,6 +1,6 @@
 # Revue agentique du format de vecteurs des moteurs spécialisés
 
-Statut : `candidate-remediation / fresh roles required`.
+Statut de cette branche de promotion : `locked contract meaning / NO-GO product-runtime-data-release`.
 
 Le schéma `engine-golden-vectors.v1` ne remplace aucune sémantique de moteur. Il borne l'enveloppe
 JSON publique des vecteurs, tandis que les profils WIT et les checkers propres à Radar, Notebook,
@@ -173,11 +173,11 @@ tandis que PR #85/#86 persistent les preuves de cette autorité ; ses hashes
 schéma/scanner/catalogue/corpus/WIT restent byte-identical. Les trois rôles gouvernent donc les mêmes
 octets d'autorité. Ils ne valent ni promotion ni autorisation produit/runtime/data/release.
 
-## Gates restants
+## Promotion catalog-only
 
-1. intégrer le record owner sans modifier l'autorité ;
-2. préparer une promotion catalog-only séparée avec revue promotion/integration avant
-   `candidate → locked`.
+Le [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) propose l'unique transition
+`engine-golden-vectors-v1: candidate → locked`. Une passe `promotion-integration` distincte sur le
+commit de promotion immuable reste obligatoire avant merge.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
 `locked` fixera seulement le sens du contrat : aucun moteur, scoring public, traitement de données

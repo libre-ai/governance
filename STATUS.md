@@ -33,12 +33,12 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
-- ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core and Boussole v2 are locked after role verdicts and owner milestones; only the shared engine-vector authority remains candidate ;
+- ADR-0003 opened and closed a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core, Boussole v2 and the shared engine-vector envelope are locked after role verdicts, promotion reviews and owner milestones ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on `d47feb9` and exactly six authorities transition to locked; Notebook Core v2 is locked after Gate A + owner `continue`, with four role verdicts APPROVE, while Gate B remains mandatory before any user backup, production or release.
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
-- the shared `engine-golden-vectors-v1` remains candidate: candidate-integration, Architecture and Security approve the combined IPv6/ASCII-metadata/wrapped-CFWS authority at `ccf9d68`, and the owner accepts the exact dev-only `entities@8.0.0` dependency after challenge; only a separate catalog-only promotion remains required ;
+- the shared `engine-golden-vectors-v1` transitions to locked through a separate catalog-only promotion after candidate-integration, Architecture and Security approval at `ccf9d68` plus challenged owner acceptance of exact dev-only `entities@8.0.0`; this fixes contract meaning only and authorizes no engine/runtime/data/release scope ;
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; contract review/promotion milestones do not authorize implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
@@ -53,5 +53,5 @@
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- candidate engine vectors now define contract behavior, but runtime conformance, bounded-resource
-  evidence and end-to-end tenant/RLS proof remain G2 implementation evidence.
+- locked engine vectors define only contract behavior; runtime conformance, bounded-resource evidence
+  and end-to-end tenant/RLS proof remain separate G2 implementation evidence.
