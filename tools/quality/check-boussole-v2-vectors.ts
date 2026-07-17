@@ -725,6 +725,11 @@ const expectedSemanticCases = {
   "dataset-id-mismatch": ["responses-dataset-id-mismatch", "digest-mismatch"],
   "aggregation-threshold": ["statement-below-publication-threshold", "input-invalid"],
   "publication-review-expired": ["publication-review-expired", "approval-invalid"],
+  "person-targeting-declaration": ["person-targeting-declared", "input-invalid"],
+  "wording-change-requires-privacy-reapproval": [
+    "person-target-wording-with-stale-approval",
+    "approval-invalid",
+  ],
   "redacted-approval": ["duplicate-private-reviewer-canary", "approval-invalid"],
 } as const;
 requireExactCaseIds(semanticCases, Object.keys(expectedSemanticCases), "semantic refusal vectors");
@@ -804,6 +809,27 @@ for (const [index, semanticCase] of semanticCases.entries()) {
     case "publication-review-expired":
       input.computedAt = "2027-07-16T00:00:01Z";
       break;
+    case "person-targeting-declared": {
+      const statement = (input.dataset.statements as RecordValue[])[0];
+      if (!statement) {
+        failures.push(`${label}: missing person-targeting mutation base`);
+        continue;
+      }
+      statement.personTargeting = "allowed";
+      break;
+    }
+    case "person-target-wording-with-stale-approval": {
+      const statement = (input.dataset.statements as RecordValue[])[0];
+      if (!statement) {
+        failures.push(`${label}: missing wording mutation base`);
+        continue;
+      }
+      statement.wording = "named_person_target_canary";
+      const datasetDigest = canonicalDatasetDigest(input.dataset);
+      input.dataset.digest = datasetDigest;
+      input.responses.datasetDigest = datasetDigest;
+      break;
+    }
     case "duplicate-private-reviewer-canary": {
       const approvals = input.method.approvals as RecordValue[];
       const first = approvals[0];
