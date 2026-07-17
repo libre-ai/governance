@@ -1,54 +1,68 @@
-# Specialized engine golden-vector envelope — security remediation
+# Specialized engine golden-vector envelope — boundary remediation
 
 Status: **candidate remediation; fresh Architecture and Security verdicts required**.
 
-This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
-[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). The historical verdict targets immutable commit
-`9b376cf65755f7556866123f9fddf681a709a2f0` and remains an audit record.
+This packet answers the historical Security findings and the Architecture/Security rejects on
+`6fd4d5dbd1b8964a2ef84b89c53c30b2496f3c93`. Every earlier verdict remains an immutable audit
+record and is stale for promotion.
+
+## Separation of responsibilities
+
+The shared authority has two distinct layers:
+
+1. **Envelope metadata** — schema version, world, status, semantics path, standards,
+   `reproductionEvidence` and `contractFiles`. These values are closed, bounded and sanitized.
+2. **Engine payload** — cases, inputs, expected outputs, mutations and canonicalization material.
+   These values are structurally bounded here, but their lexical and semantic validity belongs only
+   to each engine profile and checker.
+
+The envelope therefore does not ban legitimate payloads such as `R&D`, `50%`, percent-encoded URLs,
+accented wording or adversarial `file:` strings. It never resolves a payload string as a path, URI or
+credential. Radar, Notebook, Policy and Boussole remain the only authorities for payload meaning and
+expected outputs.
 
 ## Closed boundaries
 
-- Every former unconstrained `true` payload slot now uses a recursive public-test JSON value with
-  bounded strings, arrays and objects.
-- The repository gate applies the 8 MiB file ceiling before parsing, then depth 64 and the
-  200,000-node ceiling immediately after parsing and before AJV/schema validation.
-- `contractFiles` is a closed list of repository-relative `contracts/…` paths and lowercase SHA-256
-  values. Traversal, URI and absolute forms are rejected. The gate rejects symlinks, paths escaping
-  the repository, missing files and hash mismatches.
-- High-confidence credential material and private-key headers are rejected. ASCII, fullwidth and
-  small-form at-signs, percent signs or ampersands are forbidden recursively, closing direct,
-  Unicode-confusable, percent-encoded and HTML-entity private identifiers. Public object keys use a closed ASCII machine-token
-  alphabet; traversal segments and local file URIs are also rejected recursively. Two byte-exact
-  public-test exceptions preserve locked Radar refusal evidence:
-  `https://user:secret@example.org/feed.xml` for userinfo and `file:///etc/passwd` for forbidden URL
-  scheme. Committed payloads remain synthetic public test material; refusal canaries are not
-  credentials, personal identifiers or paths that the envelope resolves.
-- Radar, Notebook, Policy v1/v2 and Boussole golden corpora are all compiled against this shared
-  envelope by `check-contracts.ts`; engine-specific checkers remain authoritative for semantics and
-  expected outputs.
-- The shared Boussole envelope requires `world`, `status` and `cases`; its checker requires the exact
-  `boussole-scoring-v2` world and validates the envelope before reading cases.
-- TypeScript and Rust static generation treat only the explicitly commented recursive public-test
-  value as opaque. Runtime JSON Schema validation remains authoritative, and generated projections
+- Every former unconstrained `true` slot uses a recursive JSON value with 65,536-code-point strings,
+  4,096-item arrays, 512-property objects and 128-code-point property names.
+- The repository gate applies the 8 MiB ceiling before parsing, requires strict UTF-8 JSON without
+  BOM, duplicate members, unpaired surrogates or non-finite numbers, then enforces string, container,
+  property-name, depth-64 and 200,000-node limits before content scanning or AJV. A failed bound
+  short-circuits later work.
+- `contractFiles` alone is resolvable: it accepts closed repository-relative `contracts/…` paths and
+  lowercase SHA-256 values. The gate rejects traversal, URI/absolute forms, duplicates, missing or
+  non-file targets, symlinks, repository escape and hash mismatch.
+- Metadata recursively rejects high-confidence credential/private-key markers, at/percent/ampersand
+  identifier encodings, local file URIs and traversal. Metadata object keys use ASCII machine tokens
+  and reject credential-shaped names.
+- Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
+  NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
+  marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
+  numeric HTML markers and the complete lowercased HTML5 alias set whose exact scalar is ASCII RFC
+  atext, `@`, `period`, quote, bracket or colon; unknown named entities, including non-HTML5 `at`,
+  remain unchanged. The detector finds a DNS, punycode or bounded IP-literal domain suffix from `@`,
+  then scans an atext or quoted local-part by code point. Work remains bounded by the preflight
+  string limit and linear adversarial controls. Only decoded email identifiers or high-confidence
+  credentials are
+  rejected, without echoing content; unrelated `@`, `&#` or `%` text is not reinterpreted.
+- The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
+  byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
+  ordinary inert payload data and receives no resolver capability or lexical exception.
+- Scanner self-tests reject direct, atext/quoted/Unicode RFC local-parts, Unicode/punycode/IP-literal
+  domains, default-ignorable, percent, over-nested percent, `%u`, numeric/named/mixed HTML and
+  credential markers. They preserve maximum-length non-email controls, `R&D`, `R&amplitude`, literal
+  unresolved markers, `50%`, `release@2`, `https://example.org/a%2Fb`,
+  `Café démonstration` and inert path payloads.
+- Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
+  gate and then their dedicated semantic checker. Boussole additionally requires the exact
+  `boussole-scoring-v2` world before reading cases.
+- TypeScript and Rust static projection treat only the explicitly commented recursive metadata and
+  payload values as opaque. Runtime JSON Schema validation remains authoritative; generated types
   are not product input boundaries.
 
-## Executable negative evidence
+## Scope exclusions
 
-`schema-fixtures.v1.json` now rejects:
-
-- `contracts/../secrets.txt` in `contractFiles`;
-- standalone or embedded `alice@example.org` and `sk_live_example_secret` in public payload
-  evidence;
-- email-shaped property names, userinfo-prefix suffix injection, ASCII/Unicode at-sign,
-  percent-encoded and HTML-entity variants, recursive `../../secrets.txt`, and non-approved lowercase,
-  uppercase or
-  mixed-case local `file:` payloads;
-- a status above its 128-character bound.
-
-The generic gate independently validates exact contract-file hashes and the aggregate resource
-ceilings. No product engine, runtime file resolver, network capability, dataset or user-data path is
-introduced.
-
-Promotion remains blocked until fresh role-separated Architecture and Security passes approve the
-exact remediation commit and hashes, followed by a distinct promotion pass and the recorded owner
-milestone.
+No product engine, runtime file resolver, network/storage/clock/randomness capability, real dataset,
+user-data path, public scoring, release, infrastructure or deployment is introduced or authorized.
+Promotion remains blocked until fresh role-separated Architecture and Security verdicts approve one
+immutable commit, followed by a distinct promotion pass and the recorded owner milestone.
