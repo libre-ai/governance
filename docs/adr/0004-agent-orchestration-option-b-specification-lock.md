@@ -54,6 +54,10 @@ L’instruction de session est :
    deviennent des critères obligatoires du futur work package et de sa revue de conformité.
 7. Aucun chemin `apps/`, aucune crate orchestrator/harness et aucune capacité n’est créé par cette
    promotion.
+8. Après promotion, `WP-G2-A01` peut définir puis implémenter uniquement un cœur de contrôle Rust
+   simulation-only contre un faux harness. Il ne peut lancer aucun processus, worker Pi, accès
+   filesystem/réseau/provider/secret/persistence ni mission réelle ; ces capacités nécessitent des
+   packages ultérieurs et de nouvelles revues.
 
 ## Compatibilité et feature boundary
 

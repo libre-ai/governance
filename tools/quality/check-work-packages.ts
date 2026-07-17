@@ -59,8 +59,8 @@ const validate = ajv.compile(schema);
 if (!validate(plan)) failures.push(`Work package schema rejected: ${errors(validate.errors)}`);
 
 const packages = (plan as { packages?: WorkPackage[] }).packages ?? [];
-if (packages.length !== 26)
-  failures.push(`Expected 26 locked work packages, found ${packages.length}`);
+if (packages.length !== 27)
+  failures.push(`Expected 27 locked work packages, found ${packages.length}`);
 const byId = new Map<string, WorkPackage>();
 for (const workPackage of packages) {
   if (byId.has(workPackage.id)) failures.push(`${workPackage.id}: duplicate package id`);

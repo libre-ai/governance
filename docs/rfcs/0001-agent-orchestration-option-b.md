@@ -3,7 +3,7 @@
 - **Statut :** accepted — Specification Lock contractuel ; runtime non autorisé
 - **Portée :** contrats verrouillés préalables à tout orchestrateur ou harness
 - **Risque :** critique
-- **Autorise une implémentation :** non, un work package borné et une revue de conformité restent requis
+- **Autorise une implémentation :** non par le lock ; seul `WP-G2-A01`, simulation-only, peut être ouvert après ses revues de définition
 
 ## Contexte
 
@@ -228,7 +228,7 @@ Cette RFC a conduit, après revues favorables, à un incrément contractuel sép
 10. projections TypeScript/Rust reproductibles ;
 11. dossier de revues architecture, sécurité et vie privée France/UE.
 
-Les 14 entrées de catalogue sont verrouillées uniquement après les verdicts séparés, la candidate-integration remédiée, la passe de promotion et l’instruction propriétaire scoped. Le work package d’implémentation est ajouté seulement après ce Specification Lock et ne partage aucun `writePath` avec Missions.
+Les 14 entrées de catalogue sont verrouillées uniquement après les verdicts séparés, la candidate-integration remédiée, la passe de promotion et l’instruction propriétaire scoped. `WP-G2-A01` est ensuite ajouté pour le seul cœur de contrôle simulation-only ; ses `writePaths` sont exclusifs et ne couvrent ni Missions, ni harness runtime, ni adaptateur Pi.
 
 ## Non-objectifs
 
