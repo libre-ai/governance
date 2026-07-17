@@ -1,6 +1,6 @@
 # Revue agentique indépendante — Boussole scoring v2
 
-Statut : **candidate / NO-GO public scoring**.
+Statut de cette branche de promotion : **locked contract meaning / NO-GO public scoring**.
 
 Les verdicts historiques restent immuables :
 
@@ -23,9 +23,14 @@ antérieur reste une trace utile mais est stale pour la promotion.
 | Methodology | [`METHODOLOGY-VERDICT-FINAL.md`](METHODOLOGY-VERDICT-FINAL.md) | `approve` | `7cad942bfdf503bf73d0d9ab16855b5cdcf0d3129e1e027a2c110094af234eec` |
 | Privacy France/UE | [`PRIVACY-VERDICT-FINAL.md`](PRIVACY-VERDICT-FINAL.md) | `approve-with-minor-reservations` | `bb5c4eedcfa0fb5548565adca005777cff868d7e51183f28f26cc83a600aa4f4` |
 
-Les quatre rôles sont techniquement complets. Cela ne promeut pas le candidat : une passe de
-promotion séparée et le jalon explicite du propriétaire restent requis par
+Les quatre rôles sont techniquement complets. Le
+[`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) enregistre le jalon explicite du propriétaire et la
+transition catalog-only ; la passe séparée
+[`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) l’approuve sur le commit immuable `1a3f37d`. Une
+vérification d’intégration finale et le merge restent requis selon
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Le scoring public demeure NO-GO.
+Le hash du package cité dans le verdict est le snapshot exact du commit revu `1a3f37d` ; le package
+non normatif est ensuite enrichi uniquement pour référencer ce verdict durable.
 
 Les quatre rôles couvrent séparément :
 
@@ -61,6 +66,6 @@ imposer un seuil supérieur ou refuser une source ; il ne peut jamais relâcher 
 contractuel. Les identités professionnelles restent hors payload sous forme d'attestations publiques
 consenties et vérifiées par le caller de release, jamais par le composant pur.
 
-Jusqu'aux quatre verdicts, à une passe de promotion séparée et au contrôle humain explicite, le code,
-les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public reste
-désactivée à la compilation/release.
+Même après verrouillage du sens contractuel, toute fonctionnalité de scoring public reste désactivée
+à la compilation/release. Un dataset réel, un moteur, une release ou un traitement de données exigent
+des jalons et des preuves ultérieurs distincts.

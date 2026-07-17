@@ -33,11 +33,11 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
-- ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar v2 is now locked after its role verdicts, promotion pass and owner milestone; 12 Policy/Boussole/shared authorities remain candidate ; Notebook Core v2 is now locked after Gate A + owner `continue` ;
+- ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core and the five Boussole v2 authorities are locked after role verdicts and owner milestones; 7 Policy/shared authorities remain candidate ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on commit `d47feb9` with promotion still pending; Notebook Core v2 is now locked after Gate A + owner `continue`, with four role verdicts APPROVE (architecture, security, cryptography, privacy), experimental implementation is allowed, and Gate B remains mandatory before any user backup, production or release.
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
-- Boussole v2 Architecture, Security, Methodology and France/EU Privacy verdicts are durably approved on commit `e83e142`; Boussole remains candidate pending a separate promotion pass and owner milestone, and public scoring remains NO-GO ;
+- Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented; contract review/promotion milestones do not authorize implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
