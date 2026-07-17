@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
-import { verifyPolicyCoreRawInputVectors } from "./policy-core-raw-inputs";
+import {
+  parseStrictJson,
+  StrictJsonError,
+  verifyPolicyCoreRawInputVectors,
+} from "./policy-core-raw-inputs";
 
 type JsonRecord = Record<string, unknown>;
 type ErrorVariant =
@@ -138,6 +142,22 @@ function boundedInteger(value: unknown, key: string, label: string): number {
     return 0;
   }
   return Number(value[key]);
+}
+
+function requireExactCaseIds(cases: unknown[], expected: readonly string[], label: string): void {
+  const ids = cases
+    .filter(isRecord)
+    .map((candidate) => candidate.id)
+    .filter((id): id is string => typeof id === "string");
+  const actual = new Set(ids);
+  if (
+    ids.length !== cases.length ||
+    actual.size !== ids.length ||
+    actual.size !== expected.length ||
+    expected.some((id) => !actual.has(id))
+  ) {
+    failures.push(`${label}: case inventory mismatch`);
+  }
 }
 
 const policyValidator = validator("policy-definition.v2.schema.json");
@@ -371,11 +391,264 @@ if (
   snapshotInput !== 8 * 1024 * 1024 ||
   needInput !== 8 * 1024 * 1024 ||
   totalJsonInput !== policyInput + snapshotInput + needInput ||
-  evaluatedAtLimit !== 64 ||
+  evaluatedAtLimit !== 20 ||
   outputLimit !== 2 * 1024 * 1024
 ) {
   failures.push("resource budgets: byte ceilings drift from normative semantics");
 }
+
+const inputLimits = {
+  policyInput,
+  snapshotInput,
+  needInput,
+  evaluatedAt: evaluatedAtLimit,
+  successfulOutput: outputLimit,
+} as const;
+const preflight = (
+  target: keyof typeof inputLimits,
+  byteLength: number,
+): "input-invalid" | undefined => (byteLength > inputLimits[target] ? "input-invalid" : undefined);
+const expectedBoundaryCases = {
+  "policy-at-limit": ["policyInput", policyInput, "within-limit"],
+  "policy-over-limit": ["policyInput", policyInput + 1, "input-invalid"],
+  "snapshot-at-limit": ["snapshotInput", snapshotInput, "within-limit"],
+  "snapshot-over-limit": ["snapshotInput", snapshotInput + 1, "input-invalid"],
+  "need-at-limit": ["needInput", needInput, "within-limit"],
+  "need-over-limit": ["needInput", needInput + 1, "input-invalid"],
+  "evaluated-at-at-limit": ["evaluatedAt", 20, "within-limit"],
+  "evaluated-at-over-limit": ["evaluatedAt", 21, "input-invalid"],
+  "output-at-limit": ["successfulOutput", outputLimit, "within-limit"],
+  "output-over-limit": ["successfulOutput", outputLimit + 1, "input-invalid"],
+} as const;
+const boundaryCases = Array.isArray(budgets.byteBoundaryCases) ? budgets.byteBoundaryCases : [];
+requireExactCaseIds(boundaryCases, Object.keys(expectedBoundaryCases), "resource boundaries");
+for (const [index, boundaryCase] of boundaryCases.entries()) {
+  const label = `resource boundaries:${index}`;
+  if (
+    !isRecord(boundaryCase) ||
+    typeof boundaryCase.id !== "string" ||
+    typeof boundaryCase.target !== "string" ||
+    !(boundaryCase.target in inputLimits) ||
+    !Number.isSafeInteger(boundaryCase.byteLength)
+  ) {
+    failures.push(`${label}: invalid case`);
+    continue;
+  }
+  const expected = expectedBoundaryCases[boundaryCase.id as keyof typeof expectedBoundaryCases];
+  const declaredOutcome = boundaryCase.expectedError ?? boundaryCase.expectedPreflight;
+  if (
+    !expected ||
+    boundaryCase.target !== expected[0] ||
+    boundaryCase.byteLength !== expected[1] ||
+    declaredOutcome !== expected[2]
+  ) {
+    failures.push(`${label}: metadata mismatch`);
+  }
+  const generated = new Uint8Array(Number(boundaryCase.byteLength));
+  const actual = preflight(boundaryCase.target as keyof typeof inputLimits, generated.byteLength);
+  if ((actual ?? "within-limit") !== declaredOutcome) failures.push(`${label}: preflight mismatch`);
+}
+
+const decoderQualification = budgets.decoderQualification;
+const maximumJsonDepth = boundedInteger(
+  decoderQualification,
+  "maximumJsonDepth",
+  "decoder qualification",
+);
+if (maximumJsonDepth !== 64) failures.push("decoder qualification: maximum depth drift");
+const nestedJson = (depth: number): Uint8Array =>
+  new TextEncoder().encode(`${"[".repeat(depth)}0${"]".repeat(depth)}`);
+try {
+  parseStrictJson(nestedJson(maximumJsonDepth), maximumJsonDepth);
+} catch (error) {
+  failures.push(`decoder qualification: exact depth rejected: ${String(error)}`);
+}
+try {
+  parseStrictJson(nestedJson(maximumJsonDepth + 1), maximumJsonDepth);
+  failures.push("decoder qualification: excessive depth accepted");
+} catch (error) {
+  if (!(error instanceof StrictJsonError) || error.defect !== "max-depth")
+    failures.push(`decoder qualification: wrong excessive-depth refusal: ${String(error)}`);
+}
+
+const boundaryBase = golden.cases.find((candidate) => candidate.id === "all-operators-eligible");
+if (!boundaryBase?.expectedEvaluation) {
+  failures.push("resource boundaries: missing valid base case");
+} else {
+  const padValidJson = (value: JsonRecord, targetLength: number): Uint8Array => {
+    const encoded = JSON.stringify(value);
+    const padding = targetLength - Buffer.byteLength(encoded, "utf8");
+    if (padding < 0) throw new Error("resource boundary base exceeds target");
+    return new TextEncoder().encode(`${encoded}${" ".repeat(padding)}`);
+  };
+  for (const [target, value, validate] of [
+    ["policyInput", boundaryBase.policy, policyValidator],
+    ["snapshotInput", boundaryBase.snapshot, snapshotValidator],
+    ["needInput", boundaryBase.need, needValidator],
+  ] as const) {
+    const bytes = padValidJson(value, inputLimits[target]);
+    const parsed = parseStrictJson(bytes, maximumJsonDepth);
+    if (bytes.byteLength !== inputLimits[target] || preflight(target, bytes.byteLength))
+      failures.push(`resource boundaries: ${target} exact valid preflight failed`);
+    if (!validate(parsed)) failures.push(`resource boundaries: ${target} exact JSON is invalid`);
+  }
+
+  const canonicalEvaluatedAt = "2026-07-16T00:00:00Z";
+  if (
+    Buffer.byteLength(canonicalEvaluatedAt, "utf8") !== evaluatedAtLimit ||
+    preflight("evaluatedAt", Buffer.byteLength(canonicalEvaluatedAt, "utf8")) ||
+    !isUtcSeconds(canonicalEvaluatedAt)
+  ) {
+    failures.push("resource boundaries: exact evaluatedAt is not valid");
+  }
+
+  const outputAtLength = (targetLength: number): JsonRecord => {
+    const output = structuredClone(boundaryBase.expectedEvaluation as JsonRecord);
+    output.policyId = "urn:libre-ai:policy:a";
+    const initialLength = jcs(output).byteLength;
+    const padding = targetLength - initialLength;
+    if (padding < 0) throw new Error("resource boundary output exceeds target");
+    output.policyId = `${String(output.policyId)}${"a".repeat(padding)}`;
+    const evaluationDigest = digest(
+      "libre-ai.policy-evaluation.v2",
+      without(output, "id", "digest"),
+    );
+    output.id = `urn:libre-ai:evaluation:${evaluationDigest}`;
+    output.digest = evaluationDigest;
+    return output;
+  };
+  for (const [length, expected] of [
+    [outputLimit, "within-limit"],
+    [outputLimit + 1, "input-invalid"],
+  ] as const) {
+    const output = outputAtLength(length);
+    const bytes = jcs(output);
+    if (!evaluationValidator(output) || bytes.byteLength !== length)
+      failures.push(`resource boundaries: ${expected} output is not schema-valid at target`);
+    if ((preflight("successfulOutput", bytes.byteLength) ?? "within-limit") !== expected)
+      failures.push(`resource boundaries: ${expected} output preflight mismatch`);
+  }
+
+  const privacyMutations: Array<
+    [string, JsonRecord, ValidateFunction, (value: JsonRecord) => void]
+  > = [
+    [
+      "policy source userinfo",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        ((value.rules as JsonRecord[])[0]?.source as JsonRecord).uri =
+          "https://private-canary@example.org/evidence";
+      },
+    ],
+    [
+      "snapshot source query",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        ((value.facts as JsonRecord[])[0]?.source as JsonRecord).uri =
+          "https://example.org/evidence?token=private_canary";
+      },
+    ],
+    [
+      "policy source localhost",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        ((value.rules as JsonRecord[])[0]?.source as JsonRecord).uri = "https://localhost/evidence";
+      },
+    ],
+    [
+      "snapshot source private IP",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        ((value.facts as JsonRecord[])[0]?.source as JsonRecord).uri = "https://10.0.0.1/evidence";
+      },
+    ],
+    [
+      "cross-kind policy id",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        value.id = "urn:libre-ai:snapshot:wrong-kind";
+      },
+    ],
+    [
+      "cross-kind snapshot id",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        value.id = "urn:libre-ai:evaluation:wrong-kind";
+      },
+    ],
+    [
+      "cross-kind need id",
+      boundaryBase.need,
+      needValidator,
+      (value) => {
+        value.id = "urn:libre-ai:policy:wrong-kind";
+      },
+    ],
+    [
+      "non-opaque model id",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        value.modelId = "private@example.invalid";
+      },
+    ],
+    [
+      "free-form model fact",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        const fact = (value.facts as JsonRecord[])[0];
+        if (fact) fact.value = "private person@example.invalid";
+      },
+    ],
+    [
+      "free-form need fact",
+      boundaryBase.need,
+      needValidator,
+      (value) => {
+        const fact = (value.facts as JsonRecord[])[0];
+        if (fact) fact.value = "private person@example.invalid";
+      },
+    ],
+    [
+      "non-opaque proposer",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        value.proposedBy = "private_identity_canary";
+      },
+    ],
+    [
+      "non-opaque approver",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        (value.approval as JsonRecord).approverId = "private_identity_canary";
+      },
+    ],
+  ];
+  for (const [label, base, validate, mutate] of privacyMutations) {
+    const candidate = structuredClone(base);
+    mutate(candidate);
+    if (validate(candidate)) failures.push(`privacy qualification: accepted ${label}`);
+  }
+  for (const [field, value] of [
+    ["policyId", "urn:libre-ai:snapshot:wrong-kind"],
+    ["snapshotId", "urn:libre-ai:policy:wrong-kind"],
+  ] as const) {
+    const candidate = structuredClone(boundaryBase.expectedEvaluation);
+    candidate[field] = value;
+    if (evaluationValidator(candidate))
+      failures.push(`privacy qualification: accepted cross-kind evaluation ${field}`);
+  }
+}
+
 const expectedMatchedPairs = rulesLimit * Math.max(modelFactsLimit, needFactsLimit);
 const expectedSetComparisonsPerLookup = Math.ceil(Math.log2(setMembersLimit + 1));
 if (
@@ -455,10 +728,64 @@ if ((operators.invalidPolicyVectors?.length ?? 0) < 10) {
   failures.push("operator vectors: incomplete forbidden-type coverage");
 }
 
+const openApiText = await readFile("contracts/openapi/model-policy.v2.yaml", "utf8");
+const openApi = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML.parse(
+  openApiText,
+);
+const components = isRecord(openApi) && isRecord(openApi.components) ? openApi.components : {};
+const componentSchemas = isRecord(components.schemas) ? components.schemas : {};
+const problem = isRecord(componentSchemas.PolicyProblem) ? componentSchemas.PolicyProblem : {};
+const problemProperties = isRecord(problem.properties) ? problem.properties : {};
+const problemError = isRecord(problemProperties.error) ? problemProperties.error : {};
+const problemErrorProperties = isRecord(problemError.properties) ? problemError.properties : {};
+if (
+  problem.additionalProperties !== false ||
+  problemError.additionalProperties !== false ||
+  !("code" in problemErrorProperties) ||
+  !("requestId" in problemErrorProperties) ||
+  "message" in problemErrorProperties ||
+  openApiText.includes("problem-details.v1.schema.json")
+) {
+  failures.push("OpenAPI: v2 refusal envelope is not closed and redacted");
+}
+try {
+  const validateProblem = ajv.compile(problem);
+  if (
+    !validateProblem({
+      error: { code: "policy.input_invalid", requestId: "req_1234567890abcdef" },
+    }) ||
+    validateProblem({
+      error: {
+        code: "policy.input_invalid",
+        requestId: "req_1234567890abcdef",
+        message: "private diagnostic",
+      },
+    }) ||
+    validateProblem({ error: { code: "policyinput_invalid", requestId: "req_1234567890abcdef" } })
+  ) {
+    failures.push("OpenAPI: v2 refusal codes or redaction envelope do not validate as declared");
+  }
+} catch (error) {
+  failures.push(`OpenAPI: PolicyProblem schema does not compile: ${String(error)}`);
+}
+const paths = isRecord(openApi) && isRecord(openApi.paths) ? openApi.paths : {};
+const diffPath = isRecord(paths["/v2/model-policy/policies/{policyId}/diff"])
+  ? paths["/v2/model-policy/policies/{policyId}/diff"]
+  : {};
+const diffGet = isRecord(diffPath.get) ? diffPath.get : {};
+const diffResponses = isRecord(diffGet.responses) ? diffGet.responses : {};
+const diffSuccess = isRecord(diffResponses["200"]) ? diffResponses["200"] : {};
+if (
+  !JSON.stringify(diffSuccess).includes("#/components/schemas/PolicyDiff") ||
+  !isRecord(componentSchemas.PolicyDiff)
+) {
+  failures.push("OpenAPI: policy diff projection is not schema-bound");
+}
+
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
   process.exit(1);
 }
 console.log(
-  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, bounded for preimplementation`,
+  `Policy-core vectors verified: ${golden.cases.length} golden cases, ${operators.vectors.length} operator cases, ${rawInputCount} raw decoder refusals, ${boundaryCases.length} byte boundaries with valid exact ceilings, depth ${maximumJsonDepth}, privacy-minimized sources and principals, typed URNs and closed HTTP refusals, bounded for preimplementation`,
 );

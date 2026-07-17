@@ -54,6 +54,16 @@ same agent/session as authoring, but each role remains isolated and bound to the
 - all six closed WIT error variants have complete, precedence-compatible cases;
 - nine byte-exact inputs cover BOM, invalid UTF-8, duplicate decoded keys, isolated
   surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
+- the resolved WIT world exports one `api` and is asserted to have zero imports;
+- ten exact/+1 byte boundaries and JSON depth 64 are executable in both TypeScript
+  and Rust before any product engine exists; exact inputs remain schema-valid and
+  the exact 2 MiB output remains valid, digest-bound JCS;
+- source URIs are bounded sanitized public HTTPS citations with DNS-shaped hosts,
+  no localhost/IP/userinfo/query/fragment; principal/model IDs are opaque,
+  artifact URNs are kind-specific, and textual facts are bounded machine tokens
+  with executable privacy negatives;
+- the v2 HTTP refusal envelope carries only a stable code and opaque request ID,
+  never a free-form message, input value or reviewer identity;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
 ## Required independent agent checks
@@ -75,13 +85,16 @@ The Security review agent must:
   fact inputs;
 - attempt to obtain `eligible` from absent, stale, future or wrong-typed facts;
 - attempt origin/jurisdiction conflation and satisfying-occurrence cherry-picking;
-- confirm bounded arrays/strings/numbers, constant non-sensitive errors and no
-  network/clock/storage/randomness capability;
+- confirm bounded arrays/strings/numbers, exact/+1 preflight, depth refusal,
+  constant non-sensitive errors and no network/clock/storage/randomness capability;
 - reject quadratic full-set scans and any valid-input resource refusal caused by
   an implementation exceeding the candidate memory budget;
 - confirm that no result grants authorization, purchasing power or approval.
 
-The Privacy review agent must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
+The Privacy review agent must confirm tenant-bound minimization, sanitized public
+DNS-shaped source citations without personal data or secrets, opaque
+proposer/reviewer/model IDs, machine-token facts without free-form personal fixture
+data, and that outputs/logs/errors expose neither fact values nor reviewer identity.
 
 ## Promotion rule
 
