@@ -44,9 +44,10 @@ expected outputs.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
-- Scanner self-tests reject direct, Unicode-domain, default-ignorable, percent, over-nested percent,
-  `%u`, numeric/named/nested HTML and Unicode identifiers plus credential markers. They preserve
-  `R&D`, `R&amplitude`, literal unresolved markers, `50%`, `release@2`,
+- Scanner self-tests reject direct, RFC local-parts containing `&`, Unicode-domain,
+  default-ignorable, percent, over-nested percent, `%u`, numeric/named/mixed HTML and Unicode
+  identifiers plus credential markers. They preserve `R&D`, `R&amplitude`, literal unresolved
+  markers, `50%`, `release@2`,
   `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact

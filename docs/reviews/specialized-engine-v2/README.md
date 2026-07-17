@@ -1,6 +1,6 @@
 # Revue agentique du format de vecteurs des moteurs spécialisés
 
-Statut : `candidate-reviewed / pending evidence integration and distinct promotion`.
+Statut : `candidate-remediation / fresh roles required`.
 
 Le schéma `engine-golden-vectors.v1` ne remplace aucune sémantique de moteur. Il borne l'enveloppe
 JSON publique des vecteurs, tandis que les profils WIT et les checkers propres à Radar, Notebook,
@@ -26,30 +26,29 @@ les confusables Unicode puis la politique lexicale transverse de `6fd4d5d` : rec
 [`REMEDIATION.md`](REMEDIATION.md) sépare désormais métadonnées sanitisées et payloads gouvernés
 par moteur. Toute approbation antérieure au merge final de remédiation est stale.
 
-## Passes finales sur `ae455b9`
+## Passes invalidées sur `ae455b9`
 
-Deux passes review-only séparées approuvent le même arbre immuable
-`ae455b9875b03b78dbb0a9d1dcfcb9c566754808` et le schéma SHA-256
-`2300274b0ee626ccc01eb3d42142f1dd4bef96aaf8c4c68c0569188caec5954b` :
+[`ARCHITECTURE-VERDICT-FINAL.md`](ARCHITECTURE-VERDICT-FINAL.md) et
+[`SECURITY-VERDICT-FINAL.md`](SECURITY-VERDICT-FINAL.md) conservent les approbations produites sur
+`ae455b9875b03b78dbb0a9d1dcfcb9c566754808`. Elles ne sont **pas** citables comme verdicts finaux :
+une passe candidate-integration stricte sur le même SHA a ensuite reproduit un bypass bloquant dans
+les chaînes HTML mixtes amp/numeric/named. Le rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-AE455.md`](CANDIDATE-INTEGRATION-REJECT-AE455.md), SHA-256
+`18c2e8d32892d44546398f18e448316ab01e4791e52f03022aa9c32feb81773b`. La PR #66 a intégré les
+approbations avant que ce rejet concurrent soit observé ; leur présence est historique, pas probante
+pour une promotion.
 
-- [`ARCHITECTURE-VERDICT-FINAL.md`](ARCHITECTURE-VERDICT-FINAL.md) : `APPROVE architecture`,
-  session `019f6fad-8c5a-7d7e-8bb0-1cad492fff6c`, record SHA-256
-  `0833f3f2c390c6ca031e47226f1414746b9f7595af98362a3fc5f7164c404a5f` ;
-- [`SECURITY-VERDICT-FINAL.md`](SECURITY-VERDICT-FINAL.md) : `APPROVE security`, session
-  `019f6fad-8c6e-78cd-b8d3-51587d4604f4`, record SHA-256
-  `eddde521d25b35b1f32385ca40a2ea93cbeedb39aebe5bc18e42ff982191f158`.
-
-Les hashes de fichiers cités à l'intérieur des rapports sont ceux de l'arbre relu `ae455b9`. Le
-présent index et les rapports, non catalogués, sont ajoutés ensuite par une passe d'intégration de
-preuves ; ils ne modifient ni le schéma candidat ni les cinq corpus relus. Le gate partagé qualifie
-les cinq corpus, et leurs checkers propres restent seuls normatifs pour leur sémantique.
+La remédiation suivante étend la détection aux local-parts RFC contenant `&`, ajoute les compositions
+exactes au self-test et rend ces records stale par changement du checker. Aucune autorité normative
+moteur n'est modifiée.
 
 ## Gates restants
 
-1. intégrer ces records par une passe candidate-integration distincte ;
-2. enregistrer le contrôle owner pour cette autorité ;
-3. préparer une PR de promotion catalog-only séparée, en vérifiant le schéma byte-identique ;
-4. obtenir une revue promotion/integration favorable avant `candidate → locked`.
+1. intégrer la remédiation mixte après candidate-integration favorable ;
+2. rejouer Architecture et Security sur son merge immuable ;
+3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
+4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+   `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
 `locked` fixera seulement le sens du contrat : aucun moteur, scoring public, traitement de données
