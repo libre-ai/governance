@@ -121,18 +121,50 @@ rejeté les userinfo `ssh://`/`git://` et les en-têtes privés DSA/OpenPGP
 `6e885aebf4d1342ea4937da2b7ab9ed4f0ccef4ad187a005b6f2cfdea0c7b922`) ; ce rejet gouverne et rend
 les deux approbations stale après remédiation.
 
-La remédiation courante détecte sans résolution l'userinfo de tout schéma URI syntaxique et étend les
-marqueurs privés explicites à DSA, OpenPGP et PKCS#8 chiffré. Les représentations encodées et les clés
-JSON utilisent le même gate. Toutes les bornes EAI/prose restent inchangées. `entities@8.0.0` reste
-qualifié BSD-2-Clause, dev-only et sans transitive ; un contrôle owner reste requis. Aucune autorité
-normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge `ef1e847` a fermé les constats userinfo/credentials dans le gate réel, mais deux passes
+candidate-integration indépendantes ont trouvé des blocages distincts :
+
+- le pattern `metadataString` du schéma canonique acceptait encore DSA, OpenPGP et PKCS#8 chiffré en
+  validation schema-only
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847.md), SHA-256
+  `12ecbf1bd2b0f0add59588fd21e49bbdcd676a01a4b69cd46ceb113104c19b22`) ;
+- les adresses CFWS entièrement parenthésées ou quoted contournaient le scanner parce que la
+  projection RFC supprimait le wrapper complet ou conservait ses commentaires internes
+  ([`CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md),
+  SHA-256 `d0092e478af43e386a8952dac3c199a619b228baa8bc02fa40e0117fb9803d0b`).
+
+Le merge `cea7363` a aligné le schéma. Candidate-integration a ensuite approuvé
+([`CANDIDATE-INTEGRATION-CEA7363.md`](CANDIDATE-INTEGRATION-CEA7363.md), SHA-256
+`7f492b1806091b7c74c20e46eab8ce66bf5410a9ac56900ad554cfb374958061`) et Architecture a approuvé
+avec deux réserves d'audit ([`ARCHITECTURE-VERDICT-CEA7363.md`](ARCHITECTURE-VERDICT-CEA7363.md),
+SHA-256 `0006071a17692cfc295aa706a8645668df63a96ec243fe6d6f134b66e4cd2433`). Security a rejeté le tag
+IPv6 sensible à la casse et les chemins metadata contournant la politique par NFKC/default-ignorable
+([`SECURITY-VERDICT-CEA7363.md`](SECURITY-VERDICT-CEA7363.md), SHA-256
+`64b3ea80000d9eac39c23ca8d5a4f656373d877e1cec68d5d04feabd2e3c16c8`). Ce rejet gouverne ; les
+deux approbations sont stale.
+
+PR #81 a intégré les projections wrapped-CFWS après candidate-integration favorable sur sa tête
+exacte `bec32a7bedb349bad4c3c58afbc878b995d00db8`
+([`CANDIDATE-INTEGRATION-BEC32A7.md`](CANDIDATE-INTEGRATION-BEC32A7.md), SHA-256
+`6aadfbab59d20003d18c5144b2067ac66e32444b8b449a91262338be6de25695`). PR #82 a persisté ce
+record sans modifier le scanner. Cette preuve wrapped-CFWS devient elle aussi stale dès que la
+remédiation combinée change le scanner ou le schéma.
+
+La remédiation combinée traite le tag RFC `IPv6:` sans distinction de casse et ferme le sous-espace
+metadata en ASCII, donc sous NFKC et retrait des default-ignorables, tout en laissant les payloads
+moteur Unicode et opaques. Les fixtures couvrent les chemins NFKC/default-ignorable ; les
+représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` reste qualifié
+BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise. L'écart de
+chronologie de PR #80 reste historique, sans autorisation rétroactive ; cette nouvelle remédiation
+doit recevoir candidate-integration avant fusion.
 
 ## Gates restants
 
-1. intégrer la remédiation des marqueurs credential après candidate-integration favorable ;
-2. rejouer Architecture et Security sur son merge immuable ;
-3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
-4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. obtenir une candidate-integration favorable sur la tête immuable de remédiation combinée ;
+2. fusionner cette remédiation sans autre changement ;
+3. rejouer candidate-integration, Architecture et Security sur le merge immuable ;
+4. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
+5. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
