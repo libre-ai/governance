@@ -37,15 +37,17 @@ expected outputs.
   and reject credential-shaped names.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
   NFKC normalization, removes default-ignorable code points and performs four bounded decoding rounds
-  over percent octets, `%u` escapes and HTML entities. It rejects email identifiers and
-  high-confidence credentials in values or property names without echoing rejected content; an
-  unrelated `@` machine handle is not reinterpreted as an email.
+  over percent octets, `%u` escapes and numeric or named HTML markers. A still-decodable marker after
+  round four is rejected, so deeper nesting cannot bypass the bound. The scanner rejects email
+  identifiers and high-confidence credentials in values or property names without echoing rejected
+  content; an unrelated `@` machine handle is not reinterpreted as an email.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
-  byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is ordinary inert
-  payload data and receives no resolver capability or lexical exception.
-- Scanner self-tests reject direct, Unicode-domain, default-ignorable, percent, nested percent/HTML,
-  `%u`, HTML-entity and Unicode at-sign identifiers plus credential markers. They preserve `R&D`,
-  `50%`, `release@2`, `https://example.org/a%2Fb`, `Café démonstration` and inert attack canaries.
+  byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
+  ordinary inert payload data and receives no resolver capability or lexical exception.
+- Scanner self-tests reject direct, Unicode-domain, default-ignorable, percent, over-nested percent,
+  `%u`, numeric/named/nested HTML and Unicode identifiers plus credential markers. They preserve
+  `R&D`, `R&amplitude`, `50%`, `release@2`, `https://example.org/a%2Fb`, `Café démonstration` and
+  inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
