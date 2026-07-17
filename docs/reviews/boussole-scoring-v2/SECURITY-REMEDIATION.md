@@ -1,6 +1,10 @@
 # Boussole scoring v2 — security remediation packet
 
-Status: **ready for fresh security re-review / no approval**.
+Status: **historical remediation packet; hashes below are stale**.
+
+The current security evidence and hashes are recorded in
+[`SECURITY-VERDICT-FINAL.md`](SECURITY-VERDICT-FINAL.md) for commit `e83e142`. Do not cite this packet
+as the current approval.
 
 This packet answers the blocking findings in
 [`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). That rejected verdict remains an

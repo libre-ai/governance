@@ -11,11 +11,23 @@ Les verdicts historiques restent immuables :
 - les passes attribuables publiées sur l'issue #23 ont ensuite rejeté `1f2628f` en architecture et
   vie privée, tout en approuvant la méthodologie avec réserve mineure.
 
-Le présent incrément remédie ces derniers constats. Tout verdict antérieur à son SHA final devient
-stale pour la promotion, même quand il reste une preuve technique utile.
+Le jeu final cible le commit immuable `e83e142f647ec9ab6478b7c1e9428950ea209561`. Tout verdict
+antérieur reste une trace utile mais est stale pour la promotion.
 
-La promotion exige quatre records issus de passes review-only séparées par rôle, conformément à
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
+## Verdicts finaux durables
+
+| Rôle | Record | Verdict | SHA-256 du record |
+| --- | --- | --- | --- |
+| Architecture | [`ARCHITECTURE-VERDICT-FINAL.md`](ARCHITECTURE-VERDICT-FINAL.md) | `approve` | `c5460d61259b1d027d5e1f7e672848645d969af3785ecc903460d9644c72c6eb` |
+| Security | [`SECURITY-VERDICT-FINAL.md`](SECURITY-VERDICT-FINAL.md) | `approve-with-minor-reservations` | `7cacabc74f20176c3727e5eaf33e19bd0d502fc81304d9b61fe7a43bc5532a8e` |
+| Methodology | [`METHODOLOGY-VERDICT-FINAL.md`](METHODOLOGY-VERDICT-FINAL.md) | `approve` | `7cad942bfdf503bf73d0d9ab16855b5cdcf0d3129e1e027a2c110094af234eec` |
+| Privacy France/UE | [`PRIVACY-VERDICT-FINAL.md`](PRIVACY-VERDICT-FINAL.md) | `approve-with-minor-reservations` | `bb5c4eedcfa0fb5548565adca005777cff868d7e51183f28f26cc83a600aa4f4` |
+
+Les quatre rôles sont techniquement complets. Cela ne promeut pas le candidat : une passe de
+promotion séparée et le jalon explicite du propriétaire restent requis par
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Le scoring public demeure NO-GO.
+
+Les quatre rôles couvrent séparément :
 
 1. architecture — cohérence WIT/JSON Schema, URN kind-specific et catalogue complet ;
 2. sécurité — bornes, refus, arithmétique, publication agrégée et imports WASM ;
