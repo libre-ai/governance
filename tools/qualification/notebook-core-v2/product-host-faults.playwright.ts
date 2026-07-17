@@ -1,3 +1,4 @@
+import type { ChildProcess } from "node:child_process";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -41,7 +42,7 @@ test("recovers after forced process kill and crash without partial artifacts or 
     await page.getByRole("button", { name: "Créer une sauvegarde d’essai" }).click();
     await sealWorker;
     assertCleanRuntime(context, page);
-    await forceKill(context);
+    const sealTermination = await forceKill(context);
     context = undefined;
 
     expect(sealDownloads).toEqual([]);
@@ -81,7 +82,7 @@ test("recovers after forced process kill and crash without partial artifacts or 
       false,
     );
     assertCleanRuntime(context, page);
-    await forceCrash(context);
+    const restoreTermination = await forceCrash(context);
     context = undefined;
     expect(crashedRestoreDownloads).toEqual([]);
 
@@ -129,7 +130,10 @@ test("recovers after forced process kill and crash without partial artifacts or 
     await attachEvidence(testInfo, {
       browserName,
       browserVersion: context.browser()?.version() ?? "unknown",
-      processFaults: ["SIGKILL-process-group-seal", "SIGABRT-process-group-restore"],
+      processFaults: [
+        { operation: "seal", ...sealTermination },
+        { operation: "restore", ...restoreTermination },
+      ],
       productBuild,
       scenario: "seal-and-staged-restore-process-kill",
       verdict: "pass",
@@ -314,7 +318,13 @@ function assertCleanRuntime(context: BrowserContext, page: Page): void {
   });
 }
 
-async function forceKill(context: BrowserContext): Promise<void> {
+type ProcessTermination = {
+  exitCode: number | null;
+  signalCode: NodeJS.Signals;
+};
+
+async function forceKill(context: BrowserContext): Promise<ProcessTermination> {
+  const child = internalBrowserProcess(context);
   const browser = context.browser() as unknown as {
     _channel?: { killForTests?: () => Promise<void> };
   } | null;
@@ -323,27 +333,38 @@ async function forceKill(context: BrowserContext): Promise<void> {
     throw new Error("pinned Playwright process-kill channel unavailable");
   }
   await kill.call(browser?._channel);
+  expect(child.signalCode).toBe("SIGKILL");
+  return { exitCode: child.exitCode, signalCode: "SIGKILL" };
 }
 
-async function forceCrash(context: BrowserContext): Promise<void> {
-  const browser = context.browser() as unknown as {
-    _connection?: {
-      toImpl?: (value: unknown) => {
-        options?: { browserProcess?: { process?: { pid?: number } } };
-      };
-    };
-  } | null;
-  const pid = browser?._connection?.toImpl?.(browser)?.options?.browserProcess?.process?.pid;
+async function forceCrash(context: BrowserContext): Promise<ProcessTermination> {
+  const child = internalBrowserProcess(context);
+  const pid = child.pid;
   if (process.platform !== "darwin" || !Number.isSafeInteger(pid) || (pid ?? 0) < 2) {
     throw new Error("pinned Playwright browser process unavailable for crash injection");
   }
-  const disconnected = new Promise<void>((resolveDisconnected) => {
-    (context.browser() as import("@playwright/test").Browser).once("disconnected", () =>
-      resolveDisconnected(),
-    );
-  });
+  const closed = new Promise<{ exitCode: number | null; signalCode: NodeJS.Signals | null }>(
+    (resolveClosed) => {
+      child.once("close", (exitCode, signalCode) => resolveClosed({ exitCode, signalCode }));
+    },
+  );
   process.kill(-(pid as number), "SIGABRT");
-  await disconnected;
+  const termination = await closed;
+  expect(termination.signalCode).toBe("SIGABRT");
+  return { exitCode: termination.exitCode, signalCode: "SIGABRT" };
+}
+
+function internalBrowserProcess(context: BrowserContext): ChildProcess {
+  const browser = context.browser() as unknown as {
+    _connection?: {
+      toImpl?: (value: unknown) => {
+        options?: { browserProcess?: { process?: ChildProcess } };
+      };
+    };
+  } | null;
+  const child = browser?._connection?.toImpl?.(browser)?.options?.browserProcess?.process;
+  if (!child) throw new Error("pinned Playwright internal browser process unavailable");
+  return child;
 }
 
 async function expectWorkersGone(page: Page): Promise<void> {
