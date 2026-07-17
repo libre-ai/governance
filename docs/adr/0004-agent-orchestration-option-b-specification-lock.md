@@ -1,6 +1,6 @@
 # ADR-0004 — Specification Lock de l’orchestration agentique option B
 
-- **Statut :** accepted — promotion catalogue soumise à la passe promotion-integration
+- **Statut :** accepted — promotion-integration approuvée sur `88f9422`
 - **Date :** 2026-07-17
 - **Portée :** contrats Missions v2, Agent Orchestrator, Agent Harness et autorisation Biscuit
 - **Autorise une implémentation :** non

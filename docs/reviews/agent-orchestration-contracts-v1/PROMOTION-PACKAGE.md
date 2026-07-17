@@ -5,7 +5,8 @@
 - **Remediated candidate-integration commit:** `d64ad9214d0b54b7e39a2c54e238ff244f54a99c`
 - **Scope:** exactly 14 agent-orchestration authorities, `candidate → locked`
 - **Implementation / real mission / real data:** **NOT AUTHORIZED**
-- **Package state:** pending a separate promotion-integration review on the immutable promotion commit
+- **Package state:** approved by the separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass on `88f9422`
+- **Promotion verdict SHA-256:** `afe8465d94e54fc356453127febf7dafc9ed3337ad105ed4b79ae47f0aa71ec9`
 
 No reviewed authority changes in this package. The machine-authoritative transition is limited to
 the 14 catalog review states; the ADR, RFC and application/compatibility documentation record the

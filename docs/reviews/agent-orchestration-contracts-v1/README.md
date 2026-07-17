@@ -1,6 +1,6 @@
 # Agent orchestration contracts v1
 
-Status: `promotion-authored / separate promotion-integration pending`.
+Status: `locked / Specification Lock complete / implementation blocked`.
 
 These authorities make the reviewed option-B RFC machine-checkable. They authorize no orchestrator, harness, Pi extension, provider, network, secret, persistence, real mission, merge, release or deployment.
 
@@ -60,6 +60,6 @@ Exact authority commit `e93da197804c013dff2eb250a58bf7525ccd3658`:
 - security: `approve-with-minor-reservations` ;
 - France/EU privacy: `approve-with-minor-reservations`.
 
-Historical rejects remain in this dossier. The authored promotion transitions exactly 14 catalog entries to `locked`, subject to the separate review-only pass specified in [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md). The current owner instruction permits continuing without another interactive pause but does not replace or waive any technical role verdict.
+Historical rejects remain in this dossier. Promotion commit `88f94227e4b81b890b85d2e0667c1f600336afdc` transitions exactly 14 catalog entries to `locked`. The separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass approves that exact delta with no blocking, major or promotion-minor finding; its SHA-256 is `afe8465d94e54fc356453127febf7dafc9ed3337ad105ed4b79ae47f0aa71ec9`.
 
-`locked` fixes contract meaning; it is not an implementation approval. A bounded work package and conformance review remain mandatory before any runtime work or real mission.
+The scoped owner instruction is recorded in ADR-0004 and permits the sequence to continue without another interactive pause; it does not replace or waive any technical verdict. `locked` fixes contract meaning and closes this Specification Lock, but is not an implementation approval. A bounded work package and conformance review remain mandatory before any runtime work or real mission.
