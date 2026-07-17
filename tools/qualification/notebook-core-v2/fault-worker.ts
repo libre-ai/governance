@@ -57,9 +57,14 @@ async function execute(
   operation: IsolatedOperation,
   fault: QualificationFault,
 ): Promise<IsolatedResult> {
-  const componentUrl = "./notebook-core.js";
+  const internalFault = fault.startsWith("internal-");
+  const componentUrl = internalFault ? "./notebook-core-internal-fault.js" : "./notebook-core.js";
   const component = (await import(componentUrl)) as ComponentModule;
-  const coreName = fault === "trap" ? TRAP_MODULES[operation.kind] : "notebook-core.core.wasm";
+  const coreName = internalFault
+    ? "notebook-core-internal-fault.core.wasm"
+    : fault === "trap"
+      ? TRAP_MODULES[operation.kind]
+      : "notebook-core.core.wasm";
   const root = await component.instantiate(
     async () => {
       const response = await fetch(new URL(coreName, import.meta.url), { cache: "no-store" });
@@ -153,7 +158,17 @@ function decodeRequest(value: unknown): WorkerRequest {
   const request = value as Partial<WorkerRequest>;
   if (
     !Number.isSafeInteger(request.requestId) ||
-    !["none", "oom", "trap", "hang"].includes(request.fault ?? "") ||
+    ![
+      "none",
+      "oom",
+      "trap",
+      "hang",
+      "internal-oom",
+      "internal-panic",
+      "internal-serde-oom",
+      "internal-jcs-oom",
+      "internal-argon2-oom",
+    ].includes(request.fault ?? "") ||
     typeof request.operation !== "object" ||
     request.operation === null ||
     !["canonicalize", "seal", "open-digest"].includes(request.operation.kind)

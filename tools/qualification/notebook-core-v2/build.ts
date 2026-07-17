@@ -15,6 +15,35 @@ const coreModule = resolve(
   "target/wasm32-unknown-unknown/release/libre_ai_notebook_core.wasm",
 );
 const componentPath = resolve(outputDirectory, "notebook-core.component.wasm");
+const internalFaultTargetDirectory = resolve(
+  repositoryRoot,
+  "target/notebook-core-v2-internal-fault-build",
+);
+const internalFaultCoreModule = resolve(
+  internalFaultTargetDirectory,
+  "wasm32-unknown-unknown/release/libre_ai_notebook_core.wasm",
+);
+const internalFaultComponentPath = resolve(
+  outputDirectory,
+  "notebook-core.internal-fault.component.wasm",
+);
+const toolchain = JSON.parse(
+  await readFile(resolve(repositoryRoot, "toolchains/notebook-qualification.json"), "utf8"),
+) as {
+  node: {
+    version: string;
+    platforms: Record<string, { executableSha256: string }>;
+  };
+};
+const nodePlatform = `${process.platform}-${process.arch}`;
+const nodeAsset = toolchain.node.platforms[nodePlatform];
+if (
+  !nodeAsset ||
+  process.versions.node !== toolchain.node.version ||
+  sha256(new Uint8Array(await readFile(process.execPath))) !== nodeAsset.executableSha256
+) {
+  throw new Error("Notebook qualification requires the pinned Node executable");
+}
 const trapModules = [
   {
     exportName: "libre-ai:notebook-core/api@2.0.0#canonicalize-context",
@@ -30,10 +59,11 @@ const trapModules = [
   },
 ] as const;
 
-function run(command: string, arguments_: string[]): void {
+function run(command: string, arguments_: string[], environment: NodeJS.ProcessEnv = {}): void {
   const result = spawnSync(command, arguments_, {
     cwd: repositoryRoot,
     encoding: "utf8",
+    env: { ...process.env, ...environment },
     stdio: "pipe",
   });
   if (result.status !== 0) {
@@ -65,6 +95,21 @@ run("cargo", [
   "--target",
   "wasm32-unknown-unknown",
 ]);
+run(
+  "cargo",
+  [
+    "build",
+    "--locked",
+    "-p",
+    "libre-ai-notebook-core",
+    "--release",
+    "--target",
+    "wasm32-unknown-unknown",
+    "--features",
+    "qualification-faults",
+  ],
+  { CARGO_TARGET_DIR: internalFaultTargetDirectory },
+);
 await rm(outputDirectory, { force: true, recursive: true });
 await mkdir(resolve(outputDirectory, "generated"), { recursive: true });
 
@@ -112,10 +157,64 @@ for (const [name, bytes] of Object.entries(transpiled.files)) {
   await writeFile(output, bytes);
 }
 
+const internalFaultCoreBytes = new Uint8Array(await readFile(internalFaultCoreModule));
+const internalFaultComponentBytes = await componentNew(internalFaultCoreBytes);
+const internalFaultWit = await componentWit(internalFaultComponentBytes);
+if (internalFaultWit !== wit) {
+  throw new Error("qualification fault component changed the locked WIT surface");
+}
+await writeFile(internalFaultComponentPath, internalFaultComponentBytes);
+run("cargo", [
+  "run",
+  "--locked",
+  "-p",
+  "libre-ai-notebook-core",
+  "--example",
+  "check_wasm_imports",
+  "--",
+  internalFaultCoreModule,
+  internalFaultComponentPath,
+]);
+const internalFaultTranspiled = await transpileBytes(internalFaultComponentBytes, {
+  emitTypescriptDeclarations: false,
+  instantiation: "async",
+  name: "notebook-core-internal-fault",
+  nodejsCompat: false,
+  strict: true,
+  wasiShim: false,
+});
+if (internalFaultTranspiled.imports.length !== 0) {
+  throw new Error("qualification fault component has imports");
+}
+const internalFaultExports = new Set(
+  internalFaultTranspiled.exports.map(([name, kind]) => `${name}:${kind}`),
+);
+if (
+  internalFaultExports.size !== expectedExports.size ||
+  [...expectedExports].some((value) => !internalFaultExports.has(value))
+) {
+  throw new Error("qualification fault component exports do not match the locked API");
+}
+for (const [name, bytes] of Object.entries(internalFaultTranspiled.files)) {
+  const output = safeOutputPath(name);
+  await mkdir(dirname(output), { recursive: true });
+  await writeFile(output, bytes);
+}
+
 const transpiledCorePath = resolve(outputDirectory, "generated/notebook-core.core.wasm");
 const transpiledCore = new WebAssembly.Module(await readFile(transpiledCorePath));
 if (WebAssembly.Module.imports(transpiledCore).length !== 0) {
   throw new Error("transpiled core module has imports");
+}
+const internalFaultTranspiledCorePath = resolve(
+  outputDirectory,
+  "generated/notebook-core-internal-fault.core.wasm",
+);
+const internalFaultTranspiledCore = new WebAssembly.Module(
+  await readFile(internalFaultTranspiledCorePath),
+);
+if (WebAssembly.Module.imports(internalFaultTranspiledCore).length !== 0) {
+  throw new Error("qualification fault transpiled core module has imports");
 }
 
 for (const trap of trapModules) {
@@ -135,6 +234,7 @@ for (const trap of trapModules) {
 }
 
 const browserBundles = [
+  ["benchmark-worker.ts", "benchmark-worker.js"],
   ["fault-worker.ts", "fault-worker.js"],
   ["host.ts", "host.js"],
   ["isolated-host.ts", "isolated-host.js"],
@@ -155,6 +255,7 @@ await writeFile(
 
 const qualificationFiles = [
   ...Object.keys(transpiled.files),
+  ...Object.keys(internalFaultTranspiled.files),
   ...trapModules.map(({ name }) => name),
   ...browserBundles.map(([, output]) => output),
 ];
@@ -169,6 +270,14 @@ const generated = Object.fromEntries(
 const manifest = {
   component: { bytes: componentBytes.length, sha256: sha256(componentBytes) },
   coreModule: { bytes: coreBytes.length, sha256: sha256(coreBytes) },
+  internalFaultComponent: {
+    bytes: internalFaultComponentBytes.length,
+    sha256: sha256(internalFaultComponentBytes),
+  },
+  internalFaultCoreModule: {
+    bytes: internalFaultCoreBytes.length,
+    sha256: sha256(internalFaultCoreBytes),
+  },
   generated,
   schemaVersion: "libre-ai.notebook-core-v2-qualification-manifest.v1",
   transpiler: "@bytecodealliance/jco-transpile@0.4.2",
