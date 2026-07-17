@@ -153,8 +153,10 @@ remédiation combinée change le scanner ou le schéma.
 La remédiation combinée traite le tag RFC `IPv6:` sans distinction de casse et ferme le sous-espace
 metadata en ASCII, donc sous NFKC et retrait des default-ignorables, tout en laissant les payloads
 moteur Unicode et opaques. Les fixtures couvrent les chemins NFKC/default-ignorable ; les
-représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` reste qualifié
-BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise. L'écart de
+représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` est qualifié
+BSD-2-Clause, dev-only et sans transitive, puis accepté explicitement par l'owner après challenge
+([`OWNER-ACCEPTANCE-ENTITIES.md`](OWNER-ACCEPTANCE-ENTITIES.md), SHA-256
+`0258b4bc9a42950d0488cad8e4ef857384d8f1cf0f09effe1c83d0790227c005`). L'écart de
 chronologie de PR #80 reste historique, sans autorisation rétroactive.
 
 Candidate-integration a approuvé le merge exact `ccf9d684d9a43ad7236bec905e701e155520e2d6`
@@ -166,16 +168,15 @@ Architecture approuve avec une réserve documentaire désormais réconciliée
 constat bloquant ([`SECURITY-VERDICT-CCF9D68.md`](SECURITY-VERDICT-CCF9D68.md), SHA-256
 `e4e9910c4872206a9762f580f538a4bd76fc885ca051562873151b437e066cfb`).
 
-L'avancement ultérieur de `main` par PR #84 ne touche que la qualification Notebook Gate B, puis PR
-#85 persiste la preuve candidate-integration ; les hashes schéma/scanner/catalogue/corpus/WIT de
-cette autorité restent byte-identical. Les trois rôles gouvernent donc les mêmes octets d'autorité.
-Ils ne valent ni promotion, ni contrôle owner, ni autorisation produit/runtime/data/release.
+L'avancement ultérieur de `main` par PR #84/#87 ne touche que la qualification Notebook Gate B,
+tandis que PR #85/#86 persistent les preuves de cette autorité ; ses hashes
+schéma/scanner/catalogue/corpus/WIT restent byte-identical. Les trois rôles gouvernent donc les mêmes
+octets d'autorité. Ils ne valent ni promotion ni autorisation produit/runtime/data/release.
 
 ## Gates restants
 
-1. intégrer ces records Architecture/Security sans modifier l'autorité ;
-2. enregistrer l'acceptation owner explicite de `entities@8.0.0` ;
-3. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. intégrer le record owner sans modifier l'autorité ;
+2. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
