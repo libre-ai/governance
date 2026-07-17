@@ -8,7 +8,6 @@ import { expect, type Page, test } from "@playwright/test";
 
 const ITERATIONS = 20;
 const WARMUPS = 2;
-const WORKER_TERMINATION_YIELD_MS = 0;
 const MIB = 1024 * 1024;
 const PROFILES = [
   {
@@ -82,31 +81,38 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   await page.goto("/");
 
   const rss = new BrowserRssSampler(engine?.cacheDirectory ?? "");
+  const reuseCompiledModule = browserName === "firefox";
   const profileResults: Array<Record<string, unknown>> = [];
   for (const profile of PROFILES) {
     rss.startProfile();
     const profileRun = await page.evaluate(
-      async ({ iterations, profile, settleMs, warmups }) => {
+      async ({ iterations, profile, reuseCompiledModule, warmups }) => {
         const workerUrl = "/generated/benchmark-worker.js";
-        const moduleState = globalThis as typeof globalThis & {
-          __notebookQualificationCompilationMs?: number;
-          __notebookQualificationCoreModule?: WebAssembly.Module;
-        };
-        let coreModule = moduleState.__notebookQualificationCoreModule;
-        let moduleCompilationMs = moduleState.__notebookQualificationCompilationMs;
-        if (!coreModule || moduleCompilationMs === undefined) {
-          const compilationStarted = performance.now();
-          const response = await fetch("/generated/notebook-core.core.wasm", {
-            cache: "no-store",
-          });
-          if (!response.ok) throw new Error("benchmark core module unavailable");
-          coreModule = await WebAssembly.compile(await response.arrayBuffer());
-          if (WebAssembly.Module.imports(coreModule).length !== 0) {
-            throw new Error("benchmark core module has imports");
+        let coreModule: WebAssembly.Module | undefined;
+        let moduleCompilationMs = 0;
+        if (reuseCompiledModule) {
+          const moduleState = globalThis as typeof globalThis & {
+            __notebookQualificationCompilationMs?: number;
+            __notebookQualificationCoreModule?: WebAssembly.Module;
+          };
+          coreModule = moduleState.__notebookQualificationCoreModule;
+          const cachedCompilationMs = moduleState.__notebookQualificationCompilationMs;
+          if (!coreModule || cachedCompilationMs === undefined) {
+            const compilationStarted = performance.now();
+            const response = await fetch("/generated/notebook-core.core.wasm", {
+              cache: "no-store",
+            });
+            if (!response.ok) throw new Error("benchmark core module unavailable");
+            coreModule = await WebAssembly.compile(await response.arrayBuffer());
+            if (WebAssembly.Module.imports(coreModule).length !== 0) {
+              throw new Error("benchmark core module has imports");
+            }
+            moduleCompilationMs = performance.now() - compilationStarted;
+            moduleState.__notebookQualificationCompilationMs = moduleCompilationMs;
+            moduleState.__notebookQualificationCoreModule = coreModule;
+          } else {
+            moduleCompilationMs = cachedCompilationMs;
           }
-          moduleCompilationMs = performance.now() - compilationStarted;
-          moduleState.__notebookQualificationCompilationMs = moduleCompilationMs;
-          moduleState.__notebookQualificationCoreModule = coreModule;
         }
         let nextRequestId = 1;
         const runWorker = (
@@ -141,17 +147,16 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
               } else if (response.tag === "err") {
                 reject(new Error(`benchmark refused with ${response.code ?? "unknown"}`));
               } else {
-                setTimeout(
-                  () =>
-                    resolve({
-                      ...response,
-                      endToEndMs: performance.now() - started + moduleCompilationMs,
-                    }),
-                  settleMs,
-                );
+                resolve({
+                  ...response,
+                  endToEndMs: performance.now() - started + moduleCompilationMs,
+                });
               }
             };
-            worker.postMessage({ ...request, coreModule, requestId }, transfer);
+            worker.postMessage(
+              { ...request, ...(coreModule ? { coreModule } : {}), requestId },
+              transfer,
+            );
           });
         };
         const hexId = (iteration: number): string =>
@@ -238,7 +243,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       {
         iterations: ITERATIONS,
         profile,
-        settleMs: WORKER_TERMINATION_YIELD_MS,
+        reuseCompiledModule,
         warmups: WARMUPS,
       },
     );
@@ -264,20 +269,20 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
 
   rss.startProfile();
   const antiOracle = await page.evaluate(
-    async ({ iterations, settleMs }) => {
+    async ({ iterations, reuseCompiledModule }) => {
       const vectors = (await (await fetch("/golden-vectors.json")).json()) as Vectors;
-      const moduleState = globalThis as typeof globalThis & {
-        __notebookQualificationCompilationMs?: number;
-        __notebookQualificationCoreModule?: WebAssembly.Module;
-      };
-      const coreModule = moduleState.__notebookQualificationCoreModule;
-      const moduleCompilationMs = moduleState.__notebookQualificationCompilationMs;
-      if (
-        !coreModule ||
-        moduleCompilationMs === undefined ||
-        WebAssembly.Module.imports(coreModule).length !== 0
-      ) {
-        throw new Error("benchmark core module cache unavailable");
+      let coreModule: WebAssembly.Module | undefined;
+      let moduleCompilationMs = 0;
+      if (reuseCompiledModule) {
+        const moduleState = globalThis as typeof globalThis & {
+          __notebookQualificationCompilationMs?: number;
+          __notebookQualificationCoreModule?: WebAssembly.Module;
+        };
+        coreModule = moduleState.__notebookQualificationCoreModule;
+        moduleCompilationMs = moduleState.__notebookQualificationCompilationMs ?? 0;
+        if (!coreModule || WebAssembly.Module.imports(coreModule).length !== 0) {
+          throw new Error("benchmark core module cache unavailable");
+        }
       }
       const encoder = new TextEncoder();
       const fromHex = (value: string): Uint8Array => {
@@ -338,19 +343,21 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
             ) {
               reject(new Error("anti-oracle response mismatch"));
             } else {
-              setTimeout(
-                () =>
-                  resolve({
-                    endToEndMs: performance.now() - started + moduleCompilationMs,
-                    operationMs: response.operationMs as number,
-                    wasmMemoryBytes: response.wasmMemoryBytes as number,
-                  }),
-                settleMs,
-              );
+              resolve({
+                endToEndMs: performance.now() - started + moduleCompilationMs,
+                operationMs: response.operationMs,
+                wasmMemoryBytes: response.wasmMemoryBytes,
+              });
             }
           };
           worker.postMessage(
-            { coreModule, envelope, operation: "open-failure", recoverySecret, requestId },
+            {
+              ...(coreModule ? { coreModule } : {}),
+              envelope,
+              operation: "open-failure",
+              recoverySecret,
+              requestId,
+            },
             [envelope.buffer as ArrayBuffer, recoverySecret.buffer as ArrayBuffer],
           );
         });
@@ -368,7 +375,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       }
       return result;
     },
-    { iterations: ITERATIONS, settleMs: WORKER_TERMINATION_YIELD_MS },
+    { iterations: ITERATIONS, reuseCompiledModule },
   );
   const antiOracleRss = rss.finishProfile();
   const antiOracleSummary = Object.fromEntries(
@@ -386,8 +393,12 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     browserName,
     browserVersion: browser.version(),
     commit: command("git", ["rev-parse", "HEAD"]),
-    compiledModuleLifecycle: "one-per-page-cloned-to-disposable-workers",
-    endToEndCompilationAccounting: "measured-page-compilation-added-to-every-sample",
+    compiledModuleLifecycle: reuseCompiledModule
+      ? "one-per-page-cloned-to-disposable-workers"
+      : "one-per-disposable-worker",
+    endToEndCompilationAccounting: reuseCompiledModule
+      ? "measured-page-compilation-added-to-every-sample"
+      : "per-worker-compilation-measured-directly",
     componentSha256: manifest.component.sha256,
     coreModuleSha256: manifest.coreModule.sha256,
     deviceClass: "desktop-arm64-high-memory-reference",
@@ -411,7 +422,6 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       .digest("hex"),
     userAgent,
     warmups: WARMUPS,
-    workerTerminationYieldMs: WORKER_TERMINATION_YIELD_MS,
   };
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(

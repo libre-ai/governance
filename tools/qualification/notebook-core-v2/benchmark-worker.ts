@@ -14,7 +14,7 @@ type BenchmarkRequest = (
       recoverySecret: Uint8Array;
       requestId: number;
     }
-) & { coreModule: WebAssembly.Module };
+) & { coreModule?: WebAssembly.Module };
 
 type ComponentModule = {
   instantiate(
@@ -25,7 +25,6 @@ type ComponentModule = {
 };
 
 type WorkerScope = {
-  close(): void;
   onmessage: ((event: { data: unknown }) => void) | null;
   postMessage(message: unknown, transfer?: ArrayBuffer[]): void;
 };
@@ -42,11 +41,20 @@ scope.onmessage = async (event) => {
     const componentUrl = "./notebook-core.js";
     const component = (await import(componentUrl)) as ComponentModule;
     const root = await component.instantiate(
-      async () => {
-        if (WebAssembly.Module.imports(request.coreModule).length !== 0) {
+      async (path) => {
+        if (request.coreModule) {
+          if (WebAssembly.Module.imports(request.coreModule).length !== 0) {
+            throw new Error("benchmark core module has imports");
+          }
+          return request.coreModule;
+        }
+        const response = await fetch(new URL(path, import.meta.url), { cache: "no-store" });
+        if (!response.ok) throw new Error("benchmark core module unavailable");
+        const module = await WebAssembly.compile(await response.arrayBuffer());
+        if (WebAssembly.Module.imports(module).length !== 0) {
           throw new Error("benchmark core module has imports");
         }
-        return request.coreModule;
+        return module;
       },
       {},
       async (module) => {
@@ -70,7 +78,6 @@ scope.onmessage = async (event) => {
     });
   } finally {
     wipeRequest(request);
-    scope.close();
   }
 };
 
@@ -143,7 +150,7 @@ function decodeRequest(value: unknown): BenchmarkRequest {
   const request = value as Partial<BenchmarkRequest>;
   if (
     !Number.isSafeInteger(request.requestId) ||
-    !(request.coreModule instanceof WebAssembly.Module) ||
+    (request.coreModule !== undefined && !(request.coreModule instanceof WebAssembly.Module)) ||
     !["seal", "open", "open-failure"].includes(request.operation ?? "")
   ) {
     throw new Error("invalid benchmark request");
@@ -168,8 +175,8 @@ function verifyPerformancePlaintext(value: Uint8Array): string {
   if (value.length !== 16 * 1024 * 1024) {
     throw new Error("benchmark plaintext length mismatch");
   }
-  for (const byte of value) {
-    if (byte !== 0x5a) throw new Error("benchmark plaintext content mismatch");
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] !== 0x5a) throw new Error("benchmark plaintext content mismatch");
   }
   return "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5";
 }
