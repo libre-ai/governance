@@ -1,9 +1,9 @@
 # RFC-0001 — Orchestration agentique par contrats, harness isolé et adaptateur Pi
 
-- **Statut :** draft — candidat à revues architecture et sécurité
-- **Portée :** Specification Lock préalable à tout orchestrateur ou harness
+- **Statut :** accepted — Specification Lock contractuel ; runtime non autorisé
+- **Portée :** contrats verrouillés préalables à tout orchestrateur ou harness
 - **Risque :** critique
-- **Autorise une implémentation :** non
+- **Autorise une implémentation :** non, un work package borné et une revue de conformité restent requis
 
 ## Contexte
 
@@ -212,9 +212,9 @@ Les futurs vecteurs doivent couvrir au minimum :
 - worker déclarant un succès sans preuves digérées ;
 - tentative d’auto-validation, fabrication de quorum, merge, release ou déploiement.
 
-## Contrats candidats requis
+## Contrats requis par le lock
 
-Cette RFC ne crée pas encore d’autorité. Après revues favorables, un incrément contractuel séparé devra proposer :
+Cette RFC a conduit, après revues favorables, à un incrément contractuel séparé qui verrouille :
 
 1. `execution-plan-body.v1.schema.json` ;
 2. `agent-review.v1.schema.json`, préimage/signature, lignée attestée et règles de quorum à deux reviewers distincts ;
@@ -228,7 +228,7 @@ Cette RFC ne crée pas encore d’autorité. Après revues favorables, un incré
 10. projections TypeScript/Rust reproductibles ;
 11. dossier de revues architecture, sécurité et vie privée France/UE.
 
-Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et au jalon humain. Le work package d’implémentation est ajouté seulement après le Specification Lock et ne partage aucun `writePath` avec Missions.
+Les 14 entrées de catalogue sont verrouillées uniquement après les verdicts séparés, la candidate-integration remédiée, la passe de promotion et l’instruction propriétaire scoped. Le work package d’implémentation est ajouté seulement après ce Specification Lock et ne partage aucun `writePath` avec Missions.
 
 ## Non-objectifs
 
@@ -239,9 +239,9 @@ Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et 
 - modifier `agent-handoff.v1`, `MissionRecord v1` ou l’API Missions v1 en place ; une famille v2 candidate est requise ;
 - importer l’historique Git ou le workspace Grok Build.
 
-## Gates de passage
+## Gates de passage franchies
 
-La RFC peut passer à l’écriture des contrats candidats seulement si :
+Le passage à l’écriture puis au verrouillage des contrats a exigé que :
 
 - architecture confirme les quatre frontières et l’absence de seconde autorité Missions ;
 - sécurité approuve le modèle fail-closed, les budgets, l’atténuation et la non-collusion minimale du quorum ;
@@ -249,4 +249,4 @@ La RFC peut passer à l’écriture des contrats candidats seulement si :
 - la qualification supply-chain de Pi est définie sans modifier le lockfile racine ;
 - chaque ambiguïté de contrôle, causalité et comptage reçoit une sémantique testable.
 
-L’implémentation reste ensuite bloquée jusqu’au Specification Lock, à un work package borné et à un nouveau jalon humain explicite.
+Le Specification Lock contractuel n’autorise pas l’implémentation. Celle-ci reste bloquée jusqu’à un work package borné, une revue de conformité dédiée et le contrôle produit requis par la doctrine canonique.

@@ -24,5 +24,6 @@
 | D20 | WP-G2-S01 relock uses candidate v2 boundaries only | Radar, Notebook, Policy and Boussole move to reviewed v2 contracts; Context, Orchestrator and Practices remain unimplemented |
 | D21 | Solo engineering review is role-separated | ADR-0003 uses immutable commits and dedicated review-only passes per role; the same agent/session may act serially, while product-level human controls remain unchanged |
 | D22 | Radar v2 contract authorities are locked | Architecture and Security approvals, a separate promotion pass and the scoped owner milestone lock seven Radar authorities; product implementation and deployment remain separately gated |
+| D23 | Agent orchestration option B contracts are locked | Missions remains authority, Pi remains a replaceable worker, and 14 reviewed authorities may be promoted catalog-only; implementation, real missions and capabilities require a separate bounded work package and conformance review |
 
 Changes to this register require an ADR and explicit human approval.
