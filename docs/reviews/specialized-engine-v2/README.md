@@ -175,9 +175,12 @@ octets d'autorité. Ils ne valent ni promotion ni autorisation produit/runtime/d
 
 ## Promotion catalog-only
 
-Le [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) propose l'unique transition
-`engine-golden-vectors-v1: candidate → locked`. Une passe `promotion-integration` distincte sur le
-commit de promotion immuable reste obligatoire avant merge.
+Le [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) porte l'unique transition
+`engine-golden-vectors-v1: candidate → locked`. La passe distincte
+[`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md), SHA-256
+`52c49f47636945fac7b9314ce1be45ddb394d78ea5bdc6f4b685673d223619a1`, approuve le commit de
+promotion immuable `3b47e966`. Le contrôle humain de fusion reste le dernier jalon ; il doit refuser
+toute dérive d'autorité ou de dépendance.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
 `locked` fixera seulement le sens du contrat : aucun moteur, scoring public, traitement de données

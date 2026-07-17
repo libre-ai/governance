@@ -5,7 +5,9 @@
 - **Normative reviewed tree:** `b27ab744e4a53e6f5108f8f72b22dee1e80c8843`
 - **Scope:** exactly `engine-golden-vectors-v1`, `candidate → locked`
 - **Product/runtime/data/release:** **NOT AUTHORIZED**
-- **Package state:** pending a separate `promotion-integration` review on the immutable promotion commit
+- **Package state:** approved by the separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass on
+  immutable promotion commit `3b47e966eac2cdc85f4a6fad78e18744f63662e1`
+- **Promotion verdict SHA-256:** `52c49f47636945fac7b9314ce1be45ddb394d78ea5bdc6f4b685673d223619a1`
 
 No normative engine-envelope, corpus, WIT, semantics, checker, generated projection or dependency
 byte changes in this package. The only machine-authoritative transition is the target catalog status
@@ -94,6 +96,12 @@ A dedicated read-only `promotion-integration` pass on the clean immutable promot
 5. run pinned Bun and Rust repository gates, WASM import/reproducibility and cargo-deny checks;
 6. confirm `locked` grants no implementation, scoring, data, capability, release, infrastructure or
    deployment authority.
+
+The independent pass approved all six checks above with 71 locked / 0 candidate, byte-identical
+authority surfaces and green pinned Bun/Rust/WASM/cargo-deny evidence. Main later advanced through a
+Notebook-only diagnostic change; before merge, final control must confirm the engine schema,
+scanner, corpus, WIT, dependency version/integrity/import scope and catalog promotion bytes are
+unchanged.
 
 Any stale hash, broadened transition, missing owner evidence or blocking/major finding requires
 rejection. Rollback is a revert of the catalog-only promotion commit; no runtime or data migration is
