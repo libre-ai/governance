@@ -33,3 +33,18 @@ Gate A a accepté cette borne dans le contrat v2 verrouillé. Gate B doit encore
 réellement livrable avec son host dans chaque navigateur et classe d'appareil supportés. Dépasser
 16 MiB exigerait désormais une nouvelle version de contrat et un futur format chunké, authentifié et
 revu séparément ; aucune segmentation implicite n'est admise en v2.
+
+## Pré-mesure du moteur expérimental `5395e45`
+
+La passe Gate B `notebook-core-v2-gate-b-cryptography-runtime-5395e45-01` a reconstruit le module
+WASM release SHA-256 `6ad5148c97ab3d0169a67a499460a1c1db24da694e023fdc1f546f5d61d20427`
+deux fois à l'identique. Sur le harness natif release réel, un processus neuf par profil :
+
+| Profil | Plaintext | Seal | Open | Pic RSS |
+|---|---:|---:|---:|---:|
+| `m=65536,t=3,p=1` | 16 MiB | 193 ms | 166 ms | 208 896 000 octets (~199,2 MiB) |
+| `m=131072,t=4,p=4` | 16 MiB | 333 ms | 309 ms | 276 004 864 octets (~263,2 MiB) |
+
+Ces échantillons ponctuels respectent les plafonds natifs proposés, mais ne sont ni des p95 ni des
+mesures de l'ABI/host navigateur. La Gate B a donc été rejetée : la matrice navigateurs/appareils,
+les copies du host et les chemins OOM/trap restent à qualifier.

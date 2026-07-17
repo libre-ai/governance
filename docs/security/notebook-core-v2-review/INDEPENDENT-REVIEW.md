@@ -91,8 +91,12 @@ git status --short
 
 ## Décision Gate B
 
-- [ ] **APPROVED** — non démarré
-- [ ] **APPROVED WITH MINOR RESERVATIONS** — non démarré
-- [ ] **REJECTED** — non démarré
+- [ ] **APPROVED**
+- [ ] **APPROVED WITH MINOR RESERVATIONS**
+- [x] **REJECTED** — première passe sur `5395e45577b4282e4cfe2b143540e11d7dd24d80`
 
-La Gate B est **pending** (en attente). Avant validation Gate B, aucune sauvegarde utilisateur n’est émise.
+Rapport attribuable :
+[`docs/reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md).
+Le moteur Rust/WASM est conforme aux vecteurs et sans import, mais le host/navigateur, les chemins
+OOM/panic et la matrice de performances restent absents. La Gate B demeure non approuvée ; aucune
+sauvegarde utilisateur ou release n’est autorisée.
