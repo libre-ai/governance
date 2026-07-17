@@ -17,8 +17,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
   the repository, missing files and hash mismatches.
 - High-confidence credential material, private-key headers and standalone or embedded email
   identifiers are rejected by the shared schema. The sole email-shaped exception is the exact
-  `https://user:secret@example.org/…`-class reserved-domain URL needed by Radar's userinfo refusal
-  case. Committed payloads remain synthetic public test material; refusal canaries are not
+  exact reserved-domain URL prefix `https://user:secret@example.org/` needed by Radar's userinfo
+  refusal case. Committed payloads remain synthetic public test material; refusal canaries are not
   credentials or personal identifiers.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora are all compiled against this shared
   envelope by `check-contracts.ts`; engine-specific checkers remain authoritative for semantics and
