@@ -3,6 +3,8 @@ export {};
 const allowed = new Set([
   "MIT",
   "Apache-2.0",
+  // Bytecode Alliance's permissive Apache grant plus LLVM linking exception.
+  "(Apache-2.0 WITH LLVM-exception)",
   "MIT OR Apache-2.0",
   "0BSD",
   "BSD-2-Clause",

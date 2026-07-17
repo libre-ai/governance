@@ -93,10 +93,12 @@ git status --short
 
 - [ ] **APPROVED**
 - [ ] **APPROVED WITH MINOR RESERVATIONS**
-- [x] **REJECTED** — première passe sur `5395e45577b4282e4cfe2b143540e11d7dd24d80`
+- [x] **REJECTED** — dernière passe sur `7df396b8fe6e88e781f44037150e8beda977f05e`
 
-Rapport attribuable :
-[`docs/reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md).
-Le moteur Rust/WASM est conforme aux vecteurs et sans import, mais le host/navigateur, les chemins
-OOM/panic et la matrice de performances restent absents. La Gate B demeure non approuvée ; aucune
-sauvegarde utilisateur ou release n’est autorisée.
+Rapports attribuables :
+[`5395e45/CRYPTOGRAPHY-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md),
+[`d0f643b/HOST-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/d0f643b/HOST-RUNTIME.md) et
+[`7df396b/HOST-REMEDIATION.md`](../../reviews/notebook-core-v2/gate-b/7df396b/HOST-REMEDIATION.md).
+Le moteur et le host remédié exécutent tous les vecteurs sans import dans trois navigateurs, mais le
+host produit, les chemins OOM/panic/trap et la matrice p95/appareils restent absents. La Gate B demeure
+non approuvée ; aucune sauvegarde utilisateur ou release n’est autorisée.
