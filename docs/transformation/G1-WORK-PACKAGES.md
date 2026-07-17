@@ -1,10 +1,10 @@
 # G1 locked work packages
 
-- **Status:** locked package topology; WP-G2-S01 execution blocked while ADR-0003 authorities are candidates
+- **Status:** locked package topology; simulation-only `WP-G2-A01` definition reviewed and schedulable
 - **Machine authority:** [`work-packages.v1.json`](work-packages.v1.json)
 - **Schema:** [`contracts/schemas/work-package-plan.v1.schema.json`](../../contracts/schemas/work-package-plan.v1.schema.json)
 
-G1 defines 26 bounded packages. A package is ready to schedule when its dependencies are merged; `locked` means its repository boundary and acceptance are no longer delegated to an implementation agent.
+G1 defines 27 bounded packages. A package is ready to schedule when its dependencies are merged; `locked` means its repository boundary and acceptance are no longer delegated to an implementation agent.
 
 ## Execution rules
 
@@ -33,8 +33,11 @@ G1 defines 26 bounded packages. A package is ready to schedule when its dependen
 | `g2-3` | `WP-G2-I01` | provider-neutral OIDC and opaque browser sessions |
 | `g2-4` | `WP-G2-D01` | PostgreSQL/RLS, retention and deletion platform |
 | `g2-5` | `WP-G2-Q01` | clean-checkout integrated foundation evidence |
+| `g2-6` | `WP-G2-A01` | deterministic agent control core against a fake harness, without OS/runtime capabilities |
 
-No application reconstruction starts before `WP-G2-Q01`. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` keeps `notebook-core` as the sole ContextDocument canonicalization authority and creates neither `crates/context` nor `crates/agent-orchestrator`. Orchestration requires a separate Specification Lock/package and blocks real Missions execution. Practices scoring remains excluded; its WIT stays reserved until a new human-approved package demonstrates a real invariant.
+The role-separated definition verdicts for `WP-G2-A01` are recorded under [`../reviews/agent-orchestration-wp-g2-a01/`](../reviews/agent-orchestration-wp-g2-a01/); result conformance remains a separate future gate.
+
+No application reconstruction starts before `WP-G2-Q01`. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` keeps `notebook-core` as the sole ContextDocument canonicalization authority and creates neither `crates/context` nor `crates/agent-orchestrator`. The separate `WP-G2-A01` may create only a simulation-only control core under its exclusive paths; harness runtime, Pi launch and real Missions execution remain blocked. Practices scoring remains excluded; its WIT stays reserved until a new human-approved package demonstrates a real invariant.
 
 ## G3 — parallel experiences
 

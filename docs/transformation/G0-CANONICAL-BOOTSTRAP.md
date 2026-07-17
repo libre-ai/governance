@@ -14,6 +14,8 @@ GitHub is a US service and is not treated as sovereign runtime infrastructure. T
 
 ## Qualified bootstrap toolchain
 
+The repository-wide runtime floor is Bun `>=1.4.0`; shared CI additionally requires the exact qualified revision below.
+
 Prerelease [`toolchain-bun-1.4.0-canary.1-57f349f63`](https://github.com/libre-ai/libre-ai/releases/tag/toolchain-bun-1.4.0-canary.1-57f349f63) preserves:
 
 - Linux x64 and macOS ARM64 upstream binaries ;

@@ -14,7 +14,7 @@ Au checkpoint du 2026-07-16, Bun stable est `1.3.14`. Le canary Rust vérifié e
 
 1. Créer un nouveau monorepo sans importer les historiques Git.
 2. Figer ensemble les anciens repositories ; aucune nouvelle fonctionnalité n’y est développée.
-3. Utiliser Bun comme runtime, package manager, task runner, bundler, serveur HTTP et test runner TypeScript.
+3. Utiliser Bun `>=1.4.0` comme runtime, package manager, task runner, bundler, serveur HTTP et test runner TypeScript. Tous les manifests Bun déclarent ce plancher ; le bootstrap/CI conserve en plus une révision qualifiée exacte.
 4. Utiliser React 19 pour le SSR, l’hydratation, le statique et le rendu client.
 5. Utiliser directement `Bun.serve`, sans framework serveur ou meta-framework web.
 6. Conserver Rust uniquement pour les composants spécialisés explicitement justifiés.

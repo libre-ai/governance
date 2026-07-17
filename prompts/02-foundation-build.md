@@ -6,7 +6,7 @@ Implement the final shared foundation in `libre-ai/libre-ai`.
 
 ## Execution order
 
-Execute only locked packages from `docs/transformation/work-packages.v1.json`: `WP-G2-T01` first, then groups `g2-1` through `g2-5`. A package writes only its declared paths.
+Execute only locked packages from `docs/transformation/work-packages.v1.json`: `WP-G2-T01` first, then groups `g2-1` through `g2-6`. A package writes only its declared paths.
 
 ## Scope
 
@@ -15,6 +15,7 @@ Execute only locked packages from `docs/transformation/work-packages.v1.json`: `
 - Knowledge Engine and canonical contracts ;
 - UI, web-runtime, auth-web, database, cache, testing and PWA packages ;
 - specialized Rust crates ;
+- simulation-only agent orchestration control core, without harness/worker or OS capabilities ;
 - Bun app template ;
 - Proof, Artifact and repository projections ;
 - local/CI quality gates.

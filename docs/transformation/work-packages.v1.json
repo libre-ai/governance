@@ -13,7 +13,7 @@
     "Authoring and review are separate passes for every schema, authorization, migration, release or deployment change.",
     "ADR-0003 contract candidates use dedicated review-only passes per role on immutable commits; the same agent/session may act serially and CI is evidence, not a verdict.",
     "Clever Cloud Paris EU remains the runtime target and production data never enters GitHub.",
-    "WP-G3-A01 remains blocked from orchestrator integration until a separate human-approved execution-plan, control-protocol and agent-harness Specification Lock exists."
+    "WP-G3-A01 remains blocked from orchestrator integration until WP-G2-A01 implementation and conformance review pass; the current Specification Lock and package definition authorize contracts and simulation-only control work, not a harness, Pi worker or real mission."
   ],
   "packages": [
     {
@@ -332,6 +332,55 @@
       "definitionStatus": "locked"
     },
     {
+      "id": "WP-G2-A01",
+      "phase": "G2",
+      "name": "Agent orchestration control core — simulation only",
+      "objective": "Implement the deterministic Rust control core for validated plans and authorizations, idempotent commands, causal events and monotone budgets against a fake harness, without launching workers or gaining process, filesystem, network, provider, secret or persistence capabilities.",
+      "owners": ["agent-orchestrator", "security"],
+      "integrator": "architecture",
+      "writePaths": ["crates/agent-orchestrator/**", "verification/agent-orchestrator/**"],
+      "readAuthorities": [
+        "docs/adr/0004-agent-orchestration-option-b-specification-lock.md",
+        "docs/rfcs/0001-agent-orchestration-option-b.md",
+        "contracts/agent-orchestration/SEMANTICS.md",
+        "contracts/schemas/execution-plan-body.v1.schema.json",
+        "contracts/schemas/execution-authorization.v1.schema.json",
+        "contracts/schemas/agent-contributor-lineage.v1.schema.json",
+        "contracts/schemas/agent-review-session-attestation.v1.schema.json",
+        "contracts/schemas/agent-review-quorum.v1.schema.json",
+        "contracts/schemas/orchestrator-control.v1.schema.json",
+        "contracts/schemas/orchestrator-event.v2.schema.json",
+        "contracts/schemas/harness-profile.v1.schema.json",
+        "contracts/schemas/harness-attestation.v1.schema.json",
+        "contracts/schemas/mission-record.v2.schema.json",
+        "contracts/authz/agent-runs-v1.datalog",
+        "contracts/schemas/evidence-report.v1.schema.json",
+        "contracts/schemas/artifact-manifest.v1.schema.json"
+      ],
+      "dependsOn": ["WP-G2-T01", "WP-G2-C01", "WP-G2-Z01", "WP-G2-P01", "WP-G2-Q01"],
+      "parallelGroup": "g2-6",
+      "risk": "critical",
+      "humanGates": [
+        "agent-control-architecture-review",
+        "authorization-and-budget-security-review",
+        "france-eu-event-log-privacy-review",
+        "simulation-only-conformance-acceptance"
+      ],
+      "acceptance": [
+        "Plan, quorum, authorization, Biscuit and harness-attestation bindings fail closed before run ID allocation; the control core never computes or grants a Missions quorum.",
+        "Start, pause, resume and cancel are revisioned and idempotent; authorized cancel remains monotone while pause prevents every new simulated effect.",
+        "Event IDs, exact sequence, predecessor digests, identities, delta arithmetic and monotone totals reject gaps, divergent collisions, retries that restore budget and cross-tenant substitution.",
+        "Unknown keys, revoked authorization, authorization/causal-store outage and missing required controls refuse execution without reflecting tokens, identifiers, paths, findings or content in operational logs; nonce ownership remains exclusively in Missions.",
+        "The crate exposes no process, filesystem, network, provider, secret, persistence or Pi adapter; its fake harness and stores exist only under tests and verification fixtures.",
+        "TypeScript and Rust consume the same locked adversarial vectors and produce byte-identical closed reason codes for every covered case.",
+        "Proof and Artifact outputs remain content-addressed references; no event payload or log becomes a second evidence authority.",
+        "The package implements no durable or unbounded event ledger: it validates one transition plus a caller-supplied collision observation; replay storage and its explicit resource bounds remain a later package prerequisite for real use.",
+        "A clean dependency graph, Cargo deny, bounded property tests and deterministic replay pass without changing any locked authority or root dependency outside WP-G2-T01 integration.",
+        "No real mission, app integration, worker launch, sandbox claim, provider call, release or deployment is authorized by this package."
+      ],
+      "definitionStatus": "locked"
+    },
+    {
       "id": "WP-G3-W01",
       "phase": "G3",
       "name": "Website reconstruction",
@@ -545,28 +594,39 @@
       "id": "WP-G3-A01",
       "phase": "G3",
       "name": "Missions reconstruction",
-      "objective": "Build human-controlled mission proposal, risk, approval, observation, intervention, evidence and verdict without executing tools in the web app.",
+      "objective": "Build mission proposal, risk, observation and intervention with the locked v1 human-verdict baseline plus the locked v2 two-agent quorum workflow, without executing tools in the web app.",
       "owners": ["missions", "experiences"],
       "integrator": "product",
       "writePaths": ["apps/missions/**"],
       "readAuthorities": [
         "docs/apps/missions.md",
         "contracts/openapi/missions.v1.yaml",
-        "contracts/authz/missions-v1.datalog"
+        "contracts/openapi/missions.v2.yaml",
+        "contracts/authz/missions-v1.datalog",
+        "contracts/authz/agent-runs-v1.datalog",
+        "contracts/agent-orchestration/SEMANTICS.md"
       ],
-      "dependsOn": ["WP-G2-W01", "WP-G2-I01", "WP-G2-Z01", "WP-G2-D01", "WP-G2-P01", "WP-G2-Q01"],
+      "dependsOn": [
+        "WP-G2-W01",
+        "WP-G2-I01",
+        "WP-G2-Z01",
+        "WP-G2-D01",
+        "WP-G2-P01",
+        "WP-G2-Q01",
+        "WP-G2-A01"
+      ],
       "parallelGroup": "g3-1",
       "risk": "critical",
       "humanGates": [
         "mission-state-and-authz-review",
         "orchestrator-budget-review",
-        "agent-orchestrator-specification-lock"
+        "agent-orchestration-v2-conformance"
       ],
       "acceptance": [
-        "Every state/role transition, stale revision and forged event vector is exercised.",
-        "Orchestrator credentials can report/submit but cannot approve, judge or cross tenant.",
-        "A bounded mission blocks on budget and reaches success only after human evidence verdict.",
-        "Orchestrator integration and any real mission execution remain blocked until a separate approved package defines execution plans, control commands, event v2, budgets and agent-harness."
+        "Every v1/v2 state and role transition, stale revision and forged event vector is exercised without reinterpreting a v1 approval as a v2 quorum.",
+        "Author, reviewer, orchestrator and harness credentials can perform only their exact operations and cannot fabricate quorum, self-validate or cross tenant.",
+        "A bounded simulated v2 mission blocks on budget and reaches technical validation only after two eligible reviewers approve the exact result digest; protected human gates remain additive.",
+        "The web app executes no tool and owns no orchestrator runtime state; real mission execution, sandbox, Pi worker and provider integration remain blocked until separate harness/worker packages and conformance gates are approved."
       ],
       "definitionStatus": "locked"
     },
