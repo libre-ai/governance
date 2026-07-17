@@ -35,15 +35,19 @@ neutre, les réponses sautées ou absentes, l'agrégation pondérée, les ties-t
 négatifs, le dénominateur nul, le reviewer dupliqué et une référence de proposition inconnue.
 
 Le corpus sécurité couvre huit refus byte-exacts, les plafonds exact/+1, les huit codes fermés, les
-canaris de non-divulgation, le domaine arithmétique maximal, le seuil minimal d'agrégation et
-l'expiration de la revue de publication. Le gate Rust exige un monde WIT résolu sans import.
+canaris de non-divulgation, le domaine arithmétique maximal, le seuil minimal d'agrégation,
+l'expiration de la revue de publication, le refus d'un ciblage de personne déclaré et la
+réapprobation obligatoire après toute modification du wording. Le gate Rust exige un monde WIT
+résolu sans import.
 
 La politique de publication est hash-bound : seuil déclaré supérieur ou égal à 5, exclusion des
 petits groupes, aucune identité individuelle, sources roll-call uniquement agrégées et échéance de
-revue explicite. Un dataset réel peut imposer un seuil supérieur ou refuser une source ; il ne peut
-jamais relâcher ce plancher contractuel. Les identités professionnelles restent hors payload sous
-forme d'attestations publiques consenties et vérifiées par le caller de release, jamais par le
-composant pur.
+revue explicite. Chaque statement déclare un sujet de politique publique et l'interdiction du ciblage
+d'une personne. Le wording humain est lié au digest : sa conformité sémantique est attestée par le
+reviewer vie privée et toute modification exige une nouvelle approbation. Un dataset réel peut
+imposer un seuil supérieur ou refuser une source ; il ne peut jamais relâcher ce plancher
+contractuel. Les identités professionnelles restent hors payload sous forme d'attestations publiques
+consenties et vérifiées par le caller de release, jamais par le composant pur.
 
 Jusqu'aux quatre verdicts, à une passe de promotion séparée et au contrôle humain explicite, le code,
 les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public reste
