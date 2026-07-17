@@ -133,21 +133,25 @@ candidate-integration indépendantes ont trouvé des blocages distincts :
   ([`CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md),
   SHA-256 `d0092e478af43e386a8952dac3c199a619b228baa8bc02fa40e0117fb9803d0b`).
 
-Le merge `cea7363` a aligné le schéma et ajouté trois mutations normatives. La remédiation courante
-conserve cet alignement et ajoute deux projections linéaires complémentaires : l'une conserve tout
-groupe comportant un `@`, l'autre privilégie les `@` au niveau direct et retire les commentaires
-enfants. Leur union couvre les commentaires qui contiennent eux-mêmes un handle sans devoir choisir
-une interprétation ambiguë. Piles, intervalles et échappements évitent récursion et recopie
-quadratique. Les représentations encodées et les clés JSON utilisent le même gate. Toutes les autres
-bornes EAI/prose restent inchangées. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans
-transitive ; un contrôle owner reste requis. Les changements de hash du schéma puis du scanner
-rendent toute preuve antérieure stale ; une passe avec Bun épinglé reste obligatoire.
+Le merge `cea7363` a aligné le schéma et ajouté trois mutations normatives. PR #81, merge
+`6d37f0dd9759c04d9908885c8419d6d4992cbee0`, a ensuite intégré les deux projections linéaires
+complémentaires : l'une conserve tout groupe comportant un `@`, l'autre privilégie les `@` au niveau
+direct et retire les commentaires enfants. Leur union couvre les commentaires qui contiennent eux-mêmes
+un handle sans devoir choisir une interprétation ambiguë. Piles, intervalles et échappements évitent
+récursion et recopie quadratique. Les représentations encodées et les clés JSON utilisent le même
+gate.
+
+Candidate-integration a approuvé la tête exacte `bec32a7bedb349bad4c3c58afbc878b995d00db8`
+([`CANDIDATE-INTEGRATION-BEC32A7.md`](CANDIDATE-INTEGRATION-BEC32A7.md), SHA-256
+`6aadfbab59d20003d18c5144b2067ac66e32444b8b449a91262338be6de25695`). Cette approbation ne vaut
+ni rôle Architecture/Security, ni promotion, ni contrôle owner. `entities@8.0.0` reste qualifié
+BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise.
 
 ## Gates restants
 
-1. intégrer la remédiation wrapped-CFWS après candidate-integration favorable ;
-2. rejouer Architecture et Security sur son merge immuable ;
-3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
+1. intégrer ce record candidate-integration sans modifier le scanner ;
+2. rejouer Architecture et Security sur le merge immuable résultant ;
+3. persister uniquement ces nouveaux records et enregistrer le contrôle owner/dependency ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
