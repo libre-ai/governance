@@ -551,6 +551,48 @@ if (!boundaryBase?.expectedEvaluation) {
       },
     ],
     [
+      "policy source localhost",
+      boundaryBase.policy,
+      policyValidator,
+      (value) => {
+        ((value.rules as JsonRecord[])[0]?.source as JsonRecord).uri = "https://localhost/evidence";
+      },
+    ],
+    [
+      "snapshot source private IP",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        ((value.facts as JsonRecord[])[0]?.source as JsonRecord).uri = "https://10.0.0.1/evidence";
+      },
+    ],
+    [
+      "non-opaque model id",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        value.modelId = "private@example.invalid";
+      },
+    ],
+    [
+      "free-form model fact",
+      boundaryBase.snapshot,
+      snapshotValidator,
+      (value) => {
+        const fact = (value.facts as JsonRecord[])[0];
+        if (fact) fact.value = "private person@example.invalid";
+      },
+    ],
+    [
+      "free-form need fact",
+      boundaryBase.need,
+      needValidator,
+      (value) => {
+        const fact = (value.facts as JsonRecord[])[0];
+        if (fact) fact.value = "private person@example.invalid";
+      },
+    ],
+    [
       "non-opaque proposer",
       boundaryBase.policy,
       policyValidator,
