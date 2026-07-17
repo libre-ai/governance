@@ -17,8 +17,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
   the repository, missing files and hash mismatches.
 - High-confidence credential material, private-key headers and standalone or embedded email
   identifiers are rejected by the shared schema. The sole email-shaped exception is the exact
-  exact reserved-domain URL prefix `https://user:secret@example.org/` needed by Radar's userinfo
-  refusal case. Committed payloads remain synthetic public test material; refusal canaries are not
+  byte-exact reserved-domain canary `https://user:secret@example.org/feed.xml` needed by Radar's
+  userinfo refusal case. Public object property names are separately limited to machine tokens. Committed payloads remain synthetic public test material; refusal canaries are not
   credentials or personal identifiers.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora are all compiled against this shared
   envelope by `check-contracts.ts`; engine-specific checkers remain authoritative for semantics and
@@ -34,8 +34,9 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 `schema-fixtures.v1.json` now rejects:
 
 - `contracts/../secrets.txt` in `contractFiles`;
-- standalone or embedded `alice@example.org` and `sk_live_example_secret` in public payload
-  evidence;
+- standalone, embedded or property-name `alice@example.org` and `sk_live_example_secret` in public
+  payload evidence;
+- any suffix or alternate credentials around the byte-exact Radar userinfo canary;
 - a status above its 128-character bound.
 
 The generic gate independently validates exact contract-file hashes and the aggregate resource
