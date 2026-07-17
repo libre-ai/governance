@@ -18,8 +18,13 @@ Les premières passes sur `9b376cf65755f7556866123f9fddf681a709a2f0` sont conser
   `03c24677664bfcf2b150e9bdf07cc6d1b3a6cd7970a7031efc44f5530add4728`.
 
 Le rejet a démontré que les anciens champs `true` acceptaient des traversals, secrets, données
-personnelles et blobs non bornés. [`REMEDIATION.md`](REMEDIATION.md) décrit les refus et plafonds
-exécutables ajoutés. Toute approbation antérieure au commit final de remédiation est stale.
+personnelles et blobs non bornés. Les passes suivantes, publiées sur l'issue #25, ont ensuite refusé
+les confusables Unicode puis la politique lexicale transverse de `6fd4d5d` : records Architecture
+`d77fc30072b980c230494a0871e918f8bbd31d202f731219c9acaa3b7e5b7dab` et Security
+`d59569a01b992728cf0cf6b093e755066730780c41a7ebc2322c05d25e83d80b`.
+
+[`REMEDIATION.md`](REMEDIATION.md) sépare désormais métadonnées sanitizées et payloads gouvernés
+par moteur. Toute approbation antérieure au commit final de remédiation est stale.
 
 ## Gate restant
 
