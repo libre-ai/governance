@@ -39,11 +39,13 @@ expected outputs.
   NFKC normalization and performs four bounded decoding rounds over percent octets, `%u` escapes and
   exact HTML5 references. The BSD-2-Clause `entities` decoder
   follows case-sensitive HTML5 names, including legacy semicolonless forms, and preserves unknown
-  references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser then accepts every RFC 6532
-  `UTF8-non-ascii` scalar as EAI atext, limits CFWS skipping to ASCII whitespace, and validates
-  RFC-length dot-atom or quoted local-parts, nested comments, IDNA/punycode DNS labels and bounded
-  IPv4/IPv6 literals before classifying an email. A second detection view removes default-ignorables
-  only after the EAI parse, retaining both valid private identifiers and obfuscation detection. Invalid token boundaries, local-parts over 64 octets,
+  references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser accepts every RFC 6532
+  `UTF8-non-ascii` scalar as EAI atext, limits CFWS skipping to ASCII whitespace, preserves non-ASCII
+  separators during NFKC and validates RFC-length dot-atom or quoted local-parts, nested comments,
+  IDNA/punycode DNS labels and bounded IPv4/IPv6 literals. It scans the original context before the
+  comment-free projection, requires a whitespace/open-delimiter/`mailto:` local boundary, separates
+  terminal ASCII/Unicode dots and detects URL userinfo independently. A second view removes
+  default-ignorables only after the EAI parse. Invalid token boundaries, local-parts over 64 octets,
   empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
   by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
   same 65,536-code-point ceiling fails closed. Only decoded email identifiers or
@@ -52,11 +54,12 @@ expected outputs.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
-- Exported scanner tests and executable gate self-tests reject direct/encoded dot-atom, quoted and EAI
-  local-parts (including private-use, C1, noncharacters and default-ignorables), comments/CFWS,
-  Unicode/combining-mark/punycode/IP-literal domains, nested HTML5 references and credentials,
-  including default-ignorable obfuscation. They preserve malformed/overlong address shapes,
-  case-unknown references and maximum-length non-emails plus `R&D`, `R&amplitude`, `50%`, `release@2`,
+- Exported scanner tests and executable gate self-tests reject direct/encoded/parenthesized dot-atom,
+  quoted and EAI local-parts (including private-use, C1, noncharacters and default-ignorables),
+  comments/CFWS, terminal punctuation, Unicode/combining-mark/punycode/IP-literal domains, nested
+  HTML5 references, URL userinfo and credentials. They preserve malformed/overlong/token-invalid
+  address shapes, non-ASCII domain separators, case-unknown references and maximum-length non-emails
+  plus `R&D`, `R&amplitude`, `50%`, `release@2`,
   `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
@@ -69,5 +72,6 @@ expected outputs.
 
 No product engine, runtime file resolver, network/storage/clock/randomness capability, real dataset,
 user-data path, public scoring, release, infrastructure or deployment is introduced or authorized.
-Promotion remains blocked until fresh role-separated Architecture and Security verdicts approve one
+`entities@8.0.0` is pinned BSD-2-Clause, dev-only and dependency-free, but still requires explicit
+owner acceptance. Promotion remains blocked until fresh role-separated Architecture and Security verdicts approve one
 immutable commit, followed by a distinct promotion pass and the recorded owner milestone.
