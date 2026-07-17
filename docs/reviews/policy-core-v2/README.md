@@ -2,12 +2,13 @@
 
 ## Status
 
-This is a contract candidate. Architecture, Security and Privacy review-only passes independently
-approved the exact Policy v2 authorities at immutable commit
+This promotion branch locks contract meaning only. Architecture, Security and Privacy review-only
+passes independently approved the exact Policy v2 authorities at immutable commit
 `d47feb96e605263b825f603033e40c3d1b61800c` under
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). These role verdicts do not promote the
-candidate or authorize implementation; a separate promotion pass and owner control milestone remain
-required.
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The
+[`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) records the owner milestone and catalog-only
+transition; a separate promotion/integration verdict remains required before merge. No Policy engine,
+real tenant data processing or transaction authority is authorized.
 
 ## Recorded role verdicts
 
@@ -110,6 +111,6 @@ data, and that outputs/logs/errors expose neither fact values nor reviewer ident
 
 Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
 verdicts from separate review-only passes, followed by the full contract, generated-projection and
-cross-runtime conformance gates. A generator, evaluator, CI job or authoring pass cannot promote
-this candidate automatically; a separate promotion pass and the repository owner's control milestone
-remain required.
+cross-runtime conformance gates. The package records the role evidence and owner `continue`; the
+immutable promotion commit must still receive its separate `promotion-integration` verdict. A
+successful lock does not authorize implementation, transaction authority or real-data processing.
