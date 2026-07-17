@@ -1,6 +1,15 @@
 import { type ErrorCode, NotebookHostRefusal, type SealBackupRequest } from "./host";
 
-export type QualificationFault = "none" | "oom" | "trap" | "hang";
+export type QualificationFault =
+  | "none"
+  | "oom"
+  | "trap"
+  | "hang"
+  | "internal-oom"
+  | "internal-panic"
+  | "internal-serde-oom"
+  | "internal-jcs-oom"
+  | "internal-argon2-oom";
 
 export type IsolatedOperation =
   | { kind: "canonicalize"; document: Uint8Array }

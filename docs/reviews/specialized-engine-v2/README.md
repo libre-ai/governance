@@ -38,18 +38,8 @@ les chaînes HTML mixtes amp/numeric/named. Le rejet est conservé dans
 approbations avant que ce rejet concurrent soit observé ; leur présence est historique, pas probante
 pour une promotion.
 
-Sur le merge immuable `79d02b6`, la passe
-[`CANDIDATE-INTEGRATION-79D02.md`](CANDIDATE-INTEGRATION-79D02.md) (`approve`, SHA-256
-`bd2b9af3136ba6b124e9dfbeeddee67af75c3735529730008f5116bdda2b253a`) et
-[`ARCHITECTURE-VERDICT-79D02.md`](ARCHITECTURE-VERDICT-79D02.md) (`approve`, SHA-256
-`74725a31d7a3323d32f3b17a5e84a90fd5497fd352edc493b981f1e551ec6a42`) ont précédé le rejet
-Security [`SECURITY-VERDICT-79D02.md`](SECURITY-VERDICT-79D02.md), SHA-256
-`442fc6009a56c930143e2704fdddf2a4a37f0f1e24bb5ee95d08708bdcd6bc13` : les local-parts RFC entre
-guillemets, directs ou encodés, contournaient le scanner. Le constat bloquant rend les deux
-approbations historiques non promotables.
-
-La première remédiation sur `3baecf8` a fermé les compositions HTML mixtes, mais une passe
-d'intégration ultérieure a trouvé les séparateurs de domaine `&period;` encore non décodés. Ce second rejet est conservé dans
+La première remédiation sur `3baecf8` a fermé ces compositions, mais sa passe d'intégration a trouvé
+les séparateurs de domaine `&period;` encore non décodés. Ce second rejet est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-3BAECF8.md`](CANDIDATE-INTEGRATION-REJECT-3BAECF8.md), SHA-256
 `9dd66f60242f395313553b82eb7e936aa07c633d4f39ad5aebc492aa4c308dbb`.
 
@@ -65,14 +55,35 @@ conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-E6DF443.md`](CANDIDATE-INTEGRATION-REJECT-E6DF443.md), SHA-256
 `59607db595d156db37723e1bbe47130db2b9c0a9263055a958a4925b4f487967`.
 
-La remédiation sur `9e74bab` a supprimé le coût quadratique, mais sa passe d'intégration a trouvé les
-chaînes `&ampAlias;` sans point-virgule. Ce cinquième rejet est conservé dans
-[`CANDIDATE-INTEGRATION-REJECT-9E74BAB.md`](CANDIDATE-INTEGRATION-REJECT-9E74BAB.md), SHA-256
+La remédiation linéaire sur `9e74bab` a fermé ces deux points, mais sa passe d'intégration a trouvé
+les préfixes legacy `&amp` sans point-virgule devant un alias nommé. Ce cinquième rejet est conservé
+dans [`CANDIDATE-INTEGRATION-REJECT-9E74BAB.md`](CANDIDATE-INTEGRATION-REJECT-9E74BAB.md), SHA-256
 `e27011a3f008bac8518e7cce83641530a05cb346cd6df3e1081e8aa8383b8432`.
 
-Le merge `1523bcd` a fermé cette famille et les local-parts quoted. Sa passe d'intégration stricte a
-cependant rejeté les bypass EAI/IDN/CFWS et les faux positifs sur dot-atoms, domaines et casse HTML5
-non valides. Le record est conservé dans
+Des passes parallèles sur le merge `79d02b6` sont également conservées : candidate-integration
+`approve` ([`CANDIDATE-INTEGRATION-79D02.md`](CANDIDATE-INTEGRATION-79D02.md),
+`bd2b9af3136ba6b124e9dfbeeddee67af75c3735529730008f5116bdda2b253a`), Architecture `approve`
+([`ARCHITECTURE-VERDICT-79D02.md`](ARCHITECTURE-VERDICT-79D02.md),
+`74725a31d7a3323d32f3b17a5e84a90fd5497fd352edc493b981f1e551ec6a42`) et Security `reject` pour
+les local-parts RFC entre guillemets ([`SECURITY-VERDICT-79D02.md`](SECURITY-VERDICT-79D02.md),
+`442fc6009a56c930143e2704fdddf2a4a37f0f1e24bb5ee95d08708bdcd6bc13`). Le rejet Security gouverne ;
+les deux approbations ne sont pas citables pour promotion.
+
+La remédiation sur `a4e74a6` a fermé les local-parts quoted, domaines literals et chaînes `&amp`, mais
+sa passe d'intégration a rejeté le décodage non-HTML5 de noms sans point-virgule comme `&commat`.
+Ce sixième rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-A4E74A6.md`](CANDIDATE-INTEGRATION-REJECT-A4E74A6.md), SHA-256
+`b55a0e87af9841dcc2081091c00aa277c342b817e798be60a20e14d416b9e2bc`.
+
+La passe sur `453b0a6` n'a trouvé aucun blocage source et a validé 32/32 aliases directs, wrappers
+legacy et contrôles littéraux, mais elle a dû rejeter l'intégration car son environnement exposait Bun
+`1.3.11` au lieu du toolchain qualifié. Ce septième rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-453B0A6.md`](CANDIDATE-INTEGRATION-REJECT-453B0A6.md), SHA-256
+`116a09b818bc33a8cc37b649a74040f9d35ebe3d14c010212e0d6f28c3813c58`.
+
+Le merge parallèle `1523bcd` a fermé les chaînes quoted et legacy alors connues. Sa passe
+d'intégration stricte a cependant rejeté les bypass EAI/IDN/CFWS et les faux positifs sur dot-atoms,
+domaines et casse HTML5 non valides. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-1523BCD.md`](CANDIDATE-INTEGRATION-REJECT-1523BCD.md), SHA-256
 `9f401d8d3caad8dbe9df2abbc784b54738001cb1292ddfeb4467fa4cca379206`.
 
@@ -81,7 +92,7 @@ La remédiation courante remplace le sous-ensemble d'aliases ad hoc par le déco
 EAI UTF-8, commentaires/CFWS, domaines IDNA/punycode et IP literals. Longueurs RFC, labels DNS et
 frontières de tokens sont validés avant le refus, afin de préserver les formes non-email. Les tests
 exportés couvrent valeurs, clés, encodages imbriqués, cas invalides et entrées maximales. Aucune
-autorité normative moteur n'est modifiée.
+autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 

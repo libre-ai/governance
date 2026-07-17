@@ -1,0 +1,76 @@
+import { createHash } from "node:crypto";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+const root = resolve(import.meta.dir, "../../..");
+const outputDirectory = resolve(root, "target/notebook-core-v2-qualification");
+const browsers = ["chromium", "firefox", "webkit"] as const;
+const reports: Record<string, unknown> = {};
+const sources: Record<string, { path: string; sha256: string }> = {};
+let commit: string | undefined;
+let componentSha256: string | undefined;
+const violations: string[] = [];
+
+for (const browser of browsers) {
+  const path = resolve(outputDirectory, `performance-${browser}.json`);
+  const bytes = await readFile(path);
+  const report = JSON.parse(bytes.toString("utf8")) as {
+    browserName: string;
+    commit: string;
+    componentSha256: string;
+    profiles: Array<{
+      browserPeakRssDeltaBytes: number;
+      memoryBudgetBytes: number;
+      name: string;
+      open: { endToEndP95Ms: number };
+      p95BudgetMs: number;
+      seal: { endToEndP95Ms: number };
+    }>;
+  };
+  if (
+    report.browserName !== browser ||
+    (commit !== undefined && report.commit !== commit) ||
+    (componentSha256 !== undefined && report.componentSha256 !== componentSha256)
+  ) {
+    throw new Error(`Inconsistent ${browser} performance evidence`);
+  }
+  for (const profile of report.profiles) {
+    if (profile.seal.endToEndP95Ms > profile.p95BudgetMs) {
+      violations.push(`${browser}/${profile.name}/seal-p95`);
+    }
+    if (profile.open.endToEndP95Ms > profile.p95BudgetMs) {
+      violations.push(`${browser}/${profile.name}/open-p95`);
+    }
+    if (profile.browserPeakRssDeltaBytes > profile.memoryBudgetBytes) {
+      violations.push(`${browser}/${profile.name}/browser-peak-rss-delta`);
+    }
+  }
+  commit = report.commit;
+  componentSha256 = report.componentSha256;
+  reports[browser] = report;
+  sources[browser] = {
+    path: `target/notebook-core-v2-qualification/performance-${browser}.json`,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+}
+
+const summary = {
+  browsers: reports,
+  commit,
+  componentSha256,
+  schemaVersion: "libre-ai.notebook-core-v2-browser-performance-matrix.v1",
+  sources,
+  verdict: violations.length === 0 ? "qualification-budgets-pass" : "reject",
+  violations,
+};
+await writeFile(
+  resolve(outputDirectory, "performance-summary.json"),
+  `${JSON.stringify(summary)}\n`,
+);
+console.log(
+  `Notebook performance matrix: verdict=${summary.verdict} commit=${commit} component=${componentSha256}`,
+);
+if (violations.length > 0) {
+  console.error(`Performance budget violations: ${violations.join(", ")}`);
+  process.exitCode = 1;
+}

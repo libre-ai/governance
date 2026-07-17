@@ -45,6 +45,14 @@ deux fois à l'identique. Sur le harness natif release réel, un processus neuf 
 | `m=65536,t=3,p=1` | 16 MiB | 193 ms | 166 ms | 208 896 000 octets (~199,2 MiB) |
 | `m=131072,t=4,p=4` | 16 MiB | 333 ms | 309 ms | 276 004 864 octets (~263,2 MiB) |
 
-Ces échantillons ponctuels respectent les plafonds natifs proposés, mais ne sont ni des p95 ni des
-mesures de l'ABI/host navigateur. La Gate B a donc été rejetée : la matrice navigateurs/appareils,
-les copies du host et les chemins OOM/trap restent à qualifier.
+Ces échantillons ponctuels respectent les plafonds natifs proposés, mais ne sont ni des p95 ni des mesures de l'ABI/host navigateur. La Gate B a donc été rejetée : la matrice navigateurs/appareils, les copies du host et les chemins OOM/trap restent à qualifier.
+
+## Protocole navigateur Gate B versionné
+
+Le harness `tools/qualification/notebook-core-v2/performance.playwright.ts` exécute le composant verrouillé dans un worker et une instance WASM neufs par opération. Pour chacun des trois moteurs épinglés et chacun des deux profils KDF ci-dessus, il effectue deux warm-ups puis 20 itérations mesurées de seal et open sur 16 MiB. Chaque open vérifie longueur et SHA-256 du plaintext public avant effacement best-effort ; les entrées et enveloppes sont transférées, donc détachées du producteur.
+
+Deux distributions sont conservées : temps passé dans l'API composant et temps bout-en-bout incluant création/destruction du worker, chargement, compilation, copies ABI et transferts. Le p95 est le rang `ceil(0,95 × 20)`. Le harness relève toutes les 20 ms le RSS cumulé des processus issus de l'archive navigateur épinglée et rapporte le pic additionnel par rapport au navigateur vierge ; il rapporte aussi la somme des tailles de toutes les mémoires linéaires instanciées après l'opération. Cette télémétrie de qualification repose sur l'horloge et `ps` du host, jamais sur un import WASM.
+
+Quatre refus publics (`wrong-recovery-secret`, secret trop court, ciphertext/tag modifié et digest seul modifié) sont mesurés 20 fois après warm-up. Tous doivent rester `authentication-failed` sans plaintext ; les échantillons p50/p95 sont publiés, sans prétendre rendre Argon2id/AES strictement temps constant au niveau d'un navigateur multitâche.
+
+Les budgets verrouillés sont p95 seal/open bout-en-bout `≤ 5 s` et pic RSS additionnel `≤ 256 MiB` pour le profil producteur, puis `≤ 10 s` et `≤ 512 MiB` pour le profil maximal. Le script écrit la matrice complète avant de sortir en erreur si un budget échoue. La première classe déclarée est `desktop-arm64-high-memory-reference`; aucune extrapolation vers une classe contrainte ou un host produit n'est autorisée. Les résultats ne deviennent une preuve Gate B qu'une fois rejoués et archivés sur le commit immuable qu'ils désignent.

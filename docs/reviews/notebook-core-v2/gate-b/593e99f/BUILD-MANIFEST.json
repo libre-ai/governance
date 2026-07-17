@@ -1,0 +1,74 @@
+{
+  "component": {
+    "bytes": 366674,
+    "sha256": "0703b514fc462c3acd432c0a8aa15e58f93a6f8c3084b90f29064c1e3e7a790c"
+  },
+  "coreModule": {
+    "bytes": 364362,
+    "sha256": "516555ad4b300da782c2d6c59b2c842f4a768f0b564ca36a8f521b968169a729"
+  },
+  "internalFaultComponent": {
+    "bytes": 381316,
+    "sha256": "70df3487f6861c78342489b6ec8ab0fabd924721d56586338be0aefc1c84185d"
+  },
+  "internalFaultCoreModule": {
+    "bytes": 379004,
+    "sha256": "01b510a17f1e8d79524e188053fac063a503c9f40326dae474ae4fcdc2b10557"
+  },
+  "generated": {
+    "benchmark-worker.js": {
+      "bytes": 5393,
+      "sha256": "c368b34d875c150ac7e729bb35ffb082cd9e54ffa5a28f69fbda8d5cbf4a87cb"
+    },
+    "fault-worker.js": {
+      "bytes": 6671,
+      "sha256": "785a6af1d1202062bbf94939cd9451cb49e3b6839bc78c230539133687a25844"
+    },
+    "host.js": {
+      "bytes": 4891,
+      "sha256": "a3bf71c7b557b3f6a82fff866bb331ccaa01490c8296c89162c34cdbf7e060c7"
+    },
+    "interfaces/libre-ai-notebook-core-api.d.ts": {
+      "bytes": 1245,
+      "sha256": "6a0c28ce558b269d90f073733e71e7f2e7999c68ea3b465576de5684a230664d"
+    },
+    "isolated-host.js": {
+      "bytes": 4896,
+      "sha256": "35cd6db90703bae9a65fbf5bae6ccf0a103796fe538ea0da0bb83050a6656a53"
+    },
+    "notebook-core-internal-fault.core.wasm": {
+      "bytes": 378199,
+      "sha256": "71dd0df72c2a7fa80456a7a4fad74c01ca1e5a227b9b0b46b3c013170b5e8639"
+    },
+    "notebook-core-internal-fault.js": {
+      "bytes": 116219,
+      "sha256": "f3ddb6b8801aff1140b3aefc326f60b473574c290969e92f6ab65e7f66bc6027"
+    },
+    "notebook-core.core.wasm": {
+      "bytes": 363557,
+      "sha256": "de200e1256e2675905c72b0314a916badb5c70441f027408aca05f2177363071"
+    },
+    "notebook-core.d.ts": {
+      "bytes": 1667,
+      "sha256": "7701f5a168e4cac0b25881ce9fd73674ba5d18e8d23a91ca3946a1f66f6a1fe2"
+    },
+    "notebook-core.js": {
+      "bytes": 116204,
+      "sha256": "ced45517e0efb2099fe641c1c9605731f95a8eb2a16836dbd2b2f58b3901b0d1"
+    },
+    "notebook-core.trap-canonicalize.core.wasm": {
+      "bytes": 363557,
+      "sha256": "8cb6dc4256c589d96ac50adad215ebdf9c80482a1c63cc25e8899341b40bcf62"
+    },
+    "notebook-core.trap-open.core.wasm": {
+      "bytes": 363557,
+      "sha256": "ef0c060037aa3f46bcee1078720b62b784f7b19d0b6d3fa4e9cb50fa75903e68"
+    },
+    "notebook-core.trap-seal.core.wasm": {
+      "bytes": 363557,
+      "sha256": "b588a3ade53878b946b9b8245ff1367df91073963ffde19f085acb793ce8f40e"
+    }
+  },
+  "schemaVersion": "libre-ai.notebook-core-v2-qualification-manifest.v1",
+  "transpiler": "@bytecodealliance/jco-transpile@0.4.2"
+}
