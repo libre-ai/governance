@@ -1,21 +1,22 @@
 # Independent agent review dossier — Radar engine v2 contract
 
-**State:** `pending-independent-agent-review`
+**State:** `locked`
 
 **Protocol:** [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md)
 
-**Required reviews:** one dedicated Security pass and one dedicated Architecture pass, each bound to
-an immutable commit/hash and separated from authoring by review-only mode.
+**Completed reviews:** dedicated Architecture pass `radar-architecture-rereview-bbe6c96` and
+Security pass `radar-security-rereview-bbe6c96`, each bound to immutable commit/hash evidence.
 
-**Recorded decisions:** Architecture and Security verdicts are both `reject` with blocking findings;
-see [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) and
-[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). They remain immutable audit evidence for their old
-hashes. PR #40 integrated remediation; Radar remains candidate-only and NO-GO for implementation
-until fresh role-separated passes review the new hashes.
+**Recorded decisions:** the historical [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) and
+[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md) rejections remain immutable evidence for their old
+hashes. Fresh [`ARCHITECTURE-VERDICT-2.md`](ARCHITECTURE-VERDICT-2.md) and
+[`SECURITY-VERDICT-2.md`](SECURITY-VERDICT-2.md) decisions approve the remediated hashes. The
+[`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) records the separate promotion pass and owner control
+milestone. Locking the contract does not itself authorize a product engine or deployment.
 
 ## Review subject
 
-The candidate turns `libre-ai:radar-engine@2.0.0` into an executable, capability-free boundary for
+The locked contract defines `libre-ai:radar-engine@2.0.0` as an executable, capability-free boundary for
 hostile RSS/Atom/JSON Feed parsing and deterministic curation-rule evaluation. It deliberately adds
 no Radar Rust engine and performs no network operation.
 
@@ -32,10 +33,9 @@ Normative artifacts:
 - `contracts/fixtures/radar-engine-v2/golden-vectors.v1.json`;
 - `contracts/fixtures/radar-engine-v2/security-vectors.v1.json`.
 
-The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
-`contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
-separate Security and Architecture verdicts followed by a promotion pass and the human control
-milestone.
+The normalized schemas and all incompatible v2 Radar authorities are marked `locked` in
+`contracts/catalog.v1.json`; v1 remains locked and unchanged. Any change to a locked authority
+requires the compatibility process and invalidates hash-bound implementation evidence.
 
 ## Contract decisions to review
 
@@ -90,7 +90,7 @@ shasum -a 256 contracts/fixtures/radar-engine-v2/positive/rss-2.0.xml
 shasum -a 256 contracts/fixtures/radar-engine-v2/golden/rss-2.0.normalized.json
 ```
 
-The indexes are intentionally not self-hashed. Their current candidate SHA-256 values are:
+The indexes are intentionally not self-hashed. Their locked SHA-256 values are:
 
 - golden vectors: `1e8c0f446b254d6b2a15ee68cee8b4485f9fdbe73d38f894bf3464e32ab11365`;
 - security vectors: `a092dabcd81afdac4eaeb57aafc4bf9c26cec89aa514f05e48e56bfe1b0804a6`.
@@ -100,14 +100,14 @@ WIT, profile, engine schemas, export schema and OpenAPI; each file-backed case b
 exact output bytes. The security index binds required case inventories, generated ceilings, closed
 public mappings and non-disclosure canaries.
 
-## Expected independent evidence
+## Completed promotion evidence
 
-Security and Architecture review-only passes return separate verdicts covering `SECURITY.md` and
-`ARCHITECTURE.md`. Each record includes its `reviewPassId`, the reviewed Git commit, vector hashes,
-findings and an explicit verdict. A mutable target, combined-role pass, conditional verdict, stale
-hash or missing record keeps every candidate entry pending.
+Security and Architecture review-only passes returned separate approvals covering `SECURITY.md` and
+`ARCHITECTURE.md`. Each record includes its `reviewPassId`, reviewed Git commit, vector hashes,
+findings and explicit verdict. The promotion pass independently matched both records to unchanged
+current authorities and the scoped owner `continue` decision before changing catalog status.
 
-## Known residual work (not part of this candidate)
+## Known residual work (not part of this promotion)
 
 - Resource-bound enforcement and parser differential tests require the future Radar engine package.
 - Cross-runtime URL, Unicode 15.1 and RFC 8785 implementation qualification remains an implementation
