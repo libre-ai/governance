@@ -6,6 +6,13 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
+import {
+  type NotebookHardwareResources,
+  parseResourceClassManifest,
+  selectEvidenceEnvironment,
+  selectResourceClass,
+} from "./resource-class";
+
 const ITERATIONS = 20;
 const WARMUPS = 2;
 const MIB = 1024 * 1024;
@@ -17,6 +24,7 @@ const PROFILES = [
     name: "producer-16mib",
     parallelism: 1,
     plaintextBytes: 16 * MIB,
+    plaintextSha256: "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
     p95BudgetMs: 5_000,
   },
   {
@@ -26,6 +34,7 @@ const PROFILES = [
     name: "maximum-16mib",
     parallelism: 4,
     plaintextBytes: 16 * MIB,
+    plaintextSha256: "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5",
     p95BudgetMs: 10_000,
   },
 ] as const;
@@ -52,6 +61,15 @@ type Vectors = {
 
 const repositoryRoot = process.cwd();
 const outputDirectory = resolve(repositoryRoot, "target/notebook-core-v2-qualification");
+const resourceClassManifestBytes = readFileSync(
+  resolve(repositoryRoot, "toolchains/notebook-resource-classes.json"),
+);
+const resourceClassManifest = parseResourceClassManifest(
+  JSON.parse(resourceClassManifestBytes.toString("utf8")),
+);
+const resourceClassManifestSha256 = createHash("sha256")
+  .update(resourceClassManifestBytes)
+  .digest("hex");
 const toolchain = JSON.parse(
   readFileSync(resolve(repositoryRoot, "toolchains/notebook-qualification.json"), "utf8"),
 ) as {
@@ -60,7 +78,7 @@ const toolchain = JSON.parse(
   };
 };
 
-test.describe.configure({ timeout: 900_000 });
+test.describe.configure({ timeout: 1_800_000 });
 
 test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   browser,
@@ -70,6 +88,24 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   test.skip(process.platform !== "darwin" || process.arch !== "arm64");
   const engine = toolchain.playwright.engines[browserName];
   expect(engine).toBeDefined();
+  const hardware: NotebookHardwareResources = {
+    architecture: process.arch,
+    hardwareModel: command("sysctl", ["-n", "hw.model"]),
+    hypervisorPresent: command("sysctl", ["-n", "kern.hv_vmm_present"]) !== "0",
+    logicalCpu: Number(command("sysctl", ["-n", "hw.logicalcpu"])),
+    memoryBytes: Number(command("sysctl", ["-n", "hw.memsize"])),
+    operatingSystem: process.platform,
+    processor: command("sysctl", ["-n", "machdep.cpu.brand_string"]),
+  };
+  const evidenceEnvironment = selectEvidenceEnvironment(
+    process.env.NOTEBOOK_QUALIFICATION_EVIDENCE_MODE,
+    hardware,
+  );
+  const resourceClass = selectResourceClass(
+    resourceClassManifest,
+    process.env.NOTEBOOK_QUALIFICATION_DEVICE_CLASS,
+    hardware,
+  );
   const blockedRequests: string[] = [];
   const consoleMessages: string[] = [];
   const pageErrors: string[] = [];
@@ -77,14 +113,84 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
   page.on("console", (message) => consoleMessages.push(`${message.type()}:${message.text()}`));
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto("/");
+  const browserResourcePreflight = await page.evaluate(async () => {
+    const source = new Uint8Array([0x5a]);
+    const transferred = structuredClone(source, { transfer: [source.buffer] });
+    const estimate = await navigator.storage.estimate();
+    if (
+      typeof estimate.quota !== "number" ||
+      typeof estimate.usage !== "number" ||
+      !Number.isFinite(estimate.quota) ||
+      !Number.isFinite(estimate.usage)
+    ) {
+      throw new Error("browser storage estimate is unavailable");
+    }
+    return {
+      availableStorageQuotaBytes: Math.max(0, estimate.quota - estimate.usage),
+      dedicatedWorker: typeof Worker === "function",
+      indexedDb: typeof indexedDB === "object",
+      secureContext: isSecureContext,
+      transferredArrayBuffer:
+        source.byteLength === 0 && transferred.byteLength === 1 && transferred[0] === 0x5a,
+      webCrypto:
+        typeof crypto.getRandomValues === "function" && typeof crypto.subtle?.digest === "function",
+    };
+  });
+  expect(browserResourcePreflight).toMatchObject({
+    dedicatedWorker: true,
+    indexedDb: true,
+    secureContext: true,
+    transferredArrayBuffer: true,
+    webCrypto: true,
+  });
+  expect(browserResourcePreflight.availableStorageQuotaBytes).toBeGreaterThanOrEqual(
+    resourceClassManifest.productStorageQuotaCandidateBytes,
+  );
+  const verifiedBrowserCapabilities = [
+    "webassembly-simd128",
+    "dedicated-worker",
+    "arraybuffer-transfer",
+    "web-crypto",
+    "indexeddb",
+  ].sort();
+  expect(verifiedBrowserCapabilities).toEqual(
+    [...resourceClassManifest.requiredBrowserCapabilities].sort(),
+  );
 
   const rss = new BrowserRssSampler(engine?.cacheDirectory ?? "");
+  const reuseCompiledModule = browserName === "firefox";
   const profileResults: Array<Record<string, unknown>> = [];
   for (const profile of PROFILES) {
     rss.startProfile();
-    const samples = await page.evaluate(
-      async ({ iterations, profile, warmups }) => {
+    const profileRun = await page.evaluate(
+      async ({ iterations, profile, reuseCompiledModule, warmups }) => {
         const workerUrl = "/generated/benchmark-worker.js";
+        let coreModule: WebAssembly.Module | undefined;
+        let moduleCompilationMs = 0;
+        if (reuseCompiledModule) {
+          const moduleState = globalThis as typeof globalThis & {
+            __notebookQualificationCompilationMs?: number;
+            __notebookQualificationCoreModule?: WebAssembly.Module;
+          };
+          coreModule = moduleState.__notebookQualificationCoreModule;
+          const cachedCompilationMs = moduleState.__notebookQualificationCompilationMs;
+          if (!coreModule || cachedCompilationMs === undefined) {
+            const compilationStarted = performance.now();
+            const response = await fetch("/generated/notebook-core.core.wasm", {
+              cache: "no-store",
+            });
+            if (!response.ok) throw new Error("benchmark core module unavailable");
+            coreModule = await WebAssembly.compile(await response.arrayBuffer());
+            if (WebAssembly.Module.imports(coreModule).length !== 0) {
+              throw new Error("benchmark core module has imports");
+            }
+            moduleCompilationMs = performance.now() - compilationStarted;
+            moduleState.__notebookQualificationCompilationMs = moduleCompilationMs;
+            moduleState.__notebookQualificationCoreModule = coreModule;
+          } else {
+            moduleCompilationMs = cachedCompilationMs;
+          }
+        }
         let nextRequestId = 1;
         const runWorker = (
           request: Record<string, unknown>,
@@ -118,25 +224,22 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
               } else if (response.tag === "err") {
                 reject(new Error(`benchmark refused with ${response.code ?? "unknown"}`));
               } else {
-                resolve({ ...response, endToEndMs: performance.now() - started });
+                resolve({
+                  ...response,
+                  endToEndMs: performance.now() - started + moduleCompilationMs,
+                });
               }
             };
-            worker.postMessage({ ...request, requestId }, transfer);
+            worker.postMessage(
+              { ...request, ...(coreModule ? { coreModule } : {}), requestId },
+              transfer,
+            );
           });
         };
         const hexId = (iteration: number): string =>
           iteration.toString(16).padStart(32, "0").slice(-32);
         const bytes = (length: number, seed: number): Uint8Array =>
           Uint8Array.from({ length }, (_, index) => (index + seed) & 0xff);
-        const expectedPlaintext = new Uint8Array(profile.plaintextBytes).fill(0x5a);
-        const expectedDigest = new Uint8Array(
-          await crypto.subtle.digest("SHA-256", expectedPlaintext.buffer),
-        );
-        const expectedSha256 = [...expectedDigest]
-          .map((byte) => byte.toString(16).padStart(2, "0"))
-          .join("");
-        expectedPlaintext.fill(0);
-
         const runIteration = async (
           iteration: number,
         ): Promise<{
@@ -187,7 +290,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
           if (
             open.tag !== "open-ok" ||
             open.outputLength !== profile.plaintextBytes ||
-            open.outputSha256 !== expectedSha256
+            open.outputSha256 !== profile.plaintextSha256
           ) {
             throw new Error("benchmark open round-trip mismatch");
           }
@@ -212,11 +315,17 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
         for (let index = 0; index < iterations; index += 1) {
           measured.push(await runIteration(index));
         }
-        return measured;
+        return { moduleCompilationMs, samples: measured };
       },
-      { iterations: ITERATIONS, profile, warmups: WARMUPS },
+      {
+        iterations: ITERATIONS,
+        profile,
+        reuseCompiledModule,
+        warmups: WARMUPS,
+      },
     );
     const rssResult = rss.finishProfile();
+    const samples = profileRun.samples;
     const seal = summarize(samples.map((sample) => sample.seal));
     const open = summarize(samples.map((sample) => sample.open));
     const budgetPass =
@@ -229,6 +338,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       browserPeakRssBytes: rssResult.peakBytes,
       browserPeakRssDeltaBytes: rssResult.peakDeltaBytes,
       browserRssBaselineBytes: rssResult.baselineBytes,
+      moduleCompilationMs: profileRun.moduleCompilationMs,
       open,
       seal,
     });
@@ -236,8 +346,21 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
 
   rss.startProfile();
   const antiOracle = await page.evaluate(
-    async ({ iterations }) => {
+    async ({ iterations, reuseCompiledModule }) => {
       const vectors = (await (await fetch("/golden-vectors.json")).json()) as Vectors;
+      let coreModule: WebAssembly.Module | undefined;
+      let moduleCompilationMs = 0;
+      if (reuseCompiledModule) {
+        const moduleState = globalThis as typeof globalThis & {
+          __notebookQualificationCompilationMs?: number;
+          __notebookQualificationCoreModule?: WebAssembly.Module;
+        };
+        coreModule = moduleState.__notebookQualificationCoreModule;
+        moduleCompilationMs = moduleState.__notebookQualificationCompilationMs ?? 0;
+        if (!coreModule || WebAssembly.Module.imports(coreModule).length !== 0) {
+          throw new Error("benchmark core module cache unavailable");
+        }
+      }
       const encoder = new TextEncoder();
       const fromHex = (value: string): Uint8Array => {
         const output = new Uint8Array(value.length / 2);
@@ -298,16 +421,22 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
               reject(new Error("anti-oracle response mismatch"));
             } else {
               resolve({
-                endToEndMs: performance.now() - started,
+                endToEndMs: performance.now() - started + moduleCompilationMs,
                 operationMs: response.operationMs,
                 wasmMemoryBytes: response.wasmMemoryBytes,
               });
             }
           };
-          worker.postMessage({ envelope, operation: "open-failure", recoverySecret, requestId }, [
-            envelope.buffer as ArrayBuffer,
-            recoverySecret.buffer as ArrayBuffer,
-          ]);
+          worker.postMessage(
+            {
+              ...(coreModule ? { coreModule } : {}),
+              envelope,
+              operation: "open-failure",
+              recoverySecret,
+              requestId,
+            },
+            [envelope.buffer as ArrayBuffer, recoverySecret.buffer as ArrayBuffer],
+          );
         });
       };
       const result: Record<string, Sample[]> = {};
@@ -323,7 +452,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       }
       return result;
     },
-    { iterations: ITERATIONS },
+    { iterations: ITERATIONS, reuseCompiledModule },
   );
   const antiOracleRss = rss.finishProfile();
   const antiOracleSummary = Object.fromEntries(
@@ -339,16 +468,27 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     antiOraclePeakRssBytes: antiOracleRss.peakBytes,
     antiOraclePeakRssDeltaBytes: antiOracleRss.peakDeltaBytes,
     browserName,
+    browserResourcePreflight,
     browserVersion: browser.version(),
     commit: command("git", ["rev-parse", "HEAD"]),
+    compiledModuleLifecycle: reuseCompiledModule
+      ? "one-per-page-cloned-to-disposable-workers"
+      : "one-per-disposable-worker",
+    endToEndCompilationAccounting: reuseCompiledModule
+      ? "measured-page-compilation-added-to-every-sample"
+      : "per-worker-compilation-measured-directly",
     componentSha256: manifest.component.sha256,
     coreModuleSha256: manifest.coreModule.sha256,
-    deviceClass: "desktop-arm64-high-memory-reference",
+    deviceClass: resourceClass.id,
+    evidenceMode: evidenceEnvironment.mode,
     hardware: {
-      logicalCpu: Number(command("sysctl", ["-n", "hw.logicalcpu"])),
-      memoryBytes: Number(command("sysctl", ["-n", "hw.memsize"])),
-      processor: command("sysctl", ["-n", "machdep.cpu.brand_string"]),
+      hardwareModel: hardware.hardwareModel,
+      hypervisorPresent: hardware.hypervisorPresent,
+      logicalCpu: hardware.logicalCpu,
+      memoryBytes: hardware.memoryBytes,
+      processor: hardware.processor,
     },
+    minimumProductCandidateClassId: resourceClassManifest.minimumProductCandidateClassId,
     iterations: ITERATIONS,
     node: process.versions.node,
     operatingSystem: {
@@ -358,11 +498,27 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
       version: command("sw_vers", ["-productVersion"]),
     },
     profiles: profileResults,
-    schemaVersion: "libre-ai.notebook-core-v2-browser-performance.v1",
+    requiredBrowserCapabilities: resourceClassManifest.requiredBrowserCapabilities,
+    promotableEvidence: evidenceEnvironment.promotable,
+    resourceClassEvidenceStatus: resourceClass.evidenceStatus,
+    resourceClassManifestSha256,
+    resourceClassRequirements: {
+      architecture: resourceClass.architecture,
+      maximumLogicalCpuExclusive: resourceClass.maximumLogicalCpuExclusive,
+      maximumPhysicalMemoryBytesExclusive: resourceClass.maximumPhysicalMemoryBytesExclusive,
+      minimumLogicalCpu: resourceClass.minimumLogicalCpu,
+      minimumPhysicalMemoryBytes: resourceClass.minimumPhysicalMemoryBytes,
+      operatingSystem: resourceClass.operatingSystem,
+      purpose: resourceClass.purpose,
+    },
+    schemaVersion: "libre-ai.notebook-core-v2-browser-performance.v2",
     toolchainManifestSha256: createHash("sha256")
       .update(await readFile(resolve(repositoryRoot, "toolchains/notebook-qualification.json")))
       .digest("hex"),
     userAgent,
+    verifiedBrowserCapabilities,
+    virtualizationDetected: evidenceEnvironment.virtualizationDetected,
+    virtualizationSignals: evidenceEnvironment.virtualizationSignals,
     warmups: WARMUPS,
   };
   await mkdir(outputDirectory, { recursive: true });

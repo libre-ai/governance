@@ -19,6 +19,7 @@
 - 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
 - missing Gear remote recreated solely as a verified archive ;
 - canonical public GitHub repository created and initial history pushed ;
+- differentiated EUPL/Apache/CC BY governance accepted through ADR-0004, with historical grants preserved, REUSE/SPDX scopes, DCO, data provenance and trademark policy ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
 - shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
@@ -33,15 +34,22 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
-- ADR-0003 opened a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core and Boussole v2 are locked after role verdicts and owner milestones; only the shared engine-vector authority remains candidate ;
+- ADR-0003 opened and closed a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core, Boussole v2 and the shared engine-vector envelope are locked after role verdicts, promotion reviews and owner milestones ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on `d47feb9` and exactly six authorities transition to locked; Notebook Core v2 is locked after Gate A + owner `continue`, with four role verdicts APPROVE, while Gate B remains mandatory before any user backup, production or release.
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
+- the shared `engine-golden-vectors-v1` transitions to locked through a separate catalog-only promotion approved by promotion-integration on `3b47e96` and final owner `continue`, after candidate-integration, Architecture and Security approval at `ccf9d68` plus challenged acceptance of exact dev-only `entities@8.0.0`; this fixes contract meaning only and authorizes no engine/runtime/data/release scope ;
 - agent orchestration option B reaches contract Specification Lock after Architecture/Security/France-EU Privacy reviews, a remediated actual-Biscuit candidate-integration and catalog-only promotion of 14 unchanged authorities; simulation-only `WP-G2-A01` now has an accepted pure Rust decision core plus favorable result Architecture/Security/France-EU Privacy and conformance reviews on `7f31ec3`, Pi remains replaceable and no harness, worker launch or real mission is authorized ;
-- the shared `engine-golden-vectors-v1` remains candidate: candidate-integration approved the wrapped-CFWS head `bec32a7`, while Security rejected IPv6 case handling and Unicode metadata paths on `cea7363`; the combined remediation requires fresh candidate-integration, Architecture and Security passes plus owner dependency acceptance ;
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator runtime/harness or Practices scorer is implemented; the accepted agent control crate is simulation-only and contract review/promotion milestones do not authorize further implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
+
+## Next controlled milestone
+
+- **Owner choice:** close Notebook Core v2 Gate B before authorizing any first Radar, Policy or Boussole product engine ;
+- **Authorized scope:** Gate B host/qualification remediation and reproducible evidence using public fixtures, including physical macOS arm64 classes at 8 Gio and 16–24 Gio ;
+- **Exit evidence:** exact product host, real IndexedDB cycle, process-level OOM/panic handling, memory-erasure evidence, three-browser budgets and a fresh review-only Gate B verdict on an immutable commit ;
+- **Still blocked:** user backups, personal/tenant data, production, release, infrastructure, deployment and every new product engine. A later engine requires its own explicit owner milestone.
 
 ## Explicitly deferred
 
@@ -54,5 +62,5 @@
 - the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
 - GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- candidate engine vectors now define contract behavior, but runtime conformance, bounded-resource
-  evidence and end-to-end tenant/RLS proof remain G2 implementation evidence.
+- locked engine vectors define only contract behavior; runtime conformance, bounded-resource evidence
+  and end-to-end tenant/RLS proof remain separate G2 implementation evidence.
