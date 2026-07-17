@@ -4,7 +4,7 @@ Les RFC de ce répertoire sont des propositions d’architecture et de sécurit�
 
 Une RFC affectant un contrat, l’autorisation, le réseau, les providers, la persistance ou l’exécution agentique doit suivre, dans cet ordre :
 
-1. revue architecture et sécurité sur un commit immuable ;
+1. revues architecture et sécurité sur un commit immuable, plus vie privée France/UE dès qu’un contenu, identifiant, provider, journal ou transfert est concerné ;
 2. résolution explicite des décisions ouvertes ;
 3. création de contrats candidats et de leurs vecteurs positifs/négatifs ;
 4. passes de revue séparées selon `docs/reviews/AGENT-REVIEW-PROTOCOL.md` ;

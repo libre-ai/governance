@@ -52,7 +52,7 @@ Un futur `ExecutionPlanBody v1`, produit par l’orchestrateur sans droit de l�
 - profil d’outils et chemins autorisés ;
 - budgets de durée, appels outils, tokens, processus, fichiers, octets et concurrence ;
 - politique réseau `none` ou allowlist d’origines exactes ;
-- politique d’egress modèle : classification autorisée, sources et chemins, octets maximaux, rétention et exigence ZDR ;
+- politique d’egress modèle : finalité, classification autorisée, base d’autorisation, sources et chemins, octets maximaux, région effective, sous-traitants, rétention, exigence ZDR et interdiction d’entraînement/réutilisation ;
 - digest du profil de sandbox, manifests worker/extensions/skills et politique provider ;
 - destinations Proof/Artifact autorisées.
 
@@ -125,11 +125,13 @@ Les compteurs sont monotones et conservés à travers pause, reprise, retry et c
 
 Tout dépassement bloque les nouveaux effets, termine ou bloque le run selon le plan, puis émet une preuve minimale. Aucun retry ne contourne une limite globale.
 
-### Journal et vie privée
+### Événements, journal et vie privée
 
-Le journal opérationnel contient uniquement identifiants techniques bornés, versions, digests, catégories fermées, compteurs et décisions de policy. Sont exclus par défaut : prompts, code, diff, chemins absolus, commandes shell, arguments outils, emails, identifiants utilisateur, tokens et messages d’erreur bruts.
+Les événements causaux v2 sont des enregistrements métier tenant-private : ils portent les identifiants nécessaires au protocole, suivent l’autorité et la rétention Missions et ne sont pas recopiés comme logs ou attributs OTEL.
 
-Le contenu nécessaire à une preuve est stocké séparément comme artefact privé, avec classification, rétention et digest explicites. OpenTelemetry externe reste désactivé par défaut et sans contenu.
+Le journal opérationnel contient uniquement versions, catégories fermées, compteurs, décisions de policy et un identifiant de corrélation éphémère non réversible, sans table d’association persistée après le run. Sont exclus par défaut : `tenantId`, `missionId`, `runId` stable, identifiants utilisateur, références d’artefact, prompts, code, diff, chemins, commandes shell, arguments outils, emails, tokens et messages d’erreur bruts. Sa rétention courte et son niveau de précision temporelle sont fixés par le futur contrat de harness. Les métriques sont agrégées par défaut.
+
+Le contenu nécessaire à une preuve est stocké séparément comme artefact privé, avec classification, digest et classe de cycle de vie approuvée. Cette classe impose plafond de rétention, suppression/anonymisation et non-résurrection après restore selon `DATA-LIFECYCLE.md`. OpenTelemetry externe reste désactivé par défaut et sans contenu.
 
 ## Adaptation sélective de Grok Build
 
@@ -159,7 +161,7 @@ Pi est un adaptateur remplaçable et doit être qualifié avant usage :
 - secret provider amont conservé dans le gateway ; Pi reçoit seulement un jeton local court lié au peer OS, inutilisable hors du run ;
 - transport worker→gateway par Unix socket privé ou namespace réseau privé, jamais par loopback host partagé ;
 - secrets d’outils conservés dans des brokers et injectés seulement aux subprocess isolés ;
-- contenu modèle borné par classification, path scopes, taille et politique de rétention/ZDR du plan ;
+- contenu modèle borné par finalité, base d’autorisation, classification, path scopes, taille, région, sous-traitants et politique de rétention/ZDR/non-réutilisation du plan ;
 - RPC JSONL validé, borné en taille et traité comme entrée hostile ;
 - aucune confiance accordée aux permissions applicatives Pi comme frontière OS.
 
@@ -183,7 +185,8 @@ Les futurs vecteurs doivent couvrir au minimum :
 - DNS rebinding, redirect vers adresse spéciale et loopback hébergé ;
 - retry après dépassement de budget ;
 - token expiré/révoqué ou revocation store indisponible ;
-- prompt, code, chemin, commande, PII ou secret dans logs/OTEL ;
+- tenant, mission, run stable, prompt, code, chemin, commande, PII ou secret dans logs/OTEL ;
+- preuve privée conservée au-delà de sa classe de rétention ou ressuscitée après restore ;
 - worker déclarant un succès sans preuves digérées ;
 - tentative d’auto-approbation, merge, release ou déploiement.
 
