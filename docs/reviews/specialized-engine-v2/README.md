@@ -93,16 +93,25 @@ rejeté une dernière restriction de catégorie Unicode : RFC 6532 autorise tout
 [`CANDIDATE-INTEGRATION-REJECT-26AC8FE.md`](CANDIDATE-INTEGRATION-REJECT-26AC8FE.md), SHA-256
 `97e3ac0a293a98631ab609c89955f394bc36f1d75a1d729845de06c3ab70a1b3`.
 
-La remédiation courante accepte tout scalaire UTF-8 non ASCII comme EAI atext et ne traite comme CFWS
-que les espaces ASCII RFC. Les default-ignorables sont conservés pour reconnaître un local-part EAI,
-puis une seconde vue nettoyée détecte aussi leur usage d'obfuscation dans domaines et credentials.
-Le décodeur HTML5 exact `entities` BSD-2-Clause, les longueurs RFC, labels DNS, frontières de tokens
-et contrôles maximaux restent inchangés. Aucune autorité normative moteur n'est modifiée ; une passe
-avec Bun épinglé reste obligatoire.
+Le merge `77a4b1d` a fermé cette restriction EAI. Sa passe d'intégration a ensuite rejeté quatre bornes
+de contexte : NFKC transformait des séparateurs non ASCII en CFWS, des suffixes après ponctuation
+invalide devenaient des emails, les parenthèses engloutissaient un identifiant complet et les points
+terminaux restaient attachés au domaine. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-77A4B1D.md`](CANDIDATE-INTEGRATION-REJECT-77A4B1D.md), SHA-256
+`2fb75ab696ed0ee21682a54a382d431008239afe547fd19f9d0bfe7bfe6ea8a3`.
+
+La remédiation courante préserve les séparateurs non ASCII pendant NFKC, exige une vraie frontière de
+local-part, scanne le contexte original avant sa projection sans commentaires et détache les points
+terminaux ASCII/Unicode. Le slash reste correctement classé RFC atext, tandis que C0, `:` et `,` ne
+créent plus de suffixe. Les URL à userinfo gardent une détection dédiée pour le canary Radar hors de
+son allowlist exacte. `entities@8.0.0` est qualifié BSD-2-Clause, dev-only et sans transitive dans
+[`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md), SHA-256
+`6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae`; un contrôle owner reste
+requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation du scanner RFC/EAI après candidate-integration favorable ;
+1. intégrer la remédiation de contexte RFC/EAI après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
