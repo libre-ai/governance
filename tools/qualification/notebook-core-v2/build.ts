@@ -15,6 +15,20 @@ const coreModule = resolve(
   "target/wasm32-unknown-unknown/release/libre_ai_notebook_core.wasm",
 );
 const componentPath = resolve(outputDirectory, "notebook-core.component.wasm");
+const trapModules = [
+  {
+    exportName: "libre-ai:notebook-core/api@2.0.0#canonicalize-context",
+    name: "notebook-core.trap-canonicalize.core.wasm",
+  },
+  {
+    exportName: "libre-ai:notebook-core/api@2.0.0#open-backup",
+    name: "notebook-core.trap-open.core.wasm",
+  },
+  {
+    exportName: "libre-ai:notebook-core/api@2.0.0#seal-backup",
+    name: "notebook-core.trap-seal.core.wasm",
+  },
+] as const;
 
 function run(command: string, arguments_: string[]): void {
   const result = spawnSync(command, arguments_, {
@@ -104,21 +118,49 @@ if (WebAssembly.Module.imports(transpiledCore).length !== 0) {
   throw new Error("transpiled core module has imports");
 }
 
-run("bun", [
-  "build",
-  resolve(qualificationDirectory, "host.ts"),
-  "--target=browser",
-  "--format=esm",
-  `--outfile=${resolve(outputDirectory, "generated/host.js")}`,
-]);
+for (const trap of trapModules) {
+  run("cargo", [
+    "run",
+    "--quiet",
+    "--locked",
+    "-p",
+    "libre-ai-notebook-core",
+    "--example",
+    "inject_wasm_trap",
+    "--",
+    transpiledCorePath,
+    trap.exportName,
+    safeOutputPath(trap.name),
+  ]);
+}
+
+const browserBundles = [
+  ["fault-worker.ts", "fault-worker.js"],
+  ["host.ts", "host.js"],
+  ["isolated-host.ts", "isolated-host.js"],
+] as const;
+for (const [source, output] of browserBundles) {
+  run("bun", [
+    "build",
+    resolve(qualificationDirectory, source),
+    "--target=browser",
+    "--format=esm",
+    `--outfile=${resolve(outputDirectory, "generated", output)}`,
+  ]);
+}
 await writeFile(
   resolve(outputDirectory, "index.html"),
   '<!doctype html><html lang="en"><meta charset="utf-8"><title>Notebook Core qualification</title><body>qualification-only</body></html>\n',
 );
 
+const qualificationFiles = [
+  ...Object.keys(transpiled.files),
+  ...trapModules.map(({ name }) => name),
+  ...browserBundles.map(([, output]) => output),
+];
 const generated = Object.fromEntries(
   await Promise.all(
-    [...Object.keys(transpiled.files), "host.js"].sort().map(async (name) => {
+    qualificationFiles.sort().map(async (name) => {
       const bytes = await readFile(safeOutputPath(name));
       return [name, { bytes: bytes.length, sha256: sha256(bytes) }];
     }),

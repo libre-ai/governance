@@ -144,6 +144,25 @@ describe("Notebook qualification host", () => {
     expect(zeros(document)).toBe(true);
   });
 
+  test("maps runtime allocation failures to the static resource refusal", () => {
+    const document = new Uint8Array([1, 2, 3]);
+    const api = {
+      canonicalizeContext() {
+        throw new RangeError("private allocation detail");
+      },
+      sealBackup: () => new Uint8Array(),
+      openBackup() {
+        throw new Error("unreachable");
+      },
+    } satisfies NotebookCoreApi;
+
+    const error = refusal(() => canonicalizeOwned(api, document));
+    expect(error.code).toBe("resource-limit-exceeded");
+    expect(error.message).toBe(ERROR_MESSAGES["resource-limit-exceeded"]);
+    expect(error.message).not.toContain("private allocation detail");
+    expect(zeros(document)).toBe(true);
+  });
+
   test("retains stable references to every owned plaintext buffer", async () => {
     const sealPlaintext = new TextEncoder().encode("private seal plaintext");
     const secret = new Uint8Array(16).fill(7);

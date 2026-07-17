@@ -48,7 +48,7 @@ const server = Bun.serve({
     const headers = {
       "cache-control": "no-store",
       "content-security-policy":
-        "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; img-src 'self'",
+        "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; img-src 'self'",
       "content-type": contentType(path),
       "cross-origin-opener-policy": "same-origin",
       "referrer-policy": "no-referrer",
