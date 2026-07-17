@@ -38,7 +38,8 @@ expected outputs.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
   NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
   marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
-  numeric or named HTML email-syntax markers, including `period`. Only decoded email identifiers or
+  numeric HTML markers and the complete lowercased HTML5 alias set whose exact scalar is ASCII RFC
+  atext, `@` or `period`; unknown named entities remain unchanged. Only decoded email identifiers or
   high-confidence credentials are
   rejected in values or property names, without echoing rejected content; unrelated `@`, `&#` or `%`
   payload text is not reinterpreted as private data.

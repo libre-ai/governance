@@ -43,13 +43,19 @@ les séparateurs de domaine `&period;` encore non décodés. Ce second rejet est
 [`CANDIDATE-INTEGRATION-REJECT-3BAECF8.md`](CANDIDATE-INTEGRATION-REJECT-3BAECF8.md), SHA-256
 `9dd66f60242f395313553b82eb7e936aa07c633d4f39ad5aebc492aa4c308dbb`.
 
-La remédiation courante couvre les local-parts RFC contenant `&` et les entités nommées de syntaxe
-e-mail, dont `&period;`, sans réécrire les ampersands du payload. Aucune autorité normative moteur
-n'est modifiée.
+La seconde remédiation sur `39f776e` a ajouté `period`, mais sa passe d'intégration a trouvé sept
+aliases HTML5 exacts encore absents pour `*`, `_`, grave, accolades et barre verticale. Ce troisième
+rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-39F776E.md`](CANDIDATE-INTEGRATION-REJECT-39F776E.md), SHA-256
+`6e9dc13e5f11d57a75df483c57cd38b623ea429db4511c43bb4d9bfef5eda84d`.
+
+La remédiation courante couvre la liste complète des aliases HTML5 dont le scalaire exact est un
+caractère ASCII RFC atext, `@` ou `period`, sans réécrire les entités inconnues ni les ampersands du
+payload. Aucune autorité normative moteur n'est modifiée.
 
 ## Gates restants
 
-1. intégrer la remédiation mixte après candidate-integration favorable ;
+1. intégrer la remédiation des aliases nommés après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
