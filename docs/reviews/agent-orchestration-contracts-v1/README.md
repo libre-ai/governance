@@ -1,6 +1,6 @@
 # Agent orchestration contract candidates v1
 
-Status: `candidate-authoring / independent reviews required`.
+Status: `candidate-reviewed / human milestone and promotion lock required`.
 
 These authorities make the reviewed option-B RFC machine-checkable. They authorize no orchestrator, harness, Pi extension, provider, network, secret, persistence, real mission, merge, release or deployment.
 
@@ -34,5 +34,15 @@ Reviews follow [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The
 - all three role verdicts favorable on unchanged authority hashes ;
 - separate promotion/integration pass ;
 - explicit owner control milestone.
+
+## Review outcome
+
+Exact authority commit `e93da197804c013dff2eb250a58bf7525ccd3658`:
+
+- architecture: `approve` ;
+- security: `approve-with-minor-reservations` ;
+- France/EU privacy: `approve-with-minor-reservations`.
+
+Historical rejects remain in this dossier. Catalog entries intentionally remain `candidate` / `pending-independent-agent-review` until a separate promotion/integration pass and explicit human control milestone.
 
 `candidate` is not an implementation approval. A work package may be added only after Specification Lock.
