@@ -133,26 +133,38 @@ candidate-integration indépendantes ont trouvé des blocages distincts :
   ([`CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md`](CANDIDATE-INTEGRATION-REJECT-EF1E847-WRAPPED-CFWS.md),
   SHA-256 `d0092e478af43e386a8952dac3c199a619b228baa8bc02fa40e0117fb9803d0b`).
 
-Le merge `cea7363` a aligné le schéma et ajouté trois mutations normatives. PR #81, merge
-`6d37f0dd9759c04d9908885c8419d6d4992cbee0`, a ensuite intégré les deux projections linéaires
-complémentaires : l'une conserve tout groupe comportant un `@`, l'autre privilégie les `@` au niveau
-direct et retire les commentaires enfants. Leur union couvre les commentaires qui contiennent eux-mêmes
-un handle sans devoir choisir une interprétation ambiguë. Piles, intervalles et échappements évitent
-récursion et recopie quadratique. Les représentations encodées et les clés JSON utilisent le même
-gate.
+Le merge `cea7363` a aligné le schéma. Candidate-integration a ensuite approuvé
+([`CANDIDATE-INTEGRATION-CEA7363.md`](CANDIDATE-INTEGRATION-CEA7363.md), SHA-256
+`7f492b1806091b7c74c20e46eab8ce66bf5410a9ac56900ad554cfb374958061`) et Architecture a approuvé
+avec deux réserves d'audit ([`ARCHITECTURE-VERDICT-CEA7363.md`](ARCHITECTURE-VERDICT-CEA7363.md),
+SHA-256 `0006071a17692cfc295aa706a8645668df63a96ec243fe6d6f134b66e4cd2433`). Security a rejeté le tag
+IPv6 sensible à la casse et les chemins metadata contournant la politique par NFKC/default-ignorable
+([`SECURITY-VERDICT-CEA7363.md`](SECURITY-VERDICT-CEA7363.md), SHA-256
+`64b3ea80000d9eac39c23ca8d5a4f656373d877e1cec68d5d04feabd2e3c16c8`). Ce rejet gouverne ; les
+deux approbations sont stale.
 
-Candidate-integration a approuvé la tête exacte `bec32a7bedb349bad4c3c58afbc878b995d00db8`
+PR #81 a intégré les projections wrapped-CFWS après candidate-integration favorable sur sa tête
+exacte `bec32a7bedb349bad4c3c58afbc878b995d00db8`
 ([`CANDIDATE-INTEGRATION-BEC32A7.md`](CANDIDATE-INTEGRATION-BEC32A7.md), SHA-256
-`6aadfbab59d20003d18c5144b2067ac66e32444b8b449a91262338be6de25695`). Cette approbation ne vaut
-ni rôle Architecture/Security, ni promotion, ni contrôle owner. `entities@8.0.0` reste qualifié
-BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise.
+`6aadfbab59d20003d18c5144b2067ac66e32444b8b449a91262338be6de25695`). PR #82 a persisté ce
+record sans modifier le scanner. Cette preuve wrapped-CFWS devient elle aussi stale dès que la
+remédiation combinée change le scanner ou le schéma.
+
+La remédiation combinée traite le tag RFC `IPv6:` sans distinction de casse et ferme le sous-espace
+metadata en ASCII, donc sous NFKC et retrait des default-ignorables, tout en laissant les payloads
+moteur Unicode et opaques. Les fixtures couvrent les chemins NFKC/default-ignorable ; les
+représentations encodées et les clés JSON utilisent le même gate. `entities@8.0.0` reste qualifié
+BSD-2-Clause, dev-only et sans transitive ; son acceptation owner explicite reste requise. L'écart de
+chronologie de PR #80 reste historique, sans autorisation rétroactive ; cette nouvelle remédiation
+doit recevoir candidate-integration avant fusion.
 
 ## Gates restants
 
-1. intégrer ce record candidate-integration sans modifier le scanner ;
-2. rejouer Architecture et Security sur le merge immuable résultant ;
-3. persister uniquement ces nouveaux records et enregistrer le contrôle owner/dependency ;
-4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
+1. obtenir une candidate-integration favorable sur la tête immuable de remédiation combinée ;
+2. fusionner cette remédiation sans autre changement ;
+3. rejouer candidate-integration, Architecture et Security sur le merge immuable ;
+4. persister ces nouveaux records et enregistrer le contrôle owner/dependency ;
+5. préparer une promotion catalog-only séparée avec revue promotion/integration avant
    `candidate → locked`.
 
 Les preuves et verdicts suivent [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).

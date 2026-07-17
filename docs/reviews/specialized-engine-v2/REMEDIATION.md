@@ -42,14 +42,15 @@ expected outputs.
   references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser accepts every RFC 6532
   `UTF8-non-ascii` scalar as EAI atext, limits CFWS skipping to ASCII whitespace, preserves non-ASCII
   separators during NFKC and validates RFC-length dot-atom or quoted local-parts, nested comments,
-  IDNA/punycode DNS labels and bounded IPv4/IPv6 literals. It scans the original context, the RFC
-  comment-free projection and two linear wrapper-preserving comment projections. One propagates any
-  nested `@`; the other prioritizes `@` at the direct group level and removes child comments. Their
-  union handles comments that contain a handle without consuming the contextual wrapper. The parser
-  precomputes quote parity and records an opening quote only behind its own valid prose boundary,
-  requires whitespace/open delimiters or an explicit bounded FR/EN email label before `:`, separates
-  terminal ASCII/Unicode dots and independently detects userinfo for every syntactically valid URI
-  scheme, without resolution. A second view removes
+  IDNA/punycode DNS labels and bounded IPv4/IPv6 literals with the RFC `IPv6:` tag matched
+  case-insensitively. It scans the original context, the RFC comment-free projection and two linear
+  wrapper-preserving comment projections. One propagates any nested `@`; the other prioritizes `@` at
+  the direct group level and removes child comments. Their union handles comments that contain a
+  handle without consuming the contextual wrapper. The parser precomputes quote parity and records an
+  opening quote only behind its own valid prose boundary, requires whitespace/open delimiters or an
+  explicit bounded FR/EN email label before `:`, separates terminal ASCII/Unicode dots and
+  independently detects userinfo for every syntactically valid URI scheme, without resolution. A
+  second view removes
   default-ignorables only after the EAI parse. Invalid token boundaries, local-parts over 64 octets,
   empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
   by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
@@ -72,10 +73,12 @@ expected outputs.
   gate and then their dedicated semantic checker. Boussole additionally requires the exact
   `boussole-scoring-v2` world before reading cases.
 - TypeScript and Rust static projection treat only the explicitly commented recursive metadata and
-  payload values as opaque. Runtime JSON Schema validation remains authoritative. Its
-  `metadataString` credential pattern is aligned with the scanner's explicit
-  RSA/DSA/EC/OpenSSH/generic/encrypted-PKCS#8/OpenPGP private-key headers and exercised by negative
-  schema fixtures. Generated types are not product input boundaries.
+  payload values as opaque. Runtime JSON Schema validation remains authoritative. `metadataString`
+  is ASCII-only, making its local-file/traversal and credential exclusions closed under NFKC and
+  default-ignorable removal; payload strings remain Unicode-capable. Its credential pattern is
+  aligned with the scanner's explicit RSA/DSA/EC/OpenSSH/generic/encrypted-PKCS#8/OpenPGP private-key
+  headers, and negative schema fixtures exercise both marker and normalized-path families. Generated
+  types are not product input boundaries.
 
 ## Scope exclusions
 
