@@ -38,13 +38,43 @@ les chaînes HTML mixtes amp/numeric/named. Le rejet est conservé dans
 approbations avant que ce rejet concurrent soit observé ; leur présence est historique, pas probante
 pour une promotion.
 
-La remédiation suivante étend la détection aux local-parts RFC contenant `&`, ajoute les compositions
-exactes au self-test et rend ces records stale par changement du checker. Aucune autorité normative
-moteur n'est modifiée.
+Sur le merge immuable `79d02b6`, la passe
+[`CANDIDATE-INTEGRATION-79D02.md`](CANDIDATE-INTEGRATION-79D02.md) (`approve`, SHA-256
+`bd2b9af3136ba6b124e9dfbeeddee67af75c3735529730008f5116bdda2b253a`) et
+[`ARCHITECTURE-VERDICT-79D02.md`](ARCHITECTURE-VERDICT-79D02.md) (`approve`, SHA-256
+`74725a31d7a3323d32f3b17a5e84a90fd5497fd352edc493b981f1e551ec6a42`) ont précédé le rejet
+Security [`SECURITY-VERDICT-79D02.md`](SECURITY-VERDICT-79D02.md), SHA-256
+`442fc6009a56c930143e2704fdddf2a4a37f0f1e24bb5ee95d08708bdcd6bc13` : les local-parts RFC entre
+guillemets, directs ou encodés, contournaient le scanner. Le constat bloquant rend les deux
+approbations historiques non promotables.
+
+La première remédiation sur `3baecf8` a fermé les compositions HTML mixtes, mais une passe
+d'intégration ultérieure a trouvé les séparateurs de domaine `&period;` encore non décodés. Ce second rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-3BAECF8.md`](CANDIDATE-INTEGRATION-REJECT-3BAECF8.md), SHA-256
+`9dd66f60242f395313553b82eb7e936aa07c633d4f39ad5aebc492aa4c308dbb`.
+
+La seconde remédiation sur `39f776e` a ajouté `period`, mais sa passe d'intégration a trouvé sept
+aliases HTML5 exacts encore absents pour `*`, `_`, grave, accolades et barre verticale. Ce troisième
+rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-39F776E.md`](CANDIDATE-INTEGRATION-REJECT-39F776E.md), SHA-256
+`6e9dc13e5f11d57a75df483c57cd38b623ea429db4511c43bb4d9bfef5eda84d`.
+
+La troisième remédiation sur `e6df443` a complété ces aliases, mais sa passe d'intégration a rejeté
+l'alias non-HTML5 `&at;` et le coût quadratique de la regex e-mail sans `@`. Ce quatrième rejet est
+conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-E6DF443.md`](CANDIDATE-INTEGRATION-REJECT-E6DF443.md), SHA-256
+`59607db595d156db37723e1bbe47130db2b9c0a9263055a958a4925b4f487967`.
+
+La remédiation courante couvre exactement les aliases HTML5 dont le scalaire est un caractère ASCII
+RFC atext, `@`, `period`, un délimiteur de local-part entre guillemets ou un séparateur de domaine
+littéral. Elle laisse `&at;` inconnu, reconnaît les local-parts quoted, les domaines punycode/IP et
+remplace la regex rétroactive par un scan borné du domaine puis du local-part. Les tests incluent les
+encodages directs, percent, numeric, named et nested ainsi que des contrôles à la longueur maximale.
+Aucune autorité normative moteur n'est modifiée.
 
 ## Gates restants
 
-1. intégrer la remédiation mixte après candidate-integration favorable ;
+1. intégrer la remédiation des aliases nommés après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
