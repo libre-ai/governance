@@ -26,37 +26,41 @@ Adopter une architecture à quatre frontières :
 
 ```text
 Missions (Bun/TypeScript, autorité humaine)
-  └── plan approuvé et hash-bound
+  └── autorisation d’exécution liée au digest du plan
       └── Agent Orchestrator (Rust spécialisé, contrôle et budgets)
           └── Agent Harness (Rust système, sandbox et preuves)
               └── adaptateur worker Pi par RPC JSONL
 ```
 
-1. **Missions** possède proposition, risque, approbation, décisions humaines et verdict final.
-2. **Agent Orchestrator** possède l’état d’un run, l’idempotence, les commandes, la consommation monotone des budgets et l’émission d’événements causaux.
-3. **Agent Harness** possède processus, filesystem, réseau, secrets éphémères, worktrees et collecte d’évidence. Une isolation exigée mais indisponible refuse le démarrage.
-4. **Pi** est lancé comme processus externe derrière un adaptateur RPC versionné. Il ne reçoit que le workspace, les outils et les credentials atténués nécessaires au run.
+1. **Missions** possède proposition, risque, approbation du digest exact d’un plan, autorisation d’exécution, décisions humaines et verdict final.
+2. **Agent Orchestrator** compile un corps de plan déterministe à partir des contrats approuvables, puis possède l’état d’un run, l’idempotence, les commandes, la consommation monotone des budgets et l’émission d’événements causaux. Il ne peut pas autoriser son propre plan.
+3. **Agent Harness** possède processus, filesystem, réseau, gateway provider, secrets éphémères, worktrees et collecte d’évidence. Une isolation exigée mais indisponible refuse le démarrage.
+4. **Pi** est lancé comme processus externe derrière un adaptateur RPC versionné. Il ne reçoit que le workspace et les outils autorisés, plus un jeton local court lié au run ; il ne reçoit aucun secret du provider amont.
 5. **Proof/Artifact** possèdent les preuves et artefacts content-addressed. Missions et l’orchestrateur ne conservent que leurs références digérées.
 
 Pi ne devient pas une dépendance métier des applications et aucun objet HTTP, session navigateur ou accès DB produit n’entre dans le harness.
 
 ## Invariants normatifs à verrouiller
 
-### Plan d’exécution
+### Corps de plan et autorisation d’exécution
 
-Un futur `ExecutionPlan v1` doit être canonique, strict et lié par SHA-256 à :
+Un futur `ExecutionPlanBody v1`, produit par l’orchestrateur sans droit de l’autoriser, doit être canonique, strict et lié par SHA-256 à :
 
-- `tenantId`, `missionId`, révision et digest du `MissionRecord` approuvé ;
+- `tenantId` et `missionId` ;
 - handoff planning-only et digest du `SpecPackage` ;
-- critères d’acceptation et références d’approbation humaine ;
+- critères d’acceptation proposés ;
 - profil d’outils et chemins autorisés ;
 - budgets de durée, appels outils, tokens, processus, fichiers, octets et concurrence ;
 - politique réseau `none` ou allowlist d’origines exactes ;
-- digest du profil de sandbox et politique provider ;
-- destinations Proof/Artifact autorisées ;
-- identifiant de run et clé d’idempotence.
+- politique d’egress modèle : classification autorisée, sources et chemins, octets maximaux, rétention et exigence ZDR ;
+- digest du profil de sandbox, manifests worker/extensions/skills et politique provider ;
+- destinations Proof/Artifact autorisées.
 
-Le plan est immuable après démarrage. Toute expansion de capacité, chemin, réseau, budget ou provider exige un nouveau plan et une nouvelle approbation liée à son digest. Un `agent-handoff.v1` reste planning-only et ne peut pas être transformé implicitement en droit d’exécution.
+La préimage et la sérialisation canonique sont définies par le profil du contrat. Elles n’incluent ni approbation, ni autorisation, ni identifiant de run. Missions présente le corps et son digest à l’approbateur, puis `MissionRecord v2` conserve ce digest et les références d’approbation.
+
+Après la transition humaine, Missions émet une `ExecutionAuthorization v1` séparée qui lie `tenantId`, `missionId`, révision et digest du `MissionRecord v2`, digest du corps de plan, approbations, expiration et identifiant de révocation. Le Biscuit de démarrage est atténué aux mêmes faits. Cette séparation évite toute préimage circulaire. L’orchestrateur valide le corps, l’autorisation, le token et leurs digests avant de créer `runId` et la clé d’idempotence.
+
+Le corps est immuable après autorisation. Toute expansion de capacité, chemin, données, réseau, budget ou provider exige un nouveau corps et une nouvelle autorisation liée à son digest. Un `agent-handoff.v1` reste planning-only et ne peut pas être transformé implicitement en droit d’exécution.
 
 ### Commandes de contrôle
 
@@ -68,7 +72,7 @@ Un futur `OrchestratorControl v1` doit définir `start`, `pause`, `resume` et `c
 - acteur et autorisation atténuée ;
 - raison structurée, sans texte utilisateur requis.
 
-`cancel` est monotone et terminal pour le run. Une révision attendue obsolète est signalée mais ne neutralise jamais un `cancel` autorisé visant exactement le même `runId` et le même digest de plan ; elle ne peut pas atteindre un autre run. `pause` interdit tout nouvel appel outil et demande l’arrêt borné des processus en cours ; si l’arrêt sûr ne peut pas être attesté dans le budget, le run passe en échec contrôlé. `resume` ne remet aucun compteur à zéro.
+`cancel` est monotone et terminal pour le run. Une révision attendue obsolète est signalée mais ne neutralise jamais un `cancel` autorisé visant exactement le même `runId` et le même digest de plan ; elle ne peut pas atteindre un autre run. `pause` interdit tout nouvel appel outil et demande l’arrêt borné des processus en cours. Si cet arrêt échoue, le harness coupe le groupe de processus et ses capacités avant tout événement terminal ; tant que l’absence d’effets ne peut pas être attestée, le run reste bloqué et ne déclare pas sa terminaison. `resume` ne remet aucun compteur à zéro.
 
 ### Événements v2
 
@@ -91,10 +95,10 @@ Un futur `HarnessProfile v1` doit décrire et attester séparément :
 - racine du workspace, mounts lecture seule/écriture et chemins interdits ;
 - résolution canonique des chemins et politique symlink ;
 - isolation processus, UID, ressources et durée ;
-- réseau désactivé ou egress allowlist via résolution et connexion contrôlées ;
-- credentials éphémères, scope, expiration et variables autorisées ;
+- réseau worker désactivé hors socket locale du gateway ; egress gateway limité à des origines exactes via résolution et connexion contrôlées ;
+- credentials éphémères, scope, expiration et variables autorisées, sans secret provider dans l’environnement worker ;
 - limites de sortie, journal et artefacts ;
-- moteur de sandbox et capacités réellement appliquées.
+- moteur de sandbox, manifests exécutés et capacités kernel réellement appliquées.
 
 Une sandbox n’est jamais déduite d’un prompt, d’une permission Pi ou d’un worktree. Un profil obligatoire qui ne peut pas être appliqué échoue fermé. Les worktrees isolent les modifications, pas les privilèges. Les fichiers ignorés, répertoires personnels, sockets d’agent et stores de credentials ne sont jamais copiés par défaut.
 
@@ -107,7 +111,7 @@ Biscuit reste deny-by-default avec tenant obligatoire :
 - le contrôleur humain peut autoriser une commande sur une mission et un digest de plan exacts ;
 - l’orchestrateur peut contrôler un run et émettre ses événements ;
 - le harness peut invoquer uniquement les outils du plan ;
-- le worker peut utiliser une capacité atténuée à un run, un outil et une expiration ;
+- le worker peut utiliser une capacité locale atténuée à un run, un outil et une expiration ; le gateway conserve seul le secret provider amont ;
 - aucun token orchestrateur/harness/worker ne peut approuver une mission, accepter un résultat, merger, releaser ou déployer.
 
 Une panne de révocation, une clé inconnue, un tenant absent ou un digest divergent refuse l’opération. Les octets des tokens ne sont jamais journalisés.
@@ -148,7 +152,9 @@ Pi est un adaptateur remplaçable et doit être qualifié avant usage :
 - télémétrie et checks de mise à jour désactivés dans le profil harness ;
 - aucun package projet auto-installé en mode non interactif ;
 - extensions et skills chargés depuis un manifeste approuvé et digéré ;
-- provider imposé par policy, vers un endpoint local ou UE autorisé ;
+- provider imposé par policy, via un gateway harness vers un endpoint local ou UE autorisé ;
+- secret provider amont conservé dans le gateway ; Pi reçoit seulement un jeton local court inutilisable hors du run ;
+- contenu modèle borné par classification, path scopes, taille et politique de rétention/ZDR du plan ;
 - RPC JSONL validé, borné en taille et traité comme entrée hostile ;
 - aucune confiance accordée aux permissions applicatives Pi comme frontière OS.
 
@@ -178,14 +184,16 @@ Les futurs vecteurs doivent couvrir au minimum :
 
 Cette RFC ne crée pas encore d’autorité. Après revues favorables, un incrément contractuel séparé devra proposer :
 
-1. `execution-plan.v1.schema.json` ;
-2. `orchestrator-control.v1.schema.json` ;
-3. `orchestrator-event.v2.schema.json` ;
-4. `harness-profile.v1.schema.json` ;
-5. une politique Biscuit dédiée au run, sans élargir les droits Missions ;
-6. fixtures positives et négatives pour chaque invariant ;
-7. projections TypeScript/Rust reproductibles ;
-8. dossier de revues architecture, sécurité et vie privée France/UE.
+1. `execution-plan-body.v1.schema.json` ;
+2. `execution-authorization.v1.schema.json` ;
+3. `orchestrator-control.v1.schema.json` ;
+4. `orchestrator-event.v2.schema.json` ;
+5. `harness-profile.v1.schema.json` ;
+6. `mission-record.v2.schema.json` et `missions.v2.yaml`, sans modifier les autorités v1 ;
+7. une politique Biscuit dédiée au run, sans élargir les droits Missions ;
+8. fixtures positives et négatives pour chaque invariant ;
+9. projections TypeScript/Rust reproductibles ;
+10. dossier de revues architecture, sécurité et vie privée France/UE.
 
 Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et au jalon humain. Le work package d’implémentation est ajouté seulement après le Specification Lock et ne partage aucun `writePath` avec Missions.
 
@@ -195,7 +203,7 @@ Les entrées de catalogue restent `candidate` jusqu’aux verdicts séparés et 
 - autoriser une mission réelle, un provider, un secret, une persistance ou du réseau ;
 - créer un marketplace, une mémoire agentique ou un moteur agentique généraliste ;
 - donner au runtime des droits de merge, release, migration ou déploiement ;
-- modifier `agent-handoff.v1`, `MissionRecord v1` ou la DB Missions en place ;
+- modifier `agent-handoff.v1`, `MissionRecord v1` ou l’API Missions v1 en place ; une famille v2 candidate est requise ;
 - importer l’historique Git ou le workspace Grok Build.
 
 ## Gates de passage
