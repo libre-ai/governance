@@ -4,13 +4,14 @@
 
 **Protocol:** [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md)
 
-**Required reviewers:** one Security agent and one Architecture agent, each using an identity and
-session distinct from the authoring agent.
+**Required reviews:** one dedicated Security pass and one dedicated Architecture pass, each bound to
+an immutable commit/hash and separated from authoring by review-only mode.
 
 **Recorded decisions:** Architecture and Security verdicts are both `reject` with blocking findings;
 see [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) and
-[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). They are immutable audit evidence, not approvals. Radar
-remains candidate-only and NO-GO for implementation until remediation and fresh attributable passes.
+[`SECURITY-VERDICT.md`](SECURITY-VERDICT.md). They remain immutable audit evidence for their old
+hashes. PR #40 integrated remediation; Radar remains candidate-only and NO-GO for implementation
+until fresh role-separated passes review the new hashes.
 
 ## Review subject
 
@@ -33,8 +34,8 @@ Normative artifacts:
 
 The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
 `contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
-independent Security and Architecture agent verdicts. The authoring agent must not review or perform
-that promotion alone.
+separate Security and Architecture verdicts followed by a promotion pass and the human control
+milestone.
 
 ## Contract decisions to review
 
@@ -101,11 +102,10 @@ public mappings and non-disclosure canaries.
 
 ## Expected independent evidence
 
-Security and Architecture review agents return separate verdicts covering `SECURITY.md` and
-`ARCHITECTURE.md`. Each record includes the independent agent/session identity required by the shared
-protocol, the reviewed Git commit, the SHA-256 values of both vector indexes, findings by severity and
-one allowed explicit verdict. A self-review, conditional verdict, stale hash or missing record keeps
-every candidate entry pending.
+Security and Architecture review-only passes return separate verdicts covering `SECURITY.md` and
+`ARCHITECTURE.md`. Each record includes its `reviewPassId`, the reviewed Git commit, vector hashes,
+findings and an explicit verdict. A mutable target, combined-role pass, conditional verdict, stale
+hash or missing record keeps every candidate entry pending.
 
 ## Known residual work (not part of this candidate)
 

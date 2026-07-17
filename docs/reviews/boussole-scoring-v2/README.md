@@ -1,13 +1,12 @@
 # Revue agentique indépendante — Boussole scoring v2
 
 Statut : **candidate / NO-GO public scoring**. Le verdict méthodologique favorable lié au commit
-`5bcce21` reste une preuve technique liée à son hash, mais ne renseigne pas les identifiants
-agent/session désormais requis : une passe attribuable doit le confirmer. Le verdict sécurité lié à
-`1d701a2` reste `reject` comme trace historique. Sa remédiation normative exige une nouvelle passe
-attribuable sur le commit intégré. Architecture et vie privée restent également requises.
+`5bcce21` reste une preuve technique liée à son hash. Le verdict sécurité lié à `1d701a2` reste
+`reject` comme trace historique ; sa remédiation normative exige une nouvelle passe sur le commit
+intégré. Architecture et vie privée restent également requises.
 
-La promotion exige quatre records issus d’agents review-only distincts de l’agent/session auteur,
-conformément à [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
+La promotion exige quatre records issus de passes review-only séparées par rôle, conformément à
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
 
 1. architecture — cohérence WIT/JSON Schema et compatibilité ;
 2. sécurité — bornes, refus, arithmétique et imports WASM ;

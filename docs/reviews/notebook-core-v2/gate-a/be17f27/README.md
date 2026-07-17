@@ -4,8 +4,8 @@ Commit revu : `be17f27f5dec71457aca1aedb3100865900a14e1`.
 
 Quatre passes fraîches et review-only ont repris l'intégralité du dossier après les corrections de
 `9b1b994`. Elles sont conservées comme preuve historique ; les nouvelles corrections normatives
-invalident leurs verdicts pour tout commit ultérieur. Elles précèdent aussi les champs d’identité
-agent/session imposés par le protocole courant et ne qualifient donc aucune promotion actuelle.
+invalident leurs verdicts pour tout commit ultérieur. Leur obsolescence vient du changement normatif,
+indépendamment des métadonnées de passe ; elles ne qualifient donc aucune promotion actuelle.
 
 | Rôle | Verdict | Constats structurants |
 | --- | --- | --- |

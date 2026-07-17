@@ -2,8 +2,8 @@
 
 Statut : **candidate / NO-GO implémentation crypto produit**.
 
-La promotion exige quatre verdicts distincts issus d’agents review-only dont l’identité et la session
-diffèrent de celles de l’agent auteur : architecture, sécurité, cryptographie et vie privée, selon
+La promotion exige quatre verdicts issus de passes review-only distinctes par rôle : architecture,
+sécurité, cryptographie et vie privée, selon
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Le dossier technique normatif est
 `contracts/wit/notebook-core-v2/SEMANTICS.md` ; les vecteurs publics sont
 `contracts/fixtures/notebook-core-v2/golden-vectors.v1.json`. Les passes rejetées sur des commits

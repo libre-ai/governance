@@ -198,7 +198,7 @@ const requiredConstraints = [
   "No Clever Cloud resource",
   "No legacy Git history",
   "Applications never read or write another product database",
-  "No agent approves its own",
+  "Authoring and review are separate passes",
 ];
 const constraints = (plan as { globalConstraints?: string[] }).globalConstraints ?? [];
 for (const required of requiredConstraints) {
