@@ -1,5 +1,6 @@
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { parseStrictJson, StrictJsonError } from "./policy-core-raw-inputs";
 
 type RecordValue = Record<string, unknown>;
 type ComparisonInput = {
@@ -30,6 +31,13 @@ type Response = { statementId: string; kind: "answer" | "skip"; value?: number }
 
 const failures: string[] = [];
 const vectorPath = "contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json";
+const securityVectorPath = "contracts/fixtures/boussole-scoring-v2/security-vectors.v1.json";
+const byteLimits = {
+  "dataset-input": 8 * 1024 * 1024,
+  "method-input": 64 * 1024,
+  "responses-input": 256 * 1024,
+  "successful-output": 512 * 1024,
+} as const;
 const isRecord = (value: unknown): value is RecordValue =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -49,12 +57,47 @@ function jcs(value: unknown): string {
   return encoded;
 }
 
+function sha256Hex(value: Uint8Array): string {
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(value);
+  return hasher.digest("hex");
+}
+
 function digest(label: string, value: unknown): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(label);
   hasher.update(new Uint8Array([0]));
   hasher.update(jcs(value));
   return hasher.digest("hex");
+}
+
+function decodeHex(value: unknown, label: string): Uint8Array {
+  if (typeof value !== "string" || !/^(?:[a-f0-9]{2})*$/.test(value))
+    throw new Error(`${label}: invalid lowercase hex`);
+  return new Uint8Array(Buffer.from(value, "hex"));
+}
+
+function preflightLength(
+  target: keyof typeof byteLimits,
+  byteLength: number,
+): "resource-limit-exceeded" | undefined {
+  return byteLength > byteLimits[target] ? "resource-limit-exceeded" : undefined;
+}
+
+function requireExactCaseIds(cases: unknown[], expected: readonly string[], section: string): void {
+  const ids = cases
+    .filter(isRecord)
+    .map((value) => value.id)
+    .filter((value): value is string => typeof value === "string");
+  const actual = new Set(ids);
+  if (
+    ids.length !== cases.length ||
+    actual.size !== ids.length ||
+    actual.size !== expected.length ||
+    expected.some((id) => !actual.has(id))
+  ) {
+    failures.push(`${section}: case inventory mismatch`);
+  }
 }
 
 function without(value: RecordValue, ...keys: string[]): RecordValue {
@@ -80,6 +123,13 @@ function roundRational(numerator: bigint, denominator: bigint): number {
   const signed = negative ? -quotient : quotient;
   const result = Number(signed) / 1_000_000;
   return Object.is(result, -0) ? 0 : result;
+}
+
+function isUtcSeconds(value: string): boolean {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value))
+    return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
 }
 
 function approvalIsValid(value: RecordValue, subjectDigest: string): boolean {
@@ -158,13 +208,7 @@ function evaluate(
   validators: Record<"dataset" | "method" | "responses" | "output", ValidateFunction>,
 ): Evaluation {
   if (!validateInputSchemas(input, validators)) return { error: "input-invalid" };
-  if (
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(
-      input.computedAt,
-    )
-  ) {
-    return { error: "computed-at-invalid" };
-  }
+  if (!isUtcSeconds(input.computedAt)) return { error: "computed-at-invalid" };
 
   const scale = validScale(input.method);
   if (!scale) return { error: "method-unsupported" };
@@ -266,6 +310,42 @@ function evaluate(
   return { value: output };
 }
 
+function evaluateRaw(
+  datasetBytes: Uint8Array,
+  methodBytes: Uint8Array,
+  responseBytes: Uint8Array,
+  computedAt: string,
+  validators: Record<"dataset" | "method" | "responses" | "output", ValidateFunction>,
+): Evaluation {
+  if (
+    preflightLength("dataset-input", datasetBytes.byteLength) ||
+    preflightLength("method-input", methodBytes.byteLength) ||
+    preflightLength("responses-input", responseBytes.byteLength)
+  ) {
+    return { error: "resource-limit-exceeded" };
+  }
+  let dataset: unknown;
+  let method: unknown;
+  let responses: unknown;
+  try {
+    dataset = parseStrictJson(datasetBytes, 64);
+    method = parseStrictJson(methodBytes, 64);
+    responses = parseStrictJson(responseBytes, 64);
+  } catch {
+    return { error: "input-invalid" };
+  }
+  if (!isRecord(dataset) || !isRecord(method) || !isRecord(responses))
+    return { error: "input-invalid" };
+  const result = evaluate({ dataset, method, responses, computedAt }, validators);
+  if (
+    result.value &&
+    preflightLength("successful-output", Buffer.byteLength(jcs(result.value), "utf8"))
+  ) {
+    return { error: "resource-limit-exceeded" };
+  }
+  return result;
+}
+
 function decodePointer(segment: string): string {
   return segment.replaceAll("~1", "/").replaceAll("~0", "~");
 }
@@ -343,6 +423,7 @@ const cases =
 if (cases.length < 10 || cases.length > 32) failures.push("expected 10..32 bounded Boussole cases");
 const inputs = new Map<string, ComparisonInput>();
 const ids = new Set<string>();
+const coveredRefusals = new Set<string>();
 const required = new Set([
   "excluded-abstentions-positive-agreement",
   "reject-duplicate-reviewer",
@@ -394,6 +475,7 @@ for (const [index, vector] of cases.entries()) {
     continue;
   }
   const actual = evaluate(input, validators);
+  if (hasError) coveredRefusals.add(vector.expectedError as string);
   if (hasError && actual.error !== vector.expectedError) {
     failures.push(`${label}: expected ${vector.expectedError}, got ${actual.error ?? "success"}`);
   }
@@ -403,10 +485,396 @@ for (const [index, vector] of cases.entries()) {
 }
 for (const id of required) failures.push(`missing required vector ${id}`);
 
+const securityDocument: unknown = await Bun.file(securityVectorPath).json();
+if (
+  !isRecord(securityDocument) ||
+  securityDocument.schemaVersion !== "libre-ai.boussole-security-vectors.v1" ||
+  securityDocument.status !== "candidate-security-remediation"
+) {
+  failures.push("invalid Boussole security vector envelope");
+}
+const baseInput = inputs.get("excluded-abstentions-positive-agreement");
+if (!baseInput) throw new Error("missing Boussole security base input");
+const encoder = new TextEncoder();
+const baseDatasetBytes = encoder.encode(JSON.stringify(baseInput.dataset));
+const baseMethodBytes = encoder.encode(JSON.stringify(baseInput.method));
+const baseResponseBytes = encoder.encode(JSON.stringify(baseInput.responses));
+const rawCases =
+  isRecord(securityDocument) && Array.isArray(securityDocument.rawDecoderCases)
+    ? securityDocument.rawDecoderCases
+    : [];
+const rawDefects = {
+  "utf8-bom": "bom",
+  "invalid-utf8": "invalid-utf8",
+  "duplicate-member": "duplicate-member",
+  "unpaired-surrogate": "unpaired-surrogate",
+  "invalid-number": "invalid-number",
+  "malformed-json": "invalid-json",
+  "unknown-field": "schema-invalid",
+  "maximum-depth-exceeded": "max-depth",
+} as const;
+requireExactCaseIds(rawCases, Object.keys(rawDefects), "raw decoder vectors");
+for (const [index, rawCase] of rawCases.entries()) {
+  const label = `${securityVectorPath}#/rawDecoderCases/${index}`;
+  if (!isRecord(rawCase) || typeof rawCase.id !== "string" || rawCase.target !== "dataset") {
+    failures.push(`${label}: invalid raw case`);
+    continue;
+  }
+  const expectedDefect = rawDefects[rawCase.id as keyof typeof rawDefects];
+  if (rawCase.defect !== expectedDefect || rawCase.expectedError !== "input-invalid")
+    failures.push(`${label}: raw refusal metadata mismatch`);
+  let bytes: Uint8Array;
+  try {
+    bytes = decodeHex(rawCase.inputHex, label);
+  } catch (error) {
+    failures.push(String(error));
+    continue;
+  }
+  if (sha256Hex(bytes) !== rawCase.inputSha256) failures.push(`${label}: SHA-256 mismatch`);
+  const defect = rawCase.defect;
+  try {
+    parseStrictJson(bytes, 64);
+    if (defect !== "schema-invalid") failures.push(`${label}: strict decoder accepted ${defect}`);
+  } catch (error) {
+    if (!(error instanceof StrictJsonError) || error.defect !== defect)
+      failures.push(`${label}: expected ${String(defect)}, got ${String(error)}`);
+  }
+  const actual = evaluateRaw(
+    bytes,
+    baseMethodBytes,
+    baseResponseBytes,
+    baseInput.computedAt,
+    validators,
+  );
+  if (actual.error !== rawCase.expectedError)
+    failures.push(
+      `${label}: expected ${String(rawCase.expectedError)}, got ${actual.error ?? "success"}`,
+    );
+  if (typeof rawCase.expectedError === "string") coveredRefusals.add(rawCase.expectedError);
+}
+
+const resourceCases =
+  isRecord(securityDocument) && Array.isArray(securityDocument.resourceCases)
+    ? securityDocument.resourceCases
+    : [];
+const expectedResourceCases = {
+  "dataset-at-limit": ["dataset-input", 8 * 1024 * 1024, "within-limit"],
+  "dataset-over-limit": ["dataset-input", 8 * 1024 * 1024 + 1, "resource-limit-exceeded"],
+  "method-at-limit": ["method-input", 64 * 1024, "within-limit"],
+  "method-over-limit": ["method-input", 64 * 1024 + 1, "resource-limit-exceeded"],
+  "responses-at-limit": ["responses-input", 256 * 1024, "within-limit"],
+  "responses-over-limit": ["responses-input", 256 * 1024 + 1, "resource-limit-exceeded"],
+  "output-at-limit": ["successful-output", 512 * 1024, "within-limit"],
+  "output-over-limit": ["successful-output", 512 * 1024 + 1, "resource-limit-exceeded"],
+} as const;
+requireExactCaseIds(resourceCases, Object.keys(expectedResourceCases), "resource vectors");
+for (const [index, resourceCase] of resourceCases.entries()) {
+  const label = `${securityVectorPath}#/resourceCases/${index}`;
+  if (
+    !isRecord(resourceCase) ||
+    typeof resourceCase.target !== "string" ||
+    !(resourceCase.target in byteLimits) ||
+    !Number.isSafeInteger(resourceCase.byteLength) ||
+    Number(resourceCase.byteLength) < 0
+  ) {
+    failures.push(`${label}: invalid resource case`);
+    continue;
+  }
+  const target = resourceCase.target as keyof typeof byteLimits;
+  const expectedResource =
+    expectedResourceCases[resourceCase.id as keyof typeof expectedResourceCases];
+  const declaredOutcome = resourceCase.expectedError ?? resourceCase.expectedPreflight;
+  if (
+    !expectedResource ||
+    target !== expectedResource[0] ||
+    resourceCase.byteLength !== expectedResource[1] ||
+    declaredOutcome !== expectedResource[2]
+  ) {
+    failures.push(`${label}: resource boundary metadata mismatch`);
+  }
+  const generated = new Uint8Array(Number(resourceCase.byteLength));
+  const actual = preflightLength(target, generated.byteLength);
+  const expected = resourceCase.expectedError;
+  if (expected === undefined && resourceCase.expectedPreflight !== "within-limit")
+    failures.push(`${label}: missing within-limit expectation`);
+  if (expected === undefined ? actual !== undefined : actual !== expected)
+    failures.push(
+      `${label}: expected ${String(expected ?? "within-limit")}, got ${String(actual)}`,
+    );
+  if (expected === "resource-limit-exceeded" && target !== "successful-output") {
+    const boundaryResult =
+      target === "dataset-input"
+        ? evaluateRaw(
+            generated,
+            baseMethodBytes,
+            baseResponseBytes,
+            baseInput.computedAt,
+            validators,
+          )
+        : target === "method-input"
+          ? evaluateRaw(
+              baseDatasetBytes,
+              generated,
+              baseResponseBytes,
+              baseInput.computedAt,
+              validators,
+            )
+          : evaluateRaw(
+              baseDatasetBytes,
+              baseMethodBytes,
+              generated,
+              baseInput.computedAt,
+              validators,
+            );
+    if (boundaryResult.error !== expected)
+      failures.push(`${label}: raw boundary did not fail before decoding`);
+  }
+  if (typeof expected === "string") coveredRefusals.add(expected);
+}
+
+const semanticCases =
+  isRecord(securityDocument) && Array.isArray(securityDocument.semanticRefusalCases)
+    ? securityDocument.semanticRefusalCases
+    : [];
+const expectedSemanticCases = {
+  "digest-mismatch": ["responses-dataset-digest-zero", "digest-mismatch"],
+  "method-unsupported": ["asymmetric-response-scale", "method-unsupported"],
+  "computed-at-invalid": ["invalid-gregorian-day", "computed-at-invalid"],
+  "duplicate-statement-id": ["duplicate-statement-id-with-valid-digests", "response-invalid"],
+  "duplicate-response-id": ["duplicate-response-id", "response-invalid"],
+  "dataset-id-mismatch": ["responses-dataset-id-mismatch", "digest-mismatch"],
+  "redacted-approval": ["duplicate-private-reviewer-canary", "approval-invalid"],
+} as const;
+requireExactCaseIds(semanticCases, Object.keys(expectedSemanticCases), "semantic refusal vectors");
+for (const [index, semanticCase] of semanticCases.entries()) {
+  const label = `${securityVectorPath}#/semanticRefusalCases/${index}`;
+  if (!isRecord(semanticCase) || typeof semanticCase.mutation !== "string") {
+    failures.push(`${label}: invalid semantic refusal case`);
+    continue;
+  }
+  const expectedSemantic =
+    expectedSemanticCases[semanticCase.id as keyof typeof expectedSemanticCases];
+  if (
+    !expectedSemantic ||
+    semanticCase.mutation !== expectedSemantic[0] ||
+    semanticCase.expectedError !== expectedSemantic[1]
+  ) {
+    failures.push(`${label}: semantic refusal metadata mismatch`);
+  }
+  if (
+    semanticCase.id === "redacted-approval" &&
+    (!Array.isArray(semanticCase.forbiddenDiagnosticValues) ||
+      !semanticCase.forbiddenDiagnosticValues.includes("private_reviewer_canary") ||
+      !semanticCase.forbiddenDiagnosticValues.includes("private_response_canary"))
+  ) {
+    failures.push(`${label}: redaction canaries missing`);
+  }
+  const input = structuredClone(baseInput);
+  switch (semanticCase.mutation) {
+    case "responses-dataset-digest-zero":
+      input.responses.datasetDigest = "0".repeat(64);
+      break;
+    case "asymmetric-response-scale":
+      input.method.responseScale = [0, 1];
+      break;
+    case "invalid-gregorian-day":
+      input.computedAt = "2025-02-30T12:00:00Z";
+      break;
+    case "duplicate-statement-id-with-valid-digests": {
+      const original = (input.dataset.statements as RecordValue[])[0];
+      if (!original) {
+        failures.push(`${label}: missing statement mutation base`);
+        continue;
+      }
+      const statement = structuredClone(original);
+      statement.wording = "Distinct wording with duplicate statement id";
+      (input.dataset.statements as RecordValue[]).push(statement);
+      const datasetDigest = canonicalDatasetDigest(input.dataset);
+      input.dataset.digest = datasetDigest;
+      for (const approval of input.dataset.approvals as RecordValue[])
+        approval.subjectDigest = datasetDigest;
+      input.responses.datasetDigest = datasetDigest;
+      break;
+    }
+    case "duplicate-response-id":
+      (input.responses.responses as RecordValue[]).push({
+        statementId: "statement_1",
+        kind: "skip",
+      });
+      break;
+    case "responses-dataset-id-mismatch":
+      input.responses.datasetId = "urn:libre-ai:dataset:other";
+      break;
+    case "duplicate-private-reviewer-canary": {
+      const approvals = input.method.approvals as RecordValue[];
+      const first = approvals[0];
+      const second = approvals[1];
+      if (!first || !second) {
+        failures.push(`${label}: missing approval mutation base`);
+        continue;
+      }
+      first.reviewerId = "private_reviewer_canary";
+      second.reviewerId = "private_reviewer_canary";
+      input.dataset.scope = "private_response_canary";
+      const datasetDigest = canonicalDatasetDigest(input.dataset);
+      input.dataset.digest = datasetDigest;
+      for (const approval of input.dataset.approvals as RecordValue[])
+        approval.subjectDigest = datasetDigest;
+      input.responses.datasetDigest = datasetDigest;
+      break;
+    }
+    default:
+      failures.push(`${label}: unknown mutation ${semanticCase.mutation}`);
+      continue;
+  }
+  const actual = evaluate(input, validators);
+  if (actual.error !== semanticCase.expectedError)
+    failures.push(
+      `${label}: expected ${String(semanticCase.expectedError)}, got ${actual.error ?? "success"}`,
+    );
+  if (typeof semanticCase.expectedError === "string")
+    coveredRefusals.add(semanticCase.expectedError);
+  const diagnostic = JSON.stringify(actual);
+  if (
+    Array.isArray(semanticCase.forbiddenDiagnosticValues) &&
+    semanticCase.forbiddenDiagnosticValues.some(
+      (value) => typeof value === "string" && diagnostic.includes(value),
+    )
+  ) {
+    failures.push(`${label}: private canary leaked in refusal`);
+  }
+}
+
+const arithmetic = isRecord(securityDocument) ? securityDocument.maximumArithmetic : undefined;
+if (!isRecord(arithmetic) || !isRecord(arithmetic.expected)) {
+  failures.push("security vectors: missing maximum arithmetic");
+} else {
+  if (
+    arithmetic.maxVotePerCounter !== 4_294_967_295 ||
+    arithmetic.maxStatements !== 1000 ||
+    arithmetic.maxScale !== 5 ||
+    arithmetic.decimalScale !== 1_000_000
+  ) {
+    failures.push("security vectors: arithmetic domain is not at schema maxima");
+  }
+  const vote = BigInt(String(arithmetic.maxVotePerCounter));
+  const statements = BigInt(String(arithmetic.maxStatements));
+  const scale = BigInt(String(arithmetic.maxScale));
+  const decimalScale = BigInt(String(arithmetic.decimalScale));
+  const expected = arithmetic.expected;
+  const values = {
+    totalConsidered: 3n * vote * statements,
+    totalOmitted: 4n * vote * statements,
+    weightedNumerator: scale * vote * statements,
+    scoreDenominator: scale * 3n * vote * statements,
+    scaledWeightedNumerator: scale * vote * statements * decimalScale,
+  };
+  for (const [name, value] of Object.entries(values)) {
+    if (value.toString() !== expected[name])
+      failures.push(`security vectors: ${name} maximum mismatch`);
+  }
+  if (
+    values.scaledWeightedNumerator > 18_446_744_073_709_551_615n !== expected.exceedsUnsigned64 ||
+    values.scaledWeightedNumerator <= 170_141_183_460_469_231_731_687_303_715_884_105_727n !==
+      expected.fitsSigned128
+  ) {
+    failures.push("security vectors: wide arithmetic classification mismatch");
+  }
+
+  const executable = arithmetic.executableCase;
+  if (
+    !isRecord(executable) ||
+    executable.id !== "maximum-positive-wide-intermediate" ||
+    executable.statementCount !== 1000 ||
+    executable.votesFor !== 4_294_967_295 ||
+    executable.votesAgainst !== 0 ||
+    executable.abstentions !== 0 ||
+    executable.absent !== 4_294_967_295 ||
+    executable.answer !== 5 ||
+    executable.expectedScore !== 1 ||
+    executable.expectedDenominator !== "4294967295000" ||
+    executable.expectedOmitted !== "4294967295000" ||
+    executable.expectedContributions !== 1000
+  ) {
+    failures.push("security vectors: invalid executable maximum arithmetic case");
+  } else {
+    const maximumInput = structuredClone(baseInput);
+    maximumInput.method.responseScale = [-5, 0, 5];
+    const methodDigest = canonicalMethodDigest(maximumInput.method);
+    maximumInput.method.digest = methodDigest;
+    for (const approval of maximumInput.method.approvals as RecordValue[])
+      approval.subjectDigest = methodDigest;
+    maximumInput.dataset.methodDigest = methodDigest;
+    maximumInput.responses.methodDigest = methodDigest;
+
+    const template = (maximumInput.dataset.statements as RecordValue[])[0];
+    if (!template) {
+      failures.push("security vectors: missing maximum statement template");
+    } else {
+      const statements = Array.from({ length: executable.statementCount }, (_, index) => ({
+        ...structuredClone(template),
+        id: `statement_${index.toString().padStart(4, "0")}`,
+        wording: `Maximum arithmetic statement ${index}`,
+        votesFor: executable.votesFor,
+        votesAgainst: executable.votesAgainst,
+        abstentions: executable.abstentions,
+        absent: executable.absent,
+      }));
+      maximumInput.dataset.statements = statements;
+      const datasetDigest = canonicalDatasetDigest(maximumInput.dataset);
+      maximumInput.dataset.digest = datasetDigest;
+      for (const approval of maximumInput.dataset.approvals as RecordValue[])
+        approval.subjectDigest = datasetDigest;
+      maximumInput.responses.datasetDigest = datasetDigest;
+      maximumInput.responses.responses = statements.map((statement) => ({
+        statementId: statement.id,
+        kind: "answer",
+        value: executable.answer,
+      }));
+
+      const maximumResult = evaluateRaw(
+        encoder.encode(JSON.stringify(maximumInput.dataset)),
+        encoder.encode(JSON.stringify(maximumInput.method)),
+        encoder.encode(JSON.stringify(maximumInput.responses)),
+        maximumInput.computedAt,
+        validators,
+      );
+      const contributions = maximumResult.value?.contributions;
+      if (
+        !maximumResult.value ||
+        maximumResult.value.score !== executable.expectedScore ||
+        String(maximumResult.value.denominator) !== executable.expectedDenominator ||
+        String(maximumResult.value.omitted) !== executable.expectedOmitted ||
+        !Array.isArray(contributions) ||
+        contributions.length !== executable.expectedContributions
+      ) {
+        failures.push("security vectors: executable maximum arithmetic mismatch");
+      }
+    }
+  }
+}
+
+const allRefusals = new Set([
+  "input-invalid",
+  "digest-mismatch",
+  "approval-invalid",
+  "method-unsupported",
+  "response-invalid",
+  "denominator-zero",
+  "computed-at-invalid",
+  "resource-limit-exceeded",
+]);
+if (
+  coveredRefusals.size !== allRefusals.size ||
+  [...allRefusals].some((refusal) => !coveredRefusals.has(refusal))
+) {
+  failures.push("Boussole security vectors do not cover every closed refusal");
+}
+
 if (failures.length) {
   for (const failure of failures) console.error(failure);
   process.exit(1);
 }
 console.log(
-  `Boussole vectors verified: ${cases.length} executable cases, public scoring still candidate-only`,
+  `Boussole vectors verified: ${cases.length} methodology cases, ${rawCases.length} raw refusals, ${resourceCases.length} resource boundaries, ${semanticCases.length} semantic refusals, 1 generated maximum-arithmetic case; public scoring still candidate-only`,
 );

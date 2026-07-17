@@ -21,8 +21,7 @@ artefacts catalogués et le check Gate S vérifie cette identité :
   `contracts/fixtures/notebook-core-v2/golden-vectors.v1.json`.
 
 Les corrections de Gate S sont notamment : interface WIT autonome `api`, erreurs fermées, identifiant
-de sauvegarde/contexte CSPRNG opaques, retrait de `createdAt` des artefacts clairs, limite plaintext 16 MiB,
-canonicalisation Context v2 déterministe et profil Unicode obligatoire pour le recovery secret.
+de sauvegarde/contexte/blocs CSPRNG opaques, retrait de `createdAt`, révisions et exclusions des artefacts clairs, limite plaintext 16 MiB, canonicalisation Context v2 déterministe et unique profil recovery code.
 
 ## Pièces du dossier
 
@@ -34,8 +33,8 @@ canonicalisation Context v2 déterministe et profil Unicode obligatoire pour le 
   sur des commits immuables, y compris les rejets historiques.
 
 Le golden unique contient le scellement/ouverture, dix mutations backup, la canonicalisation Context
-v2 avec dix refus adversariaux et les profils `libre-ai.recovery-secret-code.v1` /
-`libre-ai.recovery-secret-text.v1`. Tout le matériel est
+v2 avec douze refus adversariaux, les cas limites rejouables profondeur/nœuds/liens/nombres et le seul profil
+`libre-ai.recovery-secret-code.v1`. Tout le matériel est
 public, déterministe et interdit comme secret, sel, nonce ou identifiant de production.
 
 ## Progression
