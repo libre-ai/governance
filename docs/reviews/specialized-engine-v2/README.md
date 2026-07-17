@@ -87,12 +87,18 @@ domaines et casse HTML5 non valides. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-1523BCD.md`](CANDIDATE-INTEGRATION-REJECT-1523BCD.md), SHA-256
 `9f401d8d3caad8dbe9df2abbc784b54738001cb1292ddfeb4467fa4cca379206`.
 
-La remédiation courante remplace le sous-ensemble d'aliases ad hoc par le décodeur HTML5 exact
-`entities` BSD-2-Clause, puis applique un parseur local borné : dot-atom et quoted local-parts,
-EAI UTF-8, commentaires/CFWS, domaines IDNA/punycode et IP literals. Longueurs RFC, labels DNS et
-frontières de tokens sont validés avant le refus, afin de préserver les formes non-email. Les tests
-exportés couvrent valeurs, clés, encodages imbriqués, cas invalides et entrées maximales. Aucune
-autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge `26ac8fe` a introduit le décodeur HTML5 exact et le parseur borné. Sa passe d'intégration a
+rejeté une dernière restriction de catégorie Unicode : RFC 6532 autorise tout scalaire
+`UTF8-non-ascii`, y compris private-use, C1 et default-ignorable. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-26AC8FE.md`](CANDIDATE-INTEGRATION-REJECT-26AC8FE.md), SHA-256
+`97e3ac0a293a98631ab609c89955f394bc36f1d75a1d729845de06c3ab70a1b3`.
+
+La remédiation courante accepte tout scalaire UTF-8 non ASCII comme EAI atext et ne traite comme CFWS
+que les espaces ASCII RFC. Les default-ignorables sont conservés pour reconnaître un local-part EAI,
+puis une seconde vue nettoyée détecte aussi leur usage d'obfuscation dans domaines et credentials.
+Le décodeur HTML5 exact `entities` BSD-2-Clause, les longueurs RFC, labels DNS, frontières de tokens
+et contrôles maximaux restent inchangés. Aucune autorité normative moteur n'est modifiée ; une passe
+avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
