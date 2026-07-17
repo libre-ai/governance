@@ -111,16 +111,25 @@ guillemets classait encore `foo\"alice@example.org\"` comme citation ouvrante. L
 dans [`CANDIDATE-INTEGRATION-REJECT-0A265CE.md`](CANDIDATE-INTEGRATION-REJECT-0A265CE.md), SHA-256
 `50e47d7f2eb6134f007dbf5fcf0329e874841747200095d698ab201365c1b5c2`.
 
-La remédiation courante exige désormais qu'un guillemet ouvrant ait lui-même une frontière de prose
-valide, tout en le conservant dans l'état de parité. Elle préserve les quotes internes/fermantes et
-reconnaît encore les citations ultérieures valides. Le vocabulaire borné de labels FR/EN et toutes les
-bornes EAI restent inchangés. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans transitive ;
-un contrôle owner reste requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun
-épinglé reste obligatoire.
+Sur le merge `da99d31`, candidate-integration a approuvé
+([`CANDIDATE-INTEGRATION-DA99D31.md`](CANDIDATE-INTEGRATION-DA99D31.md), SHA-256
+`2ba341861845547dfca48b2b2f3361b78140aa8b2f6863cb1a225ef48af3a7b5`) et Architecture a approuvé
+avec réserve documentaire ([`ARCHITECTURE-VERDICT-DA99D31.md`](ARCHITECTURE-VERDICT-DA99D31.md),
+SHA-256 `cf988cbcfdb789a9f2d32555e0265919fa74a3c2f98eadac593138ca0add9825`). Security a toutefois
+rejeté les userinfo `ssh://`/`git://` et les en-têtes privés DSA/OpenPGP
+([`SECURITY-VERDICT-DA99D31.md`](SECURITY-VERDICT-DA99D31.md), SHA-256
+`6e885aebf4d1342ea4937da2b7ab9ed4f0ccef4ad187a005b6f2cfdea0c7b922`) ; ce rejet gouverne et rend
+les deux approbations stale après remédiation.
+
+La remédiation courante détecte sans résolution l'userinfo de tout schéma URI syntaxique et étend les
+marqueurs privés explicites à DSA, OpenPGP et PKCS#8 chiffré. Les représentations encodées et les clés
+JSON utilisent le même gate. Toutes les bornes EAI/prose restent inchangées. `entities@8.0.0` reste
+qualifié BSD-2-Clause, dev-only et sans transitive ; un contrôle owner reste requis. Aucune autorité
+normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation de frontière de citation après candidate-integration favorable ;
+1. intégrer la remédiation des marqueurs credential après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
