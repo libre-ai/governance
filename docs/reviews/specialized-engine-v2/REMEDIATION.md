@@ -38,7 +38,8 @@ expected outputs.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
   NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
   marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
-  numeric or named HTML markers. Only decoded email identifiers or high-confidence credentials are
+  numeric or named HTML email-syntax markers, including `period`. Only decoded email identifiers or
+  high-confidence credentials are
   rejected in values or property names, without echoing rejected content; unrelated `@`, `&#` or `%`
   payload text is not reinterpreted as private data.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,

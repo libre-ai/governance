@@ -38,9 +38,14 @@ les chaînes HTML mixtes amp/numeric/named. Le rejet est conservé dans
 approbations avant que ce rejet concurrent soit observé ; leur présence est historique, pas probante
 pour une promotion.
 
-La remédiation suivante étend la détection aux local-parts RFC contenant `&`, ajoute les compositions
-exactes au self-test et rend ces records stale par changement du checker. Aucune autorité normative
-moteur n'est modifiée.
+La première remédiation sur `3baecf8` a fermé ces compositions, mais sa passe d'intégration a trouvé
+les séparateurs de domaine `&period;` encore non décodés. Ce second rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-3BAECF8.md`](CANDIDATE-INTEGRATION-REJECT-3BAECF8.md), SHA-256
+`9dd66f60242f395313553b82eb7e936aa07c633d4f39ad5aebc492aa4c308dbb`.
+
+La remédiation courante couvre les local-parts RFC contenant `&` et les entités nommées de syntaxe
+e-mail, dont `&period;`, sans réécrire les ampersands du payload. Aucune autorité normative moteur
+n'est modifiée.
 
 ## Gates restants
 
