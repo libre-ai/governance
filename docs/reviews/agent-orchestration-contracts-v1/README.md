@@ -13,7 +13,7 @@ These authorities make the reviewed option-B RFC machine-checkable. They authori
 - MissionRecord/API v2 ;
 - attenuated Biscuit policy for authors, reviewers and runs ;
 - semantic profile under `contracts/agent-orchestration/SEMANTICS.md` ;
-- executable quorum, authorization, canonical digest and Ed25519 signature vectors under `contracts/fixtures/agent-orchestration-v1/`.
+- executable quorum, causal-event/budget, authorization, canonical digest and Ed25519 signature vectors under `contracts/fixtures/agent-orchestration-v1/`.
 
 ## Required review roles
 

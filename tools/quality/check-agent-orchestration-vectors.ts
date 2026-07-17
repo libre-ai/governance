@@ -4,6 +4,11 @@ import {
   type AgentReviewQuorumFacts,
   evaluateAgentReviewQuorum,
 } from "../../packages/contracts/src/agent-review-quorum";
+import {
+  type AcceptedEventCollision,
+  evaluateOrchestratorEventChain,
+  type OrchestratorCausalEventFacts,
+} from "../../packages/contracts/src/orchestrator-event-chain";
 
 const root = new URL("../../", import.meta.url);
 const fixtureRoot = new URL("contracts/fixtures/agent-orchestration-v1/", root);
@@ -64,6 +69,70 @@ for (const vector of quorum.cases) {
     Object.assign(facts, { [vector.rootMutation.field]: vector.rootMutation.value });
   }
   const actual = evaluateAgentReviewQuorum(facts);
+  if (actual !== vector.expected)
+    failures.push(`${vector.id}: expected ${vector.expected}, got ${actual}`);
+}
+
+type EventScenario = {
+  previous: OrchestratorCausalEventFacts | null;
+  current: OrchestratorCausalEventFacts;
+};
+const eventChains = (await Bun.file(
+  new URL("event-chain-vectors.v1.json", fixtureRoot),
+).json()) as {
+  pair: EventScenario;
+  genesis: EventScenario;
+  cases: Array<{
+    id: string;
+    scenario: "pair" | "genesis";
+    mutations: Array<{ target: "previous" | "current"; path: string; value: unknown }>;
+    collision: "none" | "exact-current" | "same-id-different-digest" | "same-sequence-different-id";
+    expected: string;
+  }>;
+};
+function mutatePath(target: unknown, path: string, value: unknown): void {
+  const segments = path.split(".");
+  const property = segments.pop();
+  if (property === undefined) throw new Error("empty event mutation path");
+  let cursor = target as Record<string, unknown>;
+  for (const segment of segments) {
+    const next = cursor[segment];
+    if (typeof next !== "object" || next === null) throw new Error(`missing event path ${path}`);
+    cursor = next as Record<string, unknown>;
+  }
+  cursor[property] = value;
+}
+for (const vector of eventChains.cases) {
+  const scenario = structuredClone(eventChains[vector.scenario]);
+  for (const mutation of vector.mutations) {
+    const target = scenario[mutation.target];
+    if (target === null) {
+      failures.push(`${vector.id}: null event mutation target`);
+      continue;
+    }
+    mutatePath(target, mutation.path, mutation.value);
+  }
+  let collision: AcceptedEventCollision | null = null;
+  if (vector.collision === "exact-current") {
+    collision = {
+      id: scenario.current.id,
+      sequence: scenario.current.sequence,
+      eventDigest: scenario.current.eventDigest,
+    };
+  } else if (vector.collision === "same-id-different-digest") {
+    collision = {
+      id: scenario.current.id,
+      sequence: scenario.current.sequence,
+      eventDigest: "b".repeat(64),
+    };
+  } else if (vector.collision === "same-sequence-different-id") {
+    collision = {
+      id: "urn:libre-ai:event:collision",
+      sequence: scenario.current.sequence,
+      eventDigest: "b".repeat(64),
+    };
+  }
+  const actual = evaluateOrchestratorEventChain(scenario.previous, scenario.current, collision);
   if (actual !== vector.expected)
     failures.push(`${vector.id}: expected ${vector.expected}, got ${actual}`);
 }
@@ -301,5 +370,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `Agent orchestration vectors verified: ${quorum.cases.length} quorum, ${authz.cases.length} authz, ${transitions.allowed.length + transitions.denied.length} transition, ${digests.vectors.length} digest and ${signatures.vectors.length} signature cases`,
+  `Agent orchestration vectors verified: ${quorum.cases.length} quorum, ${eventChains.cases.length} event-chain, ${authz.cases.length} authz, ${transitions.allowed.length + transitions.denied.length} transition, ${digests.vectors.length} digest and ${signatures.vectors.length} signature cases`,
 );
