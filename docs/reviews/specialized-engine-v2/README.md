@@ -75,10 +75,16 @@ Ce sixième rejet est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-A4E74A6.md`](CANDIDATE-INTEGRATION-REJECT-A4E74A6.md), SHA-256
 `b55a0e87af9841dcc2081091c00aa277c342b817e798be60a20e14d416b9e2bc`.
 
+La passe sur `453b0a6` n'a trouvé aucun blocage source et a validé 32/32 aliases directs, wrappers
+legacy et contrôles littéraux, mais elle a dû rejeter l'intégration car son environnement exposait Bun
+`1.3.11` au lieu du toolchain qualifié. Ce septième rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-453B0A6.md`](CANDIDATE-INTEGRATION-REJECT-453B0A6.md), SHA-256
+`116a09b818bc33a8cc37b649a74040f9d35ebe3d14c010212e0d6f28c3813c58`.
+
 La remédiation courante exige `;` pour toute entité nommée HTML5 ; seul le préfixe legacy `&amp` peut
 être sans point-virgule lorsqu'il encapsule ensuite une entité e-mail connue. Les local-parts
 dot-atom/quoted, domaines DNS/punycode/literals et scans bornés restent couverts. Aucune autorité
-normative moteur n'est modifiée.
+normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
 
 ## Gates restants
 
