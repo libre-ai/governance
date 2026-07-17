@@ -106,17 +106,21 @@ record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-6EE4627.md`](CANDIDATE-INTEGRATION-REJECT-6EE4627.md), SHA-256
 `72c470ba92e514415df3b7a92790c55e1a5dae82597ab1c02b657cb73248f247`.
 
-La remédiation courante pré-calcule linéairement les guillemets ouvrants et reconnaît un vocabulaire
-borné de labels email FR/EN (`contact`, `email`, `courriel`, `adresse`, `to`, `from`, etc.). Elle
-préserve `ali:ce@example.org`, les labels inconnus et les quotes internes/fermantes invalides. Le
-slash reste correctement classé RFC atext. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et
-sans transitive dans [`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md),
-SHA-256 `6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae`; un contrôle owner reste
-requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Le merge `0a265ce` a fermé ces deux formes de prose. Sa passe d'intégration a trouvé que la parité des
+guillemets classait encore `foo\"alice@example.org\"` comme citation ouvrante. Le record est conservé
+dans [`CANDIDATE-INTEGRATION-REJECT-0A265CE.md`](CANDIDATE-INTEGRATION-REJECT-0A265CE.md), SHA-256
+`50e47d7f2eb6134f007dbf5fcf0329e874841747200095d698ab201365c1b5c2`.
+
+La remédiation courante exige désormais qu'un guillemet ouvrant ait lui-même une frontière de prose
+valide, tout en le conservant dans l'état de parité. Elle préserve les quotes internes/fermantes et
+reconnaît encore les citations ultérieures valides. Le vocabulaire borné de labels FR/EN et toutes les
+bornes EAI restent inchangés. `entities@8.0.0` reste qualifié BSD-2-Clause, dev-only et sans transitive ;
+un contrôle owner reste requis. Aucune autorité normative moteur n'est modifiée ; une passe avec Bun
+épinglé reste obligatoire.
 
 ## Gates restants
 
-1. intégrer la remédiation des délimiteurs de prose après candidate-integration favorable ;
+1. intégrer la remédiation de frontière de citation après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
