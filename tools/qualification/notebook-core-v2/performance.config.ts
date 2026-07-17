@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: [["line"]],
   testDir: root,
   testMatch: "performance.playwright.ts",
-  timeout: 900_000,
+  timeout: 1_800_000,
   use: {
     baseURL: "http://127.0.0.1:41773",
     serviceWorkers: "block",

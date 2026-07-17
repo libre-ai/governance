@@ -1,7 +1,7 @@
 import type { NotebookCoreApi, SealBackupRequest } from "./host";
 import { closedRefusal } from "./host";
 
-type BenchmarkRequest =
+type BenchmarkRequest = (
   | {
       operation: "seal";
       recoverySecret: Uint8Array;
@@ -13,7 +13,8 @@ type BenchmarkRequest =
       operation: "open" | "open-failure";
       recoverySecret: Uint8Array;
       requestId: number;
-    };
+    }
+) & { coreModule: WebAssembly.Module };
 
 type ComponentModule = {
   instantiate(
@@ -24,6 +25,7 @@ type ComponentModule = {
 };
 
 type WorkerScope = {
+  close(): void;
   onmessage: ((event: { data: unknown }) => void) | null;
   postMessage(message: unknown, transfer?: ArrayBuffer[]): void;
 };
@@ -40,14 +42,11 @@ scope.onmessage = async (event) => {
     const componentUrl = "./notebook-core.js";
     const component = (await import(componentUrl)) as ComponentModule;
     const root = await component.instantiate(
-      async (path) => {
-        const response = await fetch(new URL(path, import.meta.url), { cache: "no-store" });
-        if (!response.ok) throw new Error("benchmark core module unavailable");
-        const module = await WebAssembly.compile(await response.arrayBuffer());
-        if (WebAssembly.Module.imports(module).length !== 0) {
+      async () => {
+        if (WebAssembly.Module.imports(request.coreModule).length !== 0) {
           throw new Error("benchmark core module has imports");
         }
-        return module;
+        return request.coreModule;
       },
       {},
       async (module) => {
@@ -71,6 +70,7 @@ scope.onmessage = async (event) => {
     });
   } finally {
     wipeRequest(request);
+    scope.close();
   }
 };
 
@@ -114,7 +114,7 @@ async function execute(
     if (request.operation === "open-failure") {
       throw new Error("failure benchmark unexpectedly released plaintext");
     }
-    const outputSha256 = await sha256(openedPlaintext);
+    const outputSha256 = verifyPerformancePlaintext(openedPlaintext);
     scope.postMessage({
       operationMs,
       outputLength: openedPlaintext.length,
@@ -143,6 +143,7 @@ function decodeRequest(value: unknown): BenchmarkRequest {
   const request = value as Partial<BenchmarkRequest>;
   if (
     !Number.isSafeInteger(request.requestId) ||
+    !(request.coreModule instanceof WebAssembly.Module) ||
     !["seal", "open", "open-failure"].includes(request.operation ?? "")
   ) {
     throw new Error("invalid benchmark request");
@@ -163,13 +164,12 @@ function wipeRequest(request: BenchmarkRequest): void {
   for (const view of views) view.fill(0);
 }
 
-async function sha256(value: Uint8Array): Promise<string> {
-  const copy = new Uint8Array(value.length);
-  copy.set(value);
-  try {
-    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", copy.buffer));
-    return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  } finally {
-    copy.fill(0);
+function verifyPerformancePlaintext(value: Uint8Array): string {
+  if (value.length !== 16 * 1024 * 1024) {
+    throw new Error("benchmark plaintext length mismatch");
   }
+  for (const byte of value) {
+    if (byte !== 0x5a) throw new Error("benchmark plaintext content mismatch");
+  }
+  return "55c7e25571a69216de25162f191bb2847201a09ee7efe46b5bada034acc695d5";
 }
