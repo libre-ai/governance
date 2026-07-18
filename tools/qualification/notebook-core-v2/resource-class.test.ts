@@ -29,18 +29,24 @@ function hardware(memoryGib: number, logicalCpu: number): NotebookHardwareResour
 }
 
 describe("Notebook qualification resource classes", () => {
-  test("defines an explicit pending 8 GiB minimum product candidate", () => {
+  test("defines the qualified 32+ GiB reference as the minimum product candidate", () => {
     const selected = selectResourceClass(
       manifest,
       manifest.minimumProductCandidateClassId,
-      hardware(8, 8),
+      hardware(36, 14),
     );
-    expect(selected.id).toBe("desktop-arm64-constrained-8gib");
-    expect(selected.evidenceStatus).toBe("pending-real-hardware-qualification");
+    expect(selected.id).toBe("desktop-arm64-high-memory-reference");
+    expect(selected.evidenceStatus).toBe("qualified-reference-96934a8");
+    expect(selected.purpose).toBe("minimum-product-candidate");
+    for (const id of ["desktop-arm64-constrained-8gib", "desktop-arm64-mainstream-16gib"]) {
+      const community = manifest.classes.find((candidate) => candidate.id === id);
+      expect(community?.evidenceStatus).toBe("community-evidence-requested");
+      expect(community?.purpose).toBe("community-observation");
+    }
     expect(manifest.productStorageQuotaCandidateBytes).toBe(512 * 1024 ** 2);
   });
 
-  test("accepts the lower and upper supported hardware tiers only in their own ranges", () => {
+  test("accepts each observed hardware tier only in its own range", () => {
     expect(
       selectResourceClass(manifest, "desktop-arm64-mainstream-16gib", hardware(16, 8)).id,
     ).toBe("desktop-arm64-mainstream-16gib");
@@ -132,7 +138,7 @@ describe("Notebook qualification resource classes", () => {
     );
   });
 
-  test("rejects unknown manifest fields, duplicate classes, and unresolved minimums", () => {
+  test("rejects unknown fields, statuses, duplicate classes, and invalid minimums", () => {
     expect(() =>
       parseResourceClassManifest({ ...(rawManifest as object), unexpected: true }),
     ).toThrow("invalid fields");
@@ -146,5 +152,17 @@ describe("Notebook qualification resource classes", () => {
     };
     unresolved.minimumProductCandidateClassId = "desktop-missing";
     expect(() => parseResourceClassManifest(unresolved)).toThrow("unresolved");
+    const communityMinimum = structuredClone(rawManifest) as {
+      minimumProductCandidateClassId: string;
+    };
+    communityMinimum.minimumProductCandidateClassId = "desktop-arm64-constrained-8gib";
+    expect(() => parseResourceClassManifest(communityMinimum)).toThrow(
+      "minimum product class purpose is invalid",
+    );
+    const unknownStatus = structuredClone(rawManifest) as {
+      classes: Array<{ evidenceStatus: string }>;
+    };
+    if (unknownStatus.classes[0]) unknownStatus.classes[0].evidenceStatus = "self-declared";
+    expect(() => parseResourceClassManifest(unknownStatus)).toThrow("status or purpose is invalid");
   });
 });

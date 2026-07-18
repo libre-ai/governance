@@ -19,7 +19,11 @@ export type NotebookEvidenceEnvironment = {
 
 export type NotebookResourceClass = {
   architecture: string;
-  evidenceStatus: "pending-real-hardware-qualification" | "qualified-reference-5190972";
+  evidenceStatus:
+    | "community-evidence-requested"
+    | "pending-real-hardware-qualification"
+    | "qualified-reference-5190972"
+    | "qualified-reference-96934a8";
   id: string;
   label: string;
   maximumLogicalCpuExclusive: number | null;
@@ -27,7 +31,11 @@ export type NotebookResourceClass = {
   minimumLogicalCpu: number;
   minimumPhysicalMemoryBytes: number;
   operatingSystem: string;
-  purpose: "minimum-product-candidate" | "mainstream-product-target" | "qualification-reference";
+  purpose:
+    | "community-observation"
+    | "minimum-product-candidate"
+    | "mainstream-product-target"
+    | "qualification-reference";
 };
 
 export type NotebookResourceClassManifest = {
@@ -60,10 +68,13 @@ const MANIFEST_KEYS = [
   "schemaVersion",
 ] as const;
 const EVIDENCE_STATUSES = new Set([
+  "community-evidence-requested",
   "pending-real-hardware-qualification",
   "qualified-reference-5190972",
+  "qualified-reference-96934a8",
 ]);
 const PURPOSES = new Set([
+  "community-observation",
   "minimum-product-candidate",
   "mainstream-product-target",
   "qualification-reference",
