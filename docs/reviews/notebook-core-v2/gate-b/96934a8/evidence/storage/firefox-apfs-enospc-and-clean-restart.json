@@ -1,0 +1,34 @@
+{
+  "browserName": "firefox",
+  "browserVersion": "151.0",
+  "productBuild": {
+    "backupFeature": "gate-b",
+    "commit": "96934a8e0698db6d35591f811856ff0824db3956",
+    "coreSha256": "be423962e3a889e792a69a1ab60b978bcbf5ae1102db74a68c70a9a1c65e5942",
+    "workerSha256": "19054f4913ffc438159bb2345b17487dae82d75e3e0ba17212610f61c3cbeb9a"
+  },
+  "profileRestarted": true,
+  "scenario": "apfs-enospc-and-clean-restart",
+  "storageBoundary": {
+    "capacityBytes": 6232694784,
+    "browserEstimateBeforeExhaustion": {
+      "quota": 623269478,
+      "usage": 49152
+    },
+    "enospcMarker": {
+      "code": "ENOSPC",
+      "errno": -28,
+      "syscall": "open"
+    },
+    "exhaustedAvailableBytes": 33644544,
+    "filesystem": "apfs",
+    "pressureEnvelopeBytes": 16777216,
+    "liveInspectionAvailableDuringEnospc": true,
+    "pressureEnvelopeClass": "public-deterministic-invalid-envelope",
+    "recoveredAvailableBytes": 6174670848,
+    "storageOperation": "restore-staging-before-worker",
+    "testVolume": "disposable-sparse-image"
+  },
+  "verdict": "pass",
+  "schemaVersion": "libre-ai.notebook-product-host-storage-evidence.v1"
+}
