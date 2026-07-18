@@ -10,7 +10,7 @@ Preserve user work, reconcile accepted branches, remove machine-local/generated 
 
 ## G1 — Specification Lock
 
-**Status:** complete. The bounded ADR-0003 `WP-G2-S01` amendment is closed; all 71 catalog authorities are locked after role-separated reviews, promotion passes and owner controls.
+**Status:** complete. The bounded ADR-0003 `WP-G2-S01` amendment is closed; all 85 catalog authorities are locked after role-separated reviews, promotion passes and owner controls.
 
 Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
 

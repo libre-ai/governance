@@ -56,6 +56,15 @@ assertion et conservent leurs droits amont.
 - les distributions doivent conserver les notices tierces et les obligations
   de leurs dépendances indépendamment de la licence first-party.
 
+## Enregistrement d’application
+
+La PR #93 a exposé un défaut d’enforcement : son job PR-only `Licensing and contribution governance`
+a correctement refusé 27 commits sans trailer DCO, mais `main` n’exigeait alors que les contextes Bun
+et Rust et la PR a été fusionnée. Le contributeur/propriétaire a publié une
+[attestation DCO 1.1 rétroactive liée aux 27 SHAs](https://github.com/libre-ai/libre-ai/pull/93#issuecomment-5009777987),
+sans réécrire l’historique ni requalifier le run rouge. Le contexte gouvernance est désormais un
+required check strict de `main` avec Bun et Rust ; aucune nouvelle fusion ne peut contourner ce gate.
+
 ## Garde-fous
 
 - priorité aux notices fichier et aux annotations tierces sur les valeurs par

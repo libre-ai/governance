@@ -12,6 +12,7 @@
     "Every branch is bounded by declared write paths and reports security, PII, tests and evidence before integration.",
     "Authoring and review are separate passes for every schema, authorization, migration, release or deployment change.",
     "ADR-0003 contract candidates use dedicated review-only passes per role on immutable commits; the same agent/session may act serially and CI is evidence, not a verdict.",
+    "ADR-0005 permits only the disabled public-fixture Notebook Gate B slice under the future WP-G3-N01 path before G3; this bounded owner exception grants no user data, feature activation, release, physical-evidence waiver or root-lockfile ownership.",
     "Clever Cloud Paris EU remains the runtime target and production data never enters GitHub.",
     "WP-G3-A01 remains blocked from orchestrator integration until WP-G2-A01 implementation and conformance review pass; the current Specification Lock and package definition authorize contracts and simulation-only control work, not a harness, Pi worker or real mission."
   ],
