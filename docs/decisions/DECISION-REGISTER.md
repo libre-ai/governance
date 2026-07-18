@@ -28,5 +28,6 @@
 | D24 | Agent orchestration option B contracts are locked | Missions remains authority, Pi remains replaceable, and 14 reviewed authorities are promoted catalog-only; only simulation-only `WP-G2-A01` may proceed after definition reviews, while harness/worker capabilities and real missions require later packages |
 | D25 | Notebook Gate B may exercise one disabled product-host slice before G3 | `WP-G3-N01` retains final `apps/notebook/**` ownership; ADR-0005 permits only public-fixture qualification, grants no hardware waiver, user data, feature activation or release |
 | D26 | Notebook Gate B requires only the qualified 32+ Gio hardware class | ADR-0006 makes 8 Gio and 16–24 Gio optional community observations; no support is claimed for an unmeasured class and OOM/activation/release remain separately gated |
+| D27 | Real browser-process OOM is an optional Notebook diagnostic | ADR-0007 requires bounded three-engine process-fault recovery but forbids unsafe host exhaustion; OOM remains honestly labelled and activation/user data/release still require separate controls |
 
 Changes to this register require an ADR and explicit human approval.

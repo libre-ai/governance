@@ -17,6 +17,18 @@ export type NotebookEvidenceEnvironment = {
   virtualizationSignals: string[];
 };
 
+export type NotebookBrowserProcessFaultPolicy = {
+  optionalDiagnostics: Array<"browser-process-oom">;
+  requiredEvidence: Array<
+    | "abrupt-process-termination-recovery"
+    | "process-crash-recovery"
+    | "no-partial-artifact"
+    | "same-profile-recovery"
+    | "fresh-worker-after-recovery"
+  >;
+  unsafeHostExhaustionForbidden: true;
+};
+
 export type NotebookResourceClass = {
   architecture: string;
   evidenceStatus:
@@ -39,14 +51,28 @@ export type NotebookResourceClass = {
 };
 
 export type NotebookResourceClassManifest = {
+  browserProcessFaultPolicy: NotebookBrowserProcessFaultPolicy;
   classes: NotebookResourceClass[];
   defaultQualificationClassId: string;
   minimumProductCandidateClassId: string;
   productStorageQuotaCandidateBytes: number;
   requiredBrowserCapabilities: string[];
-  schemaVersion: "libre-ai.notebook-resource-classes.v1";
+  schemaVersion: "libre-ai.notebook-resource-classes.v2";
 };
 
+const REQUIRED_BROWSER_PROCESS_FAULT_EVIDENCE = [
+  "abrupt-process-termination-recovery",
+  "process-crash-recovery",
+  "no-partial-artifact",
+  "same-profile-recovery",
+  "fresh-worker-after-recovery",
+] as const;
+const OPTIONAL_BROWSER_PROCESS_DIAGNOSTICS = ["browser-process-oom"] as const;
+const BROWSER_PROCESS_FAULT_POLICY_KEYS = [
+  "optionalDiagnostics",
+  "requiredEvidence",
+  "unsafeHostExhaustionForbidden",
+] as const;
 const CLASS_KEYS = [
   "architecture",
   "evidenceStatus",
@@ -60,6 +86,7 @@ const CLASS_KEYS = [
   "purpose",
 ] as const;
 const MANIFEST_KEYS = [
+  "browserProcessFaultPolicy",
   "classes",
   "defaultQualificationClassId",
   "minimumProductCandidateClassId",
@@ -83,9 +110,12 @@ const PURPOSES = new Set([
 export function parseResourceClassManifest(value: unknown): NotebookResourceClassManifest {
   const manifest = record(value, "resource class manifest");
   exactKeys(manifest, MANIFEST_KEYS, "resource class manifest");
-  if (manifest.schemaVersion !== "libre-ai.notebook-resource-classes.v1") {
+  if (manifest.schemaVersion !== "libre-ai.notebook-resource-classes.v2") {
     throw new Error("unsupported Notebook resource class manifest");
   }
+  const browserProcessFaultPolicy = parseBrowserProcessFaultPolicy(
+    manifest.browserProcessFaultPolicy,
+  );
   const classes = array(manifest.classes, "resource classes").map((entry) => parseClass(entry));
   if (classes.length < 1) throw new Error("Notebook resource classes are empty");
   const ids = new Set(classes.map(({ id }) => id));
@@ -119,6 +149,7 @@ export function parseResourceClassManifest(value: unknown): NotebookResourceClas
   }
 
   return {
+    browserProcessFaultPolicy,
     classes,
     defaultQualificationClassId,
     minimumProductCandidateClassId,
@@ -127,7 +158,7 @@ export function parseResourceClassManifest(value: unknown): NotebookResourceClas
       "product storage quota candidate",
     ),
     requiredBrowserCapabilities,
-    schemaVersion: "libre-ai.notebook-resource-classes.v1",
+    schemaVersion: "libre-ai.notebook-resource-classes.v2",
   };
 }
 
@@ -211,6 +242,30 @@ export function selectResourceClass(
   return selected;
 }
 
+function parseBrowserProcessFaultPolicy(value: unknown): NotebookBrowserProcessFaultPolicy {
+  const policy = record(value, "browser process fault policy");
+  exactKeys(policy, BROWSER_PROCESS_FAULT_POLICY_KEYS, "browser process fault policy");
+  const requiredEvidence = canonicalStringInventory(
+    policy.requiredEvidence,
+    REQUIRED_BROWSER_PROCESS_FAULT_EVIDENCE,
+    "required browser process fault evidence",
+  );
+  const optionalDiagnostics = canonicalStringInventory(
+    policy.optionalDiagnostics,
+    OPTIONAL_BROWSER_PROCESS_DIAGNOSTICS,
+    "optional browser process diagnostics",
+  );
+  if (policy.unsafeHostExhaustionForbidden !== true) {
+    throw new Error("unsafe Notebook host exhaustion must remain forbidden");
+  }
+  return {
+    optionalDiagnostics:
+      optionalDiagnostics as NotebookBrowserProcessFaultPolicy["optionalDiagnostics"],
+    requiredEvidence: requiredEvidence as NotebookBrowserProcessFaultPolicy["requiredEvidence"],
+    unsafeHostExhaustionForbidden: true,
+  };
+}
+
 function parseClass(value: unknown): NotebookResourceClass {
   const candidate = record(value, "resource class");
   exactKeys(candidate, CLASS_KEYS, "resource class");
@@ -277,6 +332,21 @@ function record(value: unknown, label: string): Record<string, unknown> {
 function array(value: unknown, label: string): unknown[] {
   if (!Array.isArray(value)) throw new Error(`invalid ${label}`);
   return value;
+}
+
+function canonicalStringInventory(
+  value: unknown,
+  expected: readonly string[],
+  label: string,
+): string[] {
+  const actual = array(value, label).map((entry) => nonemptyString(entry, label));
+  if (
+    actual.length !== expected.length ||
+    actual.some((entry, index) => entry !== expected[index])
+  ) {
+    throw new Error(`invalid ${label}`);
+  }
+  return actual;
 }
 
 function nonemptyString(value: unknown, label: string): string {

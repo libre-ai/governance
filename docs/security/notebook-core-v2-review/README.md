@@ -1,6 +1,6 @@
 # Dossier de revue — Notebook Core v2
 
-> **Statut : Gate A approuvée / Gate B rejetée pour l’usage.** Les artefacts Notebook Core v2 sont `locked` après quatre `APPROVE` indépendants et décision propriétaire `continue`. Le moteur expérimental et le host désactivé sont autorisés pour la qualification publique uniquement ; les six passes Gate B restent `REJECT` pour toute sauvegarde utilisateur ou release.
+> **Statut : Gate A approuvée / nouveau candidat de clôture Gate B en revue.** Les artefacts Notebook Core v2 sont `locked` après quatre `APPROVE` indépendants et décision propriétaire `continue`. Le moteur expérimental et le host désactivé restent limités à la qualification publique ; aucune sauvegarde utilisateur, activation ou release n'est autorisée avant le verdict frais.
 
 ## Autorité unique
 
@@ -36,6 +36,6 @@ public, déterministe et interdit comme secret, sel, nonce ou identifiant de pro
 
 ## Progression
 
-Gate A a permis la validation machine-checkable des artefacts et le propriétaire a autorisé le passage `candidate -> locked`. Gate B a ensuite produit six rejets immuables ; le dernier sur `5190972` passe les budgets de la classe haute mémoire de référence sans approuver l’usage. Une modification normative invalide les verdicts antérieurs concernés.
+Gate A a permis la validation machine-checkable des artefacts et le propriétaire a autorisé le passage `candidate -> locked`. Les rejets Gate B historiques restent immuables. Le candidat `96934a8` ferme le host produit exact et un vrai `ENOSPC` APFS sur trois moteurs ; le candidat `bfc9e4c` ajoute une matrice physique 32+ Gio fraîche et rend les classes 8/16–24 Gio facultatives sans les déclarer supportées.
 
-Le host produit désactivé de la PR #95 et les signaux crash/kill/restart de la PR #97 complètent la qualification, sans constituer un nouveau verdict Gate B. Restent notamment l’OOM réel du processus, le quota réellement épuisé, les garanties d’effacement défendables, les classes physiques contraintes et les revues spécialisées fraîches. Gate B et les gates projet restent obligatoires avant toute sauvegarde utilisateur ou release.
+L'ADR-0007 classe désormais l'OOM réel du processus comme diagnostic facultatif, car aucun mécanisme sûr et portable n'existe sur les trois moteurs. La reprise bornée après `SIGKILL`/`SIGABRT`, les fautes mémoire internes, les budgets, le stockage et la classe 32+ Gio restent obligatoires sans changer la cryptographie. Un nouveau verdict spécialisé sur commit immuable est requis pour fermer Gate B. L'effacement physique RAM/swap/OS n'est pas revendiqué. Les gates produit, données utilisateur, offline et release restent séparées.

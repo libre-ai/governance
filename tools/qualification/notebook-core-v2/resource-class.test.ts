@@ -46,6 +46,20 @@ describe("Notebook qualification resource classes", () => {
     expect(manifest.productStorageQuotaCandidateBytes).toBe(512 * 1024 ** 2);
   });
 
+  test("requires bounded process recovery while keeping real browser OOM diagnostic-only", () => {
+    expect(manifest.browserProcessFaultPolicy).toEqual({
+      optionalDiagnostics: ["browser-process-oom"],
+      requiredEvidence: [
+        "abrupt-process-termination-recovery",
+        "process-crash-recovery",
+        "no-partial-artifact",
+        "same-profile-recovery",
+        "fresh-worker-after-recovery",
+      ],
+      unsafeHostExhaustionForbidden: true,
+    });
+  });
+
   test("accepts each observed hardware tier only in its own range", () => {
     expect(
       selectResourceClass(manifest, "desktop-arm64-mainstream-16gib", hardware(16, 8)).id,
@@ -138,7 +152,7 @@ describe("Notebook qualification resource classes", () => {
     );
   });
 
-  test("rejects unknown fields, statuses, duplicate classes, and invalid minimums", () => {
+  test("rejects unknown fields, policies, statuses, duplicate classes, and invalid minimums", () => {
     expect(() =>
       parseResourceClassManifest({ ...(rawManifest as object), unexpected: true }),
     ).toThrow("invalid fields");
@@ -164,5 +178,22 @@ describe("Notebook qualification resource classes", () => {
     };
     if (unknownStatus.classes[0]) unknownStatus.classes[0].evidenceStatus = "self-declared";
     expect(() => parseResourceClassManifest(unknownStatus)).toThrow("status or purpose is invalid");
+    const weakenedFaultPolicy = structuredClone(rawManifest) as {
+      browserProcessFaultPolicy: {
+        requiredEvidence: string[];
+        unsafeHostExhaustionForbidden: boolean;
+      };
+    };
+    weakenedFaultPolicy.browserProcessFaultPolicy.requiredEvidence.pop();
+    expect(() => parseResourceClassManifest(weakenedFaultPolicy)).toThrow(
+      "required browser process fault evidence",
+    );
+    weakenedFaultPolicy.browserProcessFaultPolicy.requiredEvidence.push(
+      "fresh-worker-after-recovery",
+    );
+    weakenedFaultPolicy.browserProcessFaultPolicy.unsafeHostExhaustionForbidden = false;
+    expect(() => parseResourceClassManifest(weakenedFaultPolicy)).toThrow(
+      "unsafe Notebook host exhaustion",
+    );
   });
 });
