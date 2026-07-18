@@ -1,6 +1,6 @@
 # Dossier de revue — Notebook Core v2
 
-> **Statut : Gate A approuvée / nouveau candidat de clôture Gate B en revue.** Les artefacts Notebook Core v2 sont `locked` après quatre `APPROVE` indépendants et décision propriétaire `continue`. Le moteur expérimental et le host désactivé restent limités à la qualification publique ; aucune sauvegarde utilisateur, activation ou release n'est autorisée avant le verdict frais.
+> **Statut : Gate A et Gate B approuvées / activation et release bloquées.** Les artefacts Notebook Core v2 sont `locked` après Gate A. Gate B approuve le candidat fixture-only `9ee3f8d` après cinq rôles spécialisés et synthèse ; aucune sauvegarde utilisateur, activation ou release n'est autorisée sans contrôle propriétaire séparé.
 
 ## Autorité unique
 
@@ -38,4 +38,4 @@ public, déterministe et interdit comme secret, sel, nonce ou identifiant de pro
 
 Gate A a permis la validation machine-checkable des artefacts et le propriétaire a autorisé le passage `candidate -> locked`. Les rejets Gate B historiques restent immuables. Le candidat `96934a8` ferme le host produit exact et un vrai `ENOSPC` APFS sur trois moteurs ; le candidat `bfc9e4c` ajoute une matrice physique 32+ Gio fraîche et rend les classes 8/16–24 Gio facultatives sans les déclarer supportées.
 
-L'ADR-0007 classe désormais l'OOM réel du processus comme diagnostic facultatif, car aucun mécanisme sûr et portable n'existe sur les trois moteurs. La reprise bornée après `SIGKILL`/`SIGABRT`, les fautes mémoire internes, les budgets, le stockage et la classe 32+ Gio restent obligatoires sans changer la cryptographie. Un nouveau verdict spécialisé sur commit immuable est requis pour fermer Gate B. L'effacement physique RAM/swap/OS n'est pas revendiqué. Les gates produit, données utilisateur, offline et release restent séparées.
+L'ADR-0007 classe désormais l'OOM réel du processus comme diagnostic facultatif, car aucun mécanisme sûr et portable n'existe sur les trois moteurs. La reprise bornée après `SIGKILL`/`SIGABRT`, les fautes mémoire internes, les budgets, le stockage et la classe 32+ Gio restent obligatoires sans changer la cryptographie. La passe [`../../reviews/notebook-core-v2/gate-b/9ee3f8d/`](../../reviews/notebook-core-v2/gate-b/9ee3f8d/) ferme Gate B avec cinq verdicts spécialisés `approve`. L'effacement physique RAM/swap/OS n'est pas revendiqué. Les gates produit, données utilisateur, offline et release restent séparées.

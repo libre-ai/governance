@@ -18,11 +18,11 @@ Complete contracts, data ownership, auth, refusal behavior, application specific
 
 ## G2 — Canonical foundations
 
-**Status:** in progress. `WP-G2-T01`, `WP-G2-C01` and the `WP-G2-S01` contract lock are complete. The next owner-selected milestone is closure of Notebook Core v2 Gate B before authorization of any first Radar, Policy or Boussole product engine.
+**Status:** in progress. `WP-G2-T01`, `WP-G2-C01`, the `WP-G2-S01` contract lock and Notebook Core v2 Gate B are complete. No first Radar, Policy, Boussole or Notebook product milestone is authorized until a new explicit owner selection.
 
 Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized Rust boundaries, contracts, Proof, Artifact and a qualified Bun template.
 
-**Current control:** Gate B qualification/remediation may use public fixtures and physical-device evidence only. User backups, personal/tenant data, production, release and product-engine implementation remain unauthorized.
+**Current control:** Notebook Gate B approves only the exact disabled fixture-only host and qualified 32+ GiB class. User backups, personal/tenant data, activation, production, release, infrastructure and any next product-engine implementation remain unauthorized pending a separate owner milestone.
 
 **Acceptance:** reference chain builds and verifies from a clean checkout without Clever Cloud; Notebook Gate B must separately approve the exact product host and supported physical resource classes before any user backup or release.
 

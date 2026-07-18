@@ -1,0 +1,28 @@
+{
+  "backupFeature": "disabled",
+  "commit": "9ee3f8da65afce9bce8da98baac72c1aea8bd0ce",
+  "coreProvenance": null,
+  "schemaVersion": "libre-ai.notebook-product-build.v1",
+  "shippingFiles": {
+    "assets/app.js": {
+      "bytes": 399060,
+      "sha256": "ff5ab14d652d5a0d30d5cdfe9300e0d447bd69b44ace97b515d8d6a3391fa3a3"
+    },
+    "assets/icon.svg": {
+      "bytes": 363,
+      "sha256": "5c0bf6d58d03d0a5a8114ff30afa3670446dc9bb13687cde8efd64093cff9830"
+    },
+    "assets/styles.css": {
+      "bytes": 7388,
+      "sha256": "5043f74fa31d6a2dc018d908e9de91de2a6c7814bb16a40193bb4f8349822e11"
+    },
+    "manifest.webmanifest": {
+      "bytes": 334,
+      "sha256": "27d5aa3377c09ad184aee45e9178ef8c8e7bf0c37d6cb6009c2f69ed2f1ea708"
+    },
+    "static/index.html": {
+      "bytes": 1402,
+      "sha256": "5c25692a99d7b4e79086786993e4a67cf8b0a848f70aa8e6a09d12a83aedcc3b"
+    }
+  }
+}

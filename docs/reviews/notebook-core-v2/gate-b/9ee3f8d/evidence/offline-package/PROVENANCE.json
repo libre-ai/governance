@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "libre-ai.notebook-qualification-offline-package.v1",
+  "preparedAt": "2026-07-18",
+  "candidate": {
+    "commit": "9ee3f8da65afce9bce8da98baac72c1aea8bd0ce",
+    "tree": "843a95252eb60f08fdc596a20bcbcd19a0b1b4fd"
+  },
+  "platform": "darwin-arm64",
+  "runtimeData": "none",
+  "distribution": "offline-handoff",
+  "archives": [
+    {
+      "name": "bun-darwin-aarch64.zip",
+      "bytes": 24254728,
+      "sha256": "4d4bdb8e3ca1b41dede0ce423871b3804424bd785c6435e43c625a60a49f2f02",
+      "source": "https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-darwin-aarch64.zip"
+    },
+    {
+      "name": "node-v26.5.0-darwin-arm64.tar.xz",
+      "bytes": 30176284,
+      "sha256": "48231d6204eca6be13e6c5184dfdffa1d64ad88880364cc2cfb198f872cb2b13",
+      "source": "https://nodejs.org/dist/v26.5.0/node-v26.5.0-darwin-arm64.tar.xz"
+    },
+    {
+      "name": "chrome-headless-shell-mac-arm64-149.0.7827.55.zip",
+      "bytes": 98043456,
+      "sha256": "302f82603be06683947594ecd60f849e362a8fe3dd82a89bd4408477c97e75a6",
+      "source": "https://cdn.playwright.dev/builds/cft/149.0.7827.55/mac-arm64/chrome-headless-shell-mac-arm64.zip"
+    },
+    {
+      "name": "firefox-mac-arm64-1532.zip",
+      "bytes": 103615809,
+      "sha256": "7372a999fe4793e62ca7f6fd65fa4b214b89d1e006e988ef156b8e1ef3bc6745",
+      "source": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1532/firefox-mac-arm64.zip"
+    },
+    {
+      "name": "webkit-mac-15-arm64-2311.zip",
+      "bytes": 80910090,
+      "sha256": "a029455b79e20f218992899b87cb59dde6f775c89d79f98ead423698cba08f9b",
+      "source": "https://cdn.playwright.dev/dbazure/download/playwright/builds/webkit/2311/webkit-mac-15-arm64.zip"
+    }
+  ],
+  "sovereignty": {
+    "runtimeExternalRequests": false,
+    "bootstrapException": "Playwright browser archives originate from pinned non-European CDN routes; public binaries are downloaded once, checksum-verified, and handed to qualification hosts offline."
+  }
+}
