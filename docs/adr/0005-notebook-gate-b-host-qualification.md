@@ -1,9 +1,11 @@
 # ADR-0005 — Exception bornée de qualification du host Notebook Gate B
 
-- **Statut :** accepted
+- **Statut :** accepted, superseded in part by ADR-0006 for the required hardware matrix
 - **Date :** 2026-07-17
 - **Portée :** qualification Notebook Core v2 uniquement
 - **Décision propriétaire solo :** poursuivre toute preuve Gate B réalisable sans données utilisateur, sans considérer l’absence de matériel physique comme un PASS
+
+> **Supersession partielle :** ADR-0006 remplace la décision 8 et la conséquence associée concernant les classes 8 Gio et 16–24 Gio. Elles sont désormais des contributions facultatives non supportées et leur absence ne bloque plus la Gate B actuelle. Le texte ci-dessous est conservé comme décision historique ; l’exception de host et toutes les autres interdictions restent actives.
 
 ## Contexte
 

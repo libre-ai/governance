@@ -35,10 +35,11 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
+- `WP-G2-Z01` Biscuit authorization capability was completed by PR #101 and merged as `a6bee98`: mandatory bounded attenuation, deny-by-default Sessions/Missions policies, verified root-family revocation and two-key Ed25519 rotation passed separate authorization-policy, key-rotation and candidate-integration reviews; the immutable rejects `87a802e` and `fbbe360` remain preserved, and no production use or key ceremony is authorized ;
 - ADR-0003 opened and closed a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core, Boussole v2 and the shared engine-vector envelope are locked after role verdicts, promotion reviews and owner milestones ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on `d47feb9` and exactly six authorities are locked; Notebook Core v2 is locked after Gate A + owner `continue`, with four role verdicts APPROVE, while Gate B remains mandatory before any user backup, production or release ;
-- Notebook now has an exact product host disabled by default from PR #95 and qualification-only crash/kill/restart evidence from PR #97 on Chromium, Firefox and WebKit; these candidate-integration passes do not approve Gate B, real process OOM, physical quota exhaustion, physical memory erasure or constrained hardware classes ;
+- Notebook now has an exact product host disabled by default, qualification-only crash/kill/restart and physical `ENOSPC` recovery evidence on Chromium, Firefox and WebKit, plus a passing physical 32+ Gio performance matrix. ADR-0006 makes 8 Gio and 16–24 Gio optional, unsupported community contributions that cannot block the current Gate B. Gate B remains `REJECT` only until real, attributable browser-process OOM handling is proven on the three engines ;
 - Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
 - Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
 - the shared `engine-golden-vectors-v1` transitions to locked through a separate catalog-only promotion approved by promotion-integration on `3b47e96` and final owner `continue`, after candidate-integration, Architecture and Security approval at `ccf9d68` plus challenged acceptance of exact dev-only `entities@8.0.0`; this fixes contract meaning only and authorizes no engine/runtime/data/release scope ;
@@ -49,8 +50,9 @@
 ## Next controlled milestone
 
 - **Owner choice:** close Notebook Core v2 Gate B before authorizing any first Radar, Policy or Boussole product engine ;
-- **Authorized scope:** Gate B host/qualification remediation and reproducible evidence using public fixtures, including physical macOS arm64 classes at 8 Gio and 16–24 Gio under the bounded ADR-0005 exception ;
-- **Exit evidence:** specialized review of the exact product host, real IndexedDB quota exhaustion and recovery, real browser-process OOM handling, defensible memory-erasure guarantees, physical constrained-class budgets and a fresh review-only Gate B verdict on an immutable commit ;
+- **Authorized scope:** Gate B OOM remediation and reproducible evidence on the exact disabled product host using public fixtures; the required hardware scope is the already-qualified physical macOS arm64 32+ Gio class ;
+- **Exit evidence:** real, attributable browser-process OOM handling on Chromium, Firefox and WebKit, followed by fresh specialized performance/runtime and review-only Gate B verdicts on one immutable commit ;
+- **Community scope:** physical 8 Gio and 16–24 Gio measurements remain welcome only to qualify future additive support. Their absence cannot block the current Gate B and no support is claimed without hash-bound physical evidence ;
 - **Still blocked:** user backups, personal/tenant data, production, release, infrastructure, deployment and every new product engine. A later engine requires its own explicit owner milestone.
 
 ## Explicitly deferred
@@ -66,4 +68,5 @@
 - CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
 - locked engine vectors define only contract behavior; runtime conformance, bounded-resource evidence
   and end-to-end tenant/RLS proof remain separate G2 implementation evidence ;
-- no local physical 8 Gio or 16–24 Gio Notebook device is currently available; VM evidence remains diagnostic-only, and logical buffer wiping cannot be promoted as physical RAM/OS erasure.
+- 8 Gio and 16–24 Gio Notebook devices remain unqualified and unsupported optional community targets, not current Gate B dependencies; VM evidence remains diagnostic-only, and logical buffer wiping cannot be promoted as physical RAM/OS erasure ;
+- the current DCO gate preflights every commit in a pull-request range but does not examine the final GitHub-generated merge commit on push; `WP-G2-Q01` must close this enforcement gap without rewriting accepted history.

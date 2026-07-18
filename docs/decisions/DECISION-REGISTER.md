@@ -27,6 +27,6 @@
 | D23 | Differentiated licensing is machine-readable | EUPL protects first-party network runtimes and strategic engines; Apache opens adoption boundaries; CC BY covers editorial material; REUSE, DCO, data provenance and trademark policies are mandatory |
 | D24 | Agent orchestration option B contracts are locked | Missions remains authority, Pi remains replaceable, and 14 reviewed authorities are promoted catalog-only; only simulation-only `WP-G2-A01` may proceed after definition reviews, while harness/worker capabilities and real missions require later packages |
 | D25 | Notebook Gate B may exercise one disabled product-host slice before G3 | `WP-G3-N01` retains final `apps/notebook/**` ownership; ADR-0005 permits only public-fixture qualification, grants no hardware waiver, user data, feature activation or release |
-| D26 | Notebook Gate B requires only the qualified 32+ Gio hardware class | ADR-0006 makes 8 Gio and 16–24 Gio optional community observations; no support is claimed for an unmeasured class and OOM/activation/release remain separately gated |
+| D26 | Notebook Gate B requires only the qualified 32+ Gio hardware class | ADR-0006 makes 8 Gio and 16–24 Gio optional community observations that cannot block the current Gate B; no support is claimed for an unmeasured class and OOM/activation/release remain separately gated |
 
 Changes to this register require an ADR and explicit human approval.

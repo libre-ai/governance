@@ -20,6 +20,7 @@ Les deux classes modestes ne sont pas disponibles localement. Les garder comme c
 5. Cette réduction de portée n'approuve pas l'OOM processus, l'activation, les données utilisateur, la production, la release, l'offline/Service Worker ou l'effacement physique.
 6. Une release future doit publier un minimum système explicite correspondant aux classes réellement qualifiées. L'application ne doit pas collecter ni transmettre la mémoire physique pour tenter de deviner une classe.
 7. Étendre ensuite le support à 8 Gio ou 16–24 Gio exige seulement une nouvelle preuve physique et les revues concernées, sauf si la mesure révèle un défaut nécessitant un nouveau candidat source.
+8. La décision propriétaire finale confirme que ces contributions restent facultatives : leur absence ne doit plus être réintroduite comme condition bloquante de la Gate B actuelle. Toute modification future de cette portée exigerait une nouvelle décision propriétaire explicite et un nouvel ADR.
 
 ## Conséquences
 
