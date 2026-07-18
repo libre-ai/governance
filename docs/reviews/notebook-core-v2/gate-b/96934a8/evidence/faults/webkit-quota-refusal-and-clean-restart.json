@@ -1,0 +1,17 @@
+{
+  "browserName": "webkit",
+  "browserVersion": "26.5",
+  "productBuild": {
+    "backupFeature": "gate-b",
+    "commit": "96934a8e0698db6d35591f811856ff0824db3956",
+    "coreSha256": "be423962e3a889e792a69a1ab60b978bcbf5ae1102db74a68c70a9a1c65e5942",
+    "workerSha256": "19054f4913ffc438159bb2345b17487dae82d75e3e0ba17212610f61c3cbeb9a"
+  },
+  "quotaFaults": [
+    "below-floor-estimate",
+    "injected-transaction-abort"
+  ],
+  "scenario": "quota-refusal-and-clean-restart",
+  "verdict": "pass",
+  "schemaVersion": "libre-ai.notebook-product-host-fault-evidence.v1"
+}

@@ -1,0 +1,18 @@
+Bun minimum verified: 1.4.0 >= 1.4.0
+Bun minimum verified: 1.4.0 >= 1.4.0
+Notebook qualification toolchain verified: Node 26.5.0, Playwright 1.61.1, chromium/firefox/webkit
+Bun minimum verified: 1.4.0 >= 1.4.0
+Built Notebook product host with backup feature gate-b
+
+
+
+
+Running 6 tests using 1 worker
+
+[1/6] [chromium] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:26:5 › recovers after forced process kill and crash without partial artifacts or worker reuse
+[2/6] [chromium] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:147:5 › fails closed before and during an injected quota exhaustion, then recovers
+[3/6] [firefox] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:26:5 › recovers after forced process kill and crash without partial artifacts or worker reuse
+[4/6] [firefox] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:147:5 › fails closed before and during an injected quota exhaustion, then recovers
+[5/6] [webkit] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:26:5 › recovers after forced process kill and crash without partial artifacts or worker reuse
+[6/6] [webkit] › tools/qualification/notebook-core-v2/product-host-faults.playwright.ts:147:5 › fails closed before and during an injected quota exhaustion, then recovers
+  6 passed (23.4s)
