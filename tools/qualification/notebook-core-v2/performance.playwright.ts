@@ -1,11 +1,12 @@
-import { execFileSync } from "node:child_process";
+import { type ChildProcess, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { expect, type Page, test } from "@playwright/test";
+import { type Browser, expect, type Page, test } from "@playwright/test";
 
+import { sumPinnedBrowserProcessGroupRss } from "./browser-rss";
 import {
   type NotebookHardwareResources,
   parseResourceClassManifest,
@@ -157,7 +158,10 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     [...resourceClassManifest.requiredBrowserCapabilities].sort(),
   );
 
-  const rss = new BrowserRssSampler(engine?.cacheDirectory ?? "");
+  const rss = new BrowserRssSampler(
+    engine?.cacheDirectory ?? "",
+    pinnedBrowserProcessGroupId(browser),
+  );
   const reuseCompiledModule = browserName === "firefox";
   const profileResults: Array<Record<string, unknown>> = [];
   for (const profile of PROFILES) {
@@ -502,6 +506,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     promotableEvidence: evidenceEnvironment.promotable,
     resourceClassEvidenceStatus: resourceClass.evidenceStatus,
     resourceClassManifestSha256,
+    rssProcessSelection: "pinned-browser-process-group-and-cache-path",
     resourceClassRequirements: {
       architecture: resourceClass.architecture,
       maximumLogicalCpuExclusive: resourceClass.maximumLogicalCpuExclusive,
@@ -557,7 +562,10 @@ class BrowserRssSampler {
   private referenceBaselineBytes = 0;
   private timer: ReturnType<typeof setInterval> | undefined;
 
-  constructor(private readonly cacheDirectory: string) {}
+  constructor(
+    private readonly cacheDirectory: string,
+    private readonly processGroupId: number,
+  ) {}
 
   startProfile(): void {
     this.stop();
@@ -583,22 +591,38 @@ class BrowserRssSampler {
 
   private sample(): number {
     const cachePath = join(homedir(), "Library/Caches/ms-playwright", this.cacheDirectory);
-    const lines = execFileSync("/bin/ps", ["-axo", "rss=,command="], {
+    const processTable = execFileSync("/bin/ps", ["-axo", "rss=,pgid=,command="], {
       encoding: "utf8",
-    }).split("\n");
-    let kib = 0;
-    for (const line of lines) {
-      if (!line.includes(cachePath)) continue;
-      const match = line.trim().match(/^(\d+)\s/);
-      if (match?.[1]) kib += Number(match[1]);
-    }
-    return kib * 1024;
+    });
+    return sumPinnedBrowserProcessGroupRss(processTable, cachePath, this.processGroupId);
   }
 
   private stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
   }
+}
+
+function pinnedBrowserProcessGroupId(browser: Browser): number {
+  const internal = browser as unknown as {
+    _connection?: {
+      toImpl?: (value: unknown) => {
+        options?: { browserProcess?: { process?: ChildProcess } };
+      };
+    };
+  };
+  const child = internal._connection?.toImpl?.(internal)?.options?.browserProcess?.process;
+  const pid = child?.pid;
+  if (!Number.isSafeInteger(pid) || (pid ?? 0) < 2) {
+    throw new Error("pinned Playwright browser process is unavailable for RSS sampling");
+  }
+  const processGroupId = Number(
+    execFileSync("/bin/ps", ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8" }).trim(),
+  );
+  if (!Number.isSafeInteger(processGroupId) || processGroupId < 2) {
+    throw new Error("pinned Playwright browser process group is unavailable for RSS sampling");
+  }
+  return processGroupId;
 }
 
 async function blockExternalRequests(page: Page, blocked: string[]): Promise<void> {
