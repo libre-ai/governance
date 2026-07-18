@@ -1,0 +1,25 @@
+{
+  "browserName": "chromium",
+  "browserVersion": "149.0.7827.55",
+  "processFaults": [
+    {
+      "operation": "seal",
+      "exitCode": null,
+      "signalCode": "SIGKILL"
+    },
+    {
+      "operation": "restore",
+      "exitCode": null,
+      "signalCode": "SIGABRT"
+    }
+  ],
+  "productBuild": {
+    "backupFeature": "gate-b",
+    "commit": "bfc9e4c77082528889ea953cc941a5312edc9b8f",
+    "coreSha256": "be423962e3a889e792a69a1ab60b978bcbf5ae1102db74a68c70a9a1c65e5942",
+    "workerSha256": "19054f4913ffc438159bb2345b17487dae82d75e3e0ba17212610f61c3cbeb9a"
+  },
+  "scenario": "seal-and-staged-restore-process-kill",
+  "verdict": "pass",
+  "schemaVersion": "libre-ai.notebook-product-host-fault-evidence.v1"
+}

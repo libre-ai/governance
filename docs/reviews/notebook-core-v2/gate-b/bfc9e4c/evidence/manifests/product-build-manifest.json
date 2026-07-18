@@ -1,0 +1,50 @@
+{
+  "backupFeature": "gate-b",
+  "commit": "bfc9e4c77082528889ea953cc941a5312edc9b8f",
+  "coreProvenance": {
+    "generatedBindings": {
+      "bytes": 116204,
+      "sha256": "ced45517e0efb2099fe641c1c9605731f95a8eb2a16836dbd2b2f58b3901b0d1"
+    },
+    "generatedCore": {
+      "bytes": 359468,
+      "sha256": "be423962e3a889e792a69a1ab60b978bcbf5ae1102db74a68c70a9a1c65e5942"
+    },
+    "qualificationManifestSha256": "33aa9de791e3f1e96a87203969381bc98a0cfb99659e8db7512bf2ad59533cc2"
+  },
+  "schemaVersion": "libre-ai.notebook-product-build.v1",
+  "shippingFiles": {
+    "assets/app.js": {
+      "bytes": 399060,
+      "sha256": "394ddb2c7c26569f466a8e95d483f23b3200fc3449ddbcbddc2f236a7cdf081d"
+    },
+    "assets/icon.svg": {
+      "bytes": 363,
+      "sha256": "5c0bf6d58d03d0a5a8114ff30afa3670446dc9bb13687cde8efd64093cff9830"
+    },
+    "assets/notebook-core-worker.js": {
+      "bytes": 4352,
+      "sha256": "19054f4913ffc438159bb2345b17487dae82d75e3e0ba17212610f61c3cbeb9a"
+    },
+    "assets/notebook-core.core.wasm": {
+      "bytes": 359468,
+      "sha256": "be423962e3a889e792a69a1ab60b978bcbf5ae1102db74a68c70a9a1c65e5942"
+    },
+    "assets/notebook-core.js": {
+      "bytes": 116204,
+      "sha256": "ced45517e0efb2099fe641c1c9605731f95a8eb2a16836dbd2b2f58b3901b0d1"
+    },
+    "assets/styles.css": {
+      "bytes": 7388,
+      "sha256": "5043f74fa31d6a2dc018d908e9de91de2a6c7814bb16a40193bb4f8349822e11"
+    },
+    "manifest.webmanifest": {
+      "bytes": 334,
+      "sha256": "27d5aa3377c09ad184aee45e9178ef8c8e7bf0c37d6cb6009c2f69ed2f1ea708"
+    },
+    "static/index.html": {
+      "bytes": 2317,
+      "sha256": "1b3026e97fb202141cd674d0d6d8f2d41c4948ec9e259a737b19305ab3a40c5e"
+    }
+  }
+}
