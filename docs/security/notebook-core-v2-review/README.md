@@ -1,6 +1,6 @@
 # Dossier de revue — Notebook Core v2
 
-> **Statut : Gate A approuvée / Gate B en attente pour la cible.** Les artefacts Notebook Core v2 sont désormais `locked` après quatre `APPROVE` indépendants et décision propriétaire `continue`. Le moteur expérimental est autorisé ; Gate B reste en attente pour toute sauvegarde utilisateur ou release.
+> **Statut : Gate A approuvée / Gate B rejetée pour l’usage.** Les artefacts Notebook Core v2 sont `locked` après quatre `APPROVE` indépendants et décision propriétaire `continue`. Le moteur expérimental et le host désactivé sont autorisés pour la qualification publique uniquement ; les six passes Gate B restent `REJECT` pour toute sauvegarde utilisateur ou release.
 
 ## Autorité unique
 
@@ -36,10 +36,6 @@ public, déterministe et interdit comme secret, sel, nonce ou identifiant de pro
 
 ## Progression
 
-Gate A a permis la validation machine-checkable des artefacts, puis Gate B est en attente (pending). Le propriétaire a autorisé le passage `candidate -> locked`.
-Une modification normative invalide les verdicts antérieurs concernés.
+Gate A a permis la validation machine-checkable des artefacts et le propriétaire a autorisé le passage `candidate -> locked`. Gate B a ensuite produit six rejets immuables ; le dernier sur `5190972` passe les budgets de la classe haute mémoire de référence sans approuver l’usage. Une modification normative invalide les verdicts antérieurs concernés.
 
-Après verrouillage autorisé par le propriétaire, Gate B examinera le composant et le host réels :
-imports module/composant, exécution sans WASI, zéroïsation, OOM/panics, CSPRNG, conversion du secret,
-absence de persistance/log/réseau privés et budgets navigateur. Gate B et les gates projet restent
-obligatoires avant toute sauvegarde utilisateur ou release.
+Le host produit désactivé de la PR #95 et les signaux crash/kill/restart de la PR #97 complètent la qualification, sans constituer un nouveau verdict Gate B. Restent notamment l’OOM réel du processus, le quota réellement épuisé, les garanties d’effacement défendables, les classes physiques contraintes et les revues spécialisées fraîches. Gate B et les gates projet restent obligatoires avant toute sauvegarde utilisateur ou release.

@@ -9,6 +9,7 @@ G1 defines 27 bounded packages. A package is ready to schedule when its dependen
 ## Execution rules
 
 - one branch/worktree per package and only its `writePaths` ;
+- ADR-0005 is the sole early-path exception: `WP-G3-N01` retains `apps/notebook/**`, while a disabled public-fixture-only Gate B slice may be qualified during G2 without starting G3; root lockfiles still require `WP-G2-T01` integration ;
 - authorities in `readAuthorities` are read-only unless architecture/security approve a coordinated contract change ;
 - root manifests/catalogs/lockfiles stay under `WP-G2-T01`; later packages submit dependency requests to that integrator instead of editing shared roots ;
 - dependency artifact hashes are recorded before work begins ;
@@ -29,7 +30,7 @@ G1 defines 27 bounded packages. A package is ready to schedule when its dependen
 | `g2-2` | `WP-G2-W01` | Bun/React/design/PWA template |
 | `g2-2` | `WP-G2-Z01` | specialized Biscuit capability |
 | `g2-2` | `WP-G2-P01` | Proof and Artifact |
-| `g2-2` | `WP-G2-S01` | four candidate pure Rust/WASM product engines |
+| `g2-2` | `WP-G2-S01` | four locked Rust/WASM product boundaries; only Notebook has an experimental engine |
 | `g2-3` | `WP-G2-I01` | provider-neutral OIDC and opaque browser sessions |
 | `g2-4` | `WP-G2-D01` | PostgreSQL/RLS, retention and deletion platform |
 | `g2-5` | `WP-G2-Q01` | clean-checkout integrated foundation evidence |
@@ -37,7 +38,7 @@ G1 defines 27 bounded packages. A package is ready to schedule when its dependen
 
 The role-separated definition verdicts for `WP-G2-A01` are recorded under [`../reviews/agent-orchestration-wp-g2-a01/`](../reviews/agent-orchestration-wp-g2-a01/); result conformance remains a separate future gate.
 
-No application reconstruction starts before `WP-G2-Q01`. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` keeps `notebook-core` as the sole ContextDocument canonicalization authority and creates neither `crates/context` nor `crates/agent-orchestrator`. The separate `WP-G2-A01` may create only a simulation-only control core under its exclusive paths; harness runtime, Pi launch and real Missions execution remain blocked. Practices scoring remains excluded; its WIT stays reserved until a new human-approved package demonstrates a real invariant.
+No application reconstruction starts before `WP-G2-Q01`. ADR-0005 does not alter that dependency: it permits only the disabled Notebook product-host slice needed to test the exact Gate B boundary with public fixtures. The canary remains bootstrap-only until `WP-G2-T01` explicitly qualifies a stable Rust-line Bun release. `WP-G2-S01` keeps `notebook-core` as the sole ContextDocument canonicalization authority and creates neither `crates/context` nor an orchestrator inside S01. The separate `WP-G2-A01` may create only a simulation-only control core under its exclusive paths; harness runtime, Pi launch and real Missions execution remain blocked. Practices scoring remains excluded; its WIT stays reserved until a new human-approved package demonstrates a real invariant.
 
 ## G3 — parallel experiences
 

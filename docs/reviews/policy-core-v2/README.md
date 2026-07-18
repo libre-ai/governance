@@ -1,16 +1,16 @@
-# policy-core-v2 candidate review dossier
+# policy-core-v2 locked contract review dossier
 
 ## Status
 
-This promotion branch locks contract meaning only. Architecture, Security and Privacy review-only
-passes independently approved the exact Policy v2 authorities at immutable commit
-`d47feb96e605263b825f603033e40c3d1b61800c` under
+Architecture, Security and Privacy review-only passes independently approved the exact Policy v2
+authorities at immutable commit `d47feb96e605263b825f603033e40c3d1b61800c` under
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). The
 [`PROMOTION-PACKAGE.md`](PROMOTION-PACKAGE.md) records the owner milestone and catalog-only
-transition; the separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) pass approves commit
-`e7bb757`. A final integration check and merge remain required. No Policy engine, real tenant data
-processing or transaction authority is authorized. The package hash cited by the verdict is the exact
-snapshot at `e7bb757`; the non-normative package is then enriched only to link the durable verdict.
+transition; the separate [`PROMOTION-VERDICT.md`](PROMOTION-VERDICT.md) approved commit
+`e7bb757`, and final integration is merged. Exactly six Policy v2 catalog entries are now `locked`.
+No Policy engine, real tenant-data processing or transaction authority is authorized. The package hash
+cited by the verdict remains the exact snapshot at `e7bb757`; later non-normative enrichment only links
+the durable verdict.
 
 ## Recorded role verdicts
 
@@ -20,7 +20,7 @@ snapshot at `e7bb757`; the non-normative package is then enriched only to link t
 | Security | [`SECURITY-VERDICT.md`](SECURITY-VERDICT.md) | `APPROVE` | `9098a409a0fd7027c50038174035a8510ddd850b2f5c466ae768411572c60ff0` |
 | Privacy | [`PRIVACY-VERDICT.md`](PRIVACY-VERDICT.md) | `APPROVE` | `da21ce6147f0c2c53153f6721e33abccfbb7b1f49890a4459f7d1b1f75d31175` |
 
-## Candidate authorities
+## Locked authorities
 
 - `contracts/schemas/policy-definition.v2.schema.json`
 - `contracts/schemas/policy-need.v2.schema.json`
@@ -111,8 +111,8 @@ data, and that outputs/logs/errors expose neither fact values nor reviewer ident
 
 ## Promotion rule
 
-Promotion from `candidate` to `locked` requires recorded Architecture, Security and Privacy agent
+Promotion from `candidate` to `locked` received recorded Architecture, Security and Privacy agent
 verdicts from separate review-only passes, followed by the full contract, generated-projection and
 cross-runtime conformance gates. The package records the role evidence and owner `continue`, and the
-immutable promotion commit has received its separate favorable `promotion-integration` verdict. A
+immutable promotion commit received its separate favorable `promotion-integration` verdict. This
 successful lock does not authorize implementation, transaction authority or real-data processing.

@@ -555,8 +555,9 @@ expect(
   "INDEPENDENT-REVIEW.md missing owner-control reference URL",
 );
 expect(
-  gateAReviewText.includes("Gate B") && gateAReviewText.includes("pending"),
-  "INDEPENDENT-REVIEW.md missing Gate B pending state",
+  gateAReviewText.includes("Gate B") &&
+    (gateAReviewText.includes("REJECT") || gateAReviewText.includes("rejet")),
+  "INDEPENDENT-REVIEW.md missing current Gate B rejection state",
 );
 for (const pass of gateArolePasses) {
   expect(
@@ -1293,5 +1294,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate A verified: closed WIT, byte-identical catalog copies and reviewed files, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A is approved and Gate B remains pending`,
+  `Notebook Core v2 Gate A verified: closed WIT, byte-identical catalog copies and reviewed files, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A is approved and Gate B remains rejected for use`,
 );

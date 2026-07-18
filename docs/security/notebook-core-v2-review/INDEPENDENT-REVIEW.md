@@ -1,6 +1,6 @@
 # Procès-verbal de revues séparées par rôle — Gates A/B
 
-> **Statut : Gate A approuvée / Gate B pending.**
+> **Statut : Gate A approuvée / Gate B REJECT.**
 
 Gate A a validé la migration `candidate -> locked` des quatre autorités Notebook Core v2. La preuve
 machine-checkable est complète et la Gate B reste requise avant exploitation utilisateur.
@@ -93,14 +93,16 @@ git status --short
 
 - [ ] **APPROVED**
 - [ ] **APPROVED WITH MINOR RESERVATIONS**
-- [x] **REJECTED** — dernière passe sur `e9970b39736d2c65f57f87955a98891b75384c63`
+- [x] **REJECTED** — dernière passe Gate B sur `5190972`
 
-Rapports attribuables :
-[`5395e45/CRYPTOGRAPHY-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/5395e45/CRYPTOGRAPHY-RUNTIME.md),
-[`d0f643b/HOST-RUNTIME.md`](../../reviews/notebook-core-v2/gate-b/d0f643b/HOST-RUNTIME.md),
-[`7df396b/HOST-REMEDIATION.md`](../../reviews/notebook-core-v2/gate-b/7df396b/HOST-REMEDIATION.md) et
-[`e9970b3/FAULT-RECOVERY.md`](../../reviews/notebook-core-v2/gate-b/e9970b3/FAULT-RECOVERY.md).
-Le moteur et le host remédié exécutent tous les vecteurs sans import dans trois navigateurs ; le worker
-jetable récupère après trap, plafond mémoire et blocage ABI injectés. Le host produit, les OOM/panic
-internes et la matrice p95/appareils restent absents. La Gate B demeure non approuvée ; aucune
+Les six rapports attribuables sont indexés dans
+[`docs/reviews/notebook-core-v2/gate-b/README.md`](../../reviews/notebook-core-v2/gate-b/README.md).
+La dernière passe [`5190972`](../../reviews/notebook-core-v2/gate-b/5190972/) passe les budgets p95/RSS
+des trois navigateurs sur la classe haute mémoire de référence, mais rejette Gate B faute de classes
+contraintes, de host produit exact, d’OOM processus et de preuve d’effacement physique à ce commit.
+
+Après ce verdict, la PR #95 a intégré le host exact sous feature gate fermé et la PR #97 a observé ses
+crash/kill/restart et nettoyages sur trois navigateurs. Ces preuves candidate-integration n’ont pas encore
+reçu de passe Gate B spécialisée et ne démontrent ni OOM réel du processus, ni quota physiquement
+épuisé, ni effacement physique, ni classes 8 Gio/16–24 Gio. La Gate B demeure non approuvée ; aucune
 sauvegarde utilisateur ou release n’est autorisée.
