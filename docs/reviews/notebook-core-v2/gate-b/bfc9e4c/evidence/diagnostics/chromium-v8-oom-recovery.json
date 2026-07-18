@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "libre-ai.notebook-browser-oom-diagnostic.v1",
+  "candidate": "bfc9e4c77082528889ea953cc941a5312edc9b8f",
+  "engine": "chromium",
+  "engineHeapLimitMiB": 32,
+  "limitMechanism": "v8-max-old-space-size",
+  "promotableEvidence": false,
+  "promotionBlocker": "software engine heap cap is diagnostic-only",
+  "watchdogMs": 15000,
+  "publicFixtureOnly": true,
+  "browserPid": 73277,
+  "browserVersion": "149.0.7827.55",
+  "processesBefore": [
+    {
+      "id": 73277,
+      "type": "browser"
+    },
+    {
+      "id": 73281,
+      "type": "renderer"
+    },
+    {
+      "id": 73279,
+      "type": "GPU"
+    },
+    {
+      "id": 73280,
+      "type": "network.mojom.NetworkService"
+    }
+  ],
+  "rendererPid": 73281,
+  "events": [
+    "page-crash",
+    "browser-disconnected"
+  ],
+  "terminationEvent": "page-crash",
+  "watchdogFired": false,
+  "oomMarker": "[0718/094507.151217:ERROR:third_party/blink/renderer/bindings/core/v8/v8_initializer.cc:943] V8 javascript OOM (CALL_AND_RETRY_LAST).",
+  "rendererGcMarker": "walltime since start of marking 12 ms) (average mu = 0.48[73281:0x13c00980000]      316 ms: Incremental Mark-Compact (reduce) 30.2 (32.0) -> 30.2 (32.0) MB, pooled: 0.0 MB, 10.96 / 0.00 ms (+ 0.0 ms in 0 steps since start of marking, biggest step 0.0 ms, walltime since start of marking 11 ms) (average mu = 0.37[73281:0x13c00980000]      329 ms: Mark-Compact (reduce) 30.2 (32.0) -> 30.2 (32.0) MB, pooled: 0.0 MB, 12.85 / 0.00 ms (average mu = 0.233, current mu = 0.001) last resort; GC in old space requested",
+  "processesAfter": [
+    {
+      "id": 73277,
+      "type": "browser"
+    },
+    {
+      "id": 73279,
+      "type": "GPU"
+    },
+    {
+      "id": 73280,
+      "type": "network.mojom.NetworkService"
+    }
+  ],
+  "rendererPresentAfter": false,
+  "rendererPresentInPsAfter": false,
+  "allocationOutcome": "rejected:page.evaluate: Target crashed ",
+  "recoveredMarker": "public-0x5a",
+  "freshWorkerRecovered": true,
+  "recoveryVerified": true
+}

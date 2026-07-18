@@ -1,11 +1,11 @@
 # Appel à contribution — qualification des machines Notebook modestes
 
-Notebook Core v2 doit encore être mesuré sur des machines Apple Silicon modestes avant que la sauvegarde puisse être activée. Nous cherchons des personnes ou organisations disposant de l'une des configurations suivantes :
+Notebook Core v2 est qualifié sur la classe physique 32+ Gio. Pour découvrir les limites et étendre ultérieurement le support aux machines Apple Silicon modestes, nous cherchons facultativement des personnes ou organisations disposant de l'une des configurations suivantes. L'absence de ces contributions ne bloque plus Gate B conformément à l'ADR-0006 :
 
 | Besoin | Classe à sélectionner | Machine recherchée |
 |---|---|---|
-| preuve minimale | `desktop-arm64-constrained-8gib` | Mac physique arm64, 8 Gio à moins de 12 Gio, au moins 8 CPU logiques |
-| preuve courante | `desktop-arm64-mainstream-16gib` | Mac physique arm64, 16 à 24 Gio, au moins 8 CPU logiques |
+| observation contrainte | `desktop-arm64-constrained-8gib` | Mac physique arm64, 8 Gio à moins de 12 Gio, au moins 8 CPU logiques |
+| observation courante | `desktop-arm64-mainstream-16gib` | Mac physique arm64, 16 à 24 Gio, au moins 8 CPU logiques |
 | diagnostic précoce | l'une des deux classes | VM macOS arm64 avec 8 ou 16 Gio assignés |
 
 Un MacBook Air M1/M2 8 Gio est particulièrement intéressant car il représente une cible fanless contrainte. Il n'est pas nécessaire de prêter la machine : la campagne peut être exécutée par son propriétaire.
@@ -28,7 +28,7 @@ Une machine physique utilise :
 export NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=physical-evidence
 ```
 
-Le harness refuse les signaux de virtualisation connus. Un résultat vert produit `qualification-budgets-pass`, mais ne ferme pas seul Gate B : le commit et les fichiers bruts font ensuite l'objet d'une passe `review-only` et d'une décision explicite.
+Le harness refuse les signaux de virtualisation connus. Un résultat vert produit `qualification-budgets-pass`, mais ne suffit pas à déclarer la classe supportée : le commit et les fichiers bruts font ensuite l'objet d'une passe `review-only` et d'une décision explicite.
 
 ### Diagnostic VM
 
@@ -194,7 +194,7 @@ Inspectez le relevé, le journal et les JSON avant envoi. Ne modifiez jamais un 
 - aucune donnée personnelle, requête externe, console ou erreur de page ;
 - fichiers bruts revus sur commit immuable par une passe distincte.
 
-Un résultat échoué est utile et doit être conservé tel quel. Il conduit à corriger le moteur ou à reconsidérer le minimum ; jamais à relâcher silencieusement les budgets cryptographiques.
+Un résultat échoué est utile et doit être conservé tel quel. Il conduit à corriger le moteur ou à conserver la classe hors support ; jamais à relâcher silencieusement les budgets cryptographiques.
 
 ## Autres manières d'aider sans prêter ni louer une machine
 
