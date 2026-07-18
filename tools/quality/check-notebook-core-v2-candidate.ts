@@ -151,6 +151,37 @@ const gateACommit = "a28e116b0a3ebf278412650715e03f7050c0aac0";
 const gateATree = "cda41e7f9cc620a87ee0488caa06141614fb5b93";
 const ownerControlUrl = "https://github.com/libre-ai/libre-ai/pull/41#issuecomment-4998576948";
 const cycleReviewRoot = "docs/reviews/notebook-core-v2/gate-a/a28e116";
+const gateBCommit = "9ee3f8da65afce9bce8da98baac72c1aea8bd0ce";
+const gateBTree = "843a95252eb60f08fdc596a20bcbcd19a0b1b4fd";
+const gateBReviewRoot = "docs/reviews/notebook-core-v2/gate-b/9ee3f8d";
+const gateBReviewPasses = [
+  {
+    report: "ARCHITECTURE-HOST.md",
+    passId: "notebook-core-v2-gate-b-architecture-host-9ee3f8d-01",
+    sha256: "9f8582f490bba1fc394afbd75fc3b0ab23efcc3b2bde6ba0ea8649da861290cc",
+  },
+  {
+    report: "SECURITY.md",
+    passId: "notebook-core-v2-gate-b-security-9ee3f8d-02",
+    sha256: "093cdd111993eff4876fd501ab57cf9ad896741a223d5b2b6db51425032fcba2",
+  },
+  {
+    report: "CRYPTOGRAPHY-RUNTIME.md",
+    passId: "notebook-core-v2-gate-b-cryptography-runtime-9ee3f8d-03",
+    sha256: "b1c14f825e4180f0cff1564b0ca0e432558a80c022fafb390e64666dc7152fb9",
+  },
+  {
+    report: "PRIVACY-FRANCE-EU.md",
+    passId: "notebook-core-v2-gate-b-privacy-france-eu-9ee3f8d-04",
+    sha256: "54cce6571bdd439fc0686a5d2bde20b6f5f15fc5de45828c0f83df78bd640ab4",
+  },
+  {
+    report: "PERFORMANCE-RESOURCE-CLASSES.md",
+    passId: "notebook-core-v2-gate-b-performance-resource-classes-9ee3f8d-05",
+    sha256: "1554eb45f336187156ee221846521196e2ff236f6a55a8c730f91cac6a45fc3b",
+  },
+] as const;
+const gateBVerdictSha = "0ec57e0713a114ff0c2110b9bc130a1ba9f811c9ca23763a2a865e129dab512e";
 const failures: string[] = [];
 const encoder = new TextEncoder();
 
@@ -557,7 +588,7 @@ expect(
 expect(
   gateAReviewText.includes("Gate B") &&
     (gateAReviewText.includes("REJECT") || gateAReviewText.includes("rejet")),
-  "INDEPENDENT-REVIEW.md missing current Gate B rejection state",
+  "INDEPENDENT-REVIEW.md missing historical Gate A boundary",
 );
 for (const pass of gateArolePasses) {
   expect(
@@ -640,6 +671,47 @@ const reviewFiles = [
 for (const path of reviewFiles) {
   expect(existsSync(path), `${path}: Gate A review file is missing`);
 }
+
+for (const pass of gateBReviewPasses) {
+  const path = `${gateBReviewRoot}/${pass.report}`;
+  expect(existsSync(path), `${path}: Gate B role report is missing`);
+  const text = await Bun.file(path).text();
+  expect(text.includes(gateBCommit), `${path}: Gate B candidate mismatch`);
+  expect(text.includes(gateBTree), `${path}: Gate B tree mismatch`);
+  expect(text.includes(pass.passId), `${path}: Gate B reviewPassId mismatch`);
+  expect(text.includes("mode : `review-only`"), `${path}: Gate B mode is not review-only`);
+  const verdicts = text.match(/^\*\*VERDICT: (approve|reject)\*\*$/gm) ?? [];
+  expectEqual(verdicts.length, 1, `${path}: exactly one terminal verdict`);
+  expectEqual(verdicts[0], "**VERDICT: approve**", `${path}: terminal verdict`);
+  expectEqual(await fileSha256(path), pass.sha256, `${path}: report SHA mismatch`);
+}
+
+const gateBVerdictPath = `${gateBReviewRoot}/GATE-B-VERDICT.md`;
+const gateBVerdictText = await Bun.file(gateBVerdictPath).text();
+expect(gateBVerdictText.includes(gateBCommit), "Gate B synthesis candidate mismatch");
+expect(gateBVerdictText.includes(gateBTree), "Gate B synthesis tree mismatch");
+expect(
+  gateBVerdictText.includes("notebook-core-v2-gate-b-synthesis-9ee3f8d-06"),
+  "Gate B synthesis reviewPassId mismatch",
+);
+expect(gateBVerdictText.includes("**GATE B: APPROVE**"), "Gate B synthesis is not approved");
+expectEqual(
+  await fileSha256(gateBVerdictPath),
+  gateBVerdictSha,
+  `${gateBVerdictPath}: report SHA mismatch`,
+);
+expect(
+  (await Bun.file(`${gateBReviewRoot}/README.md`).text()).includes(
+    "- verdict Gate B : **APPROVE**",
+  ),
+  "Gate B archive status is not approved",
+);
+expect(
+  (await Bun.file("STATUS.md").text()).includes(
+    "Notebook Gate B is approved on immutable candidate `9ee3f8d`",
+  ),
+  "current Gate B status is not approved",
+);
 
 const reviewedCopies: ReadonlyArray<readonly [string, string]> = [
   [`${root}/world.wit`, "contracts/wit/notebook-core-v2/world.wit"],
@@ -1294,5 +1366,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `Notebook Core v2 Gate A verified: closed WIT, byte-identical catalog copies and reviewed files, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A is approved and Gate B remains rejected for use`,
+  `Notebook Core v2 verified: closed WIT, byte-identical catalog copies and reviewed files, AAD/digest/AES-GCM, ${vectors.mutations.length} backup and ${vectors.contextCanonicalization.mutations.length} context mutations, 6 replayable resource boundaries, one recovery profile; Gate A and Gate B role verdicts approve on ${gateBCommit}; activation, user data and release remain separately gated`,
 );

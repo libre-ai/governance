@@ -5,6 +5,7 @@ const root = resolve(process.cwd(), "tools/qualification/notebook-core-v2");
 
 export default defineConfig({
   fullyParallel: false,
+  globalSetup: resolve(root, "performance.global-setup.ts"),
   outputDir: `${root}/../../../target/notebook-core-v2-qualification/playwright-performance`,
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
