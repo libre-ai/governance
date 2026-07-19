@@ -1,0 +1,68 @@
+name: Public truth drift
+
+# Weekly audit: the LEGACY-MANIFEST github_status of every legacy repository
+# must match the observable GitHub state. This is the check that would have
+# caught the 2026-07-19 audit findings (unarchived repository with post-freeze
+# pushes, silently removed repositories) as they happened.
+on:
+  schedule:
+    - cron: "43 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manifest-drift:
+    name: Manifest matches observable GitHub state
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Compare github_status with live state
+        run: |
+          set -euo pipefail
+          fail=0
+          # policy is a private repository: unreadable with the repo-scoped
+          # token, verified manually instead.
+          PRIVATE_SKIP="policy"
+          repo=""
+          while IFS= read -r line; do
+            case "$line" in
+              *"- id: legacy."*)
+                repo="${line##*legacy.}"
+                ;;
+              *"github_status:"*)
+                status="${line##*github_status: }"
+                skip=false
+                for p in $PRIVATE_SKIP; do
+                  [ "$repo" = "$p" ] && skip=true
+                done
+                if [ "$skip" = "true" ]; then
+                  echo "SKIP $repo (private, unreadable with the repository token)"
+                  continue
+                fi
+                if archived=$(gh api "repos/libre-ai/$repo" --jq .archived 2>/dev/null); then
+                  live="present-archived-$archived"
+                else
+                  live="absent"
+                fi
+                case "$status" in
+                  frozen-reserved-product-home)
+                    if [ "$live" != "present-archived-true" ]; then
+                      echo "DRIFT: $repo expected frozen+archived, live=$live"
+                      fail=1
+                    fi
+                    ;;
+                  removed-*)
+                    if [ "$live" != "absent" ]; then
+                      echo "DRIFT: $repo expected removed, live=$live"
+                      fail=1
+                    fi
+                    ;;
+                esac
+                ;;
+            esac
+          done < ecosystem/LEGACY-MANIFEST.yaml
+          exit $fail

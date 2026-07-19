@@ -1,0 +1,80 @@
+name: Doctrine governance
+
+# Hard backstop for ADR-0008 §7: doctrine exists only in the invariants
+# register, every accepted ADR carries its owner-arbitration trace, and the
+# superseded doctrine or retired brands cannot silently resurface in living
+# documents. Introduced by the 2026-07-19 quality pass.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  doctrine-governance:
+    name: Doctrine governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: ADR numbering is unique
+        run: |
+          set -euo pipefail
+          # Grandfathered collision: the two 0004 files predate this gate
+          # (0004-licensing-governance + 0004-agent-orchestration-option-b).
+          # Any other duplicate number fails.
+          dups=$(ls docs/adr | grep -oE '^[0-9]{4}' | sort | uniq -d | grep -v '^0004$' || true)
+          if [ -n "$dups" ]; then
+            echo "Duplicate ADR numbers: $dups"
+            exit 1
+          fi
+
+      - name: Accepted ADRs from 0008 onward carry an owner-arbitration line
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in docs/adr/*.md; do
+            num=$(basename "$f" | cut -c1-4)
+            if [ "$((10#$num))" -lt 8 ]; then continue; fi
+            if grep -qiE 'Statut.*accepted' "$f" && ! grep -qiE 'Arbitrage' "$f"; then
+              echo "$f: accepted without an Arbitrage line"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Invariants register citations resolve
+        run: |
+          set -euo pipefail
+          fail=0
+          for n in $(grep -oE 'ADR-[0-9]{4}' docs/decisions/INVARIANTS.md | sort -u | cut -d- -f2); do
+            if ! ls docs/adr/${n}-*.md >/dev/null 2>&1; then
+              echo "INVARIANTS.md cites ADR-${n} but docs/adr/${n}-*.md does not exist"
+              fail=1
+            fi
+          done
+          if grep -E 'ADR 0047' docs/decisions/INVARIANTS.md | grep -qv 'control-plane'; then
+            echo "INVARIANTS.md: cross-repo ADR citation without the control-plane qualifier"
+            fail=1
+          fi
+          for f in docs/specifications/IDENTITY-AUTHORIZATION.md docs/specifications/DATA-LIFECYCLE.md docs/transformation/G1-WORK-PACKAGES.md; do
+            test -s "$f" || { echo "missing cited source: $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Superseded doctrine and retired brands stay out of living documents
+        run: |
+          set -euo pipefail
+          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr" \
+            --include='*.md' . \
+            | grep -v 'docs/transformation/inputs/' \
+            | grep -v 'docs/reviews/' \
+            | grep -v 'docs/adr/0008-' \
+            | grep -v 'node_modules/' || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Superseded doctrine or a retired brand resurfaced in a living document."
+            exit 1
+          fi
