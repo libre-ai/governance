@@ -66,3 +66,35 @@ jobs:
             esac
           done < ecosystem/LEGACY-MANIFEST.yaml
           exit $fail
+      - name: Inventory matches observable organization
+        run: |
+          set -euo pipefail
+          fail=0
+          # Public repositories declared in the inventory
+          declared=$(grep -E '^  - repository: ' ecosystem/repositories.v1.yaml \
+            | sed 's/.*repository: //')
+          declared_public=""
+          repo=""
+          while IFS= read -r line; do
+            case "$line" in
+              "  - repository: "*) repo="${line##*repository: }" ;;
+              "    visibility: public"*) declared_public="$declared_public ${repo#libre-ai/}" ;;
+            esac
+          done < ecosystem/repositories.v1.yaml
+          # Live public repositories of the organization
+          live=$(gh api --paginate "orgs/libre-ai/repos?per_page=100" \
+            --jq '.[] | select(.private == false) | .name' | sort)
+          for r in $live; do
+            case " $declared_public " in
+              *" $r "*) ;;
+              *) echo "DRIFT: public repository '$r' absent from repositories.v1.yaml"; fail=1 ;;
+            esac
+          done
+          for r in $declared_public; do
+            case "$r" in libre-ai|.github) continue;; esac
+            gh api "repos/libre-ai/$r" --jq .archived >/dev/null 2>&1 || {
+              echo "DRIFT: inventory declares '$r' public but it is not observable"
+              fail=1
+            }
+          done
+          exit $fail
