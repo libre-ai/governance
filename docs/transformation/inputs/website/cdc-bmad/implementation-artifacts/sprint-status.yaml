@@ -1,0 +1,87 @@
+# generated: 2026-07-14
+# last_updated: 2026-07-14
+# project: website
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context recommended)
+# - Stories 2.6, 2.7, 2.8 are stakeholder-authored (corpus pieces) — dev does not close them alone
+
+generated: 2026-07-14
+last_updated: 2026-07-15  # Story 2.6 pièce maîtresse — done
+project: website
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: done
+  1-1-fondations-visuelles-tokens-et-typographies: done
+  1-2-les-neuf-composants-du-contrat-ux: done
+  1-3-navigation-et-gabarit-de-page: done
+  1-4-home-a-message-unique: done
+  1-5-pages-utilitaires: done
+  1-6-coherence-de-marque-purge-libre-ia: done
+  1-7-retrait-du-site-produit-legacy: done
+  epic-1-retrospective: optional
+  epic-2: in-progress
+  2-1-gabarit-type-et-pipeline-markdown: done
+  2-2-page-piece-de-corpus: done
+  2-3-citabilite-bloc-citation-et-metadonnees: done
+  2-4-index-du-corpus-et-serie-trimestrielle: done
+  2-5-flux-atom: done
+  2-6-piece-maitresse-redaction-et-publication: done
+  2-7-piece-signature-energie-du-clic: backlog
+  2-8-brief-trimestriel-n1: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-pages-offres-t1: backlog
+  3-2-offres-t2-annoncees-et-catalogue-t3: backlog
+  3-3-service-conversion-socle-et-formulaire-de-contact: backlog
+  3-4-prise-de-rendez-vous-sans-compte: backlog
+  3-5-annulation-par-lien-signe-et-envoi-d-email: backlog
+  3-6-conversion-universelle-branchee: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-page-collectif-fondateur-incarne-et-vision-cible: backlog
+  4-2-fiches-membres-et-porte-discrete: backlog
+  4-3-page-chaine-maitrisee: backlog
+  4-4-ce-que-nous-construisons: backlog
+  4-5-interventions-et-attribution: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-gates-editorial-et-confidentialite: backlog
+  5-2-gate-sobriete-et-publication-des-mesures: backlog
+  5-3-gates-accessibilite-et-clavier: backlog
+  5-4-gate-zero-tiers-et-gouvernance-des-seuils: backlog
+  5-5-enveloppe-operationnelle: backlog
+  5-6-mise-en-ligne-sur-libre-ai-fr: backlog
+  epic-5-retrospective: optional
