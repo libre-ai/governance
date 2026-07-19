@@ -1,0 +1,137 @@
+schema_version: libre-ai.repositories.v1
+authority: single source of the public topology and exposure states (ADR-0009 §7)
+updated_on: 2026-07-19
+exposure_scale: [idea, spec-published, usable-verifiable, proven]
+repositories:
+  - repository: libre-ai/libre-ai
+    role: hub
+    layer: moyeu
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    owns:
+      - contracts, specifications, doctrine (invariants register)
+      - shared foundations and high-churn bricks (layers 3-4 workshop)
+      - fleet CI (cross-integration, compatibility matrices, fixtures)
+    consumes: []
+  - repository: libre-ai/.github
+    role: org-profile
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    owns:
+      - organization profile README (projection of this inventory)
+    consumes:
+      - this inventory
+  - repository: libre-ai/feed-radar
+    role: reserved-product-home
+    layer: couche-1
+    product: Radar
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - explainable feed selection and portable curation (at activation)
+    consumes:
+      - hub contracts, auth, data lifecycle, radar engine
+    canonical_paths:
+      - apps/radar
+  - repository: libre-ai/notebook
+    role: reserved-product-home
+    layer: couche-1
+    product: Notebook
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - private local-first knowledge, controlled context export (at activation)
+    consumes:
+      - hub contracts, notebook-core (Gate B approved)
+    canonical_paths:
+      - apps/notebook
+      - crates/notebook-core
+  - repository: libre-ai/ai-practices
+    role: reserved-product-home
+    layer: couche-1
+    product: AI Practices
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - professional training for sourced AI practice (at activation)
+    consumes:
+      - hub contracts, auth, data lifecycle
+    canonical_paths:
+      - apps/practices
+  - repository: libre-ai/sessions
+    role: reserved-product-home
+    layer: couche-1
+    product: Sessions
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - source-grounded collective learning and facilitation (at activation)
+    consumes:
+      - hub contracts, auth, data lifecycle
+    canonical_paths:
+      - apps/sessions
+  - repository: libre-ai/boussole-politique
+    role: reserved-product-home
+    layer: couche-1
+    product: Boussole Politique
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - private civic comparison against sourced public votes (at activation)
+    consumes:
+      - hub contracts, boussole engine (contracts locked)
+    canonical_paths:
+      - apps/boussole
+  - repository: libre-ai/spec-studio
+    role: reserved-product-home
+    layer: couche-1
+    product: Spec Studio
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - product decisions, specifications and bounded handoffs (at activation)
+    consumes:
+      - hub contracts, auth
+    canonical_paths:
+      - apps/specifications
+  - repository: libre-ai/policy
+    role: reserved-product-home
+    layer: couche-1
+    product: Model Policy
+    visibility: private
+    target_visibility: public-after-secrets-audit (ADR-0009 §8, wave 4 entry)
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    owns:
+      - model selection under explainable policy (at activation)
+    consumes:
+      - hub contracts, policy-core (contracts locked)
+    canonical_paths:
+      - apps/model-policy
+      - crates/policy-core
+  - repository: libre-ai/agent-board
+    role: reserved-product-home
+    layer: couche-2
+    product: Missions
+    visibility: public
+    lifecycle: frozen-until-wave-3
+    exposure: spec-published
+    owns:
+      - human surface of agent missions (at activation, with the orchestrator lock)
+    consumes:
+      - hub contracts, orchestration contracts (locked, option B)
+    canonical_paths:
+      - apps/missions
+notes:
+  - Layer 3-4 bricks live in the hub until the coverage law promotes them
+    (ADR-0009 §4); they enter this inventory when they gain a public surface.
+  - No private personal repository belongs to this inventory (ADR-0009 §9).
