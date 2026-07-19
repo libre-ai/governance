@@ -61,7 +61,7 @@ Il n’autorise ni perte de données, ni intégration tardive. Les composants ci
 ## Vague 5 — Single Cutover
 
 - DNS, artefacts et déploiements ;
-- projections publiques ;
+- publications générées et repositories produits selon décision propriétaire (ADR-0008) ;
 - archivage définitif ;
 - surveillance et rollback global.
 

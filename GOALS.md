@@ -40,6 +40,6 @@ Qualify security, data migration, accessibility, performance, operations and rel
 
 ## G5 — Distribution
 
-Publish projections, packages, documentation, context packs and reproducible evidence.
+Publish packages, documentation, context packs and reproducible evidence; activate real public product repositories on explicit owner decision (ADR-0008).
 
 **Acceptance:** an independent actor can reconstruct and verify a distributed capability.
