@@ -72,4 +72,4 @@
 - no local physical 8 Gio or 16–24 Gio Notebook device is currently available; these classes remain optional and unsupported, while VM evidence stays diagnostic-only ;
 - real browser-process OOM remains unobserved portably across the three engines; it is an optional residual-risk diagnostic and global RAM/swap exhaustion is forbidden ;
 - logical buffer wiping cannot be promoted as physical RAM/OS erasure ;
-- the current DCO gate preflights every commit in a pull-request range but does not examine the final GitHub-generated merge commit on push; `WP-G2-Q01` must close this enforcement gap without rewriting accepted history.
+- the DCO gate now also verifies every commit a push introduces on `main`, requiring the merging maintainer's `Signed-off-by:` trailer inside GitHub-generated merge messages (anticipatory `WP-G2-Q01` change); detection on the merge commit itself is post-merge, so a violation surfaces as a failed `main` run remediated by a forward commit, and pre-gate merge commits remain unexamined accepted history.
