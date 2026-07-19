@@ -1,6 +1,6 @@
 # Revues séparées par rôle — Notebook Core v2
 
-Statut : **locked / Gate A approuvée / Gate B REJECT / release bloquée**.
+Statut : **locked / Gate A approuvée / Gate B APPROVED / activation et release bloquées**.
 
 La promotion exige quatre verdicts issus de passes review-only distinctes par rôle : architecture,
 sécurité, cryptographie et vie privée, selon
@@ -14,9 +14,11 @@ La passe [`gate-b/96934a8`](gate-b/96934a8/) est basée sur la gouvernance réco
 
 La passe [`gate-b/bfc9e4c`](gate-b/bfc9e4c/) applique la décision propriétaire ADR-0006 : la classe physique 32+ Gio devient la seule classe requise, tandis que 8/16–24 Gio restent des contributions facultatives et non supportées. Une matrice fraîche sur le candidat exact passe tous les budgets dans les trois moteurs. Les quatre rôles architecture, sécurité, cryptographie et vie privée approuvent ; performance rejette encore faute d'OOM processus attribuable sur les trois moteurs.
 
+La passe finale [`gate-b/9ee3f8d`](gate-b/9ee3f8d/) applique ADR-0007 : l'OOM réel du processus devient un diagnostic facultatif, la reprise bornée reste obligatoire et la saturation globale est interdite. Un rejet RSS Firefox intermédiaire est conservé, puis le sampler est remédié par verrou exclusif du cache, preflight de processus et comptage complet compatible WebKit. La matrice finale physique passe sur trois moteurs et les cinq rôles spécialisés plus la synthèse Gate B approuvent. Cette Gate ne vaut ni activation, donnée utilisateur, production ou release.
+
 La passe cryptographie a reproduit Argon2id, AAD, AES-256-GCM, tag et digest avec une seconde
 implémentation, puis confirmé la borne candidate de 16 MiB, les limites navigateur et l’ordre
 anti-oracle. Elle vérifie aussi que l'interface WIT autonome `api` n'introduit aucun import de types.
 La passe vie privée a confirmé le local-only, l’absence de réseau/log, les identifiants CSPRNG
 export-scoped, l'absence de timestamp/révision/exclusion claire et l'unique recovery code normatif.
-L’artefact WASM et son composant transpillé ont des imports vides ; les copies ABI, buffers host et instances jetables après fautes injectées sont exercés dans trois navigateurs. Panic/OOM Rust, premier alloc serde, réservations JCS/Argon et matrice p50/p95/RSS sont mesurés sur une classe arm64 de référence. Le host produit exact est désactivé par défaut et reprend après crash, kill et `ENOSPC`. L'OOM du processus navigateur et l'effacement physique non revendicable restent ouverts ; les classes physiques 8/16–24 Gio sont suivies uniquement pour une extension future du support.
+L’artefact WASM et son composant transpillé ont des imports vides ; les copies ABI, buffers host et instances jetables après fautes injectées sont exercés dans trois navigateurs. Panic/OOM Rust, premier alloc serde, réservations JCS/Argon et matrice p50/p95/RSS sont mesurés sur une classe arm64 de référence. Le host produit exact est désactivé par défaut et reprend après crash, kill et `ENOSPC`. L'OOM du processus navigateur, l'effacement physique et les classes 8/16–24 Gio restent des limites ou observations facultatives, sans revendication de support.

@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
+import { sumPinnedBrowserCacheRss } from "./browser-rss";
 import {
   type NotebookHardwareResources,
   parseResourceClassManifest,
@@ -502,6 +503,7 @@ test("measures locked 16 MiB profiles and anti-oracle distributions", async ({
     promotableEvidence: evidenceEnvironment.promotable,
     resourceClassEvidenceStatus: resourceClass.evidenceStatus,
     resourceClassManifestSha256,
+    rssProcessSelection: "exclusive-pinned-browser-cache",
     resourceClassRequirements: {
       architecture: resourceClass.architecture,
       maximumLogicalCpuExclusive: resourceClass.maximumLogicalCpuExclusive,
@@ -583,16 +585,10 @@ class BrowserRssSampler {
 
   private sample(): number {
     const cachePath = join(homedir(), "Library/Caches/ms-playwright", this.cacheDirectory);
-    const lines = execFileSync("/bin/ps", ["-axo", "rss=,command="], {
+    const processTable = execFileSync("/bin/ps", ["-axo", "rss=,command="], {
       encoding: "utf8",
-    }).split("\n");
-    let kib = 0;
-    for (const line of lines) {
-      if (!line.includes(cachePath)) continue;
-      const match = line.trim().match(/^(\d+)\s/);
-      if (match?.[1]) kib += Number(match[1]);
-    }
-    return kib * 1024;
+    });
+    return sumPinnedBrowserCacheRss(processTable, cachePath);
   }
 
   private stop(): void {
