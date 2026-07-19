@@ -35,6 +35,7 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
+- `WP-G2-Z01` Biscuit authorization capability was completed by PR #101 and merged as `a6bee98`: mandatory bounded attenuation, deny-by-default Sessions/Missions policies, verified root-family revocation and two-key Ed25519 rotation passed separate authorization-policy, key-rotation and candidate-integration reviews; the immutable rejects `87a802e` and `fbbe360` remain preserved, and no production use or key ceremony is authorized ;
 - ADR-0003 opened and closed a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core, Boussole v2 and the shared engine-vector envelope are locked after role verdicts, promotion reviews and owner milestones ;
 - solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
 - Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on `d47feb9` and exactly six authorities are locked; Notebook Core v2 is locked after Gate A and Gate B is approved on `9ee3f8d`, while user backups, activation, production and release still require a separate owner milestone ;
@@ -70,4 +71,5 @@
   and end-to-end tenant/RLS proof remain separate G2 implementation evidence ;
 - no local physical 8 Gio or 16–24 Gio Notebook device is currently available; these classes remain optional and unsupported, while VM evidence stays diagnostic-only ;
 - real browser-process OOM remains unobserved portably across the three engines; it is an optional residual-risk diagnostic and global RAM/swap exhaustion is forbidden ;
-- logical buffer wiping cannot be promoted as physical RAM/OS erasure.
+- logical buffer wiping cannot be promoted as physical RAM/OS erasure ;
+- the current DCO gate preflights every commit in a pull-request range but does not examine the final GitHub-generated merge commit on push; `WP-G2-Q01` must close this enforcement gap without rewriting accepted history.
