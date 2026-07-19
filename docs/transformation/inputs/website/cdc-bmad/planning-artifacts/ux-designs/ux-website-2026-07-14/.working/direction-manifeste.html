@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Libre IA — Manifeste</title>
+    <style>
+      /* Rationale : Voix haute. Typographie très grande, contrastes maximal noir/blanc, déclarations en pleine page.
+           Esthétique de tribune politique. Ambiance : une position assumée, pas de nuance sur la home, impact visuel maximal.
+           État montré : CTA repos (noir) + CTA actif (inversé, blanc sur noir). */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #000;
+        background: #fff;
+        line-height: 1.4;
+      }
+
+      .viewport {
+        max-width: 1024px;
+        margin: 0 auto;
+        background: white;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+      }
+
+      .header {
+        margin-bottom: 3rem;
+        border-bottom: 2px solid #000;
+        padding-bottom: 2rem;
+      }
+
+      .logo {
+        font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        color: #000;
+        text-transform: uppercase;
+        margin-bottom: 2rem;
+        font-weight: bold;
+      }
+
+      h1 {
+        font-size: 3.5rem;
+        font-weight: 900;
+        line-height: 1.1;
+        color: #000;
+        margin-bottom: 2rem;
+        letter-spacing: -0.02em;
+      }
+
+      .subtitle {
+        font-size: 1.25rem;
+        color: #000;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .entrees {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #000;
+      }
+
+      .entree {
+        margin-bottom: 1.75rem;
+        display: flex;
+        gap: 2rem;
+      }
+
+      .entree-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #000;
+        font-weight: 900;
+        min-width: 120px;
+      }
+
+      .entree-text {
+        font-size: 1.5rem;
+        line-height: 1.3;
+        color: #000;
+        font-weight: 600;
+      }
+
+      .corpus {
+        margin-top: 4rem;
+        padding: 3rem 0;
+        border-top: 2px solid #000;
+        border-bottom: 2px solid #000;
+      }
+
+      .corpus-title {
+        font-size: 2.75rem;
+        margin-bottom: 1.5rem;
+        color: #000;
+        font-weight: 900;
+        line-height: 1.15;
+      }
+
+      .corpus-text {
+        font-size: 1.35rem;
+        line-height: 1.6;
+        color: #000;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+      }
+
+      .corpus-meta {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: bold;
+      }
+
+      .cta-container {
+        text-align: center;
+        margin-top: 4rem;
+        margin-bottom: 3rem;
+      }
+
+      .cta {
+        display: inline-block;
+        padding: 1.5rem 3.5rem;
+        font-size: 1.25rem;
+        border: 3px solid #000;
+        color: #000;
+        background: white;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .cta:hover {
+        background: #000;
+        color: white;
+      }
+
+      .cta.active-state {
+        background: #000;
+        color: white;
+      }
+
+      .footer {
+        text-align: center;
+        padding-top: 2rem;
+        border-top: 2px solid #000;
+        font-size: 0.85rem;
+        color: #000;
+        margin-top: auto;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .state-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #999;
+        margin-top: 2rem;
+        letter-spacing: 0.15em;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="viewport">
+      <div class="header">
+        <div class="logo">⚡ Libre IA</div>
+        <h1>De l'IA qui vous respecte</h1>
+        <div class="subtitle">
+          Des coûts clairs. Des équipes qui maîtrisent vraiment. La liberté de
+          partir quand vous voulez.
+        </div>
+      </div>
+
+      <div class="entrees">
+        <div class="entree">
+          <div class="entree-label">Dirigeant</div>
+          <div class="entree-text">
+            Décider sans dépendre du discours des vendeurs
+          </div>
+        </div>
+        <div class="entree">
+          <div class="entree-label">Public</div>
+          <div class="entree-text">
+            La souveraineté, documentée et sans agenda caché
+          </div>
+        </div>
+        <div class="entree">
+          <div class="entree-label">Technique</div>
+          <div class="entree-text">
+            Les dépôts, les coûts, les architectures — tout est public
+          </div>
+        </div>
+      </div>
+
+      <div class="corpus">
+        <h2 class="corpus-title">
+          Sortir des hyperscalers sans perdre la capacité
+        </h2>
+        <p class="corpus-text">
+          L'IA de frontière existe. Les équipes compétentes existent. Ce qui
+          manque : l'infrastructure qui laisse une organisation maître de ses
+          coûts, de sa donnée, et de son avenir. Nous l'avons construite.
+        </p>
+        <div class="corpus-meta">Juillet 2026 · mis à jour</div>
+      </div>
+
+      <div class="cta-container">
+        <a href="#" class="cta">Réserver 30 minutes</a>
+        <div class="state-label">↓ État actif / inversé</div>
+        <a
+          href="#"
+          class="cta active-state"
+          style="display: block; margin-top: 2rem"
+          >Réserver 30 minutes</a
+        >
+      </div>
+
+      <div class="footer">187 Ko · 0 REQUÊTES TIERCES · FRANCE</div>
+    </div>
+  </body>
+</html>
