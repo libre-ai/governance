@@ -18,6 +18,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Product paths require a work-package reference (pull requests)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "$GITHUB_BASE_REF"
+          touched=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD -- 'apps/**' || true)
+          if [ -z "$touched" ]; then
+            echo "no product paths touched"
+            exit 0
+          fi
+          if git log "origin/$GITHUB_BASE_REF"..HEAD --format=%B | grep -qE 'WP-G[0-9]-[A-Z][0-9]+'; then
+            echo "work-package reference found in branch commits"
+            exit 0
+          fi
+          echo "$touched"
+          echo "apps/** touched without a WP-G<phase>-<letter><NN> work-package reference in the branch commits (invariant I-08)."
+          exit 1
 
       - name: ADR numbering is unique
         run: |
