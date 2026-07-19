@@ -119,9 +119,12 @@ repositories:
       - apps/model-policy
       - crates/policy-core
   - repository: libre-ai/agent-board
-    role: reserved-product-home
+    role: reserved-application-home
     layer: couche-2
-    product: Missions
+    application: Missions
+    # Missions est l'application de la couche 2, PAS un huitième produit :
+    # le portefeuille compte sept produits (ADR-0009 §2). Ambiguïté détectée
+    # par le test de l'agent froid du 2026-07-19 et corrigée le jour même.
     visibility: public
     lifecycle: frozen-until-wave-3
     exposure: spec-published
