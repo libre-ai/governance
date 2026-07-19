@@ -54,7 +54,18 @@ for await (const path of glob.scan({ cwd: ".", dot: true, onlyFiles: true })) {
   }
 }
 
-const vision = await Bun.file("vision.md").text();
+// Wave 0 (ADR-0009): vision.md is decomposed by authority; the anchored
+// decisions live across the durable vision and its authority documents.
+const visionCorpus = (
+  await Promise.all(
+    [
+      "vision.md",
+      "docs/architecture/DETAILED-TARGET.md",
+      "docs/architecture/TOOLCHAIN.md",
+      "docs/transformation/PROGRAM.md",
+    ].map((path) => Bun.file(path).text()),
+  )
+).join("\n");
 for (const decision of [
   "migration Big Bang",
   "GitHub et collaboration canoniques",
@@ -62,7 +73,8 @@ for (const decision of [
   "Bun fullstack",
   "Rust spécialisé",
 ]) {
-  if (!vision.includes(decision)) failures.push(`Vision is missing decision: ${decision}`);
+  if (!visionCorpus.includes(decision))
+    failures.push(`Vision corpus is missing decision: ${decision}`);
 }
 
 if (failures.length > 0) {
