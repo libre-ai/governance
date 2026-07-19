@@ -17,7 +17,7 @@ Execute only locked packages from `docs/transformation/work-packages.v1.json`: `
 - specialized Rust crates ;
 - simulation-only agent orchestration control core, without harness/worker or OS capabilities ;
 - Bun app template ;
-- Proof, Artifact and repository projections ;
+- Proof, Artifact and deterministic artifact projections ;
 - local/CI quality gates.
 
 ## Constraints
