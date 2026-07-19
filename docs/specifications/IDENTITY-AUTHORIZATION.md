@@ -75,19 +75,21 @@ Ed25519 signing keys rotate at least every 90 days: publish new public key, depl
 
 ## Refusal codes
 
-| Code | Meaning |
-| --- | --- |
-| `auth.oidc_state_invalid` | state missing, stale, replayed or divergent |
-| `auth.oidc_claim_invalid` | issuer/audience/signature/nonce/time invalid |
-| `auth.session_missing` | opaque session absent or unknown |
-| `auth.session_expired` | idle/absolute expiry reached |
-| `auth.session_revoked` | session revoked or membership invalidated |
-| `auth.csrf_invalid` | origin/fetch metadata/token check failed |
-| `auth.tenant_mismatch` | token/session/resource tenants differ |
-| `auth.biscuit_invalid` | signature, format, authority or attenuation invalid |
-| `auth.biscuit_revoked` | verified root block is revoked |
-| `auth.operation_denied` | deny-by-default authorizer found no allowance |
-| `auth.key_unavailable` | qualified verification/signing key unavailable |
+This table enumerates authentication and authorization refusals. The optimistic-concurrency control required by the revision precondition of cookie-authenticated mutations is a distinct category: a stale revision returns `412` with `auth.session_revision_mismatch`, not a refusal from this table (monorepo ADR-0010).
+
+| Code                      | Meaning                                             |
+| ------------------------- | --------------------------------------------------- |
+| `auth.oidc_state_invalid` | state missing, stale, replayed or divergent         |
+| `auth.oidc_claim_invalid` | issuer/audience/signature/nonce/time invalid        |
+| `auth.session_missing`    | opaque session absent or unknown                    |
+| `auth.session_expired`    | idle/absolute expiry reached                        |
+| `auth.session_revoked`    | session revoked or membership invalidated           |
+| `auth.csrf_invalid`       | origin/fetch metadata/token check failed            |
+| `auth.tenant_mismatch`    | token/session/resource tenants differ               |
+| `auth.biscuit_invalid`    | signature, format, authority or attenuation invalid |
+| `auth.biscuit_revoked`    | verified root block is revoked                      |
+| `auth.operation_denied`   | deny-by-default authorizer found no allowance       |
+| `auth.key_unavailable`    | qualified verification/signing key unavailable      |
 
 Messages never reveal whether a user, tenant or resource exists. Operational logs retain request/resource IDs, root block ID, policy/rule ID and outcome—not user/session IDs. Attributable actor history belongs to the authorized product event or deletion/approval receipt under that owner's retention policy, not to auth logs.
 
