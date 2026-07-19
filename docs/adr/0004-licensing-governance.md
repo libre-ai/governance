@@ -2,7 +2,7 @@
 
 - **Statut :** accepted
 - **Date :** 2026-07-17
-- **Portée :** monorepo canonique et futures projections
+- **Portée :** monorepo canonique, futurs repositories produits et projections générées (documentation, SDK, packs)
 - **Décision propriétaire solo :** transition multi-licence, REUSE et DCO explicitement autorisés
 
 ## Contexte

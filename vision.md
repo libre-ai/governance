@@ -138,8 +138,10 @@ Il contient :
 - les outils de distribution ;
 - la gouvernance et les décisions.
 
-Les repositories publics spécialisés sont des projections ou des archives. Ils
-ne constituent jamais une seconde autorité.
+Les repositories publics sont soit le socle, soit de vrais repositories
+produits ou de famille construits sur lui, soit des archives. Aucun d'eux ne
+constitue une seconde autorité de contrats ou de spécifications : cette
+autorité reste au socle (ADR-0008).
 
 ### 4.2 Reconstruction sans import d’historique
 
@@ -327,8 +329,8 @@ apprentissage ou une release.
 
 ### Projection
 
-Vue générée depuis le monorepo : repository, README, site, documentation,
-graphe, diagramme, catalogue, SDK, context pack ou release note.
+Artefact généré depuis le socle : site, documentation, graphe, diagramme,
+catalogue, SDK, context pack ou release note. Jamais un repository (ADR-0008).
 
 ---
 
@@ -429,7 +431,7 @@ Gates humaines et automatisées
       ↓
 Artefact + évidence + provenance
       ↓
-Déploiement et projections publiques
+Déploiement et publications publiques
 ```
 
 ### 7.4 Flux applicatif web
@@ -468,15 +470,18 @@ pourra exécuter sous politique. Proof vérifie indépendamment. Artifact constr
 ### 7.6 Repositories publics
 
 ```text
-Monorepo canonique
-       ↓ compilation déterministe
-Projection ciblée
-       ↓
-Repository public ou package
+Socle canonique (contrats, specs, fondations)
+       ↓ dépendances versionnées
+Repositories produits et de famille (développement réel)
+       ↓ artefacts générés (docs, SDK, packs)
+Publications
 ```
 
-Les projections sont à sens unique et portent le SHA source, le chemin, le hash
-de contenu et la version du compilateur.
+Les repositories produits sont de vrais lieux de développement : issues, pull
+requests et releases. Ils consomment le socle comme dépendance versionnée et
+n'hébergent jamais l'autorité des contrats (ADR-0008). Les artefacts générés
+restent à sens unique et portent le SHA source, le chemin, le hash de contenu
+et la version du compilateur.
 
 ### 7.7 GitHub et collaboration canoniques
 
@@ -485,13 +490,15 @@ les repositories, issues, pull requests, protections de branches et releases
 publiques.
 
 - `libre-ai/libre-ai` devient le repository canonique ;
-- les anciens repositories deviennent des archives ou projections ;
+- les anciens repositories produits sont réservés comme emplacements des
+  futurs repositories produits ; les anciens repositories d'outillage sont
+  retirés après capture vérifiée (ADR-0008) ;
 - les merges, tags et releases canoniques sont réalisés sur GitHub ;
 - aucune nouvelle forge ou infrastructure Git n’est ajoutée à cette migration ;
 - la souveraineté runtime et données reste assurée séparément par les choix
-d’hébergement applicatif ;
+  d’hébergement applicatif ;
 - les exports Git et les artefacts empêchent que GitHub devienne une dépendance
-de données irréversible.
+  de données irréversible.
 
 Ce choix est une décision de distribution et de collaboration, pas une
 affirmation de souveraineté complète de la forge.
@@ -566,7 +573,6 @@ libre-ai/
 ├── distribution/
 │   ├── templates/
 │   │   └── bun-app/
-│   ├── repository-projections/
 │   ├── knowledge-packs/
 │   ├── documentation/
 │   └── training/
@@ -1214,16 +1220,16 @@ Le commit source complet du canary observé est :
 Versions de préparation observées et à épingler dans le premier lockfile après
 qualification :
 
-| Dépendance | Version observée | Licence |
-| --- | --- | --- |
-| React / React DOM | `19.2.7` | MIT |
-| React Aria Components | `1.19.0` | Apache-2.0 |
-| Tailwind CSS | `4.3.2` | MIT |
-| TypeScript | `7.0.2` | Apache-2.0 |
-| Biome | `2.5.3` — dernière version admise par la fenêtre de sécurité de trois jours | MIT OR Apache-2.0 |
-| Ajv | `8.20.0` | MIT |
-| ajv-formats | `3.0.1` | MIT |
-| Playwright Test | `1.61.1` | Apache-2.0 |
+| Dépendance            | Version observée                                                            | Licence           |
+| --------------------- | --------------------------------------------------------------------------- | ----------------- |
+| React / React DOM     | `19.2.7`                                                                    | MIT               |
+| React Aria Components | `1.19.0`                                                                    | Apache-2.0        |
+| Tailwind CSS          | `4.3.2`                                                                     | MIT               |
+| TypeScript            | `7.0.2`                                                                     | Apache-2.0        |
+| Biome                 | `2.5.3` — dernière version admise par la fenêtre de sécurité de trois jours | MIT OR Apache-2.0 |
+| Ajv                   | `8.20.0`                                                                    | MIT               |
+| ajv-formats           | `3.0.1`                                                                     | MIT               |
+| Playwright Test       | `1.61.1`                                                                    | Apache-2.0        |
 
 Décisions d’outillage :
 
@@ -1390,7 +1396,7 @@ lieu de conservation.
 
 ### 17.3 Projections
 
-Chaque projection contient :
+Chaque projection (documentation, SDK, context pack, catalogue) contient :
 
 ```yaml
 schema_version: libre-ai.projection.v1
@@ -1422,16 +1428,16 @@ pertinents.
 
 ### Renommages internes recommandés
 
-| Ancien nom | Cible |
-| --- | --- |
-| `bolt-cosmatic` | `libre-ai-agent-orchestrator` |
-| `bolt-harness` | `libre-ai-agent-harness` |
+| Ancien nom                      | Cible                                                           |
+| ------------------------------- | --------------------------------------------------------------- |
+| `bolt-cosmatic`                 | `libre-ai-agent-orchestrator`                                   |
+| `bolt-harness`                  | `libre-ai-agent-harness`                                        |
 | `portal-core` / Client Kit core | `@libre-ai/web-runtime` ou crate native explicitement justifiée |
-| Portal UI | `@libre-ai/ui` |
-| Wrench inspect | `libre-ai-proof` |
-| Gear loader/memory | `libre-ai-context` |
-| Gear cable/depot | `libre-ai-artifact` |
-| Rumble product crates | nom de domaine ou produit explicite |
+| Portal UI                       | `@libre-ai/ui`                                                  |
+| Wrench inspect                  | `libre-ai-proof`                                                |
+| Gear loader/memory              | `libre-ai-context`                                              |
+| Gear cable/depot                | `libre-ai-artifact`                                             |
+| Rumble product crates           | nom de domaine ou produit explicite                             |
 
 Les noms publics des expériences peuvent rester pour préserver leur lisibilité.
 Les anciens packages ne reçoivent pas de couche de compatibilité par défaut,
@@ -1494,26 +1500,26 @@ Ces règles sont testées automatiquement.
 
 ## 20. Cartographie des repositories actuels vers la cible
 
-| Repository actuel | Cible | Portage principal | Rust attendu |
-| --- | --- | --- | --- |
-| `agent-factory` | futur package `agent-orchestrator` + `agent-harness` | archive/RFC uniquement en G2 ; aucune reprise S01 | différé jusqu’au lock dédié |
-| `agent-board` | `apps/missions` | Bun/React greenfield | seulement si moteur d’état le justifie |
-| `ai-practices` | `apps/practices` | Bun/React/Bun.sql | corpus/scoring opposable à évaluer |
-| `artifact-supply` | `crates/artifact` | nettoyage et renommage | oui |
-| `benchmarks` | `verification/benchmarks` et `campaigns` | import sélectif des campagnes | tooling selon besoin |
-| `boussole-politique` | `apps/boussole` | Bun/React local-first | scoring déterministe conservé |
-| `client-kit` | `packages/*`, `distribution/templates/bun-app` | reconstruction TS/React | bindings natifs seulement si consommés |
-| `context-kit` | archive externe uniquement | aucune reprise sans nouveau package approuvé | non dans G2 |
-| `design-system` | `packages/ui` | tokens et composants React | non par défaut |
-| `dioxus-app-template` | archive externe uniquement | remplacé par `bun-app`, aucune projection cible | non |
-| `feed-radar` | `apps/radar` | Bun fullstack | parsing/règles déterministes à conserver |
-| `gear` | archive externe uniquement | aucun code importé | non, responsabilités redistribuées par contrats |
-| `notebook` | `apps/notebook` | greenfield Bun/React local-first | chiffrement/index/WASM si justifié |
-| `policy` | `apps/model-policy`, `crates/policy-core` | Bun UI/API + cœur WASM | oui pour policy/scoring |
-| `proof-kit` | `crates/proof`, `verification/` | suppression du lab Dioxus | oui |
-| `sessions` | `apps/sessions` | Bun SSR/WebSocket/BFF | authz/RAG exact-evidence à évaluer |
-| `spec-studio` | `apps/specifications` | Bun/React greenfield | seulement pour hashing/invariants prouvés |
-| `website` | `apps/website` | Bun/React SSR + statique | non par défaut |
+| Repository actuel     | Cible                                                | Portage principal                                 | Rust attendu                                    |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `agent-factory`       | futur package `agent-orchestrator` + `agent-harness` | archive/RFC uniquement en G2 ; aucune reprise S01 | différé jusqu’au lock dédié                     |
+| `agent-board`         | `apps/missions`                                      | Bun/React greenfield                              | seulement si moteur d’état le justifie          |
+| `ai-practices`        | `apps/practices`                                     | Bun/React/Bun.sql                                 | corpus/scoring opposable à évaluer              |
+| `artifact-supply`     | `crates/artifact`                                    | nettoyage et renommage                            | oui                                             |
+| `benchmarks`          | `verification/benchmarks` et `campaigns`             | import sélectif des campagnes                     | tooling selon besoin                            |
+| `boussole-politique`  | `apps/boussole`                                      | Bun/React local-first                             | scoring déterministe conservé                   |
+| `client-kit`          | `packages/*`, `distribution/templates/bun-app`       | reconstruction TS/React                           | bindings natifs seulement si consommés          |
+| `context-kit`         | archive externe uniquement                           | aucune reprise sans nouveau package approuvé      | non dans G2                                     |
+| `design-system`       | `packages/ui`                                        | tokens et composants React                        | non par défaut                                  |
+| `dioxus-app-template` | archive externe uniquement                           | remplacé par `bun-app`, aucune cible de reprise   | non                                             |
+| `feed-radar`          | `apps/radar`                                         | Bun fullstack                                     | parsing/règles déterministes à conserver        |
+| `gear`                | archive externe uniquement                           | aucun code importé                                | non, responsabilités redistribuées par contrats |
+| `notebook`            | `apps/notebook`                                      | greenfield Bun/React local-first                  | chiffrement/index/WASM si justifié              |
+| `policy`              | `apps/model-policy`, `crates/policy-core`            | Bun UI/API + cœur WASM                            | oui pour policy/scoring                         |
+| `proof-kit`           | `crates/proof`, `verification/`                      | suppression du lab Dioxus                         | oui                                             |
+| `sessions`            | `apps/sessions`                                      | Bun SSR/WebSocket/BFF                             | authz/RAG exact-evidence à évaluer              |
+| `spec-studio`         | `apps/specifications`                                | Bun/React greenfield                              | seulement pour hashing/invariants prouvés       |
+| `website`             | `apps/website`                                       | Bun/React SSR + statique                          | non par défaut                                  |
 
 `boussole-politique` reste dans Libre AI comme démonstrateur exigeant de
 calcul local, explicabilité, provenance et neutralité méthodologique. Sa présence
@@ -1732,7 +1738,8 @@ rollbackée sans dépendre d’un ancien repository ou service.
 
 - publication du monorepo canonique ;
 - bascule des domaines, DNS et artefacts ;
-- activation des projections publiques ;
+- activation des publications générées ; les repositories produits s'activent
+  par décision propriétaire (ADR-0008) ;
 - archivage définitif des anciens repositories ;
 - publication des limites et fonctionnalités non reprises ;
 - surveillance renforcée ;
@@ -1860,18 +1867,18 @@ archivé lors du freeze global ; aucun consommateur historique ne bloque la cibl
 
 ### Inversions requises
 
-| Règle actuelle | Nouvelle règle |
-| --- | --- |
-| Rust possède toute logique durable | Bun/TS possède la stack web durable ; Rust possède les composants spécialisés justifiés |
-| Bun est une commodité web | Bun est la plateforme applicative web par défaut |
-| TypeScript ne possède pas le backend | TypeScript possède BFF, API web, sessions, DB et workers applicatifs des produits migrés |
-| `Bun.serve` seulement local/SSR jetable | `Bun.serve` est la frontière HTTP/fullstack par défaut |
-| contrat nécessairement Rust-owned | contrat canonique dans `contracts/`, types Rust/TS générés |
-| Axum/Tokio/SQLx standards par défaut | standards uniquement pour services Rust retenus |
-| Rust-first test stack | stratégie duale Bun/TS + Rust spécialisé + Playwright |
-| Dioxus/PWA candidat par défaut | React/Bun web par défaut ; Dioxus deprecated pour web |
-| Rust/WASM UI | Rust/WASM core possible derrière UI React |
-| durable shell migre en Rust | orchestration durable via Bun task runner ou CLI Rust selon ownership |
+| Règle actuelle                          | Nouvelle règle                                                                           |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Rust possède toute logique durable      | Bun/TS possède la stack web durable ; Rust possède les composants spécialisés justifiés  |
+| Bun est une commodité web               | Bun est la plateforme applicative web par défaut                                         |
+| TypeScript ne possède pas le backend    | TypeScript possède BFF, API web, sessions, DB et workers applicatifs des produits migrés |
+| `Bun.serve` seulement local/SSR jetable | `Bun.serve` est la frontière HTTP/fullstack par défaut                                   |
+| contrat nécessairement Rust-owned       | contrat canonique dans `contracts/`, types Rust/TS générés                               |
+| Axum/Tokio/SQLx standards par défaut    | standards uniquement pour services Rust retenus                                          |
+| Rust-first test stack                   | stratégie duale Bun/TS + Rust spécialisé + Playwright                                    |
+| Dioxus/PWA candidat par défaut          | React/Bun web par défaut ; Dioxus deprecated pour web                                    |
+| Rust/WASM UI                            | Rust/WASM core possible derrière UI React                                                |
+| durable shell migre en Rust             | orchestration durable via Bun task runner ou CLI Rust selon ownership                    |
 
 ### Gates nouvelles
 

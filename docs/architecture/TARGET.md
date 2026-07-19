@@ -2,20 +2,20 @@
 
 ## Autorité
 
-Le monorepo `libre-ai/libre-ai` est l’unique source modifiable et GitHub reste la forge canonique déjà arbitrée. Les repositories spécialisés sont des projections générées ; les anciens repositories sont des archives. Clever Cloud reste la cible runtime Paris/UE, sans configuration ni provisioning pendant le cleanup et la Specification Lock.
+Le socle `libre-ai/libre-ai` est l’autorité unique des contrats, spécifications et fondations partagées, et GitHub reste la forge canonique déjà arbitrée. La cible est multi-repository (ADR-0008) : de vrais repositories produits et de famille se construisent sur le socle consommé comme dépendance versionnée ; les anciens repositories produits sont des archives réservées comme emplacements de ces futurs repositories ; les anciens repositories d’outillage sont retirés après capture vérifiée. Clever Cloud reste la cible runtime Paris/UE, sans configuration ni provisioning pendant le cleanup et la Specification Lock.
 
 ## Plans
 
-| Plan | Ownership |
-| --- | --- |
-| Connaissance et graphe | `ecosystem/`, `crates/ecosystem-engine` |
-| Applications web | `apps/*` — Bun/TypeScript/React |
-| Plateforme web partagée | `packages/*` |
-| Moteurs spécialisés | `crates/*` — Rust |
-| Contrats | `contracts/` |
-| Vérification indépendante | `verification/`, `crates/proof` |
-| Artefacts et releases | `crates/artifact`, `distribution/` |
-| Infrastructure | `infrastructure/` |
+| Plan                      | Ownership                               |
+| ------------------------- | --------------------------------------- |
+| Connaissance et graphe    | `ecosystem/`, `crates/ecosystem-engine` |
+| Applications web          | `apps/*` — Bun/TypeScript/React         |
+| Plateforme web partagée   | `packages/*`                            |
+| Moteurs spécialisés       | `crates/*` — Rust                       |
+| Contrats                  | `contracts/`                            |
+| Vérification indépendante | `verification/`, `crates/proof`         |
+| Artefacts et releases     | `crates/artifact`, `distribution/`      |
+| Infrastructure            | `infrastructure/`                       |
 
 ## Dépendances autorisées
 

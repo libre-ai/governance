@@ -47,6 +47,7 @@
 - Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
 - the shared `engine-golden-vectors-v1` transitions to locked through a separate catalog-only promotion approved by promotion-integration on `3b47e96` and final owner `continue`, after candidate-integration, Architecture and Security approval at `ccf9d68` plus challenged acceptance of exact dev-only `entities@8.0.0`; this fixes contract meaning only and authorizes no engine/runtime/data/release scope ;
 - agent orchestration option B reaches contract Specification Lock after Architecture/Security/France-EU Privacy reviews, a remediated actual-Biscuit candidate-integration and catalog-only promotion of 14 unchanged authorities; simulation-only `WP-G2-A01` now has an accepted pure Rust decision core plus favorable result Architecture/Security/France-EU Privacy and conformance reviews on `7f31ec3`, Pi remains replaceable and no harness, worker launch or real mission is authorized ;
+- ADR-0008 ratifies the multi-repository target topology and the Libre AI brand posture (option C), supersedes the repository-projection doctrine and institutes the invariants register `docs/decisions/INVARIANTS.md` ;
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator runtime/harness or Practices scorer is implemented; the accepted agent control crate is simulation-only and contract review/promotion milestones do not authorize further implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
@@ -60,7 +61,7 @@
 ## Explicitly deferred
 
 - Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
-- public repository projections until G5.
+- activation of public product repositories until an explicit owner decision per product (ADR-0008).
 
 ## Current risks
 
