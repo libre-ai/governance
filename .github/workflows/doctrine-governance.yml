@@ -92,9 +92,36 @@ jobs:
             | grep -v 'docs/transformation/inputs/' \
             | grep -v 'docs/reviews/' \
             | grep -v 'docs/adr/0008-' \
+            | grep -v 'docs/decisions/LEXICON.md' \
             | grep -v 'node_modules/' || true)
           if [ -n "$matches" ]; then
             echo "$matches"
             echo "Superseded doctrine or a retired brand resurfaced in a living document."
+            exit 1
+          fi
+
+      - name: Retired ecosystem brands stay out of living documents (LEXICON §6.3)
+        run: |
+          set -euo pipefail
+          # Word-bounded, case-insensitive dead-brand motifs from the signed
+          # Lexicon map (PR #130). Exclusions are the historical registers the
+          # map itself lists in §6.2, file by file — never whole directories
+          # beyond the gate's existing ones.
+          matches=$(grep -rniE '\brumble\b|\bbolt\b|\bwrench\b|\bgear\b|\bportal\b|\bcos-matic\b|\bcosmatic\b' \
+            --include='*.md' . \
+            | grep -v 'docs/transformation/inputs/' \
+            | grep -v 'docs/reviews/' \
+            | grep -v 'node_modules/' \
+            | grep -v 'docs/adr/0008-' \
+            | grep -v 'docs/decisions/LEXICON.md' \
+            | grep -v 'docs/decisions/DECISION-REGISTER.md' \
+            | grep -v 'docs/architecture/DETAILED-TARGET.md' \
+            | grep -v 'docs/transformation/G0-FREEZE-EVIDENCE.md' \
+            | grep -v 'docs/transformation/REPOSITORY-MAP.md' \
+            | grep -v 'docs/transformation/PROGRAM.md' \
+            | grep -vE '^(\./)?vision\.md:' || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "A retired ecosystem brand resurfaced in a living document (LEXICON §6.1)."
             exit 1
           fi
