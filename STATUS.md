@@ -51,11 +51,18 @@
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator runtime/harness or Practices scorer is implemented; the accepted agent control crate is simulation-only and contract review/promotion milestones do not authorize further implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
+## Wave-execution decisions (ADR-0011, 2026-07-20)
+
+- **WP-G2-I01 (auth-web) closed** (PR #111); **WP-G2-D01 (data) application layer complete** — 8 modules, 51 tests, two independent adversarial reviews reconciled (draft PR #123); D01 DB integration remains, developed in a local Linux container (colima) with CI as reproducibility authority.
+- **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
+- **Orchestrator Specification Lock (wave 3):** conditional pre-authorization — pronounced automatically in an autonomous run only if the loop-security kernel K1-K5 is locked and passes an independent adversarial review.
+- **Security gates in autonomous runs:** auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved; only the pronouncement is automated).
+
 ## Next controlled milestone
 
 - **Completed control:** Notebook Core v2 Gate B is approved for the exact disabled fixture-only host and the required physical macOS arm64 32+ GiB class ;
-- **No automatic continuation:** no first Radar, Policy, Boussole or Notebook product implementation milestone is selected by Gate B closure ;
-- **Owner decision required:** any next product engine, Notebook user-data path, activation, production, release, infrastructure or deployment needs its own explicit milestone ;
+- **Selected next product (ADR-0011):** Notebook is the pilot engine; no other engine implementation starts until the Notebook app pattern is validated end-to-end, after which Polaris orchestrates the rest in parallel ;
+- **Owner decision required:** Notebook user-data path activation, production, release, infrastructure or deployment still needs its own explicit milestone ;
 - **Optional evidence:** physical 8/16–24 GiB observations and real browser-process OOM diagnostics may extend confidence or support without reopening the approved current scope unless they reveal a source defect.
 
 ## Explicitly deferred

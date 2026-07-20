@@ -138,3 +138,7 @@ notes:
   - Layer 3-4 bricks live in the hub until the coverage law promotes them
     (ADR-0009 §4); they enter this inventory when they gain a public surface.
   - No private personal repository belongs to this inventory (ADR-0009 §9).
+  - Layer 2 (agent orchestration, productized) is named Polaris (ADR-0011 D2);
+    its bricks (orchestrator, harness) enter this inventory at wave 3.
+  - First engine is Notebook (pilot); the rest follow in parallel orchestrated
+    by Polaris at wave 4b (ADR-0011 D1).
