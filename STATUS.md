@@ -55,8 +55,8 @@
 
 - **WP-G2-I01 (auth-web) closed** (PR #111); **WP-G2-D01 (data) application layer complete** — 8 modules, 51 tests, two independent adversarial reviews reconciled (draft PR #123); D01 DB integration remains, developed in a local Linux container (colima) with CI as reproducibility authority.
 - **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
-- **Orchestrator Specification Lock (wave 3):** conditional pre-authorization — pronounced automatically in an autonomous run only if the loop-security kernel K1-K5 is locked and passes an independent adversarial review.
-- **Security gates in autonomous runs:** auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved; only the pronouncement is automated).
+- **Orchestrator Specification Lock (wave 3):** hard stop (ADR-0011 D3, hardened) — never pronounced in an autonomous run. An agent locks the loop-security kernel K1-K5, runs its independent adversarial review, produces the decision dossier, then stops; pronouncing the lock is an exclusive owner act.
+- **Security gates in autonomous runs (ADR-0011 D4, graduated trust):** the first security-critical merge of a layer (first D01 RLS barrier, first security review of each product layer) is a hard stop for owner pronouncement — bootstrapping the trust chain; subsequent merges of the same pattern auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved throughout).
 
 ## Next controlled milestone
 

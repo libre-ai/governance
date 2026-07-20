@@ -45,7 +45,7 @@ Autorité de séquencement post-G2. Institué par l'ADR-0009 : la sortie du Big 
 
 - **Vague 4a — Notebook (pilote).** Gate d'entrée : G2 clos + contrat Notebook Core v2 (Gate B déjà approuvée). Rôle : valider le pattern app de bout en bout (contrat → moteur → app → revue) une fois. Sortie : Notebook utilisable et vérifiable, publié avec son évidence.
 - **Vague 4b — le reste en parallèle, orchestré par Polaris.** Gate d'entrée : pattern validé en 4a + Polaris opérationnel (vague 3). Radar, Boussole, Model Policy, Practices, Sessions, Spec Studio construits en parallèle sous l'orchestration de la couche 2 — cette phase parallèle est la démonstration du produit zéro. `model-policy` : re-audit secrets/PII puis passage en public avant activation. Les `WP-G3-*` s'exécutent ici ; `WP-G4-*`/`WP-G5-*` par produit au fil des activations.
-- **Politique de gate sécurité en run autonome (ADR-0011 D4) :** chaque composant sécurité-critique est relu par des agents adversariaux distincts de l'implémenteur (K4) ; merge automatique si le dossier est propre. L'indépendance de la revue est préservée ; seul le prononcé est automatisé.
+- **Politique de gate sécurité en run autonome (ADR-0011 D4, confiance graduée) :** chaque composant sécurité-critique est relu par des agents adversariaux distincts de l'implémenteur (K4). **Premier merge sécurité-critique d'une couche = arrêt dur** (dossier produit, prononcé propriétaire, amorçage de la chaîne de confiance) ; **répétitions du même pattern = merge automatique** sur dossier de revue propre. L'indépendance de la revue est préservée dans les deux cas. Distinct de D3, dont l'arrêt dur est permanent (jamais auto).
 
 ## Correspondance vagues ↔ phases et work-packages
 

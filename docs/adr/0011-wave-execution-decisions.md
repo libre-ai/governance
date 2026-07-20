@@ -29,13 +29,22 @@ La couche 2 (orchestration gouvernable de la flotte, productîsée) porte le nom
 
 Le Specification Lock orchestrateur n'est **jamais** prononcé en run autonome. Un agent verrouille le noyau de sécurité des boucles K1-K5 dans le socle, lance sa revue adversariale indépendante (relecteurs distincts de l'implémenteur), produit le dossier de décision (état du noyau, verdict de la revue, périmètre du lock), puis **s'arrête**. Le prononcé du lock est un acte propriétaire nominatif exclusif. Motif du durcissement (2026-07-20) : c'est la gate qui démarre la boucle auto-alimentée officielle — le composant le plus sensible ; le coût d'un franchissement erroné est disproportionné devant le coût d'un arrêt pour prononcé humain. (Supersede la pré-autorisation conditionnelle initialement retenue.)
 
-### D4 — Politique des gates de sécurité en run autonome : auto-procéder sur revue indépendante verte
+### D4 — Politique des gates de sécurité en run autonome : confiance graduée (premier merge de couche = arrêt dur, répétitions = auto)
 
-Chaque composant sécurité-critique (revue RLS de D01, revues de sécurité des vagues) est relu par des agents adversariaux **distincts de l'implémenteur** (conforme au noyau K4 : l'implémenteur n'approuve pas ses propres garde-fous). Le merge se fait automatiquement si le dossier de revue est propre. Cette politique **automatise le prononcé sans supprimer l'indépendance** de la revue — elle ne relâche pas K4, dont le cœur (indépendance implémenteur/relecteur) est préservé.
+Chaque composant sécurité-critique est relu par des agents adversariaux **distincts de l'implémenteur** (conforme au noyau K4 : l'implémenteur n'approuve pas ses propres garde-fous). Le prononcé du merge suit une **confiance graduée** :
+
+- **Premier merge sécurité-critique d'une couche = arrêt dur.** Le premier franchissement d'un pattern de gate donné — première barrière RLS de la couche données (D01), première revue de sécurité de chaque couche produit — produit son dossier de décision et **s'arrête** pour prononcé propriétaire. Ce premier prononcé amorce la chaîne de confiance : l'humain valide le pattern de revue une fois, sur pièce.
+- **Répétitions du même pattern = auto-procéder sur revue verte.** Une fois le pattern d'une couche validé humainement, les merges suivants de même nature (même couche, même type de garde-fou) se prononcent automatiquement si le dossier de revue indépendante est propre.
+
+**Motif :** réconcilier D4 avec le durcissement de D3. Durcir le lock orchestrateur tout en laissant la première barrière d'isolation des données (D01 RLS) auto-merger serait incohérent sur l'axe sécurité #1 (isolation tenant, RGPD). La confiance graduée borne le risque au point d'amorçage — un checkpoint humain par couche — sans imposer un arrêt à chaque itération.
+
+**Distinction avec D3 :** le lock orchestrateur (D3) reste un arrêt dur **permanent** (jamais auto, à chaque occurrence) car il démarre la boucle auto-alimentée officielle ; la confiance graduée (D4) est un arrêt d'amorçage **unique par couche**, puis auto. Dans les deux cas, K4 (indépendance implémenteur/relecteur) est préservé.
 
 ### D5 — Environnement de développement de D01 : conteneur Linux local (colima), CI en validation
 
 L'intégration DB de D01 se développe dans un conteneur Linux local (colima, déjà installé) : un bun 1.4 canary linux-arm64 natif régénère le lockfile v2 et exécute les tests RLS (pglite, WASM) en boucle rapide. Le CI (linux-x64, bun figé `1.4.0-canary.1+57f349f63`) reste l'autorité de reproductibilité et valide en fin de cycle. Le format de lockfile v2 dépend de la version de bun, pas de l'architecture : le lock local arm64 et le lock CI x64 sont identiques à version égale.
+
+**Préalable de vérification (colima non éprouvé) :** cette chaîne — bun 1.4 canary arm64 + pglite dans colima — n'a pas encore été exécutée ; elle est une hypothèse d'outillage, pas un fait établi. Avant tout développement d'adapter, un **preflight** l'éprouve sur un test RLS trivial (`SET LOCAL` + deny cross-tenant, deux tenants). En cas d'échec de la chaîne locale, **repli** : piloter le lockfile et les tests d'intégration via le CI (PR ouverte, itération sur le retour CI comme autorité de repro) sans bloquer la couche applicative déjà complète.
 
 ## Conséquences
 
