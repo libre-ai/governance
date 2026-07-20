@@ -25,9 +25,9 @@ Motif du pilote plutôt que « tous en parallèle d'emblée » : prouver le patt
 
 La couche 2 (orchestration gouvernable de la flotte, productîsée) porte le nom **Polaris**. Réserve connue et acceptée : collision de nom élevée (nom répandu dans la tech) — à traiter comme la coexistence de marque déjà documentée (dépôt figuratif, ancrage `.fr`), non re-litigée ici.
 
-### D3 — Gate du Specification Lock orchestrateur (vague 3) : pré-autorisation conditionnelle
+### D3 — Gate du Specification Lock orchestrateur (vague 3) : arrêt dur
 
-En run autonome, le Specification Lock orchestrateur est prononcé automatiquement **si et seulement si** : (a) le noyau de sécurité des boucles K1-K5 est verrouillé dans le socle, ET (b) il passe une revue adversariale indépendante verte (relecteurs distincts de l'implémenteur). La revue indépendante reste le garde-fou dur ; l'automatisation ne porte que sur le prononcé, pas sur la suppression de la revue.
+Le Specification Lock orchestrateur n'est **jamais** prononcé en run autonome. Un agent verrouille le noyau de sécurité des boucles K1-K5 dans le socle, lance sa revue adversariale indépendante (relecteurs distincts de l'implémenteur), produit le dossier de décision (état du noyau, verdict de la revue, périmètre du lock), puis **s'arrête**. Le prononcé du lock est un acte propriétaire nominatif exclusif. Motif du durcissement (2026-07-20) : c'est la gate qui démarre la boucle auto-alimentée officielle — le composant le plus sensible ; le coût d'un franchissement erroné est disproportionné devant le coût d'un arrêt pour prononcé humain. (Supersede la pré-autorisation conditionnelle initialement retenue.)
 
 ### D4 — Politique des gates de sécurité en run autonome : auto-procéder sur revue indépendante verte
 
