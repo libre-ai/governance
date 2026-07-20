@@ -69,7 +69,13 @@
 ## Explicitly deferred
 
 - Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
-- activation of public product repositories until an explicit owner decision per product (ADR-0008).
+- activation of public product repositories until an explicit owner decision per product (ADR-0008) ;
+- **`authority-v2` K1 enforcement wiring** (precondition of `candidate → locked`): the
+  `agent-runs v2` authorizer must add `check if` clauses over `agent_fleet` and `mission_agent`
+  (binding `token_mission ∈ mission_agent`) to enforce cross-fleet / cross-mission isolation, and
+  the `authz-biscuit` crate must issue agent tokens with the three K1 facts, inject `token_mission`,
+  enforce per-agent_id revocation and validate `capability_scope`. Until then the K1 facts are
+  identity metadata, not an enforced boundary (`docs/reviews/authority-v2/REVIEW-PACKAGE.md`).
 
 ## Current risks
 
