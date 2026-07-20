@@ -35,7 +35,7 @@ Autorité de séquencement post-G2. Institué par l'ADR-0009 : la sortie du Big 
 
 **Objectif :** l'orchestration gouvernable devient produit — la boucle auto-alimentée officielle démarre, la flotte étant son premier client. La couche 2 porte le nom **Polaris** (ADR-0011 D2).
 
-- **Gate d'entrée :** noyau de sécurité verrouillé (identité des agents — flotte/mission/capacités/révocation — spécifiée et lockée ; registre immuable ; mutations de couche 3 sous revue) **et** Specification Lock orchestrateur prononcé. **En run autonome (ADR-0011 D3) :** le lock est prononcé automatiquement si le noyau K1-K5 est verrouillé au socle ET passe une revue adversariale indépendante verte ; sinon arrêt avec dossier de décision.
+- **Gate d'entrée :** noyau de sécurité verrouillé (identité des agents — flotte/mission/capacités/révocation — spécifiée et lockée ; registre immuable ; mutations de couche 3 sous revue) **et** Specification Lock orchestrateur prononcé. **En run autonome (ADR-0011 D3, durci) :** ARRÊT DUR — un agent verrouille K1-K5, lance sa revue indépendante, produit le dossier, puis s'arrête ; le prononcé du lock est un acte propriétaire nominatif exclusif, jamais automatisé.
 - **Livrables :** `orchestrator`, `harness` sous leur lock ; `missions` (l'app humaine de la couche) ; boucles opérant la flotte sous gates avec métriques ; `memory` livré avec le lock.
 - **Gate de sortie :** la constellation est gérée par la méthode en conditions réelles ; les métriques de couverture pilotent la loi de croissance ; traceur v2 — démonstration publique complète de la méthode sur son propre cas.
 
