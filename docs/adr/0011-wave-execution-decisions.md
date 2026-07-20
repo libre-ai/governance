@@ -46,6 +46,24 @@ L'intégration DB de D01 se développe dans un conteneur Linux local (colima, d�
 
 **Préalable de vérification (colima non éprouvé) :** cette chaîne — bun 1.4 canary arm64 + pglite dans colima — n'a pas encore été exécutée ; elle est une hypothèse d'outillage, pas un fait établi. Avant tout développement d'adapter, un **preflight** l'éprouve sur un test RLS trivial (`SET LOCAL` + deny cross-tenant, deux tenants). En cas d'échec de la chaîne locale, **repli** : piloter le lockfile et les tests d'intégration via le CI (PR ouverte, itération sur le retour CI comme autorité de repro) sans bloquer la couche applicative déjà complète.
 
+### D6 — Plafonds d'autonomie chiffrés (liveness et coût) en run autonome
+
+En run autonome, deux classes de risque exigent des seuils chiffrés, sans quoi un run peut boucler (non-progrès) ou dériver en coût. Un dépassement n'est jamais un échec silencieux : il produit un dossier d'avancement (fait / reste / cause) puis **s'arrête** pour décision propriétaire (relever le seuil ou re-scoper).
+
+**Liveness (non-progrès).** « Progrès mesurable » = au moins un des événements suivants depuis la dernière mesure : une PR mergée satisfaisant un nouveau critère de gate de sortie ; un finding bloquant de revue fermé ; un work-package passé de `pending` à `done`. Seuils :
+
+- **Par PR :** au plus 3 cycles CI/revue pour atteindre le vert. Au 3ᵉ échec → STOP + dossier (règle TDD : « rendre le test vert est difficile » = problème de conception, pas d'itération).
+- **Par vague :** 3 PR consécutives sans progrès mesurable → STOP + dossier.
+- **Anti-thrash :** un même fichier réédité 5 fois ou plus sans faire avancer une gate → STOP + dossier.
+
+**Coût (tokens de sortie).** Plafonds de sécurité (« stop-and-reassess »), calibrés au-dessus du coût attendu pour n'attraper que la dérive. Seuils :
+
+- **Par PR :** plus de 400 k tokens de sortie sur une seule PR → STOP + dossier (thrashing probable).
+- **Par vague (cumul) :** Phase 0 Lexicon Lock 300 k · G2 (D01+Q01) 1,5 M · vague 1 1 M · vague 2 2 M · vague 4a 1 M.
+- **Total run α :** 6 M → STOP global + dossier.
+
+Ces valeurs sont des décisions de phase, tunables par ADR ultérieur ; elles bornent le risque sans figer une estimation comme un fait.
+
 ## Conséquences
 
 - `docs/transformation/EXECUTION-SEQUENCING.md` est mis à jour : vague 4 scindée en 4a/4b, gates 3 et 4 renseignées, politiques de gate de run autonome inscrites.

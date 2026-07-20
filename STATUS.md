@@ -57,6 +57,7 @@
 - **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
 - **Orchestrator Specification Lock (wave 3):** hard stop (ADR-0011 D3, hardened) — never pronounced in an autonomous run. An agent locks the loop-security kernel K1-K5, runs its independent adversarial review, produces the decision dossier, then stops; pronouncing the lock is an exclusive owner act.
 - **Security gates in autonomous runs (ADR-0011 D4, graduated trust):** the first security-critical merge of a layer (first D01 RLS barrier, first security review of each product layer) is a hard stop for owner pronouncement — bootstrapping the trust chain; subsequent merges of the same pattern auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved throughout).
+- **Autonomy ceilings (ADR-0011 D6):** numeric liveness and cost thresholds bound an autonomous run — per-PR ≤ 3 green attempts, 3 consecutive no-progress PRs per wave, per-PR > 400k output tokens, and per-wave token caps (Phase 0 300k, G2 1.5M, wave 1 1M, wave 2 2M, wave 4a 1M; α run total 6M). A breach stops with a progress dossier for an owner decision, never a silent kill.
 
 ## Next controlled milestone
 
