@@ -155,6 +155,9 @@ type AuthzVector = {
   resourceSubjectDigest?: string;
   subjectType?: string;
   quorumValid?: boolean;
+  agentFleet?: string;
+  resourceFleet?: string;
+  missionAgent?: string;
   expected: "allow" | "deny";
 };
 
@@ -225,6 +228,27 @@ function authorize(vector: AuthzVector): boolean {
   }
 }
 
+// agent-runs-v2 refines v1 with the loop-security kernel K1 identity boundary:
+// an agent-role token additionally requires its fleet to match the resource
+// fleet and the agent to be a member of the operating mission. Human roles
+// (operator, protected-controller) are unaffected. v2 is strictly stronger than
+// v1 (it can only deny what v1 allowed, never allow more).
+const AGENT_ROLES = new Set([
+  "author-agent",
+  "reviewer-agent",
+  "mission-service",
+  "orchestrator",
+  "harness",
+]);
+
+function authorizeV2(vector: AuthzVector): boolean {
+  if (!authorize(vector)) return false;
+  if (!AGENT_ROLES.has(vector.role)) return true;
+  const fleetBound = same(vector.agentFleet, vector.resourceFleet);
+  const missionMember = same(vector.missionAgent, vector.tokenMission);
+  return fleetBound && missionMember;
+}
+
 const authz = (await Bun.file(new URL("authz-vectors.v1.json", fixtureRoot)).json()) as {
   cases: AuthzVector[];
 };
@@ -237,6 +261,19 @@ if (!authz.cases.some((vector) => vector.expected === "allow"))
   failures.push("authz: no allow vector");
 if (!authz.cases.some((vector) => vector.expected === "deny"))
   failures.push("authz: no deny vector");
+
+const authzV2 = (await Bun.file(new URL("authz-vectors.v2.json", fixtureRoot)).json()) as {
+  cases: AuthzVector[];
+};
+for (const vector of authzV2.cases) {
+  const actual = authorizeV2(vector) ? "allow" : "deny";
+  if (actual !== vector.expected)
+    failures.push(`v2 ${vector.id}: expected ${vector.expected}, got ${actual}`);
+}
+if (!authzV2.cases.some((vector) => vector.expected === "allow"))
+  failures.push("authz v2: no allow vector");
+if (!authzV2.cases.some((vector) => vector.expected === "deny"))
+  failures.push("authz v2: no deny vector");
 
 const transitions = (await Bun.file(
   new URL("mission-transition-vectors.v1.json", fixtureRoot),
@@ -365,10 +402,37 @@ for (const required of [
   if (!policy.includes(required)) failures.push(`authz policy: missing ${required}`);
 }
 
+const policyV2 = await Bun.file(new URL("contracts/authz/agent-runs-v2.datalog", root)).text();
+for (const required of [
+  "agent_fleet($user, $fleet)",
+  "resource_fleet($fleet)",
+  "mission_agent($user, $mission)",
+  "token_mission",
+  "quorum_valid",
+  "deny if true",
+]) {
+  if (!policyV2.includes(required)) failures.push(`authz policy v2: missing ${required}`);
+}
+// Every agent-role allow rule must carry the K1 fleet + mission-membership guard;
+// human roles (operator, protected-controller) must not require it.
+for (const line of policyV2.split("\n")) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("allow if ")) continue;
+  const isAgentRole = [...AGENT_ROLES].some((role) => trimmed.includes(`role($user, "${role}")`));
+  const guarded =
+    trimmed.includes("agent_fleet($user, $fleet)") &&
+    trimmed.includes("resource_fleet($fleet)") &&
+    trimmed.includes("mission_agent($user, $mission)");
+  if (isAgentRole && !guarded)
+    failures.push(`authz policy v2: agent-role rule missing K1 guard: ${trimmed.slice(0, 60)}`);
+  if (!isAgentRole && guarded)
+    failures.push(`authz policy v2: non-agent rule carries K1 guard: ${trimmed.slice(0, 60)}`);
+}
+
 if (failures.length > 0) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
 console.log(
-  `Agent orchestration vectors verified: ${quorum.cases.length} quorum, ${eventChains.cases.length} event-chain, ${authz.cases.length} authz, ${transitions.allowed.length + transitions.denied.length} transition, ${digests.vectors.length} digest and ${signatures.vectors.length} signature cases`,
+  `Agent orchestration vectors verified: ${quorum.cases.length} quorum, ${eventChains.cases.length} event-chain, ${authz.cases.length} authz (+${authzV2.cases.length} v2 K1-fleet), ${transitions.allowed.length + transitions.denied.length} transition, ${digests.vectors.length} digest and ${signatures.vectors.length} signature cases`,
 );
