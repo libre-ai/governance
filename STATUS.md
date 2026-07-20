@@ -1,6 +1,6 @@
 # Transformation status
 
-**Current phase:** G2 — Canonical Foundations.
+**Current phase:** G2 closed — wave 1 (layer-4 satellites) opening per `docs/transformation/EXECUTION-SEQUENCING.md`.
 
 ## Completed
 
@@ -53,7 +53,7 @@
 
 ## Wave-execution decisions (ADR-0011, 2026-07-20)
 
-- **WP-G2-I01 (auth-web) closed** (PR #111); **WP-G2-D01 (data) application layer complete** — 8 modules, 51 tests, two independent adversarial reviews reconciled (draft PR #123); D01 DB integration remains, developed in a local Linux container (colima) with CI as reproducibility authority.
+- **WP-G2-I01 (auth-web) closed** (PR #111). **WP-G2-D01 (tenant data/RLS) closed** (PR #123, `43c85e7`): application layer + the mandatory PostgreSQL barrier (isolated owner migrations, `FORCE ROW LEVEL SECURITY`, append-only receipts, 35-day CHECK ceiling), adapters and Redis/Cellar ports, developed against a PGlite harness (`packages/testing`); two independent K4 reviews (`rls-adversarial-review`, `migration-and-deletion-review`) approved with conditions, the first security-critical merge of the data layer pronounced by the owner (ADR-0011 D4 bootstrap), F-01/F-03 carried to G4. **WP-G2-Q01 (foundation quality harness) closed** (PR #132, `5ea34f9`): reference-chain harness runs the full foundation chain green from a clean checkout (Bun.serve/React, contracts, RLS, Biscuit, WIT, Proof/Artifact, three-engine Playwright — 10/10, reproducible digest `f45dfad0…`), plus tree-wide secret and no-Clever gates; independent g2-foundation-acceptance review CLEAN. **G2 is closed.**
 - **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
 - **Orchestrator Specification Lock (wave 3):** hard stop (ADR-0011 D3, hardened) — never pronounced in an autonomous run. An agent locks the loop-security kernel K1-K5, runs its independent adversarial review, produces the decision dossier, then stops; pronouncing the lock is an exclusive owner act.
 - **Security gates in autonomous runs (ADR-0011 D4, graduated trust):** the first security-critical merge of a layer (first D01 RLS barrier, first security review of each product layer) is a hard stop for owner pronouncement — bootstrapping the trust chain; subsequent merges of the same pattern auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved throughout).

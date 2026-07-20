@@ -18,7 +18,7 @@ Complete contracts, data ownership, auth, refusal behavior, application specific
 
 ## G2 — Canonical foundations
 
-**Status:** in progress. `WP-G2-T01`, `WP-G2-C01`, `WP-G2-W01`, `WP-G2-Z01`, the `WP-G2-S01` contract lock and Notebook Core v2 Gate B are complete. No first Radar, Policy, Boussole or Notebook product milestone is authorized until a new explicit owner selection.
+**Status:** complete. `WP-G2-T01`, `WP-G2-C01`, `WP-G2-W01`, `WP-G2-Z01`, the `WP-G2-S01` contract lock, Notebook Core v2 Gate B, `WP-G2-I01` (auth-web), `WP-G2-D01` (tenant data/RLS, bootstrap pronounced) and `WP-G2-Q01` (foundation quality harness) are complete. The reference chain builds and verifies green from a clean checkout (digest `f45dfad0…`). No first Radar, Policy, Boussole or Notebook product milestone is authorized until a new explicit owner selection; post-G2 execution follows the wave sequencing (wave 1 opens).
 
 Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized Rust boundaries, contracts, Proof, Artifact and a qualified Bun template.
 
