@@ -158,10 +158,10 @@ integrates K1's facts and promotes K3, then opens wave 3.
 
 ## Status of the five controls at this lock
 
-| Control                | Socle brick / mechanism                                      | State                                                                       |
-| ---------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation | **specified** — facts integrate into the datalog at the orchestrator lock   |
-| K2 classification      | `@libre-ai/classification`                                   | **in service** — sealed authority gate, reviewed CLEAN                      |
-| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` candidate)               | **reviewed** — contract promotes to locked on the first dogfooding consumer |
-| K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review              | **in service**                                                              |
-| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate            | **in service**                                                              |
+| Control                | Socle brick / mechanism                                      | State                                                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation | **in service** — `authority-v2` + `agent-runs-v2` locked; fleet/mission enforced (real-biscuit proof), issuance carries the three facts, per-agent revocation is fail-closed |
+| K2 classification      | `@libre-ai/classification`                                   | **in service** — sealed authority gate, reviewed CLEAN                                                                                                                       |
+| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` candidate)               | **reviewed** — contract promotes to locked on the first dogfooding consumer                                                                                                  |
+| K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review              | **in service**                                                                                                                                                               |
+| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate            | **in service**                                                                                                                                                               |

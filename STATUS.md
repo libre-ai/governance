@@ -70,13 +70,11 @@
 
 - Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
 - activation of public product repositories until an explicit owner decision per product (ADR-0008) ;
-- **`authority-v2` + `agent-runs-v2` `candidate → locked` promotion** — remaining precondition:
-  **per-agent_id revocation**. The K1 enforcement wiring is otherwise in service: the `agent-runs-v2`
-  authorizer enforces cross-fleet / cross-mission isolation (PR #145, real-biscuit runtime proof
-  #146), and `authz-biscuit::issue_agent` mints agent tokens carrying the three K1 facts + the
-  `token_mission` operating fact (PR #147). `capability_scope` remains a tool/write-path boundary
-  responsibility of the (not-yet-built) agent runtime. Until the promotion, both contracts stay
-  `candidate` and the crate still consumes `authority-v1` for human tokens.
+- **Live-token invalidation of a revoked agent** (validation-side control) lands with the agent
+  runtime consumer (orchestrator / harness); until then a revoked agent's outstanding tokens lapse
+  under the ≤900s TTL ceiling. Issuance-side per-agent revocation is in service (PR #149).
+- **`capability_scope` tool/write-path enforcement** is a responsibility of the (not-yet-built)
+  agent runtime; the token carries the fact, the runtime must check it (never granting CI/gate write).
 
 ## Current risks
 
