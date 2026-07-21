@@ -48,6 +48,16 @@ Each role listed in `contracts/catalog.v1.json` produces a separate review-only 
 
 Promotion from `candidate` to `locked` requires all catalog roles, green quality gates and a separate promotion/integration pass that verifies the collected records.
 
+## Orchestration mechanics
+
+Validity rules above say nothing about throughput; this section fixes the execution defaults so fan-out waves stay fast and deduplicated (2026-07-21 usage audit: a 25-pass wave ran sequentially over ~12 h where parallel batches would have taken ~1 h, with 12–18 % redundant re-runs and free-text verdicts that resisted aggregation).
+
+- **One job per (commit, role).** The orchestrator (`tools/review/fanout.ts`) launches jobs in parallel batches (default concurrency 5), never sequentially by habit.
+- **Deduplication.** A (commit, role) pair with a recorded verdict is not re-launched. Re-running requires an explicit force, and the existing record is never overwritten — it is an immutable audit record; archive it first.
+- **Isolation.** Each pass reviews a detached worktree at the target commit. The runner invalidates the pass if the worktree is dirty afterwards, mechanically enforcing the "reviewed files are not modified" rule.
+- **Machine-readable verdict.** Each pass ends with exactly one JSON verdict envelope (shape and validation: `tools/review/fanout-core.ts`, `review-verdict.v0.1`) echoing the runner-assigned `reviewPassId`; role, mode and commit are cross-checked against the job to reject mixups. Free-text reports may accompany the envelope; the envelope is the record of note. The shape is promoted to `contracts/` when a second producer emits it.
+- **Shared evidence digest.** Reference material is read once from the target commit (with content hashes) and inlined into every prompt, instead of each agent re-reading the repository.
+
 ## Human control milestone
 
 The repository owner remains the control authority and explicitly records `accept`, `continue`, `hold` or `reject`. Human control is required before:
