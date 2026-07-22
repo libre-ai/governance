@@ -51,27 +51,32 @@ was reserved by the owner on 2026-07-22.
    OTP: if the token strategy requires it, publish locally instead:
    `cd packages/<p> && bun publish --access public --otp <code>` in the same
    order.
-5. **Mirror repositories** — create `libre-ai/sdk-ts`, `libre-ai/ui`,
-   `libre-ai/auth` (public, empty, no README); disable issues/PRs; then run
-   `tools/release/mirror-satellites.sh`; protect `main` on each mirror.
+5. **Wave-1 exit gate (real-usage proof)** — run `bun tools/release/starter-npm-proof.ts`
+   to extract the starter template out of the workspace and install it from the npm
+   registry; on success, a dated evidence JSON is written to `distribution/evidence/`.
+   Commit the produced evidence.
+6. **Mirror repositories** — create `libre-ai/sdk-ts`, `libre-ai/ui`,
+   `libre-ai/auth`, `libre-ai/starter` (public, empty, no README); disable issues/PRs;
+   then run `tools/release/mirror-satellites.sh`; protect `main` on each mirror.
    Decide whether `web-platform` gets a reserved mirror name (npm-only until
    then).
-6. **Inventory + evidence** — update `ecosystem/repositories.v1.yaml`
+7. **Inventory + evidence** — update `ecosystem/repositories.v1.yaml`
    (satellites → published state), append the publication entry to
    `distribution/evidence/gate-acceptance-log.md`, regenerate a coverage
    snapshot (`bun distribution/evidence/coverage-metrics.ts`).
 
 ## Wave-1 exit checklist (after publication)
 
-- [ ] Each published brick consumed by **at least one real usage** outside the
-      hub workspace (e.g. a starter or an external project installing from
-      npm) — the wave's exit gate, not satisfied by publication alone.
+- [ ] Each published brick consumed by real usage outside the hub workspace
+      (extracted and installed from npm) — the wave's exit gate, proven by the
+      starter template installation (`starter-npm-proof` evidence committed to
+      `distribution/evidence/`).
 - [ ] Coverage metrics published (share of operations without human touch).
-- [ ] Evidence sealed (gate-acceptance-log + dated coverage JSON).
+- [ ] Evidence sealed (gate-acceptance-log + dated coverage JSON + starter proof).
 
 ## Deferred / explicitly not done here
 
-- `sdk-rs`, `starter` satellites (EXECUTION-SEQUENCING defers them).
+- `sdk-rs` satellite (EXECUTION-SEQUENCING defers it).
 - npm **provenance** / OIDC trusted publishing: this bun has no
   `--provenance`; revisit by publishing bun-packed tarballs via npm CLI, or
   when bun grows the flag.

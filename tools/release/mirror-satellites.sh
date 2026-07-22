@@ -22,17 +22,18 @@ mirror_of() {
     sdk-ts) echo "packages/contracts libre-ai/sdk-ts" ;;
     ui) echo "packages/ui libre-ai/ui" ;;
     auth) echo "packages/auth-web libre-ai/auth" ;;
+    starter) echo "distribution/templates/starter libre-ai/starter" ;;
     *) echo "" ;;
   esac
 }
 
-targets=("sdk-ts" "ui" "auth")
+targets=("sdk-ts" "ui" "auth" "starter")
 if [ "$#" -ge 1 ]; then targets=("$@"); fi
 
 for target in "${targets[@]}"; do
   entry="$(mirror_of "$target")"
   if [ -z "$entry" ]; then
-    echo "unknown mirror target: $target (expected sdk-ts | ui | auth)" >&2
+    echo "unknown mirror target: $target (expected sdk-ts | ui | auth | starter)" >&2
     exit 1
   fi
   package_dir="${entry% *}"
