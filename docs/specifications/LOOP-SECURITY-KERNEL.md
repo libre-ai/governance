@@ -139,7 +139,7 @@ specified here and the owner pronounces the orchestrator Specification Lock
 forge itself is the first system these controls govern, and its evidence of
 doing so is published (I-20).
 
-**Two controls complete at the orchestrator lock, by design, not as a gap here:**
+**One control completes at the orchestrator lock, by design, not as a gap here:**
 
 - **K1** — the agent identity **facts** (`agent_fleet`, `mission_agent`,
   `capability_scope`) and per-agent revocation are specified above; their
@@ -147,14 +147,10 @@ doing so is published (I-20).
   (`contracts/authz/authority-v1.datalog`) and authorizer `check if` clauses is
   an explicit chapter of the orchestrator Specification Lock — that lock is what
   opens real agent execution, so the facts land with it.
-- **K3** — the `envelope.v1` contract is reviewed and merged as a candidate; its
-  promotion to `locked` is gated on the first forge/harness dogfooding consumer
-  (E22: reference-only until a consumer exists), which arrives with the
-  orchestrator lock's memory recall.
 
-K2, K4 and K5 are `in service` today. The kernel is therefore **specified and
+K2, K3, K4 and K5 are `in service` today. The kernel is therefore **specified and
 ready to lock** (§8): the orchestrator-lock owner act consumes this document,
-integrates K1's facts and promotes K3, then opens wave 3.
+integrates K1's facts, then opens wave 3.
 
 ## Status of the five controls at this lock
 
@@ -162,6 +158,6 @@ integrates K1's facts and promotes K3, then opens wave 3.
 | ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation | **in service** — `authority-v2` + `agent-runs-v2` locked; fleet/mission enforced (real-biscuit proof), issuance carries the three facts, per-agent revocation is fail-closed |
 | K2 classification      | `@libre-ai/classification`                                   | **in service** — sealed authority gate, reviewed CLEAN                                                                                                                       |
-| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` candidate)               | **reviewed** — contract promotes to locked on the first dogfooding consumer                                                                                                  |
+| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` locked)                  | **in service** — contract locked after first dogfooding consumer (fanout orchestrator wraps evidence); HMAC integrity enforced at every model-facing recall path             |
 | K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review              | **in service**                                                                                                                                                               |
 | K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate            | **in service**                                                                                                                                                               |
