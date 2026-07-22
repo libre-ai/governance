@@ -50,8 +50,20 @@ export interface TransmissionFinding {
 const SCOPED_PREFIXES = ["apps/boussole/", "apps/practices/"];
 const SELF_TEST_SUFFIX = "check-no-transmission.test.ts";
 
+// Documented, narrow allowlist — reviewed exceptions, NOT a convenience escape
+// hatch. A PWA service worker unavoidably uses `fetch` to serve its app shell;
+// each file here generates a service worker whose only `fetch` is provably
+// same-origin, GET-only and restricted to the shell asset allowlist (no user
+// data, no cross-origin). Each entry's file header states and bounds that
+// guarantee, and any change to those files must be re-reviewed for it. Adding a
+// path here is a security decision, not a way to silence a real finding.
+const ALLOWLISTED_PATHS: ReadonlySet<string> = new Set([
+  "apps/boussole/scripts/build-service-worker.ts",
+]);
+
 function inScope(path: string): boolean {
   if (path.endsWith(SELF_TEST_SUFFIX)) return false;
+  if (ALLOWLISTED_PATHS.has(path)) return false;
   return SCOPED_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 

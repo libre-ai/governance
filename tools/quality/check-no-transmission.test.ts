@@ -97,4 +97,23 @@ describe("scanForTransmission", () => {
       findingsFor("packages/data/src/x.ts", "const s = new WebSocket('wss://x');"),
     ).toHaveLength(0);
   });
+
+  test("does not flag the documented service-worker generator allowlist entry", () => {
+    // The PWA service worker's shell-only fetch is a reviewed exception, named in
+    // ALLOWLISTED_PATHS with a bounded rationale.
+    expect(
+      findingsFor(
+        "apps/boussole/scripts/build-service-worker.ts",
+        "event.respondWith(caches.match(event.request).then(cached=>cached??fetch(event.request)));",
+      ),
+    ).toHaveLength(0);
+  });
+
+  test("still flags the same fetch in a non-allowlisted boussole file", () => {
+    // The allowlist is by exact path, not a blanket scripts/ exemption: a fetch
+    // anywhere else in the app is still caught.
+    expect(
+      findingsFor("apps/boussole/scripts/build.ts", "await fetch(event.request);"),
+    ).toHaveLength(1);
+  });
 });
