@@ -59,6 +59,7 @@ const SELF_TEST_SUFFIX = "check-no-transmission.test.ts";
 // path here is a security decision, not a way to silence a real finding.
 const ALLOWLISTED_PATHS: ReadonlySet<string> = new Set([
   "apps/boussole/scripts/build-service-worker.ts",
+  "apps/practices/scripts/build-service-worker.ts",
 ]);
 
 function inScope(path: string): boolean {

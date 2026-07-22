@@ -116,4 +116,23 @@ describe("scanForTransmission", () => {
       findingsFor("apps/boussole/scripts/build.ts", "await fetch(event.request);"),
     ).toHaveLength(1);
   });
+
+  test("does not flag transmission primitives in the practices service-worker generator allowlist entry", () => {
+    // The PWA service worker's shell-only fetch is a reviewed exception, named in
+    // ALLOWLISTED_PATHS with a bounded rationale (same as boussole).
+    expect(
+      findingsFor(
+        "apps/practices/scripts/build-service-worker.ts",
+        "event.respondWith(caches.match(event.request).then(cached=>cached??fetch(event.request)));",
+      ),
+    ).toHaveLength(0);
+  });
+
+  test("still flags a fetch in a non-allowlisted practices file", () => {
+    // The allowlist is by exact path, not a blanket scripts/ exemption: a fetch
+    // anywhere else in the practices app is still caught.
+    expect(
+      findingsFor("apps/practices/scripts/build.ts", "await fetch(event.request);"),
+    ).toHaveLength(1);
+  });
 });
