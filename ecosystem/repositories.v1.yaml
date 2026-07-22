@@ -134,6 +134,38 @@ repositories:
       - hub contracts, orchestration contracts (locked, option B)
     canonical_paths:
       - apps/missions
+  - repository: libre-ai/carriere
+    role: reserved-product-home
+    layer: couche-1
+    product: Carrière
+    # 8ᵉ produit couche-1, ajouté par décision propriétaire 2026-07-23 (topologie
+    # multi-repo ADR-0008 ; loi de croissance ADR-0009 §4 « pas de plafond fixe »).
+    # Le décompte « sept produits » de §2 décrivait l'état du 2026-07-19 ; la
+    # constellation croît par décision propriétaire.
+    visibility: public
+    lifecycle: reserved
+    exposure: idea
+    owns:
+      - sovereign, explainable job-search assistant for cadres (at activation)
+    consumes:
+      - hub contracts, auth, data lifecycle
+    canonical_paths:
+      - apps/carriere
+  - repository: libre-ai/website
+    role: reserved-projection-home
+    layer: transverse
+    product: Website
+    # CDC verrouillé (docs/apps/website.md, check-specification-lock) ; repo
+    # réservé créé le 2026-07-23 pour réconcilier l'inventaire observable.
+    visibility: public
+    lifecycle: reserved
+    exposure: spec-published
+    owns:
+      - public citable projection of reviewed knowledge, product records, evidence (at activation)
+    consumes:
+      - hub corpus, product projections, forge evidence
+    canonical_paths:
+      - docs/apps/website.md
 notes:
   - Layer 3-4 bricks live in the hub until the coverage law promotes them
     (ADR-0009 §4); they enter this inventory when they gain a public surface.
