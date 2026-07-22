@@ -10,6 +10,8 @@ const applications = [
   "boussole",
   "specifications",
   "missions",
+  "agent-board",
+  "memory",
 ];
 const requiredSections = [
   "Purpose and actors",
