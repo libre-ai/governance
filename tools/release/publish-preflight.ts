@@ -1,0 +1,160 @@
+/**
+ * Wave-1 publish preflight — fail-closed gate before any `bun publish`.
+ *
+ * For each satellite it runs a REAL `bun pm pack` into a temp dir, then
+ * inspects the produced tarball: the manifest must be non-private, licensed,
+ * and carry zero `workspace:`/`catalog:` residue in any dependency group
+ * (bun materializes them at pack time — this gate proves it happened); the
+ * entries must include LICENSE and no test file; the four satellites must
+ * share one linked version. Analysis is pure (unit-tested); only the CLI
+ * touches the filesystem.
+ */
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+export const SATELLITE_DIRECTORIES = [
+  "packages/contracts",
+  "packages/web-platform",
+  "packages/ui",
+  "packages/auth-web",
+] as const;
+
+interface TarballManifest {
+  readonly name?: string;
+  readonly version?: string;
+  readonly license?: string;
+  readonly private?: boolean;
+  readonly [key: string]: unknown;
+}
+
+const DEPENDENCY_GROUPS = [
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "optionalDependencies",
+] as const;
+
+/** Manifest rules for a publishable tarball; returns issues (empty = clean). */
+export function analyzeTarballManifest(manifest: TarballManifest): string[] {
+  const issues: string[] = [];
+  if (manifest.private === true) issues.push(`${manifest.name}: manifest is still private`);
+  if (typeof manifest.license !== "string" || manifest.license.length === 0) {
+    issues.push(`${manifest.name}: missing license field`);
+  }
+  for (const group of DEPENDENCY_GROUPS) {
+    const dependencies = manifest[group];
+    if (typeof dependencies !== "object" || dependencies === null) continue;
+    for (const [dependency, spec] of Object.entries(dependencies as Record<string, unknown>)) {
+      if (typeof spec !== "string") continue;
+      if (spec.startsWith("workspace:")) {
+        issues.push(`${manifest.name}: ${group}.${dependency} kept a workspace: ref (${spec})`);
+      }
+      if (spec.startsWith("catalog:") || spec === "catalog") {
+        issues.push(`${manifest.name}: ${group}.${dependency} kept a catalog: ref (${spec})`);
+      }
+    }
+  }
+  return issues;
+}
+
+/** Entry rules: LICENSE shipped, no test file leaked. */
+export function analyzeTarballEntries(entries: readonly string[]): string[] {
+  const issues: string[] = [];
+  if (!entries.includes("LICENSE")) issues.push("LICENSE missing from the tarball");
+  for (const entry of entries) {
+    if (/\.test\.(ts|tsx)$/.test(entry)) issues.push(`test file leaked into the tarball: ${entry}`);
+  }
+  return issues;
+}
+
+/** The wave-1 satellites version together (linked versioning). */
+export function checkVersionCoherence(
+  manifests: readonly { name: string; version: string }[],
+): string[] {
+  const reference = manifests[0]?.version;
+  if (reference === undefined) return [];
+  return manifests
+    .filter((manifest) => manifest.version !== reference)
+    .map(
+      (manifest) =>
+        `${manifest.name}: version ${manifest.version} differs from the linked set (${reference})`,
+    );
+}
+
+async function packAndInspect(
+  repositoryRoot: string,
+  packageDirectory: string,
+): Promise<{ manifest: TarballManifest; issues: string[] }> {
+  const workDirectory = await mkdtemp(join(tmpdir(), "publish-preflight-"));
+  try {
+    const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", workDirectory, "--quiet"], {
+      cwd: resolve(repositoryRoot, packageDirectory),
+    });
+    if (packed.exitCode !== 0) {
+      return {
+        manifest: {},
+        issues: [`${packageDirectory}: bun pm pack failed: ${packed.stderr.toString().trim()}`],
+      };
+    }
+    const tarballs = (await readdir(workDirectory)).filter((name) => name.endsWith(".tgz"));
+    const tarballName = tarballs[0];
+    if (tarballName === undefined) {
+      return { manifest: {}, issues: [`${packageDirectory}: no tarball produced`] };
+    }
+
+    const listing = Bun.spawnSync(["tar", "-tzf", join(workDirectory, tarballName)]);
+    const entries = listing.stdout
+      .toString()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      // npm tarballs prefix every entry with "package/".
+      .map((line) => line.replace(/^package\//, ""));
+
+    const extract = Bun.spawnSync([
+      "tar",
+      "-xzf",
+      join(workDirectory, tarballName),
+      "-C",
+      workDirectory,
+      "package/package.json",
+    ]);
+    if (extract.exitCode !== 0) {
+      return { manifest: {}, issues: [`${packageDirectory}: could not read tarball manifest`] };
+    }
+    const manifest = (await Bun.file(
+      join(workDirectory, "package", "package.json"),
+    ).json()) as TarballManifest;
+
+    return {
+      manifest,
+      issues: [...analyzeTarballManifest(manifest), ...analyzeTarballEntries(entries)],
+    };
+  } finally {
+    await rm(workDirectory, { recursive: true, force: true });
+  }
+}
+
+if (import.meta.main) {
+  const repositoryRoot = resolve(import.meta.dir, "../..");
+  const issues: string[] = [];
+  const packed: { name: string; version: string }[] = [];
+
+  for (const packageDirectory of SATELLITE_DIRECTORIES) {
+    const result = await packAndInspect(repositoryRoot, packageDirectory);
+    issues.push(...result.issues);
+    if (typeof result.manifest.name === "string" && typeof result.manifest.version === "string") {
+      packed.push({ name: result.manifest.name, version: result.manifest.version });
+    }
+  }
+  issues.push(...checkVersionCoherence(packed));
+
+  if (issues.length > 0) {
+    for (const issue of issues) console.error(issue);
+    console.error("Publish preflight FAILED — nothing may be published.");
+    process.exit(1);
+  }
+  console.log(
+    `Publish preflight OK for ${packed.length} satellites at linked version ${packed[0]?.version}`,
+  );
+}
