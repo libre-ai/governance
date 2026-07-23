@@ -4,6 +4,10 @@ name: Public truth drift
 # must match the observable GitHub state. This is the check that would have
 # caught the 2026-07-19 audit findings (unarchived repository with post-freeze
 # pushes, silently removed repositories) as they happened.
+#
+# Since 2026-07-23 (ADR-0008), reserved product homes are reserved-active
+# (unarchived, issues off, living README) rather than frozen-archived; the
+# audit verifies reserved-active-product-home repos are present and NOT archived.
 on:
   schedule:
     - cron: "43 6 * * 1"
@@ -52,6 +56,15 @@ jobs:
                   frozen-reserved-product-home)
                     if [ "$live" != "present-archived-true" ]; then
                       echo "DRIFT: $repo expected frozen+archived, live=$live"
+                      fail=1
+                    fi
+                    ;;
+                  reserved-active-product-home)
+                    # Reactivated 2026-07-23 (ADR-0008): reserved homes are now
+                    # unarchived and carry a living README. They must be present
+                    # and NOT archived.
+                    if [ "$live" != "present-archived-false" ]; then
+                      echo "DRIFT: $repo expected reserved+unarchived, live=$live"
                       fail=1
                     fi
                     ;;

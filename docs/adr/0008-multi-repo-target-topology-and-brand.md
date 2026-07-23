@@ -5,6 +5,7 @@
 - **Arbitrage :** propriétaire (session de consolidation source-de-vérité du 2026-07-19)
 - **Portée :** écosystème — topologie GitHub, doctrine de distribution, marque
 - **Remplace :** la doctrine « repositories spécialisés = projections générées à sens unique » (anciens vision.md §7.6/§7.7, TARGET.md, README.md), constatée sans trace d'arbitrage propriétaire
+- **Amendé :** 2026-07-23 (décision propriétaire) — la préservation systématique des URLs historiques (point 2) est levée au profit de noms de repositories **conformes à l'architecture** ; premier cas appliqué : `agent-board` → `missions` (l'application couche-2 est l'autorité de mission ; Agent Board n'en est que la projection en lecture seule).
 
 ## Contexte
 
@@ -17,7 +18,7 @@ L'audit source-de-vérité du 2026-07-19 a établi que la doctrine de projection
    - des **repositories produits réels** — développés, avec issues, pull requests et releases — un par produit, consommant le socle comme dépendance versionnée ;
    - des repositories de **famille plateforme/preuve** et de **distribution**, créés à leur activation sous des noms thématiques neufs (noms candidats en annexe, non normatifs) ;
    - `.github` (README d'organisation).
-2. **Les URLs des produits historiques sont réservées** comme emplacements des futurs repositories produits : `feed-radar`, `notebook`, `ai-practices`, `sessions`, `boussole-politique`, `spec-studio`, `policy`, `agent-board`. Ils restent des archives gelées, avec avertissement de statut, jusqu'à leur activation par décision propriétaire.
+2. **Les repositories produits rouvrent sous un nom conforme à leur architecture** (amendement propriétaire 2026-07-23) : `feed-radar`, `notebook`, `ai-practices`, `sessions`, `boussole-politique`, `spec-studio`, `policy`, `missions`. La préservation systématique des URLs historiques est levée : un nom hérité trompeur est corrigé plutôt que perpétué — ainsi `agent-board` → `missions`, l'application couche-2 étant l'autorité de mission (propose → relit → autorise → valide), Agent Board n'en étant que la projection en lecture seule. Les repositories restent réservés, avec avertissement de statut, jusqu'à leur activation par décision propriétaire.
 3. **Les repositories d'outillage hérités** — `gear`, `context-kit`, `client-kit`, `proof-kit`, `artifact-supply`, `design-system`, `agent-factory` — sont retirés de GitHub après capture vérifiée (miroirs complets + bundles du 2026-07-19). Leurs responsabilités vivent dans le socle ; leurs noms ne sont jamais réutilisés. `website`, `benchmarks` et `dioxus-app-template`, déjà retirés, ne sont pas recréés.
 4. **« Projection » désigne exclusivement des artefacts générés** — documentation, SDK, context packs, catalogues, site — jamais des repositories. Le format `libre-ai.projection.v1` reste valable pour ces artefacts.
 5. **Répartition socle/produits :** ce qui est partagé par plusieurs produits vit au socle (contrats, identité/authz, cycle de vie des données, UI partagée, preuve) ; ce qui n'appartient qu'à un produit vit dans son repository. Les modalités d'activation de chaque repository produit font l'objet d'une décision propriétaire dédiée.
