@@ -178,4 +178,4 @@ Les deux spines forment un contrat de handoff **adéquat avec critiques élevée
 
 ---
 
-**Chemin complet:** `/Users/ifi6567/Documents/libre-ai/website/_bmad-output/planning-artifacts/ux-designs/ux-website-2026-07-14/review-rubric.md`
+**Chemin complet:** `<workspace>/website/_bmad-output/planning-artifacts/ux-designs/ux-website-2026-07-14/review-rubric.md`

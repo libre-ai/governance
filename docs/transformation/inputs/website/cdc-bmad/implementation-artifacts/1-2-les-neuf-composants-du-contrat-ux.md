@@ -695,7 +695,7 @@ Finished `release` profile [optimized] target(s) in 5.97s
 
 ```
 ./target/release/site-build
-site-build: 15 pages publiées dans /Users/ifi6567/Documents/libre-ai/website/.claude/worktrees/impl-bmad/dist
+site-build: 15 pages publiées dans <workspace>/website/.claude/worktrees/impl-bmad/dist
 ```
 
 **Clippy:** ✓ Zéro warnings sur src/components/

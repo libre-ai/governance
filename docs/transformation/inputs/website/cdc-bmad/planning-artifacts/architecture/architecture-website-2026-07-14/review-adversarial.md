@@ -196,4 +196,4 @@ Passage Gate 4 possible **sous condition** : resserrements AD fusionnés dans sp
 - Faibles : 2 (AD-5 slots constraint, AD-4 timestamp)
 - **Total critères** : 5 paires → **toutes confirmées après relecture**
 
-Chemin : `/Users/ifi6567/Documents/libre-ai/website/_bmad-output/planning-artifacts/architecture/architecture-website-2026-07-14/review-adversarial.md`
+Chemin : `<workspace>/website/_bmad-output/planning-artifacts/architecture/architecture-website-2026-07-14/review-adversarial.md`

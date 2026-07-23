@@ -307,7 +307,7 @@ afin de savoir en un regard ce qui est proposé et où contacter.
 
 Per user CLAUDE.md and review feedback :
 
-- **Jamais** de chemin machine-local dans le code (`/Users/ifi6567/...`, `/Users/...` interdit — utiliser chemins relatifs ou `$(git rev-parse --show-toplevel)`)
+- **Jamais** de chemin machine-local dans le code (`/Users/<user>/...`, `/Users/...` interdit — utiliser chemins relatifs ou `$(git rev-parse --show-toplevel)`)
 - **Jamais** de `git` commands sauf `git status`, `git diff`, `git log` en lecture — aucun commit/push/reset/checkout/rm
 - **Jamais** de noms clients/employeurs sans autorisation écrite dans le contenu (NFR-5)
 - **Jamais** de commit sans lire le diff complet (`git diff --staged` — si contenu imprévu → abort)

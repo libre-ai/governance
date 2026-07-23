@@ -351,7 +351,7 @@ Trois polices requises, toutes OFL (SIL Open Font License 1.1), auto-hébergemen
 $ cargo run --release --features static --no-default-features --bin site-build
    Finished `release` profile [optimized] target(s) in 0.10s
     Running `target/release/site-build`
-site-build: 15 pages publiées dans /Users/ifi6567/Documents/libre-ai/website/.claude/worktrees/impl-bmad/dist
+site-build: 15 pages publiées dans <workspace>/website/.claude/worktrees/impl-bmad/dist
 ```
 
 **Assets Verification:**

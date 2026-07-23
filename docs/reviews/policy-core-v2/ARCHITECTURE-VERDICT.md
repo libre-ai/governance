@@ -65,10 +65,10 @@ cargo test -p libre-ai-contract-types --test policy_core_vectors --locked -- --n
 cargo test -p libre-ai-contract-types --test schema_fixtures --locked -- --nocapture
 # => 3 passed; embedded schemas compile and fail closed
 
-/Users/ifi6567/.bun/bin/bun tools/quality/check-policy-core-v2-vectors.ts
+~/.bun/bin/bun tools/quality/check-policy-core-v2-vectors.ts
 # => pass; 20 golden, 28 operator, 9 raw decoder refusals, 10 byte boundaries, depth 64
 
-/Users/ifi6567/.bun/bin/bun -e '<manual recomputation>'
+~/.bun/bin/bun -e '<manual recomputation>'
 # => fractional-number-jcs digest matched
 # => order-independence-a/b digest identical
 # => self-approval-refused => approval-invalid with approverId===proposedBy
@@ -99,7 +99,7 @@ cargo test -p libre-ai-contract-types --test schema_fixtures --locked -- --nocap
 
 ## Residual risks
 
-- Le **Bun qualifié/pinné** du dépôt n’était pas disponible localement : `/Users/ifi6567/.bun/bin/bun` est en `1.3.11`, alors que `toolchains/bun.json` exige `1.4.0-canary.1+57f349f63`. Les vérifications TS passées ici sont donc **informatives**, pas toolchain-qualified.
+- Le **Bun qualifié/pinné** du dépôt n’était pas disponible localement : `~/.bun/bin/bun` est en `1.3.11`, alors que `toolchains/bun.json` exige `1.4.0-canary.1+57f349f63`. Les vérifications TS passées ici sont donc **informatives**, pas toolchain-qualified.
 - `bun run check:generated-contracts` n’a pas pu être rejoué entièrement dans cet environnement faute de `node_modules/.bin/biome`. Les hashes du `packages/contracts/src/generated/manifest.json` restent cohérents avec les schémas v2, et la génération Rust a bien été exercée par build/test.
 - Les plafonds CPU/mémoire sont **pré-implémentation** ; leur qualification sur le composant compilé réel reste un sujet Gate B, pas une preuve runtime à ce commit.
 

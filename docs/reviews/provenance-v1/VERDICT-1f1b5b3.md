@@ -373,8 +373,8 @@ This is correct: edVerify() will reject invalid signatures.
 
 ## References
 
-- **Code:** `/Users/ifi6567/Documents/libre-ai-d01/packages/provenance/src/index.ts` (221 lines)
-- **Tests:** `/Users/ifi6567/Documents/libre-ai-d01/packages/provenance/src/provenance.test.ts`
-- **Contract:** `/Users/ifi6567/Documents/libre-ai-d01/contracts/schemas/agent-contributor-lineage.v1.schema.json`
-- **Protocol:** `/Users/ifi6567/Documents/libre-ai-d01/docs/reviews/AGENT-REVIEW-PROTOCOL.md`
+- **Code:** `packages/provenance/src/index.ts` (221 lines)
+- **Tests:** `packages/provenance/src/provenance.test.ts`
+- **Contract:** `contracts/schemas/agent-contributor-lineage.v1.schema.json`
+- **Protocol:** `docs/reviews/AGENT-REVIEW-PROTOCOL.md`
 - **Commit:** `1f1b5b3` (feat: Ed25519 agent contributor lineage wave 2, couche 3)

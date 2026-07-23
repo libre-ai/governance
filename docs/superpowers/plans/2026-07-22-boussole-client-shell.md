@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Local bun runs: PATH-prefix `/Users/ifi6567/notebook-qualification/runtime-bfc9e4c/bun/bun-darwin-aarch64`. CI (linux-x64) is the repro authority.
+- Local bun runs: PATH-prefix `~/notebook-qualification/runtime-bfc9e4c/bun/bun-darwin-aarch64`. CI (linux-x64) is the repro authority.
 - **No outbound transmission** in `apps/boussole`: the `check-no-transmission` gate forbids `fetch(`, `window.fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon`, `RTCPeerConnection`, remote `import()`, node network modules. The client entry must NOT register the service worker via any forbidden primitive — `navigator.serviceWorker.register("/sw.js")` is allowed (not on the forbidden list; it is a same-origin worker registration, not a data-transmission primitive). Verify with `bun tools/quality/check-no-transmission.ts` in every task that touches `apps/boussole`.
 - Commits: `git commit -s` (DCO trailer derived from git config — author `Constantin Jais <cjais@pm.me>`, never the pro email). Every commit touching `apps/**` needs a `WP-G3-B01` reference in the message. Add `Agent-Role: implementer`.
 - Colours never carry meaning alone; every interactive control is labelled; a skip link targets the main landmark.

@@ -19,7 +19,7 @@ Files reviewed:
 - `packages/classification/src/classification.test.ts` (92 lines)
 - `packages/classification/package.json` (35 lines)
 
-Authority source: `/Users/ifi6567/Documents/constantin-jais/ecosystem/specs/shared/loop-security-kernel.md` (K2 §data-reliability-classification)
+Authority source: `ecosystem/specs/shared/loop-security-kernel.md` in the `constantin-jais` repo (K2 §data-reliability-classification)
 
 ---
 

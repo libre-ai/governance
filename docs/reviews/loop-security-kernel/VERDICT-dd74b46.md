@@ -15,14 +15,14 @@
 
 **Documents reviewed (sources of truth):**
 
-- `/Users/ifi6567/Documents/constantin-jais/ecosystem/specs/shared/loop-security-kernel.md` (control-plane input)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/adr/0009-constellation-portfolio-and-method.md` (§6 kernel requirements)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/adr/0011-wave-execution-decisions.md` (D3, execution gates)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/transformation/EXECUTION-SEQUENCING.md` (wave 3 gate definition)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/specifications/IDENTITY-AUTHORIZATION.md` (K1 baseline, G1 lock)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/decisions/INVARIANTS.md` (I-18 normative requirement)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/reviews/classification-v1/` (K2 verdict: CLEAN post-remediation)
-- `/Users/ifi6567/Documents/libre-ai-d01/docs/reviews/envelope-v1/` (K3 verdict: APPROVE, candidate state)
+- `ecosystem/specs/shared/loop-security-kernel.md` in the `constantin-jais` repo (control-plane input)
+- `docs/adr/0009-constellation-portfolio-and-method.md` (§6 kernel requirements)
+- `docs/adr/0011-wave-execution-decisions.md` (D3, execution gates)
+- `docs/transformation/EXECUTION-SEQUENCING.md` (wave 3 gate definition)
+- `docs/specifications/IDENTITY-AUTHORIZATION.md` (K1 baseline, G1 lock)
+- `docs/decisions/INVARIANTS.md` (I-18 normative requirement)
+- `docs/reviews/classification-v1/` (K2 verdict: CLEAN post-remediation)
+- `docs/reviews/envelope-v1/` (K3 verdict: APPROVE, candidate state)
 
 **Reviewed file:** `docs/specifications/LOOP-SECURITY-KERNEL.md` at commit dd74b46 (immutable, SHA verified).
 
