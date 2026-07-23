@@ -384,3 +384,23 @@ Notebook v1 remains local-only. A future capability (post-release, ADR TBD) allo
 **Brick shape confirmée** : `packages/collab-core` (TS) + `crates/collab-core` (Loro+MLS) + `crates/relay-collab` (forward-only WebSocket).
 
 **Status** : Prêt signature owner. Pas de dépendance bloquante post-signature (OpenMLS 0.8.1 production-ready, WASM functional).
+
+---
+
+## 11. Résolutions K4 — v3 (owner-signed 2026-07-23)
+
+K4 crypto (résolution ancrée RFC 9420 + red-team adversarial). Verdict : outcomes de sécurité **corrects** ; 4 corrections de fidélité RFC / clarté appliquées ci-dessous. Principe directeur : **utiliser les mécanismes natifs de MLS RFC 9420**, ne pas rouler de crypto ad-hoc.
+
+**R1 — Modèle de transport MLS.** Les messages Handshake (Proposal/Commit/Add/Remove) sont envoyés en **PublicMessage** (le relais voit les métadonnées d'appartenance : joins/leaves, avance d'époque) ; les deltas Loro sont envoyés en **PrivateMessage** (chiffrés bout-en-bout ; le relais ne voit que le ciphertext). Le relais **DOIT maintenir l'ordre FIFO par-expéditeur à travers les frontières d'époque** (les clients appliquent la transition d'époque avant tout message de la nouvelle époque). _RFC 9420 §4.1, §5._
+
+**R2 — Discipline de nonce.** Déléguée entièrement à MLS : dérivation (clé, nonce) par-message depuis le secret tree ; anti-rejeu automatique via le compteur de séquence MLS dans `sender_data`. Aucun nonce ad-hoc géré à la main. _RFC 9420 §8, §9.3-9.4._
+
+**R3 — Forward Secrecy vs Post-Compromise Security.** **FS (automatique)** : après chaque Commit, l'`epoch_secret` ancien est supprimé ; un secret compromis _avant_ le Commit ne dérive pas les clés futures (les nouvelles ne se dérivent pas des anciennes). **PCS (explicite)** : proposition KeyUpdate → Commit → nouvelle clé de feuille + nouvel `epoch_secret`. FS = comportement MLS par défaut ; PCS = rotation active (politique de déclenchement KeyUpdate à documenter : révocation utilisateur, périodique). _RFC 9420 §6, §10._
+
+**R4 — Dérivation de clé (HKDF).** Utiliser l'API **Exporter() de MLS (§7)** avec séparation de domaine via `exporter_secret` : `k_collab = Exporter("collab-epoch-data", context, 32)`, PAS une dérivation directe de `epoch_secret`. Tout le matériel de clé passe par le key schedule MLS analysé. _RFC 9420 §7, §8._
+
+**R5 — Authentification d'expéditeur (correction Critique du red-team).** Les deltas Loro sont envoyés en **MLS PrivateMessage**, qui lie l'expéditeur **via le MAC AEAD calculé sur `authenticated_data` (incluant l'index de feuille de l'expéditeur)**, et **NON via un champ signature** — PrivateMessage n'a PAS de champ signature en RFC 9420 (la signature n'existe que dans PublicMessage, §5.1.1). Un `k_epoch` partagé ne permet donc PAS de forger un delta attribué à autrui : le MAC AEAD est calculé sous une clé dérivée liée à l'expéditeur, et le destinataire vérifie l'`authenticated_data` avant d'accepter. _RFC 9420 §9.3-9.4._
+
+**Risques résiduels** (aucun au niveau crypto) : (a) **implémentation** — correction du binding OpenMLS WASM (v0.8.1 maintenu ; audit recommandé à l'intégration) ; (b) **métadonnées** — un relais compromis observe présence / époque / tailles (mitigation future : padding constant-rate).
+
+**Sign-off crypto** : owner, 2026-07-23. L'implémentation MLS devient un increment cadré (non-délégable, gaté sur l'intégration OpenMLS + audit).
