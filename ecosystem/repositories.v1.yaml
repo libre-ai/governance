@@ -1,7 +1,11 @@
 schema_version: libre-ai.repositories.v1
 authority: single source of the public topology and exposure states (ADR-0009 §7)
-updated_on: 2026-07-19
+updated_on: 2026-07-23
 exposure_scale: [idea, spec-published, usable-verifiable, proven]
+# `benchmark` records the best-in-class product each couche-1 product and the
+# couche-2 application targets for parity (owner-established). It is a target, not
+# a claim of parity reached; the deficit is tracked separately. Infrastructure and
+# the own public projection carry no external benchmark.
 repositories:
   - repository: libre-ai/libre-ai
     role: hub
@@ -31,6 +35,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: Inoreader
+      url: https://www.inoreader.com
     owns:
       - explainable feed selection and portable curation (at activation)
     consumes:
@@ -44,6 +51,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: SiYuan
+      url: https://github.com/siyuan-note/siyuan
     owns:
       - private local-first knowledge, controlled context export (at activation)
     consumes:
@@ -58,6 +68,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: DataCamp
+      url: https://www.datacamp.com
     owns:
       - professional training for sourced AI practice (at activation)
     consumes:
@@ -71,6 +84,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: Miro
+      url: https://miro.com
     owns:
       - source-grounded collective learning and facilitation (at activation)
     consumes:
@@ -84,6 +100,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: VAA (Voting Advice Application class)
+      note: best-in-class VAA class — e.g. Wahl-O-Mat, iSideWith
     owns:
       - private civic comparison against sourced public votes (at activation)
     consumes:
@@ -97,6 +116,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: Notion
+      url: https://www.notion.so
     owns:
       - product decisions, specifications and bounded handoffs (at activation)
     consumes:
@@ -111,6 +133,9 @@ repositories:
     target_visibility: public-after-secrets-audit (ADR-0009 §8, wave 4 entry)
     lifecycle: frozen-until-wave-4
     exposure: spec-published
+    benchmark:
+      product: Model registries
+      note: model registry / model-card governance class — e.g. Hugging Face Hub
     owns:
       - model selection under explainable policy (at activation)
     consumes:
@@ -128,6 +153,9 @@ repositories:
     visibility: public
     lifecycle: frozen-until-wave-3
     exposure: spec-published
+    benchmark:
+      product: Multica
+      url: https://github.com/multica-ai/multica
     owns:
       - human surface of agent missions (at activation, with the orchestrator lock)
     consumes:
@@ -145,6 +173,7 @@ repositories:
     visibility: public
     lifecycle: frozen-reserved
     exposure: idea
+    benchmark: TBD (owner to set)
     owns:
       - sovereign, explainable job-search assistant for cadres (at activation)
     consumes:
@@ -160,6 +189,7 @@ repositories:
     visibility: public
     lifecycle: frozen-reserved
     exposure: spec-published
+    benchmark: n/a (own public projection, not a parity target)
     owns:
       - public citable projection of reviewed knowledge, product records, evidence (at activation)
     consumes:
@@ -174,3 +204,5 @@ notes:
     its bricks (orchestrator, harness) enter this inventory at wave 3.
   - First engine is Notebook (pilot); the rest follow in parallel orchestrated
     by Polaris at wave 4b (ADR-0011 D1).
+  - benchmark targets are owner-established best-in-class references for parity;
+    a target to reach, not a claim of parity already reached.
