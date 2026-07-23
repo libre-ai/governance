@@ -89,3 +89,30 @@ promotion_rule: >
   something verifiable (ADR-0009 §4). Until then it stays here at idea/spec-published
   exposure. Enrolling a candidate, creating a repository, and activating a product
   are owner decisions (ADR-0009 §5 human-touch surface).
+
+enrollment:
+  # Owner decision 2026-07-23. Enrolled = committed to the pipeline; not the same as
+  # having a repository (an item earns a repo when verifiable, §4).
+  enrolled_candidates: [rgpd-kit, transcription, model-routing, embedded-db, api-workbench]
+  accepted_suggestions: [agent-identity, agentic-research, patterns-skills, desktop-shells]
+
+production_order:
+  # Repo activation / productization order. Distinct from the feature-completion loop,
+  # which completes already-scaffolded apps in the hub in parallel.
+  authority: ADR-0009 §8 (owner-confirmed 2026-07-23)
+  waves:
+    - wave: 0
+      target: pre-migration
+      note: main=truth, inventory up to date, first forge-evidence (traceur iteration 1)
+    - wave: 1
+      target: couche-4 (atelier applicatif)
+      note: most mature, built in G2
+    - wave: 2
+      target: couche-3 (infrastructure de confiance)
+      note: trust infrastructure before agents execute
+    - wave: 3
+      target: couche-2 (Polaris — la méthode incarnée)
+      note: under orchestrator lock; HARD GATE = security-of-loops core (§6), incl. agent-identity
+    - wave: 4
+      target: couche-1 (apps)
+      note: Notebook pilot, then the rest via Polaris

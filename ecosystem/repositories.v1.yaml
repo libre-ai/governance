@@ -143,7 +143,7 @@ repositories:
     # Le décompte « sept produits » de §2 décrivait l'état du 2026-07-19 ; la
     # constellation croît par décision propriétaire.
     visibility: public
-    lifecycle: reserved
+    lifecycle: frozen-reserved
     exposure: idea
     owns:
       - sovereign, explainable job-search assistant for cadres (at activation)
@@ -158,7 +158,7 @@ repositories:
     # CDC verrouillé (docs/apps/website.md, check-specification-lock) ; repo
     # réservé créé le 2026-07-23 pour réconcilier l'inventaire observable.
     visibility: public
-    lifecycle: reserved
+    lifecycle: frozen-reserved
     exposure: spec-published
     owns:
       - public citable projection of reviewed knowledge, product records, evidence (at activation)

@@ -157,4 +157,8 @@ repositories:
     revision: 0318c92b5b0f4fed82cc64b75e5132db04ea04e3
     dirty_entries: 0
     freeze_status: archived
-    github_status: removed-before-2026-07-19
+    # The legacy website (revision above) was removed before 2026-07-19. The name
+    # was re-created 2026-07-23 as a NEW reserved product home for the CDC-locked
+    # Website product (tracked in repositories.v1.yaml); the removed legacy content
+    # is NOT restored. Status transitions removed -> frozen-reserved-product-home.
+    github_status: frozen-reserved-product-home
