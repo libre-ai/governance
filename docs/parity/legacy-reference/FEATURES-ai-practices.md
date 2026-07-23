@@ -31,7 +31,7 @@
 ### Export & Reset
 - **Progress export**: JSON bundle with answered_count, outcomes array, RUM metrics — e2e test line 108-117
 - **Progress deletion**: learner deletes all local progress without account dependency — spec Journey 3 "Export/reset"
-- **Portable progress**: no server dependency, can be archived offline — e2e test filename: "rumble-ai-practices-synthese.json"
+- **Portable progress**: no server dependency, can be archived offline — e2e test filename: "*-ai-practices-synthese.json" (legacy brand prefix elided per LEXICON §6.1)
 - **RUM metric tracking**: select-to-validate time, median response time in export — e2e test line 114-116
 
 ### Review & Publishing Workflow
