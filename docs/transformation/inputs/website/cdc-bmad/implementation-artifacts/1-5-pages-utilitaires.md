@@ -333,7 +333,7 @@ Sitemap: https://libre-ai.fr/sitemap.xml
    ```bash
    grep -c "<h1" dist/mentions-legales/index.html  # Should be 1
    grep "À compléter avant la mise en ligne" dist/mentions-legales/index.html  # All uncertainty markers present
-   grep "SIRET\|/home/\|ifi6567" dist/mentions-legales/index.html  # Should return 0 (no invention, no local paths)
+   grep "SIRET\|/home/\|$(whoami)" dist/mentions-legales/index.html  # Should return 0 (no invention, no local paths)
    wc -l dist/mentions-legales/index.html  # Should be 1 line (minified)
    ```
 

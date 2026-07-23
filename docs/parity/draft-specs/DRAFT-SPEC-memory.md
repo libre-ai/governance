@@ -461,4 +461,4 @@ Registry note: Benchmark frameworks = Letta/MemGPT (Felicis-backed OS), Mem0 (AW
 2. **K3-wrapped**: Every recalled memory delivered to a model is HMAC-signed envelope (`trusted: false`) — untrusted operational data cannot be deserialized blindly; wrapper is verified before use.
 3. **K1-sovereign**: No cloud vector store (Pinecone/Weaviate Cloud forbidden); all embeddings computed by tenant-scoped pgvector or self-hosted Ollama; embedding indices never cross tenant boundaries; PII-containing memories encrypted at rest with tenant-specific key.
 
-**File path:** `/private/tmp/claude-502/-Users-ifi6567-Documents/30f9f25e-166c-4351-a464-5bc499391cf9/scratchpad/legacy-mining/DRAFT-SPEC-memory.md`
+**File path:** `docs/parity/draft-specs/DRAFT-SPEC-memory.md`

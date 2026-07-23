@@ -14,7 +14,7 @@
 2. **SLSA level self-assessment field** — add optional `slsaLevel` (0–3 metadata) so builders can declare their control posture; formal parity with SLSA framework
 3. **Key ID → public key resolver interface** — formalize how consumers map `signingKeyId` to public key (currently implicit); enables key registry + audit trail for key rotations
 
-**File Path**: `/private/tmp/claude-502/-Users-ifi6567-Documents/30f9f25e-166c-4351-a464-5bc499391cf9/scratchpad/DRAFT-SPEC-provenance-proof.md`
+**File Path**: `docs/parity/draft-specs/DRAFT-SPEC-provenance-proof.md`
 
 ---
 
@@ -32,7 +32,7 @@
 2. **Upgrade HMAC → Ed25519** (WP-G2-Z01 decision) — align with provenance brick; asymmetric signing for producer/consumer separation; reduces key management overhead
 3. **RBAC + source metadata binding** — document how `source` + `label` integrate with authorization policies (e.g., "tool-output from untrusted APIs requires approval"); currently metadata present but unbound to policy
 
-**File Path**: `/private/tmp/claude-502/-Users-ifi6567-Documents/30f9f25e-166c-4351-a464-5bc499391cf9/scratchpad/DRAFT-SPEC-envelope.md`
+**File Path**: `docs/parity/draft-specs/DRAFT-SPEC-envelope.md`
 
 ---
 
