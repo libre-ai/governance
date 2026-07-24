@@ -3,6 +3,7 @@ import {
   analyzeTarballEntries,
   analyzeTarballManifest,
   checkExpectedLicense,
+  checkExportsResolve,
   checkVersionCoherence,
   EXPECTED_LICENSES,
 } from "./publish-preflight";
@@ -103,6 +104,56 @@ describe("checkExpectedLicense", () => {
     const issues = checkExpectedLicense({ name: "@libre-ai/mystery", license: "Apache-2.0" });
     expect(issues).toHaveLength(1);
     expect(issues[0]).toContain("no expected license");
+  });
+});
+
+describe("checkExportsResolve", () => {
+  const entries = ["package.json", "LICENSE", "README.md", "src/index.ts", "dist/index.js"];
+
+  test("accepts a manifest whose every exports/types target is shipped", () => {
+    expect(
+      checkExportsResolve(
+        {
+          name: "@libre-ai/ui",
+          types: "./src/index.ts",
+          exports: {
+            ".": {
+              types: "./src/index.ts",
+              bun: "./src/index.ts",
+              import: "./dist/index.js",
+              default: "./dist/index.js",
+            },
+          },
+        },
+        entries,
+      ),
+    ).toEqual([]);
+  });
+
+  test("flags a conditional export target that was not packed", () => {
+    const issues = checkExportsResolve(
+      { name: "@libre-ai/ui", exports: { ".": { import: "./dist/missing.js" } } },
+      entries,
+    );
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain("./dist/missing.js");
+  });
+
+  test("flags a top-level types target that was not packed", () => {
+    const issues = checkExportsResolve(
+      { name: "@libre-ai/x", types: "./dist/index.d.ts" },
+      entries,
+    );
+    expect(issues.some((issue) => issue.includes("./dist/index.d.ts"))).toBe(true);
+  });
+
+  test("skips wildcard subpath targets (cannot match concrete entries)", () => {
+    expect(
+      checkExportsResolve(
+        { name: "@libre-ai/contracts", exports: { "./generated/*": "./src/generated/*" } },
+        entries,
+      ),
+    ).toEqual([]);
   });
 });
 

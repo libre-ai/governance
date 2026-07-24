@@ -104,6 +104,42 @@ export function checkExpectedLicense(manifest: TarballManifest): string[] {
   return [];
 }
 
+/**
+ * Every file an `exports`/`types`/`main` entry points at must be present in the
+ * tarball, or a consumer's `import "@libre-ai/ui"` resolves to a file that was
+ * never shipped. Recurses through conditional `exports` objects; wildcard
+ * subpath targets (containing `*`) are skipped — they cannot be matched against
+ * concrete entries. Fail-closed on any missing target.
+ */
+export function checkExportsResolve(
+  manifest: TarballManifest,
+  entries: readonly string[],
+): string[] {
+  const shipped = new Set(entries);
+  const targets = new Set<string>();
+
+  const collect = (value: unknown): void => {
+    if (typeof value === "string") {
+      targets.add(value);
+    } else if (value !== null && typeof value === "object") {
+      for (const nested of Object.values(value as Record<string, unknown>)) collect(nested);
+    }
+  };
+  collect(manifest.exports);
+  if (typeof manifest.types === "string") targets.add(manifest.types);
+  if (typeof manifest.main === "string") targets.add(manifest.main);
+
+  const issues: string[] = [];
+  for (const target of targets) {
+    if (target.includes("*")) continue;
+    const normalized = target.replace(/^\.\//, "");
+    if (!shipped.has(normalized)) {
+      issues.push(`${manifest.name}: exports/types target ${target} is not present in the tarball`);
+    }
+  }
+  return issues;
+}
+
 /** The wave-1 satellites version together (linked versioning). */
 export function checkVersionCoherence(
   manifests: readonly { name: string; version: string }[],
@@ -118,14 +154,44 @@ export function checkVersionCoherence(
     );
 }
 
+/**
+ * A satellite that ships a compiled `dist/` (only `@libre-ai/ui` today) declares
+ * a `build` script. The preflight builds it just-in-time before packing and
+ * removes the generated `dist/` afterward, so the artifact is transient and the
+ * working tree stays free of nested JavaScript (the `check:source` gate only
+ * whitelists a repo-root `dist/`). Returns an issue if the build fails.
+ */
+async function buildIfNeeded(packagePath: string): Promise<{ built: boolean; issues: string[] }> {
+  const manifest = (await Bun.file(join(packagePath, "package.json")).json()) as {
+    scripts?: Record<string, string>;
+  };
+  if (typeof manifest.scripts?.build !== "string") return { built: false, issues: [] };
+  const build = Bun.spawnSync(["bun", "run", "build"], { cwd: packagePath });
+  if (build.exitCode !== 0) {
+    return {
+      built: false,
+      issues: [`${packagePath}: build failed: ${build.stderr.toString().trim()}`],
+    };
+  }
+  return { built: true, issues: [] };
+}
+
 async function packAndInspect(
   repositoryRoot: string,
   packageDirectory: string,
 ): Promise<{ manifest: TarballManifest; issues: string[] }> {
+  const packagePath = resolve(repositoryRoot, packageDirectory);
+  // Build before creating the temp dir, so a build failure leaks nothing; clean
+  // any partial dist the failed build may have left.
+  const built = await buildIfNeeded(packagePath);
+  if (built.issues.length > 0) {
+    await rm(join(packagePath, "dist"), { recursive: true, force: true });
+    return { manifest: {}, issues: built.issues };
+  }
   const workDirectory = await mkdtemp(join(tmpdir(), "publish-preflight-"));
   try {
     const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", workDirectory, "--quiet"], {
-      cwd: resolve(repositoryRoot, packageDirectory),
+      cwd: packagePath,
     });
     if (packed.exitCode !== 0) {
       return {
@@ -168,10 +234,13 @@ async function packAndInspect(
         ...analyzeTarballManifest(manifest),
         ...checkExpectedLicense(manifest),
         ...analyzeTarballEntries(entries),
+        ...checkExportsResolve(manifest, entries),
       ],
     };
   } finally {
     await rm(workDirectory, { recursive: true, force: true });
+    // Transient build artifact: keep the working tree free of nested JS.
+    if (built.built) await rm(join(packagePath, "dist"), { recursive: true, force: true });
   }
 }
 

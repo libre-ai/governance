@@ -24,9 +24,16 @@ was reserved by the owner on 2026-07-22.
 - **Materialization proven:** `bun publish`/`bun pm pack` rewrite
   `workspace:*` and `catalog:` refs into real semver in every dependency group
   (verified against bun's source and empirically on these packages).
+- **`@libre-ai/ui` dual runtime:** ships a compiled `dist/` (ESM, React
+  automatic runtime, react/react-dom/react-aria-components external) for
+  Node/Vite/Next consumers, plus `src/` for Bun (the `bun` export condition) and
+  for types. The `dist/` is built just before its pack (release-time only, never
+  committed); the other three satellites stay TS-source (their consumers run on
+  the Bun server runtime).
 - **Gates:** `tools/release/publish-preflight.ts` packs each satellite for
   real and fails closed on any workspace:/catalog: residue, private flag,
-  missing LICENSE, leaked test file, or version drift. Green on all 4.
+  missing LICENSE, leaked test file, version drift, wrong per-package SPDX
+  license, or an `exports`/`types` target absent from the tarball. Green on all 4.
 - **Automation:** `.github/workflows/release.yml` (manual dispatch, dry-run by
   default; the publish job needs the `npm-publish` environment) and
   `tools/release/bump-version.ts` (linked bump).
@@ -45,12 +52,17 @@ was reserved by the owner on 2026-07-22.
    `dry_run: true` (default). Green = preflight re-proven on CI hardware.
 4. **Publish** — re-run with `dry_run: false`; approve the environment gate.
    Order is dependency-safe (contracts → web-platform → ui → auth-web).
-   Auth path: bun's own publish documentation states `bun publish` respects
-   the `NPM_CONFIG_TOKEN` environment variable for CI workflows (docs/pm/cli/
-   publish.mdx) — which is exactly how the workflow passes the secret.
-   OTP: if the token strategy requires it, publish locally instead:
-   `cd packages/<p> && bun publish --access public --otp <code>` in the same
-   order.
+   Auth path: the workflow packs each satellite with `bun pm pack` and publishes
+   the tarball with `npm publish <tgz> --access public --provenance` — the
+   battle-tested npm auth path. `actions/setup-node` writes the registry
+   `.npmrc`; the token is passed as `NODE_AUTH_TOKEN` (the secret `NPM_TOKEN`).
+   The `--provenance` flag needs the job's `id-token: write` permission (already
+   declared) and a public repository; it attaches a signed build attestation
+   linking each package to this workflow run. `@libre-ai/ui` is built to `dist/`
+   just before its pack (release-time only).
+   OTP: if the token strategy requires it, publish locally instead —
+   `cd packages/<p> && bun pm pack && npm publish <tgz> --access public --otp <code>`
+   in the same order (build `ui` first with `bun run --cwd packages/ui build`).
 5. **Wave-1 exit gate (real-usage proof)** — run `bun tools/release/starter-npm-proof.ts`
    to extract the starter template out of the workspace and install it from the npm
    registry; on success, a dated evidence JSON is written to `distribution/evidence/`.
@@ -77,8 +89,9 @@ was reserved by the owner on 2026-07-22.
 ## Deferred / explicitly not done here
 
 - `sdk-rs` satellite (EXECUTION-SEQUENCING defers it).
-- npm **provenance** / OIDC trusted publishing: this bun has no
-  `--provenance`; revisit by publishing bun-packed tarballs via npm CLI, or
-  when bun grows the flag.
 - Per-package NOTICE files aggregating dependency licenses (LICENSE ships;
   deps' licenses are visible on npm) — add if the licensing gate evolves.
+- A compiled `dist/` for `contracts`/`web-platform`/`auth-web`: not done — their
+  real consumers run on the Bun server runtime, so TS-source publishing fits.
+  Only `@libre-ai/ui` (browser React components consumed by Node/Vite/Next) ships
+  a `dist/`.
