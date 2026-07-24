@@ -19,6 +19,14 @@
       "artifact": "distribution/evidence/sovereignty/2026-07-24-f942f52.json"
     },
     {
+      "id": "sovereignty-2026-07-24-15dc102",
+      "date": "2026-07-24",
+      "type": "sovereignty",
+      "title": "Sovereignty report (commit 15dc102) — 3 pass, 0 fail, 4 pending",
+      "status": "pass",
+      "artifact": "distribution/evidence/sovereignty/2026-07-24-15dc102.json"
+    },
+    {
       "id": "coverage-2026-07-22",
       "date": "2026-07-22",
       "type": "coverage",

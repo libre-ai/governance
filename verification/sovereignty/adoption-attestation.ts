@@ -38,10 +38,14 @@ export async function readAdoptionAttestation(repoRoot: string): Promise<Attesta
     return { kind: "unreadable", detail: "attestation is not valid JSON" };
   }
   if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-    const status: unknown = (parsed as Record<string, unknown>).status;
-    if (typeof status === "string") {
-      return { kind: "present", path: ADOPTION_ATTESTATION_RELATIVE_PATH, status };
+    // The shipped L3 schema (libre-ai.adoption-reproduction.v1) carries the
+    // run outcome in `verdict`; `status` is kept as a fallback so an older
+    // draft attestation would still be readable rather than reported broken.
+    const record = parsed as Record<string, unknown>;
+    const verdict: unknown = record.verdict ?? record.status;
+    if (typeof verdict === "string") {
+      return { kind: "present", path: ADOPTION_ATTESTATION_RELATIVE_PATH, status: verdict };
     }
   }
-  return { kind: "unreadable", detail: "attestation has no string `status` field" };
+  return { kind: "unreadable", detail: "attestation has no string `verdict` field" };
 }

@@ -24,6 +24,14 @@
     <summary>pass</summary>
   </entry>
   <entry>
+    <id>tag:libre-ai.github.io,2026:evidence/sovereignty-2026-07-24-15dc102</id>
+    <title>Sovereignty report (commit 15dc102) — 3 pass, 0 fail, 4 pending</title>
+    <updated>2026-07-24T00:00:00Z</updated>
+    <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/sovereignty/2026-07-24-15dc102.json"/>
+    <category term="sovereignty"/>
+    <summary>pass</summary>
+  </entry>
+  <entry>
     <id>tag:libre-ai.github.io,2026:evidence/coverage-2026-07-22</id>
     <title>Automation coverage measurement (last 50 merges)</title>
     <updated>2026-07-22T00:00:00Z</updated>

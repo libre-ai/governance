@@ -16,6 +16,11 @@ des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-
 - Statut : pass
 - Source : [`distribution/evidence/sovereignty/2026-07-24-f942f52.json`](../../distribution/evidence/sovereignty/2026-07-24-f942f52.json)
 
+## 2026-07-24 — [sovereignty] Sovereignty report (commit 15dc102) — 3 pass, 0 fail, 4 pending
+
+- Statut : pass
+- Source : [`distribution/evidence/sovereignty/2026-07-24-15dc102.json`](../../distribution/evidence/sovereignty/2026-07-24-15dc102.json)
+
 ## 2026-07-22 — [coverage] Automation coverage measurement (last 50 merges)
 
 - Statut : 0% genuine automation

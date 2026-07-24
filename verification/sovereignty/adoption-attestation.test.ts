@@ -27,7 +27,22 @@ describe("readAdoptionAttestation", () => {
     expect(await readAdoptionAttestation(root)).toEqual({ kind: "absent" });
   });
 
-  test("reads the status of a published attestation", async () => {
+  test("reads the verdict of a published v1 attestation", async () => {
+    const root = await makeFakeRepoRoot();
+    const path = join(root, ADOPTION_ATTESTATION_RELATIVE_PATH);
+    await mkdir(join(path, ".."), { recursive: true });
+    await writeFile(
+      path,
+      `{ "schemaVersion": "libre-ai.adoption-reproduction.v1", "verdict": "pass" }\n`,
+    );
+    expect(await readAdoptionAttestation(root)).toEqual({
+      kind: "present",
+      path: ADOPTION_ATTESTATION_RELATIVE_PATH,
+      status: "pass",
+    });
+  });
+
+  test("falls back to a legacy status field", async () => {
     const root = await makeFakeRepoRoot();
     const path = join(root, ADOPTION_ATTESTATION_RELATIVE_PATH);
     await mkdir(join(path, ".."), { recursive: true });
@@ -48,7 +63,7 @@ describe("readAdoptionAttestation", () => {
     expect(outcome.kind).toBe("unreadable");
   });
 
-  test("reports unreadable when the status field is missing", async () => {
+  test("reports unreadable when the verdict field is missing", async () => {
     const root = await makeFakeRepoRoot();
     const path = join(root, ADOPTION_ATTESTATION_RELATIVE_PATH);
     await mkdir(join(path, ".."), { recursive: true });
