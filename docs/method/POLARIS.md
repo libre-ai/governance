@@ -16,13 +16,13 @@ Tout le reste — build, test, revue dual-K4, gates d'entrée/sortie de vague, m
 
 Chaque contrôle est une paire (exigence, réalisation au socle) avec une frontière d'enforcement explicite.
 
-| Noyau | Exigence | Réalisation socle | État |
-| --- | --- | --- | --- |
-| **K1** | Identité d'agent : flotte / mission / capacités / révocation per-`agent_id` | Faits Biscuit lockés + `authority-v2` + `agent-runs-v2` + `AgentRevocationStore` fail-closed | **IN SERVICE** (2026-07-20) |
-| **K2** | Données `operational` jamais autorité ; `classification` scellée, gelée | `@libre-ai/classification` — `requireAuthorityFor` fail-closed, mutations gelées | **IN SERVICE** (2026-07-20) |
+| Noyau  | Exigence                                                                                            | Réalisation socle                                                                                           | État                        |
+| ------ | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **K1** | Identité d'agent : flotte / mission / capacités / révocation per-`agent_id`                         | Faits Biscuit lockés + `authority-v2` + `agent-runs-v2` + `AgentRevocationStore` fail-closed                | **IN SERVICE** (2026-07-20) |
+| **K2** | Données `operational` jamais autorité ; `classification` scellée, gelée                             | `@libre-ai/classification` — `requireAuthorityFor` fail-closed, mutations gelées                            | **IN SERVICE** (2026-07-20) |
 | **K3** | Intégrité d'enveloppe signée sur tout rappel : HMAC constant-time + délimiteurs échappés prouvables | `@libre-ai/envelope` (`envelope.v1` locked) — `wrapUntrusted` + `verifyEnvelope` appliqués au rappel modèle | **IN SERVICE** (2026-07-22) |
-| **K4** | Mutations couche 3 et garde-fous : revue humaine + signature + rollback borné, pas d'auto-merge | CODEOWNERS + doctrine gate + independent-review protocol (K4: implémenteur ≠ reviewer) | **IN SERVICE** (2026-07-20) |
-| **K5** | Registre immuable en production : aucune boucle ne mute les invariants hors PR revue | `docs/decisions/INVARIANTS.md` sous protection main + gate ADR + deny-list signé | **IN SERVICE** (2026-07-20) |
+| **K4** | Mutations couche 3 et garde-fous : revue humaine + signature + rollback borné, pas d'auto-merge     | CODEOWNERS + doctrine gate + independent-review protocol (K4: implémenteur ≠ reviewer)                      | **IN SERVICE** (2026-07-20) |
+| **K5** | Registre immuable en production : aucune boucle ne mute les invariants hors PR revue                | `docs/decisions/INVARIANTS.md` sous protection main + gate ADR + deny-list signé                            | **IN SERVICE** (2026-07-20) |
 
 Le noyau K1–K5 est **l'entrée gate de vague 3** (EXECUTION-SEQUENCING §8) : orchestrateur et harness lock ne s'ouvrent qu'après.
 
@@ -52,8 +52,8 @@ Indépendance signifie **rôle séparé et pass revue-only** (AGENT-REVIEW-PROTO
 - **D4 – Confiance graduée** : premier merge sécurité-critique d'une couche = arrêt dur (dossier + prononcé propriétaire) ; répétitions = auto-merge sur revue propre (K4).
 - **D3 – Arrêt dur permanent** (porte V3) : orchestrator Specification Lock jamais automatisé, acte propriétaire nominatif exclusif.
 - **D6 – Plafonds autonomie** :
-  - *Liveness* : ≤ 3 cycles CI/revue par PR ; 3 PR consécutives sans progrès mesurable → STOP.
-  - *Coût* : tokens cumulés par vague (phase 0 : 300 k, G2 : 1,5 M, V1 : 1 M, V2 : 2 M, V4a : 1 M).
+  - _Liveness_ : ≤ 3 cycles CI/revue par PR ; 3 PR consécutives sans progrès mesurable → STOP.
+  - _Coût_ : tokens cumulés par vague (phase 0 : 300 k, G2 : 1,5 M, V1 : 1 M, V2 : 2 M, V4a : 1 M).
   - Dépassement = dossier produit, jamais kill silencieux.
 
 ## Preuve auto-documentée (le traceur)
@@ -69,14 +69,16 @@ Aucune brique n'est en production sans preuve publiée.
 ## Ce qui est IN-SERVICE vs SPECIFIED-PENDING
 
 **IN SERVICE aujourd'hui :**
+
 - Noyau K1–K5 spécifié (LOOP-SECURITY-KERNEL.md) et locké.
 - Review protocol indépendant et gates CI.
 - Registre d'invariants et doctrine governance.
 - Traceur v1 (gate-acceptance-log + coverage metrics).
 
 **SPECIFIED-PENDING (vague 3, en cours de construction) :**
-- **Orchestrator runtime** — les boucles elles-mêmes qui opèrent agents et flotte sous K1–K5 (branche feat/beta-missions-*, feat/beta-boussole-*, WP-G3-*).
-- **Harness runtime** — intégration agent-runs-v2 + memory + metrics into the actual orchestrator executable.
+
+- **Orchestrator runtime** — les boucles elles-mêmes qui opèrent agents et flotte sous K1–K5 (work-packages WP-G3-*).
+- **Harness runtime** — intégration d'agent-runs-v2, de la mémoire et des métriques dans l'exécutable orchestrateur réel.
 - **Merge automation sur revue propre** — l'autorisation permanente d'auto-merge (D4) attend la première wave complète de promotion.
 
 Le noyau gouverne déjà ; son exécution à l'échelle de constellation s'amorce en vague 3, d'où l'état intermédiaire honnête.
@@ -112,4 +114,4 @@ Polaris n'automatise pas :
 - `docs/reviews/AGENT-REVIEW-PROTOCOL.md` — protocol d'indépendance de revue.
 - `distribution/evidence/gate-acceptance-log.md` — le traceur public des verdicts.
 - `docs/transformation/EXECUTION-SEQUENCING.md` — phasing en vagues.
-- ADR-0009 (constellation-portefeuille), ADR-0011 (couche 2 & gates), ADR-0001–0008 (doctrine de foundation).
+- `docs/adr/0009-constellation-portfolio-and-method.md` (constellation-portefeuille), `docs/adr/0011-wave-execution-decisions.md` (couche 2 & gates), `docs/adr/` 0001–0008 (doctrine de foundation).
