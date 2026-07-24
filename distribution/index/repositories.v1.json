@@ -27,7 +27,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://www.datacamp.com",
       "canonical_paths": [
         "apps/practices"
@@ -41,7 +41,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "canonical_paths": [
         "apps/boussole"
       ]
@@ -54,7 +54,7 @@
       "visibility": "public",
       "lifecycle": "frozen-reserved",
       "exposure": "idea",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "canonical_paths": [
         "apps/carriere"
       ]
@@ -76,7 +76,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://www.inoreader.com",
       "canonical_paths": [
         "apps/radar"
@@ -99,7 +99,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-3",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://github.com/multica-ai/multica",
       "canonical_paths": [
         "apps/missions"
@@ -113,7 +113,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://github.com/siyuan-note/siyuan",
       "canonical_paths": [
         "apps/notebook",
@@ -128,7 +128,7 @@
       "visibility": "private",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "canonical_paths": [
         "apps/model-policy",
         "crates/policy-core"
@@ -142,7 +142,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://miro.com",
       "canonical_paths": [
         "apps/sessions"
@@ -156,7 +156,7 @@
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
-      "criteria_status": "draft-pending-owner",
+      "criteria_status": "owner-ratified",
       "benchmark_url": "https://www.notion.so",
       "canonical_paths": [
         "apps/specifications"

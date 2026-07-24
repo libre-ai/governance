@@ -18,9 +18,11 @@ exposure_scale: [idea, spec-published, usable-verifiable, proven]
 #                         record); a predicate holding true triggers owner review
 #                         for abandon — it never auto-kills (human-touch surface,
 #                         ADR-0009 §5).
-# All current values are DRAFTS derived from docs/parity/audits/PARITY-*.md and
-# the locked CDCs; `criteria_status: draft-pending-owner` marks each block until
-# the owner ratifies it (then it flips to `owner-ratified`).
+# Values are derived from docs/parity/audits/PARITY-*.md and the locked CDCs,
+# ratified as-is by the owner on 2026-07-24 (`criteria_status: owner-ratified`).
+# A window's "activation" is the product's wave-4 entry — the owner activation
+# decision per ADR-0008 and docs/transformation/EXECUTION-SEQUENCING.md; every
+# kill-predicate window is anchored there.
 repositories:
   - repository: libre-ai/libre-ai
     role: hub
@@ -90,12 +92,12 @@ repositories:
     kill_predicates:
       - id: parity-stagnation
         predicate: covered_traits < 50 of 105
-        window: two consecutive parity audits after activation
+        window: two consecutive parity audits after wave-4 activation
         source: docs/parity/audits/PARITY-radar-inoreader.md
       - id: sovereignty-breach
         predicate: any of the 15 CONFLIT traits (full-text archive, cross-tenant analytics) enters the covered set
         source: docs/parity/audits/PARITY-radar-inoreader.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/notebook
     role: reserved-product-home
     layer: couche-1
@@ -129,12 +131,12 @@ repositories:
     kill_predicates:
       - id: parity-stagnation
         predicate: covered_traits < 60 of 143
-        window: two consecutive parity audits after activation
+        window: two consecutive parity audits after wave-4 activation
         source: docs/parity/audits/PARITY-notebook-siyuan.md
       - id: sovereignty-breach
         predicate: cloud sync, telemetry or a plugin runtime enters the covered set
         source: docs/parity/audits/PARITY-notebook-siyuan.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/ai-practices
     role: reserved-product-home
     layer: couche-1
@@ -167,12 +169,12 @@ repositories:
     kill_predicates:
       - id: parity-regression
         predicate: coverage < 56% of 62 features (below the 2026-07 baseline)
-        window: any parity audit after activation
+        window: any parity audit after wave-4 activation
         source: docs/parity/audits/PARITY-practices-datacamp.md
       - id: advisory-invariant-breach
         predicate: any autonomous model-grading path enters the covered set
         source: docs/parity/audits/PARITY-practices-datacamp.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/sessions
     role: reserved-product-home
     layer: couche-1
@@ -205,12 +207,12 @@ repositories:
     kill_predicates:
       - id: parity-stagnation
         predicate: covered_traits < 30 of 62
-        window: two consecutive parity audits after activation
+        window: two consecutive parity audits after wave-4 activation
         source: docs/parity/audits/PARITY-sessions-miro.md
       - id: audit-trail-breach
         predicate: a private facilitator mode (rejected arbitration) enters the covered set
         source: docs/parity/audits/PARITY-sessions-miro.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/boussole-politique
     role: reserved-product-home
     layer: couche-1
@@ -243,12 +245,12 @@ repositories:
     kill_predicates:
       - id: parity-regression
         predicate: coverage < 55% of 58 features (below the 2026-07 baseline)
-        window: any parity audit after activation
+        window: any parity audit after wave-4 activation
         source: docs/parity/audits/PARITY-boussole-voxe.md
       - id: transmission-breach
         predicate: check-no-transmission reports an outbound primitive in apps/boussole
         source: tools/quality/check-no-transmission.ts
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/spec-studio
     role: reserved-product-home
     layer: couche-1
@@ -281,12 +283,12 @@ repositories:
     kill_predicates:
       - id: parity-stagnation
         predicate: covered_traits < 35 of 75
-        window: two consecutive parity audits after activation
+        window: two consecutive parity audits after wave-4 activation
         source: docs/parity/audits/PARITY-specstudio-notion.md
       - id: planning-only-breach
         predicate: an execution-capable token is issuable from the planning surface
         source: docs/parity/audits/PARITY-specstudio-notion.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/policy
     role: reserved-product-home
     layer: couche-1
@@ -321,12 +323,12 @@ repositories:
     kill_predicates:
       - id: parity-stagnation
         predicate: covered_traits < 30 of 68
-        window: two consecutive parity audits after activation
+        window: two consecutive parity audits after wave-4 activation
         source: docs/parity/audits/PARITY-modelpolicy-registries.md
       - id: determinism-breach
         predicate: any network call observed during policy evaluation
         source: docs/parity/audits/PARITY-modelpolicy-registries.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/missions
     role: reserved-application-home
     layer: couche-2
@@ -366,12 +368,12 @@ repositories:
     kill_predicates:
       - id: shortfall-growth
         predicate: ABSENT-T1 gaps > 8 of 36 (worse than the 2026-07 baseline)
-        window: any parity audit after activation
+        window: any parity audit after wave-4 activation
         source: docs/parity/audits/PARITY-agents-multica.md
       - id: execution-handoff-breach
         predicate: any handoff granting execution capability enters the covered set
         source: docs/parity/audits/PARITY-agents-multica.md
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/carriere
     role: reserved-product-home
     layer: couche-1
@@ -413,7 +415,7 @@ repositories:
       - id: no-audit-after-spec
         predicate: no parity audit exists two verification cycles after spec-published is reached
         source: docs/parity/audits/
-    criteria_status: draft-pending-owner
+    criteria_status: owner-ratified
   - repository: libre-ai/website
     role: reserved-projection-home
     layer: transverse
