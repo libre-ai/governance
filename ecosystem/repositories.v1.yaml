@@ -1,11 +1,26 @@
 schema_version: libre-ai.repositories.v1
 authority: single source of the public topology and exposure states (ADR-0009 §7)
-updated_on: 2026-07-23
+updated_on: 2026-07-24
 exposure_scale: [idea, spec-published, usable-verifiable, proven]
 # `benchmark` records the best-in-class product each couche-1 product and the
 # couche-2 application targets for parity (owner-established). It is a target, not
 # a claim of parity reached; the deficit is tracked separately. Infrastructure and
 # the own public projection carry no external benchmark.
+#
+# Falsifiability fields (positioning L2, 2026-07-24). Every couche-1 product and
+# the couche-2 application carry four fields so a product is a testable bet, not
+# a standing assumption:
+#   hypothesis          — the falsifiable bet the product exists to test.
+#   evidence_required   — the artefacts that must exist for the bet to be judged.
+#   promotion_criteria  — `to`/`when` pairs on the exposure_scale.
+#   kill_predicates     — machine-evaluable predicates (`id`, `predicate`,
+#                         optional `window`, `source` naming the metric's file of
+#                         record); a predicate holding true triggers owner review
+#                         for abandon — it never auto-kills (human-touch surface,
+#                         ADR-0009 §5).
+# All current values are DRAFTS derived from docs/parity/audits/PARITY-*.md and
+# the locked CDCs; `criteria_status: draft-pending-owner` marks each block until
+# the owner ratifies it (then it flips to `owner-ratified`).
 repositories:
   - repository: libre-ai/libre-ai
     role: hub
@@ -28,6 +43,21 @@ repositories:
       - organization profile README (projection of this inventory)
     consumes:
       - this inventory
+  - repository: libre-ai/db-inspect
+    role: standalone-tool
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Only public executable of the organization today. Active in its own
+    # repository — not a reserved home rebuilt in the hub — because it ships
+    # pinned releases consumed directly by CI pipelines; it therefore has no
+    # canonical monorepo path. Reconciled into the inventory on 2026-07-24
+    # (it was observable on GitHub but absent here, a §7 authority violation).
+    benchmark: n/a (infrastructure, no external parity target)
+    owns:
+      - fail-closed PostgreSQL schema inspection gate (pinned-release CI tool)
+    consumes: []
   - repository: libre-ai/feed-radar
     role: reserved-product-home
     layer: couche-1
@@ -44,6 +74,28 @@ repositories:
       - hub contracts, auth, data lifecycle, radar engine
     canonical_paths:
       - apps/radar
+    hypothesis: >
+      A sovereign feed reader with deterministic rule replay and explainable
+      curation reaches Inoreader-class daily utility without a full-text
+      archive and without cross-tenant analytics.
+    evidence_required:
+      - parity audit against the 105-trait Inoreader map (docs/parity/audits/PARITY-radar-inoreader.md)
+      - deterministic replay demonstrated on versioned rules (ReplayRuleSet)
+      - provenance metadata present on every export
+    promotion_criteria:
+      - to: usable-verifiable
+        when: covered traits >= 70 of 105 and the 38 ABSENT-T1 traits each resolved (shipped or owner-rejected with rationale)
+      - to: proven
+        when: covered traits >= 90 of 105 across two consecutive parity audits
+    kill_predicates:
+      - id: parity-stagnation
+        predicate: covered_traits < 50 of 105
+        window: two consecutive parity audits after activation
+        source: docs/parity/audits/PARITY-radar-inoreader.md
+      - id: sovereignty-breach
+        predicate: any of the 15 CONFLIT traits (full-text archive, cross-tenant analytics) enters the covered set
+        source: docs/parity/audits/PARITY-radar-inoreader.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/notebook
     role: reserved-product-home
     layer: couche-1
@@ -61,6 +113,28 @@ repositories:
     canonical_paths:
       - apps/notebook
       - crates/notebook-core
+    hypothesis: >
+      A local-only, private-by-default knowledge workspace with controlled
+      context export covers the core capture-organize-retrieve loop of
+      SiYuan-class tools without cloud sync, telemetry or a plugin runtime.
+    evidence_required:
+      - parity audit against the 143-feature SiYuan map (docs/parity/audits/PARITY-notebook-siyuan.md)
+      - the 6 T1 core-parity items shipped with verifiable evidence
+      - owner arbitration recorded on the 6 non-goal conflicts (sync, collaboration, publish, RAG, plugins, revocation)
+    promotion_criteria:
+      - to: usable-verifiable
+        when: covered traits >= 71 of 143 (all 42 ABSENT-T1 closed) and Gate B evidence green
+      - to: proven
+        when: covered traits >= 100 of 143 across two consecutive parity audits
+    kill_predicates:
+      - id: parity-stagnation
+        predicate: covered_traits < 60 of 143
+        window: two consecutive parity audits after activation
+        source: docs/parity/audits/PARITY-notebook-siyuan.md
+      - id: sovereignty-breach
+        predicate: cloud sync, telemetry or a plugin runtime enters the covered set
+        source: docs/parity/audits/PARITY-notebook-siyuan.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/ai-practices
     role: reserved-product-home
     layer: couche-1
@@ -77,6 +151,28 @@ repositories:
       - hub contracts, auth, data lifecycle
     canonical_paths:
       - apps/practices
+    hypothesis: >
+      Human-reviewed, schema-validated, immutable feedback (model advisory
+      only, never grading) trains sourced AI judgment to DataCamp-class
+      exercise utility without certification or employer-facing proof.
+    evidence_required:
+      - parity audit against the 62-feature DataCamp/Codecademy map (docs/parity/audits/PARITY-practices-datacamp.md)
+      - the 3 T1 amendments shipped (XP/streak, messy data, attempt history)
+      - accessibility evidence at WCAG AA with 200% zoom readability
+    promotion_criteria:
+      - to: usable-verifiable
+        when: coverage >= 75% of 62 features (baseline 56%) and the 11 ABSENT-T1 closed
+      - to: proven
+        when: coverage >= 85% across two consecutive parity audits
+    kill_predicates:
+      - id: parity-regression
+        predicate: coverage < 56% of 62 features (below the 2026-07 baseline)
+        window: any parity audit after activation
+        source: docs/parity/audits/PARITY-practices-datacamp.md
+      - id: advisory-invariant-breach
+        predicate: any autonomous model-grading path enters the covered set
+        source: docs/parity/audits/PARITY-practices-datacamp.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/sessions
     role: reserved-product-home
     layer: couche-1
@@ -93,6 +189,28 @@ repositories:
       - hub contracts, auth, data lifecycle
     canonical_paths:
       - apps/sessions
+    hypothesis: >
+      Append-only contributions with a facilitator approval gate deliver
+      Miro/Mural-class facilitation utility while preserving a complete,
+      unbroken audit trail of who contributed what.
+    evidence_required:
+      - parity audit against the 62-feature Miro+Mural map (docs/parity/audits/PARITY-sessions-miro.md)
+      - the 6 T1 amendments shipped (voting, soft timers, client-side undo, templates, outline/zoom, accessibility)
+      - audit-trail completeness demonstrated on a real facilitated session
+    promotion_criteria:
+      - to: usable-verifiable
+        when: covered traits >= 40 of 62 (baseline 16) and the 6 ABSENT-T1 closed
+      - to: proven
+        when: covered traits >= 50 of 62 across two consecutive parity audits
+    kill_predicates:
+      - id: parity-stagnation
+        predicate: covered_traits < 30 of 62
+        window: two consecutive parity audits after activation
+        source: docs/parity/audits/PARITY-sessions-miro.md
+      - id: audit-trail-breach
+        predicate: a private facilitator mode (rejected arbitration) enters the covered set
+        source: docs/parity/audits/PARITY-sessions-miro.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/boussole-politique
     role: reserved-product-home
     layer: couche-1
@@ -109,6 +227,28 @@ repositories:
       - hub contracts, boussole engine (contracts locked)
     canonical_paths:
       - apps/boussole
+    hypothesis: >
+      An account-less, zero-profiling civic comparison with local WASM
+      recompute achieves VAA-class core parity while user responses never
+      leave the device.
+    evidence_required:
+      - parity audit against the 58-feature VAA map (docs/parity/audits/PARITY-boussole-voxe.md)
+      - the 3 T1 amendments shipped (mismatch explanation, 24h URL-cache sharing without DB, EN/DE/ES)
+      - check-no-transmission CI gate green on apps/boussole (structural no-network proof)
+    promotion_criteria:
+      - to: usable-verifiable
+        when: coverage >= 75% of 58 features (baseline 55%) and the 14 ABSENT-T1 closed
+      - to: proven
+        when: coverage >= 85% across two consecutive parity audits with the small-cohort threshold (< 5 excluded) still enforced
+    kill_predicates:
+      - id: parity-regression
+        predicate: coverage < 55% of 58 features (below the 2026-07 baseline)
+        window: any parity audit after activation
+        source: docs/parity/audits/PARITY-boussole-voxe.md
+      - id: transmission-breach
+        predicate: check-no-transmission reports an outbound primitive in apps/boussole
+        source: tools/quality/check-no-transmission.ts
+    criteria_status: draft-pending-owner
   - repository: libre-ai/spec-studio
     role: reserved-product-home
     layer: couche-1
@@ -125,6 +265,28 @@ repositories:
       - hub contracts, auth
     canonical_paths:
       - apps/specifications
+    hypothesis: >
+      Immutable accepted spec packages with planning-only handoffs make a
+      spec workspace more trustworthy than Notion/Linear-class tools without
+      reproducing their workflow automation.
+    evidence_required:
+      - parity audit against the 75-feature Notion+Linear map (docs/parity/audits/PARITY-specstudio-notion.md)
+      - the 8 T1 amendments shipped (nesting, backlinks, templates, diff UI, timeline, parallel review, keyboard-only)
+      - author/approver separation demonstrated end-to-end (RLS, SupersedeSpecPackage)
+    promotion_criteria:
+      - to: usable-verifiable
+        when: covered traits >= 50 of 75 (baseline 20) and the 8 ABSENT-T1 closed
+      - to: proven
+        when: covered traits >= 60 of 75 across two consecutive parity audits
+    kill_predicates:
+      - id: parity-stagnation
+        predicate: covered_traits < 35 of 75
+        window: two consecutive parity audits after activation
+        source: docs/parity/audits/PARITY-specstudio-notion.md
+      - id: planning-only-breach
+        predicate: an execution-capable token is issuable from the planning surface
+        source: docs/parity/audits/PARITY-specstudio-notion.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/policy
     role: reserved-product-home
     layer: couche-1
@@ -143,6 +305,28 @@ repositories:
     canonical_paths:
       - apps/model-policy
       - crates/policy-core
+    hypothesis: >
+      Deny-by-default, deterministic policy evaluation over immutable model
+      snapshots — zero network during evaluation — covers registry-class
+      model governance better than leaderboard- or routing-centric registries.
+    evidence_required:
+      - parity audit against the 68-feature HuggingFace+OpenRouter map (docs/parity/audits/PARITY-modelpolicy-registries.md)
+      - golden vectors green byte-exact on both Rust and WASM targets
+      - the 7 ABSENT-T1 items closed with the quantified T1 operators (training_flops, license allowlist, region_in)
+    promotion_criteria:
+      - to: usable-verifiable
+        when: covered traits >= 40 of 68 (baseline 18) and unknown-attribute evaluation proven indeterminate-fail-closed
+      - to: proven
+        when: covered traits >= 50 of 68 across two consecutive parity audits
+    kill_predicates:
+      - id: parity-stagnation
+        predicate: covered_traits < 30 of 68
+        window: two consecutive parity audits after activation
+        source: docs/parity/audits/PARITY-modelpolicy-registries.md
+      - id: determinism-breach
+        predicate: any network call observed during policy evaluation
+        source: docs/parity/audits/PARITY-modelpolicy-registries.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/missions
     role: reserved-application-home
     layer: couche-2
@@ -166,6 +350,28 @@ repositories:
     canonical_paths:
       - apps/missions
       # apps/agent-board (Agent Board projection) rejoindra cette liste quand son code existera
+    hypothesis: >
+      A mission authority built on quorum blind review and fail-closed
+      per-agent revocation exceeds Multica-class agent surfaces on
+      security/audit while closing their automation/UX lead.
+    evidence_required:
+      - parity audit against the 36-feature Multica baseline (docs/parity/audits/PARITY-agents-multica.md)
+      - the 8 EXCEEDED security traits maintained (quorum blind review, revocation, evidence isolation, capability binding, planning-only handoff)
+      - top-3 T1 gaps addressed (autopilot scheduling, skills library, squads routing) or owner-rejected with rationale
+    promotion_criteria:
+      - to: usable-verifiable
+        when: ABSENT-T1 gaps <= 2 of 8 (baseline 25% functional shortfall) with the orchestrator lock in place
+      - to: proven
+        when: coverage >= 32 of 36 baseline traits across two consecutive parity audits, EXCEEDED set intact
+    kill_predicates:
+      - id: shortfall-growth
+        predicate: ABSENT-T1 gaps > 8 of 36 (worse than the 2026-07 baseline)
+        window: any parity audit after activation
+        source: docs/parity/audits/PARITY-agents-multica.md
+      - id: execution-handoff-breach
+        predicate: any handoff granting execution capability enters the covered set
+        source: docs/parity/audits/PARITY-agents-multica.md
+    criteria_status: draft-pending-owner
   - repository: libre-ai/carriere
     role: reserved-product-home
     layer: couche-1
@@ -184,6 +390,30 @@ repositories:
       - hub contracts, auth, data lifecycle
     canonical_paths:
       - apps/carriere
+    # Draft block thinner than the others on purpose: Carrière has no parity
+    # audit yet (benchmark TBD, owner to set); values derive from the owner
+    # decision of 2026-07-23 and the product CDC, not from a PARITY-*.md.
+    hypothesis: >
+      A sovereign, explainable job-search assistant measurably improves how
+      cadres run their search compared with opaque aggregators (falsifiable
+      once the owner sets the benchmark).
+    evidence_required:
+      - owner-set best-in-class benchmark (currently TBD)
+      - parity audit against that benchmark (none exists today)
+      - published CDC with the sovereignty and explainability invariants
+    promotion_criteria:
+      - to: spec-published
+        when: benchmark set by owner and CDC locked under check-specification-lock
+      - to: usable-verifiable
+        when: first parity audit exists and its T1 coverage targets are met
+    kill_predicates:
+      - id: no-benchmark-at-activation
+        predicate: benchmark still TBD at wave-4 entry
+        source: ecosystem/portfolio.v1.yaml
+      - id: no-audit-after-spec
+        predicate: no parity audit exists two verification cycles after spec-published is reached
+        source: docs/parity/audits/
+    criteria_status: draft-pending-owner
   - repository: libre-ai/website
     role: reserved-projection-home
     layer: transverse

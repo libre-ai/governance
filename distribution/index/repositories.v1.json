@@ -1,0 +1,178 @@
+{
+  "schema_version": "libre-ai.repository-index.v1",
+  "source": "ecosystem/repositories.v1.yaml",
+  "source_schema_version": "libre-ai.repositories.v1",
+  "source_updated_on": "2026-07-24",
+  "exposure_scale": [
+    "idea",
+    "spec-published",
+    "usable-verifiable",
+    "proven"
+  ],
+  "repositories": [
+    {
+      "repository": "libre-ai/.github",
+      "name": ".github",
+      "layer": "transverse",
+      "role": "org-profile",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/ai-practices",
+      "name": "AI Practices",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://www.datacamp.com",
+      "canonical_paths": [
+        "apps/practices"
+      ]
+    },
+    {
+      "repository": "libre-ai/boussole-politique",
+      "name": "Boussole Politique",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "canonical_paths": [
+        "apps/boussole"
+      ]
+    },
+    {
+      "repository": "libre-ai/carriere",
+      "name": "Carrière",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-reserved",
+      "exposure": "idea",
+      "criteria_status": "draft-pending-owner",
+      "canonical_paths": [
+        "apps/carriere"
+      ]
+    },
+    {
+      "repository": "libre-ai/db-inspect",
+      "name": "db-inspect",
+      "layer": "transverse",
+      "role": "standalone-tool",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/feed-radar",
+      "name": "Radar",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://www.inoreader.com",
+      "canonical_paths": [
+        "apps/radar"
+      ]
+    },
+    {
+      "repository": "libre-ai/libre-ai",
+      "name": "libre-ai",
+      "layer": "moyeu",
+      "role": "hub",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/missions",
+      "name": "Missions",
+      "layer": "couche-2",
+      "role": "reserved-application-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-3",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://github.com/multica-ai/multica",
+      "canonical_paths": [
+        "apps/missions"
+      ]
+    },
+    {
+      "repository": "libre-ai/notebook",
+      "name": "Notebook",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://github.com/siyuan-note/siyuan",
+      "canonical_paths": [
+        "apps/notebook",
+        "crates/notebook-core"
+      ]
+    },
+    {
+      "repository": "libre-ai/policy",
+      "name": "Model Policy",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "private",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "canonical_paths": [
+        "apps/model-policy",
+        "crates/policy-core"
+      ]
+    },
+    {
+      "repository": "libre-ai/sessions",
+      "name": "Sessions",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://miro.com",
+      "canonical_paths": [
+        "apps/sessions"
+      ]
+    },
+    {
+      "repository": "libre-ai/spec-studio",
+      "name": "Spec Studio",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "frozen-until-wave-4",
+      "exposure": "spec-published",
+      "criteria_status": "draft-pending-owner",
+      "benchmark_url": "https://www.notion.so",
+      "canonical_paths": [
+        "apps/specifications"
+      ]
+    },
+    {
+      "repository": "libre-ai/website",
+      "name": "Website",
+      "layer": "transverse",
+      "role": "reserved-projection-home",
+      "visibility": "public",
+      "lifecycle": "frozen-reserved",
+      "exposure": "spec-published",
+      "canonical_paths": [
+        "docs/apps/website.md"
+      ]
+    }
+  ]
+}

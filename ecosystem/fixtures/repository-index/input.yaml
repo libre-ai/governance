@@ -1,0 +1,46 @@
+# Fixture for build-index.test.ts. Entries are deliberately NOT sorted and mix
+# every optional shape (structured benchmark with url, prose benchmark string,
+# private visibility, canonical_paths, criteria_status) so the golden output
+# locks the full rendering surface.
+schema_version: libre-ai.repositories.v1
+authority: fixture — not the real inventory
+updated_on: 2026-07-24
+exposure_scale: [idea, spec-published, usable-verifiable, proven]
+repositories:
+  - repository: libre-ai/zeta-product
+    role: reserved-product-home
+    layer: couche-1
+    product: Zeta
+    visibility: public
+    lifecycle: frozen-until-wave-4
+    exposure: spec-published
+    benchmark:
+      product: Best In Class
+      url: https://example.org/best-in-class
+    owns:
+      - fixture product surface
+    consumes:
+      - hub contracts
+    canonical_paths:
+      - apps/zeta
+    criteria_status: draft-pending-owner
+  - repository: libre-ai/alpha-hub
+    role: hub
+    layer: moyeu
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    owns:
+      - fixture hub
+    consumes: []
+  - repository: libre-ai/midden-secret
+    role: reserved-product-home
+    layer: couche-1
+    product: Midden
+    visibility: private
+    lifecycle: frozen-until-wave-4
+    exposure: idea
+    benchmark: TBD (owner to set)
+    owns:
+      - fixture private product
+    consumes: []
