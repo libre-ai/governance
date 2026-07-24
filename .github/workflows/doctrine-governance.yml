@@ -87,12 +87,17 @@ jobs:
       - name: Superseded doctrine and retired brands stay out of living documents
         run: |
           set -euo pipefail
-          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr" \
+          # "Libre IA" (brand-name variant) added 2026-07-24 after the owner
+          # confirmed the ADR-0008 verdict trans-surface: the brand is
+          # "Libre AI" everywhere; legacy-reference parity notes are historical
+          # evidence and excluded like the other frozen inputs.
+          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA" \
             --include='*.md' . \
             | grep -v 'docs/transformation/inputs/' \
             | grep -v 'docs/reviews/' \
             | grep -v 'docs/adr/0008-' \
             | grep -v 'docs/decisions/LEXICON.md' \
+            | grep -v 'docs/parity/legacy-reference/' \
             | grep -v 'node_modules/' || true)
           if [ -n "$matches" ]; then
             echo "$matches"
