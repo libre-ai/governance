@@ -89,6 +89,16 @@ export function rewriteManifestForRegistry(
   return result;
 }
 
+/**
+ * A `bun install` failure is the *expected* pre-publication state only when the
+ * registry returns 404/E404 for an `@libre-ai` package (they are not published
+ * yet). Requiring BOTH the not-found code AND the scope avoids misreading a real
+ * post-publication failure that merely mentions `@libre-ai` as "not published".
+ */
+export function isPrePublicationFailure(stderr: string): boolean {
+  return /\b(?:404|E404)\b/.test(stderr) && stderr.includes("@libre-ai");
+}
+
 async function readManifest(path: string): Promise<Manifest> {
   const file = await Bun.file(path).json();
   return file as Manifest;
@@ -168,8 +178,7 @@ if (import.meta.main) {
     });
     if (install.exitCode !== 0) {
       const stderr = install.stderr.toString().trim();
-      // Check for pre-publication failure (packages not on npm yet).
-      if (stderr.includes("404") || stderr.includes("not found") || stderr.includes("@libre-ai")) {
+      if (isPrePublicationFailure(stderr)) {
         console.error(
           "starter npm-proof: @libre-ai packages not on the registry yet — run after the owner's npm day (WAVE1-PUBLICATION-RUNBOOK step 4).",
         );
