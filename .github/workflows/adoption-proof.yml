@@ -1,0 +1,71 @@
+name: Adoption proof
+
+# Positioning L3 — proof of independent appropriability. Weekly blank-room
+# reproduction of the PUBLIC repository: anonymous clone, credential-free
+# environment, the documented reference chain, one contract validated with
+# the repository's own conformance tooling. The attestation (with its
+# friction log — the objective readability backlog) is published as a run
+# artifact and in the job summary.
+#
+# Deliberately secret-free: the loop proves that anonymous public access is
+# sufficient, so no secret is configured and the default GITHUB_TOKEN is
+# never exported to the reproduction script (the script additionally builds
+# a deny-by-default child environment, see verification/adoption/cleanroom.ts).
+# Attestations produced here do NOT auto-push to main (branch protection);
+# see verification/adoption/README.md for how a CI attestation becomes a
+# committed evidence file.
+on:
+  schedule:
+    # Weekly; minute deliberately off :00/:30 to avoid the scheduler's
+    # top-of-hour congestion.
+    - cron: "41 5 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    name: Blank-room reproduction loop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable action
+        with:
+          toolchain: "1.97.0"
+      # Public toolchain prerequisites, not private assistance: the browsers
+      # are installed at a fixed path and handed to the loop through its
+      # explicit toolchain passthrough (PLAYWRIGHT_BROWSERS_PATH).
+      - name: Install dependencies (for the pinned Playwright CLI)
+        run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+        run: bunx playwright install --with-deps chromium firefox webkit
+      - name: Run the blank-room reproduction loop
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+        run: bun verification/adoption/reproduce.ts --out "$RUNNER_TEMP/adoption-evidence"
+      - name: Publish the attestation to the job summary
+        # A failed reproduction is still evidence — publish it too.
+        if: always()
+        run: |
+          shopt -s nullglob
+          for report in "$RUNNER_TEMP"/adoption-evidence/*.md; do
+            cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        if: always()
+        with:
+          name: adoption-attestation
+          path: ${{ runner.temp }}/adoption-evidence/
+          if-no-files-found: warn
