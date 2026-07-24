@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   analyzeTarballEntries,
   analyzeTarballManifest,
+  checkExpectedLicense,
   checkVersionCoherence,
+  EXPECTED_LICENSES,
 } from "./publish-preflight";
 
 // Fail-closed publish gate: a satellite tarball must be self-contained and
@@ -56,6 +58,51 @@ describe("analyzeTarballEntries", () => {
       "src/registry.test.ts",
     ]);
     expect(issues.some((issue) => issue.includes("registry.test.ts"))).toBe(true);
+  });
+
+  test("flags spec and non-ts test variants, not only .test.ts(x)", () => {
+    for (const leaked of [
+      "src/registry.spec.ts",
+      "src/registry.test.tsx",
+      "src/registry.test.js",
+      "src/registry.test.mjs",
+      "src/registry.spec.jsx",
+    ]) {
+      const issues = analyzeTarballEntries(["package.json", "LICENSE", "src/index.ts", leaked]);
+      expect(issues.some((issue) => issue.includes(leaked))).toBe(true);
+    }
+  });
+
+  test("does not flag ordinary source that merely contains 'test' in its name", () => {
+    expect(
+      analyzeTarballEntries(["package.json", "LICENSE", "src/test-utils.ts", "src/attestation.ts"]),
+    ).toEqual([]);
+  });
+});
+
+describe("checkExpectedLicense", () => {
+  test("each satellite maps to its exact SPDX license (Apache-2.0 x3, EUPL-1.2)", () => {
+    expect(EXPECTED_LICENSES["@libre-ai/contracts"]).toBe("Apache-2.0");
+    expect(EXPECTED_LICENSES["@libre-ai/ui"]).toBe("Apache-2.0");
+    expect(EXPECTED_LICENSES["@libre-ai/web-platform"]).toBe("Apache-2.0");
+    expect(EXPECTED_LICENSES["@libre-ai/auth-web"]).toBe("EUPL-1.2");
+  });
+
+  test("accepts a manifest whose license matches the expected one", () => {
+    expect(checkExpectedLicense({ name: "@libre-ai/auth-web", license: "EUPL-1.2" })).toEqual([]);
+  });
+
+  test("flags a license that drifted from the expected one", () => {
+    const issues = checkExpectedLicense({ name: "@libre-ai/auth-web", license: "Apache-2.0" });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain("EUPL-1.2");
+    expect(issues[0]).toContain("Apache-2.0");
+  });
+
+  test("fails closed on a satellite name absent from the expected map", () => {
+    const issues = checkExpectedLicense({ name: "@libre-ai/mystery", license: "Apache-2.0" });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain("no expected license");
   });
 });
 

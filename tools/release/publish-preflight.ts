@@ -20,6 +20,20 @@ export const SATELLITE_DIRECTORIES = [
   "packages/auth-web",
 ] as const;
 
+/**
+ * The exact SPDX license each satellite must publish under (ADR-0004): a
+ * silent drift (e.g. auth-web flipped to Apache-2.0, or a permissive package
+ * relicensed) would otherwise ship undetected — the `license`-non-empty check
+ * alone does not catch it. Every satellite name must appear here; an unknown
+ * name fails closed.
+ */
+export const EXPECTED_LICENSES: Record<string, string> = {
+  "@libre-ai/contracts": "Apache-2.0",
+  "@libre-ai/web-platform": "Apache-2.0",
+  "@libre-ai/ui": "Apache-2.0",
+  "@libre-ai/auth-web": "EUPL-1.2",
+};
+
 interface TarballManifest {
   readonly name?: string;
   readonly version?: string;
@@ -58,14 +72,36 @@ export function analyzeTarballManifest(manifest: TarballManifest): string[] {
   return issues;
 }
 
-/** Entry rules: LICENSE shipped, no test file leaked. */
+// A test/spec file in any JS/TS extension family (.test.ts, .spec.tsx,
+// .test.js, .test.mjs, .spec.cts, …). Broader than .test.ts(x) so a spec
+// helper or a compiled test cannot slip past the `files` negation.
+const TEST_ENTRY = /\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/** Entry rules: LICENSE shipped, no test/spec file leaked. */
 export function analyzeTarballEntries(entries: readonly string[]): string[] {
   const issues: string[] = [];
   if (!entries.includes("LICENSE")) issues.push("LICENSE missing from the tarball");
   for (const entry of entries) {
-    if (/\.test\.(ts|tsx)$/.test(entry)) issues.push(`test file leaked into the tarball: ${entry}`);
+    if (TEST_ENTRY.test(entry)) issues.push(`test file leaked into the tarball: ${entry}`);
   }
   return issues;
+}
+
+/**
+ * The manifest's declared license must equal the exact SPDX id pinned for that
+ * satellite (fail-closed: an unknown satellite name has no expected license).
+ */
+export function checkExpectedLicense(manifest: TarballManifest): string[] {
+  const name = manifest.name;
+  if (typeof name !== "string") return ["manifest without a name has no expected license"];
+  const expected = EXPECTED_LICENSES[name];
+  if (expected === undefined) {
+    return [`${name}: no expected license registered for this satellite`];
+  }
+  if (manifest.license !== expected) {
+    return [`${name}: license ${manifest.license} differs from the required ${expected}`];
+  }
+  return [];
 }
 
 /** The wave-1 satellites version together (linked versioning). */
@@ -128,7 +164,11 @@ async function packAndInspect(
 
     return {
       manifest,
-      issues: [...analyzeTarballManifest(manifest), ...analyzeTarballEntries(entries)],
+      issues: [
+        ...analyzeTarballManifest(manifest),
+        ...checkExpectedLicense(manifest),
+        ...analyzeTarballEntries(entries),
+      ],
     };
   } finally {
     await rm(workDirectory, { recursive: true, force: true });

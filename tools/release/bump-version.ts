@@ -82,6 +82,7 @@ if (import.meta.main) {
     console.log(`${update.name} -> ${update.nextVersion}`);
   }
   console.log(
-    `Linked set bumped to ${plan.nextVersion}. Re-run bun install to refresh the lockfile.`,
+    `Linked set bumped to ${plan.nextVersion}. Re-run bun install to refresh the lockfile, ` +
+      `then bun run lint to reformat the rewritten manifests before committing.`,
   );
 }
