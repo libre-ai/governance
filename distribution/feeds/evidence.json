@@ -27,6 +27,23 @@
       "artifact": "distribution/evidence/sovereignty/2026-07-24-15dc102.json"
     },
     {
+      "id": "coverage-2026-07-24",
+      "date": "2026-07-24",
+      "type": "coverage",
+      "title": "Automation coverage measurement (last 50 merges)",
+      "status": "0% genuine automation",
+      "artifact": "distribution/evidence/coverage-2026-07-24.json"
+    },
+    {
+      "id": "gate-2026-07-24-vague-1-couche-4-publish-readiness-des-4-satellites-re-prouv",
+      "date": "2026-07-24",
+      "type": "gate",
+      "title": "Vague 1 couche 4 — publish-readiness des 4 satellites re-prouvée sur le main courant",
+      "status": "RE-VÉRIFIÉ",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "`distribution/evidence/coverage-2026-07-24.json`, PR #191, `tools/release/publish-preflight.ts`"
+    },
+    {
       "id": "coverage-2026-07-22",
       "date": "2026-07-22",
       "type": "coverage",

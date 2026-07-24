@@ -32,6 +32,22 @@
     <summary>pass</summary>
   </entry>
   <entry>
+    <id>tag:libre-ai.github.io,2026:evidence/coverage-2026-07-24</id>
+    <title>Automation coverage measurement (last 50 merges)</title>
+    <updated>2026-07-24T00:00:00Z</updated>
+    <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/coverage-2026-07-24.json"/>
+    <category term="coverage"/>
+    <summary>0% genuine automation</summary>
+  </entry>
+  <entry>
+    <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-24-vague-1-couche-4-publish-readiness-des-4-satellites-re-prouv</id>
+    <title>Vague 1 couche 4 — publish-readiness des 4 satellites re-prouvée sur le main courant</title>
+    <updated>2026-07-24T00:00:00Z</updated>
+    <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/gate-acceptance-log.md"/>
+    <category term="gate"/>
+    <summary>RE-VÉRIFIÉ — `distribution/evidence/coverage-2026-07-24.json`, PR #191, `tools/release/publish-preflight.ts`</summary>
+  </entry>
+  <entry>
     <id>tag:libre-ai.github.io,2026:evidence/coverage-2026-07-22</id>
     <title>Automation coverage measurement (last 50 merges)</title>
     <updated>2026-07-22T00:00:00Z</updated>

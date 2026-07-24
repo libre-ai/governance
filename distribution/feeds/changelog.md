@@ -21,6 +21,17 @@ des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-
 - Statut : pass
 - Source : [`distribution/evidence/sovereignty/2026-07-24-15dc102.json`](../../distribution/evidence/sovereignty/2026-07-24-15dc102.json)
 
+## 2026-07-24 — [coverage] Automation coverage measurement (last 50 merges)
+
+- Statut : 0% genuine automation
+- Source : [`distribution/evidence/coverage-2026-07-24.json`](../../distribution/evidence/coverage-2026-07-24.json)
+
+## 2026-07-24 — [gate] Vague 1 couche 4 — publish-readiness des 4 satellites re-prouvée sur le main courant
+
+- Statut : RE-VÉRIFIÉ
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : `distribution/evidence/coverage-2026-07-24.json`, PR #191, `tools/release/publish-preflight.ts`
+
 ## 2026-07-22 — [coverage] Automation coverage measurement (last 50 merges)
 
 - Statut : 0% genuine automation
