@@ -1,0 +1,39 @@
+# Libre AI
+
+> Libre AI is an open-source, sovereignty-focused software lab whose portfolio is built by AI agents under a governed, evidence-first method; no product is released yet, every claim maps to a verifiable artifact in the canonical repository `libre-ai/libre-ai`, and the method itself is the first product.
+
+Working language of the repository is French; agent-facing surfaces are in English. Documentation is CC-BY-4.0, software is EUPL-1.2/Apache-2.0 (see LICENSING.md).
+
+## Machine index
+
+- [Repository index (JSON)](https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/index/repositories.v1.json): deterministic projection of the authoritative inventory — public topology, layers, exposure states, one entry per repository
+- [Repository inventory (YAML, authority)](https://raw.githubusercontent.com/libre-ai/libre-ai/main/ecosystem/repositories.v1.yaml): single source of the public topology, with per-product falsifiability fields (hypothesis, evidence_required, promotion_criteria, kill_predicates)
+
+## Agents
+
+- [AGENTS.md](https://raw.githubusercontent.com/libre-ai/libre-ai/main/AGENTS.md): canonical rules for agents contributing to the repository — authority, stack, boundaries, security, quality gates
+- [CONTRIBUTING.md](https://raw.githubusercontent.com/libre-ai/libre-ai/main/CONTRIBUTING.md): governance (work packages, DCO, human approvals) and three outside-contribution paths executable by a human or a mandated agent
+
+## Positioning
+
+- [README](https://raw.githubusercontent.com/libre-ai/libre-ai/main/README.md): mission, what a third party can verify today, the 10-minute verification walkthrough, non-goals, the four-layer constellation, honest status
+- [The method](https://raw.githubusercontent.com/libre-ai/libre-ai/main/docs/positioning/method.md): the governed cycle, the closed human-touch surface, numbered autonomy ceilings, in-service vs specified-pending
+- [The evidence](https://raw.githubusercontent.com/libre-ai/libre-ai/main/docs/positioning/evidence.md): claim-type to artifact to verification-command table, including unfavorable parity numbers
+- [Non-goals](https://raw.githubusercontent.com/libre-ai/libre-ai/main/docs/positioning/non-goals.md): what Libre AI is not, and factual one-line distinctions from neighboring organizations
+
+## Evidence
+
+- [Gate acceptance log](https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/evidence/gate-acceptance-log.md): public journal of gate verdicts, each line carrying a verifiable reference (PR, SHA, ADR)
+- [Reference chain harness](https://raw.githubusercontent.com/libre-ai/libre-ai/main/verification/harness/reference-chain.ts): replays the foundation chain from a clean checkout; digest-anchored report, expected digest published
+- [Evidence directory](https://github.com/libre-ai/libre-ai/tree/main/distribution/evidence): dated evidence reports and coverage metrics (automation coverage currently 0%, measured not declared)
+
+## Contracts
+
+- [Contract catalog](https://raw.githubusercontent.com/libre-ai/libre-ai/main/contracts/catalog.v1.json): the locked authority catalog — JSON Schemas, OpenAPI surfaces, WIT worlds, Biscuit policies
+- [Contracts directory](https://github.com/libre-ai/libre-ai/tree/main/contracts): schemas, fixtures and golden vectors; verified by `bun run check:contracts`
+
+## Optional
+
+- [Organization profile](https://github.com/libre-ai): the human-readable story of the organization
+- [Invariants register](https://raw.githubusercontent.com/libre-ai/libre-ai/main/docs/decisions/INVARIANTS.md): what is doctrine and nothing else
+- [db-inspect](https://github.com/libre-ai/db-inspect): the organization's only public executable today — fail-closed PostgreSQL schema inspection gate, pinned releases
