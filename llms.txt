@@ -27,6 +27,12 @@ Working language of the repository is French; agent-facing surfaces are in Engli
 - [Reference chain harness](https://raw.githubusercontent.com/libre-ai/libre-ai/main/verification/harness/reference-chain.ts): replays the foundation chain from a clean checkout; digest-anchored report, expected digest published
 - [Evidence directory](https://github.com/libre-ai/libre-ai/tree/main/distribution/evidence): dated evidence reports and coverage metrics (automation coverage currently 0%, measured not declared)
 
+## Feeds
+
+- [Evidence changelog (Markdown)](https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/feeds/changelog.md): dated public changelog of every evidence event — gate verdicts, adoption attestations, sovereignty reports, coverage measurements — newest first, each entry linking its source artifact
+- [Evidence feed (JSON)](https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/feeds/evidence.json): structured projection of the same events (schema libre-ai.evidence-feed.v1) — stable ids, ISO 8601 dates, type, status, artifact reference
+- [Evidence feed (Atom)](https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/feeds/evidence.atom.xml): Atom 1.0 projection of the same events for feed readers and watchers; regenerated deterministically by distribution/build-feeds.ts, freshness enforced in CI
+
 ## Contracts
 
 - [Contract catalog](https://raw.githubusercontent.com/libre-ai/libre-ai/main/contracts/catalog.v1.json): the locked authority catalog — JSON Schemas, OpenAPI surfaces, WIT worlds, Biscuit policies
