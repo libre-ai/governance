@@ -714,6 +714,66 @@
       "definitionStatus": "locked"
     },
     {
+      "id": "WP-G3-H01",
+      "phase": "G3",
+      "name": "Agent harness — attested execution confinement",
+      "objective": "Realize the confinement boundary a worker cannot argue its way out of: profile resolution and digesting, filesystem canonicalization with symlink policy, bounded outputs with a fail-closed scan, and a signed attestation binding requested profile, effective controls, worker manifests and kernel capabilities. Local process confinement only; network, secrets and providers stay closed.",
+      "owners": ["security", "platform"],
+      "integrator": "security",
+      "writePaths": ["crates/agent-harness/**"],
+      "readAuthorities": [
+        "docs/apps/harness.md",
+        "docs/specifications/LOOP-SECURITY-KERNEL.md",
+        "docs/adr/0004-agent-orchestration-option-b-specification-lock.md",
+        "docs/adr/0018-wave-3-opening-orchestrator-and-harness.md",
+        "contracts/schemas/harness-profile.v1.schema.json",
+        "contracts/schemas/harness-attestation.v1.schema.json"
+      ],
+      "dependsOn": ["WP-G2-Q01", "WP-G2-Z01"],
+      "parallelGroup": "g3-0",
+      "risk": "critical",
+      "humanGates": ["layer-2-bootstrap-security-merge"],
+      "acceptance": [
+        "Every refusal code of the specification is reachable by an adversarial test written before the control it attacks.",
+        "A symlink and a path traversal escaping the workspace root are both refused after canonicalization, on the host's real semantics.",
+        "No attestation is emitted with an incomplete binding or without a signature; requested and effective controls are recorded as distinct fields.",
+        "An attestation verifies independently from the run that produced it, given only the profile digest and the public key.",
+        "A capability closed by ADR-0018 D2 is refused even when the profile declares it."
+      ],
+      "definitionStatus": "locked"
+    },
+    {
+      "id": "WP-G3-O01",
+      "phase": "G3",
+      "name": "Orchestrator runtime — governed agent run control",
+      "objective": "Turn an authorized execution plan into a bounded, observable run: consume execution authorizations issued by Missions, enforce agent facts and per-agent revocation fail-closed, apply control-document budgets and liveness limits, append an immutable event chain, and halt with a decision dossier. Capabilities land in a separate crate so the accepted simulation-only core is not widened.",
+      "owners": ["platform", "security"],
+      "integrator": "platform",
+      "writePaths": ["crates/agent-orchestrator-run/**"],
+      "readAuthorities": [
+        "docs/apps/orchestrator.md",
+        "docs/specifications/LOOP-SECURITY-KERNEL.md",
+        "docs/adr/0004-agent-orchestration-option-b-specification-lock.md",
+        "docs/adr/0018-wave-3-opening-orchestrator-and-harness.md",
+        "contracts/schemas/orchestrator-control.v1.schema.json",
+        "contracts/schemas/orchestrator-event.v2.schema.json",
+        "contracts/schemas/execution-authorization.v1.schema.json",
+        "contracts/schemas/execution-plan-body.v1.schema.json"
+      ],
+      "dependsOn": ["WP-G2-Q01", "WP-G2-D01", "WP-G2-A01", "WP-G3-H01"],
+      "parallelGroup": "g3-1",
+      "risk": "critical",
+      "humanGates": ["layer-2-bootstrap-security-merge"],
+      "acceptance": [
+        "A run cannot open without an execution authorization whose plan digest matches the plan body; self-authorization is refused.",
+        "Cross-tenant run access is denied at the storage layer, proven by a two-tenant integration test.",
+        "Replaying an event chain reconstructs run state byte-identically, and a broken predecessor digest is refused.",
+        "No step executes without a harness attestation binding the profile that was requested.",
+        "Store concurrency, RLS, need-to-know exports, retention and deletion/restore are qualified per ADR-0004 §6."
+      ],
+      "definitionStatus": "locked"
+    },
+    {
       "id": "WP-G4-I01",
       "phase": "G4",
       "name": "Clever Cloud EU integration environment",

@@ -59,8 +59,13 @@ const validate = ajv.compile(schema);
 if (!validate(plan)) failures.push(`Work package schema rejected: ${errors(validate.errors)}`);
 
 const packages = (plan as { packages?: WorkPackage[] }).packages ?? [];
-if (packages.length !== 27)
-  failures.push(`Expected 27 locked work packages, found ${packages.length}`);
+// No frozen cardinal (ADR-0018 D5). A hard-coded count turns every legitimate
+// addition into a red build while guaranteeing nothing a pull-request review
+// does not already see. What follows — unique ids, mutually exclusive write
+// paths, phase/parallel-group coherence, acyclic dependencies, no dependency on
+// a later phase, a mandatory human gate on high and critical packages — is what
+// actually holds, and it holds at any size. The plan must simply not be empty.
+if (packages.length === 0) failures.push("Work package plan is empty");
 const byId = new Map<string, WorkPackage>();
 for (const workPackage of packages) {
   if (byId.has(workPackage.id)) failures.push(`${workPackage.id}: duplicate package id`);

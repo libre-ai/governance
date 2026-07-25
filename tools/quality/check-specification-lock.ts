@@ -12,6 +12,12 @@ const applications = [
   "missions",
   "agent-board",
   "memory",
+  // Layer 2 (Polaris) realization surfaces, added by ADR-0018 D3. Their actors
+  // are agents rather than humans — as is already the case for `memory` — but
+  // the alternative was a second product-specification authority, which costs
+  // more than the slight impropriety of the word "apps".
+  "orchestrator",
+  "harness",
 ];
 const requiredSections = [
   "Purpose and actors",
