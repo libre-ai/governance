@@ -112,7 +112,8 @@
 | Vote dataset contract                                  | Contracts                    | —                 | —                                                                                         |
 | Fact layer (Scrutin/Vote/Elu)                          | Data, Journey #1             | —                 | —                                                                                         |
 | Source provenance tracking                             | Data section                 | —                 | —                                                                                         |
-| VAA statement layer + polarity                         | Data, Journey #2             | —                 | —                                                                                         |
+| VAA statement layer                                    | Data, Journey #2             | —                 | —                                                                                         |
+| Statement polarity                                     | —                            | Absent            | —                                                                                         |
 | Selection versioning                                   | Data, Section 5.2            | —                 | —                                                                                         |
 | Independent review requirement                         | Section 5.2                  | —                 | —                                                                                         |
 | Scoring formula (weighted direction)                   | Section 7, Journey #3        | —                 | —                                                                                         |
