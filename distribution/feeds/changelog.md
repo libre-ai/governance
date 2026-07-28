@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-28 — [gate] Jalon γ — phase 3.0 housekeeping (activation générale : reliquats statués, chaîne finale)
+
+- Statut : CLOS
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : `distribution/evidence/2026-07-28-milestone-gamma-housekeeping.md`, PRs #261/#265–#271
+
 ## 2026-07-24 — [adoption] Adoption attestation 2026-07-24-d0c5745 — blank-room reproduction
 
 - Statut : pass
