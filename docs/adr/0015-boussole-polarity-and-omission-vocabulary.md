@@ -17,7 +17,7 @@ Un scrutin et la formulation d'un énoncé peuvent être de sens inverse : un vo
 
 Dans les contrats du monorepo, `polarity` n'existe pas. Vérification : `git grep -ril polarity -- contracts apps packages crates` ne retourne aucun fichier. L'inversion est censée être absorbée par la rédaction de `wording`, elle-même liée au digest du dataset et relue par le relecteur vie privée. Le signe du score dépend donc d'une relecture de prose, sans marqueur machine et sans vecteur golden couvrant un dataset à formulation inversée.
 
-**Fait à signaler, non corrigé par cet ADR.** Le tableau §3 de `docs/parity/legacy-reference/FEATURES-boussole-politique.md` déclare la ligne « VAA statement layer + polarity » comme couverte par la spécification, colonne « Couverture spec » renseignée à « Data, Journey #2 ». **Cette ligne est fausse** : aucun contrat ne porte la polarité. La correction du tableau de parité est traitée par une pull request séparée ; le présent ADR se borne à enregistrer le fait et ne modifie pas ce fichier.
+**Fait à signaler, non corrigé par cet ADR — réserve close le 2026-07-28.** Le tableau §3 des cartes de parité pré-freeze de Boussole déclarait la ligne « VAA statement layer + polarity » comme couverte par la spécification, colonne « Couverture spec » renseignée à « Data, Journey #2 ». **Cette ligne était fausse** : aucun contrat ne porte la polarité. La correction annoncée par pull request séparée est devenue sans objet : ces cartes ont été oubliées par ADR-0019 (`forgotten.legacy-reference-parity`). Le fait reste enregistré ici ; l'affirmation fausse ne survit nulle part.
 
 ### 2. Vocabulaire d'omission
 

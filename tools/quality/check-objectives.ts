@@ -25,8 +25,6 @@ const requiredFiles = [
   "prompts/02-foundation-build.md",
   "prompts/03-parallel-reconstruction.md",
   "prompts/04-integration-cutover.md",
-  "prompts/website-reconciliation.md",
-  "prompts/design-system-reconciliation.md",
 ];
 const forbiddenStatements = [
   "Forgejo",

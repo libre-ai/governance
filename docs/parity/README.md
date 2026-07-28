@@ -48,11 +48,12 @@ candidate CDC amendments (owner-signed).
 - `DESIGN-sovereign-realtime-collab.md` — v1 (superseded by v2; kept for the
   non-goal-coexistence + landing-plan sections).
 
-## legacy-reference/ — mined legacy apps (context only)
+## Pre-freeze feature maps — forgotten
 
-`FEATURES-{notebook,boussole-politique,feed-radar,ai-practices}.md` — the frozen
-legacy reference apps were Dojo-stage proofs, mostly LESS complete than current
-specs; the real bar is the industrial benchmarks above.
+The mined legacy feature maps were Dojo-stage proofs describing Dioxus interfaces,
+mostly LESS complete than current specs, and one of them carried a claim ADR-0015
+recorded as false. They were evicted on 2026-07-28 (ADR-0019, entry
+`forgotten.legacy-reference-parity`). The bar is the industrial benchmarks above.
 
 ## Resume order (next session)
 
