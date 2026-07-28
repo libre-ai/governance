@@ -163,6 +163,21 @@ describe("scanPersonalIdentifiers", () => {
     expect(identifiersFor("docs/x.md", "sha256 0123456789abcdef")).toHaveLength(0);
   });
 
+  test("does not flag long decimal fractions as phone numbers", () => {
+    // Found on the real tree: OKLCH conversion matrices (packages/ui/color-system)
+    // carry ten-digit fractions whose digits after the decimal point read as a
+    // valid mobile number ("4.0767416621" contains 07 67 41 66 21). A zero that
+    // follows a decimal point is a fraction, never a dialling prefix.
+    expect(
+      identifiersFor("packages/ui/color-system/color.ts", "4.0767416621 * l - 3.3077 * m"),
+    ).toHaveLength(0);
+    expect(
+      identifiersFor("packages/ui/color-system/color.ts", "lightness - 0.0894841775 * a"),
+    ).toHaveLength(0);
+    // The guard must not weaken the real notations.
+    expect(identifiersFor("docs/x.md", "joignable au 0767416621")).toHaveLength(1);
+  });
+
   test("does not flag a run of concatenated ISO dates as a phone number", () => {
     // Found on the real tree: an evidence-feed fixture id. A date chain offers
     // "0" + digit + four separated pairs, so the pattern must refuse a leading

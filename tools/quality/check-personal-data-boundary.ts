@@ -144,9 +144,12 @@ const EMAIL_PATTERN = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 //
 // The two guards are what keep it off ordinary repository content. The trailing
 // \b keeps it off a hex digest — `0123456789abcdef` offers no word boundary after
-// the digits. The leading (?<![\d-]) keeps it off a chain of ISO dates, where
-// `…-2026-01-13-…` otherwise reads as a zero, a digit and four separated pairs.
-const PHONE_FR_PATTERN = /(?:\+33[\s.-]?|(?<![\d-])\b0)[1-9](?:[\s.-]?\d{2}){4}\b/;
+// the digits. The leading (?<![\d.-]) keeps it off a chain of ISO dates, where
+// `…-2026-01-13-…` otherwise reads as a zero, a digit and four separated pairs,
+// and off long decimal fractions — `4.0767416621` (an OKLCH conversion
+// coefficient) otherwise reads as a mobile number: a zero that follows a
+// decimal point is a fraction, never a dialling prefix.
+const PHONE_FR_PATTERN = /(?:\+33[\s.-]?|(?<![\d.-])\b0)[1-9](?:[\s.-]?\d{2}){4}\b/;
 const IBAN_FR_PATTERN = /\bFR\d{2}(?:\s?[A-Z0-9]{4}){5}\s?[A-Z0-9]{3}\b/;
 
 function isAllowlistedEmail(address: string): boolean {
