@@ -14,7 +14,7 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 
-# package directory -> mirror repository (names reserved in LEXICON §7).
+# package directory -> mirror repository (names reserved in LEXICON §2.1).
 # web-platform has no reserved mirror name: published on npm only, until the
 # owner reserves one (documented in the wave-1 runbook).
 mirror_of() {

@@ -1,8 +1,8 @@
 # LEXICON — carte de noms cible et glossaire produit (Phase 0, Lexicon Lock)
 
-- **Statut :** proposed — sans effet tant que la signature propriétaire n'est pas prononcée.
+- **Statut :** signé — signature propriétaire prononcée le 2026-07-20, journalisée dans [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md) (PR #130, merge = signature). Cette carte est en vigueur : elle est l'autorité unique des noms cibles, et tout nom hors carte est un défaut bloquant (garde-fou classe 4).
 - **Date :** 2026-07-20
-- **Arbitrage :** requis — la signature propriétaire de cette carte est l'acte de clôture de la Phase 0 (Lexicon Lock). Procédure : production solo → revue K4 (relecteurs indépendants : cohérence, collisions, doctrine) → arrêt dur → signature propriétaire → seulement alors renommage et écriture des noms cibles comme acquis.
+- **Arbitrage :** accompli — la signature propriétaire de cette carte est l'acte de clôture de la Phase 0 (Lexicon Lock). Procédure suivie : production solo → revue K4 (relecteurs indépendants : cohérence, collisions, doctrine) → arrêt dur → signature propriétaire → renommage et écriture des noms cibles comme acquis.
 - **Portée :** tous les noms cibles de la constellation — repositories, produits, briques, packages npm, crates, familles — et le glossaire produit. Le glossaire de **méthode** (socle, control plane, satellite, vague, gate, WP, traceur…) est déjà fixé et ne relève pas de cette carte.
 - **Règle d'anti-hallucination :** tant que cette carte n'est pas signée, aucun agent n'écrit un nom cible comme acquis dans un artefact ; après signature, tout nom hors carte est un défaut bloquant (garde-fou classe 4).
 - **Place documentaire :** après signature, cette carte devient l'autorité unique du sujet « noms cibles et glossaire produit » et s'inscrit à ce titre dans la carte d'autorité (`docs/README.md`) — la même pull request porte cette inscription. Elle ne concurrence ni le registre des invariants ni l'inventaire : elle fixe des noms, pas la doctrine ni la topologie.

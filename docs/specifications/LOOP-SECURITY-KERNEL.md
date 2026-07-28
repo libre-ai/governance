@@ -4,7 +4,7 @@
   invariant **I-18** (ADR-0009 §6). Consumes the control-plane input
   `constantin-jais/constantin-jais:ecosystem/specs/shared/loop-security-kernel.md`.
 - **Authority:** this document **specifies** the five loop-security controls at
-  the socle and is the **entry gate of wave 3**. Per EXECUTION-SEQUENCING §8, the
+  the socle and is the **entry gate of wave 3**. Per EXECUTION-SEQUENCING, wave 3, the
   kernel is "specified and ready to lock the orchestrator lock": the
   specification is complete and faithful here, and two controls **complete at
   the orchestrator lock**, not before it — see the status table and the
@@ -30,7 +30,7 @@ its **enforcement**.
   explicit step of the orchestrator lock (not a gap in this specification).
 
 A control being `reviewed` or `specified` rather than `in service` is **not** an
-omission: EXECUTION-SEQUENCING §8 distinguishes "specified and ready to lock"
+omission: EXECUTION-SEQUENCING, wave 3, distinguishes "specified and ready to lock"
 (this document) from the orchestrator lock pronouncement (the porte-V3 owner
 act). The two controls that complete at the orchestrator lock are named in the
 status table.

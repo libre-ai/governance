@@ -24,7 +24,7 @@ Chaque contrôle est une paire (exigence, réalisation au socle) avec une fronti
 | **K4** | Mutations couche 3 et garde-fous : revue humaine + signature + rollback borné, pas d'auto-merge     | CODEOWNERS + doctrine gate + independent-review protocol (K4: implémenteur ≠ reviewer)                      | **IN SERVICE** (2026-07-20) |
 | **K5** | Registre immuable en production : aucune boucle ne mute les invariants hors PR revue                | `docs/decisions/INVARIANTS.md` sous protection main + gate ADR + deny-list signé                            | **IN SERVICE** (2026-07-20) |
 
-Le noyau K1–K5 est **l'entrée gate de vague 3** (EXECUTION-SEQUENCING §8) : orchestrateur et harness lock ne s'ouvrent qu'après.
+Le noyau K1–K5 est **l'entrée gate de vague 3** (EXECUTION-SEQUENCING, section « Vague 3 ») : orchestrateur et harness lock ne s'ouvrent qu'après.
 
 ## Rôles et gates
 
