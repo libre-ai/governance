@@ -293,8 +293,7 @@ repositories:
     role: reserved-product-home
     layer: couche-1
     product: Model Policy
-    visibility: private
-    target_visibility: public-after-secrets-audit (ADR-0009 §8, wave 4 entry)
+    visibility: public
     lifecycle: frozen-until-wave-4
     exposure: spec-published
     benchmark:

@@ -125,7 +125,7 @@
       "name": "Model Policy",
       "layer": "couche-1",
       "role": "reserved-product-home",
-      "visibility": "private",
+      "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
       "exposure": "spec-published",
       "criteria_status": "owner-ratified",
