@@ -294,6 +294,7 @@ repositories:
     layer: couche-1
     product: Model Policy
     visibility: public
+    publication_evidence: docs/security/POLICY-SECRETS-PII-REAUDIT.md (ADR-0009 §8 re-audit, 2026-07-28)
     lifecycle: frozen-until-wave-4
     exposure: spec-published
     benchmark:
