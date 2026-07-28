@@ -14,7 +14,13 @@ import { containsCredentialMarker } from "./public-source-scanner";
  * and the schema-fixtures vector corpus (both carry anti-pattern fixtures by
  * design, already validated in their own context by check-contracts),
  * non-normative review evidence (docs/reviews and any evidence directory), and
- * the usual build or vendored trees.
+ * the usual build or vendored trees. File exclusions are exact paths — an
+ * unanchored suffix would let any same-named path inherit the exemption — and
+ * a fixture that must carry a positive detection case on a non-reserved host
+ * (e.g. the no-clever gate's own canary) exempts its single line with the
+ * greppable `secret-scan:allowed-fixture` marker instead of its whole file
+ * (K4 review of f49fc18, finding 4: file-wide exemptions silently unscanned
+ * every other vendor-token form).
  */
 export interface SecretScanTarget {
   readonly path: string;
@@ -28,21 +34,30 @@ export interface SecretFinding {
 
 const IGNORED_PREFIXES = ["node_modules/", "target/", "dist/", ".git/", "docs/reviews/"];
 const IGNORED_SUBSTRINGS = ["/evidence/"];
-const IGNORED_SUFFIXES = [
-  "public-source-scanner.ts",
-  "public-source-scanner.test.ts",
-  "check-secret-scan.ts",
-  "check-secret-scan.test.ts",
-  // Scanner test-vector corpus: intentional credential anti-patterns, exercised
-  // as positive detection cases by check-contracts / public-source-scanner.
+// Exact paths only: the detector pair (it holds the patterns), this gate's own
+// pair (anti-pattern fixtures by design) and the scanner vector corpus.
+const IGNORED_FILES = new Set([
+  "tools/quality/public-source-scanner.ts",
+  "tools/quality/public-source-scanner.test.ts",
+  "tools/quality/check-secret-scan.ts",
+  "tools/quality/check-secret-scan.test.ts",
   "contracts/fixtures/schema-fixtures.v1.json",
-];
+]);
+// Line-level exemption for a fixture that must exercise a positive detection
+// case on a non-reserved host. Greppable, reviewed, single-line by design —
+// and honoured ONLY inside the allowlisted fixture files below: a secrets
+// gate on a public repository must not offer a universal mute (K4 re-pass
+// of 344aea0). Extending the allowlist is a security decision.
+const LINE_EXEMPTION_MARKER = "secret-scan:allowed-fixture";
+const LINE_EXEMPTION_FILES = new Set([
+  "tools/quality/check-no-clever-production.test.ts",
+  "tools/quality/check-personal-data-boundary.test.ts",
+]);
 
 function isIgnored(path: string): boolean {
   if (IGNORED_PREFIXES.some((prefix) => path.startsWith(prefix))) return true;
   if (IGNORED_SUBSTRINGS.some((part) => path.includes(part))) return true;
-  if (IGNORED_SUFFIXES.some((suffix) => path.endsWith(suffix))) return true;
-  return false;
+  return IGNORED_FILES.has(path);
 }
 
 export function scanForSecrets(targets: readonly SecretScanTarget[]): SecretFinding[] {
@@ -52,8 +67,11 @@ export function scanForSecrets(targets: readonly SecretScanTarget[]): SecretFind
       continue;
     }
     const lines = target.content.split("\n");
+    const markerHonoured = LINE_EXEMPTION_FILES.has(target.path);
     for (let i = 0; i < lines.length; i += 1) {
-      if (containsCredentialMarker(lines[i] ?? "")) {
+      const line = lines[i] ?? "";
+      if (markerHonoured && line.includes(LINE_EXEMPTION_MARKER)) continue;
+      if (containsCredentialMarker(line)) {
         findings.push({ path: target.path, line: i + 1 });
       }
     }

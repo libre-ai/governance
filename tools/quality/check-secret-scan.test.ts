@@ -70,4 +70,47 @@ describe("scanForSecrets", () => {
     );
     expect(findings).toHaveLength(0);
   });
+
+  // K4 review of f49fc18, finding 4: exemptions were file-wide and matched by
+  // unanchored endsWith, so any path ending with an exempted name inherited
+  // the exemption and every other vendor-token form went unscanned.
+  test("exemptions are exact paths, not unanchored suffixes", () => {
+    const findings = findingsFor(
+      "apps/evil/public-source-scanner.ts",
+      "const id = 'AKIA1234567890ABCDEF';",
+    );
+    expect(findings).toHaveLength(1);
+  });
+
+  test("sibling gates are scanned again: only marked fixture lines are exempt", () => {
+    const findings = findingsFor(
+      "tools/quality/check-no-clever-production.test.ts",
+      [
+        "const ok = 1;",
+        "'postgresql://u:pw@b0-postgresql.services.hebergeur-fictif.fr:5432/db', // secret-scan:allowed-fixture",
+        "const t = 'ghp_0123456789abcdefghijABCDEFGHIJ0123';",
+      ].join("\n"),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.line).toBe(3);
+  });
+
+  test("the line marker is honoured only inside the fixture allowlist", () => {
+    // A secrets gate on a public repository must not offer a universal mute:
+    // outside the two known fixture files, the marker is inert and the
+    // credential on the line is still reported (K4 re-pass of 344aea0).
+    const findings = findingsFor(
+      "apps/web/src/config.ts",
+      "const t = 'ghp_0123456789abcdefghijABCDEFGHIJ0123'; // secret-scan:allowed-fixture",
+    );
+    expect(findings).toHaveLength(1);
+  });
+
+  test("the line marker does not exempt other files' unmarked credentials", () => {
+    const findings = findingsFor(
+      "apps/x/config.ts",
+      "const db = 'postgresql://u:pw@db-prod.acme.fr:5432/db';",
+    );
+    expect(findings).toHaveLength(1);
+  });
 });

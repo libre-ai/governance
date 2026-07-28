@@ -184,7 +184,7 @@ describe("scanPersonalIdentifiers", () => {
     expect(
       identifiersFor(
         "tools/quality/some-scanner.test.ts",
-        'const db = "postgresql://user:pw@b0000-postgresql.services.hebergeur-fictif.fr:5432/db";',
+        'const db = "postgresql://user:pw@b0000-postgresql.services.hebergeur-fictif.fr:5432/db";', // secret-scan:allowed-fixture
       ),
     ).toHaveLength(0);
   });

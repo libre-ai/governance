@@ -17,7 +17,7 @@ describe("scanForProvisioningClaims", () => {
   test("flags a concrete Clever Cloud addon URI (a real provisioned resource)", () => {
     const findings = findingsFor(
       "apps/notebook/config.ts",
-      'const db = "postgresql://user:pw@bXXXX-postgresql.services.clever-cloud.com:5432/db";',
+      'const db = "postgresql://user:pw@bXXXX-postgresql.services.clever-cloud.com:5432/db";', // secret-scan:allowed-fixture
     );
     expect(findings).toHaveLength(1);
     expect(findings[0]?.reason).toMatch(/clever-cloud/i);

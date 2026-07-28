@@ -161,7 +161,7 @@ function isAllowlistedEmail(address: string): boolean {
 /**
  * Addresses on a line, minus the ones that are really URL userinfo.
  *
- * `postgresql://user:pw@host/db` contains a perfectly email-shaped `pw@host`.
+ * `postgresql://user:pw@host.example.com/db` has an email-shaped userinfo tail.
  * The discriminator is the scheme: an address directly preceded by `:` or `/`
  * on a line that already opened a `://` is a credential, not a contact. Keying
  * on `://` rather than on the punctuation alone keeps `mailto:someone@x.fr`
