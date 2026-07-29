@@ -1,6 +1,6 @@
 schema_version: libre-ai.repositories.v1
 authority: single source of the public topology (ADR-0009 §7 as bounded by ADR-0020 — exposure states live in each repository's project.v1.yaml card)
-updated_on: 2026-07-28
+updated_on: 2026-07-29
 # Champs transitoires depuis ADR-0020 : `exposure` (et son échelle) migrent vers
 # les fiches project.v1.yaml en phase γ 3.2 — non-autoritatifs ici depuis l'acte,
 # conservés pour ne perdre aucune donnée avant la naissance des fiches.
@@ -48,6 +48,34 @@ repositories:
       - organization profile README (projection of this inventory)
     consumes:
       - this inventory
+  - repository: libre-ai/governance
+    role: authority
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Governance authority born from the hub dismantling (ADR-0020, γ 3.3):
+    # doctrine, invariants, ADRs, LEXICON, ecosystem index, project-card
+    # schema and fleet gates. History carried by git filter-repo; the hub
+    # remains the clonable archive.
+    benchmark: n/a (governance authority, no external parity target)
+    owns:
+      - doctrine and decision registers (docs/decisions, docs/adr)
+      - ecosystem index, project-card schema and fleet aggregator (ecosystem/)
+      - evidence and distribution (distribution/, verification/)
+  - repository: libre-ai/contracts
+    role: authority
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Contracts authority born from the hub dismantling (ADR-0020, γ 3.3):
+    # the canonical contract authorities, catalog, compatibility and their
+    # gates. History carried by git filter-repo.
+    benchmark: n/a (contract authority, no external parity target)
+    owns:
+      - canonical contract authorities and vectors (contracts/)
+      - contract catalog and compatibility policy
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse

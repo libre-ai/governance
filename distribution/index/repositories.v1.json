@@ -2,7 +2,7 @@
   "schema_version": "libre-ai.repository-index.v1",
   "source": "ecosystem/repositories.v1.yaml",
   "source_schema_version": "libre-ai.repositories.v1",
-  "source_updated_on": "2026-07-28",
+  "source_updated_on": "2026-07-29",
   "exposure_scale": [
     "idea",
     "spec-published",
@@ -60,6 +60,15 @@
       ]
     },
     {
+      "repository": "libre-ai/contracts",
+      "name": "contracts",
+      "layer": "transverse",
+      "role": "authority",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
       "repository": "libre-ai/db-inspect",
       "name": "db-inspect",
       "layer": "transverse",
@@ -81,6 +90,15 @@
       "canonical_paths": [
         "apps/radar"
       ]
+    },
+    {
+      "repository": "libre-ai/governance",
+      "name": "governance",
+      "layer": "transverse",
+      "role": "authority",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
     },
     {
       "repository": "libre-ai/libre-ai",
