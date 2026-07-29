@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-29 — [gate] Jalon γ — phase 3.3 autorités : governance + contracts nés verts, index de migration ouvert
+
+- Statut : CLOS
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PR #277, `ecosystem/migration-index.v1.yaml`, verdicts K4 sur la PR
+
 ## 2026-07-29 — [gate] Jalon γ — phase 3.2 système de fiches (`project.v1`)
 
 - Statut : CLOS

@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-29-jalon-phase-3-3-autorites-governance-contracts-nes-verts-ind",
+      "date": "2026-07-29",
+      "type": "gate",
+      "title": "Jalon γ — phase 3.3 autorités : governance + contracts nés verts, index de migration ouvert",
+      "status": "CLOS",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PR #277, `ecosystem/migration-index.v1.yaml`, verdicts K4 sur la PR"
+    },
+    {
       "id": "gate-2026-07-29-jalon-phase-3-2-systeme-de-fiches-project-v1",
       "date": "2026-07-29",
       "type": "gate",

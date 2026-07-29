@@ -16,8 +16,9 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0, 3.1 et 3.2 closes (ADR-0020 signé le 2026-07-28, système de fiches
-  mergé le 2026-07-29) ; aucun repo créé, aucun chemin n'a quitté le hub.
+  Phases γ 3.0 à 3.3 closes — governance et contracts nés verts le 2026-07-29
+  (premier flip, gabarit consommé par SHA épinglé) ; aucun chemin n'a encore été
+  retiré du hub (retraits tracés pending à l'index de migration).
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -82,9 +83,15 @@ phases:
     title: γ 3.3 — Autorités governance + contracts
     exit_criteria:
       - id: repos-created-migrated
-        text: Les deux repos créés (checkpoint propriétaire), contenus migrés avec histoire, gates verts, index renseigné.
+        text: >-
+          Les deux repos créés (checkpoint propriétaire), contenus migrés avec histoire,
+          gates verts des deux côtés, index de migration renseigné (retraits du hub :
+          pending, étalés sur 3.4-3.8 selon la règle dure de bascule).
         weight: 10
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-29"
+          reference: "PR #277 (merge 52f567d9), gate-acceptance-log 2026-07-29 (ligne 3.3)" 
   - id: satellites
     title: γ 3.4 — Satellites de code partagé
     exit_criteria:

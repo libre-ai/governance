@@ -8,6 +8,14 @@
   <link rel="alternate" type="text/html" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/feeds/changelog.md"/>
   <link rel="self" type="application/atom+xml" href="https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/feeds/evidence.atom.xml"/>
   <entry>
+    <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-29-jalon-phase-3-3-autorites-governance-contracts-nes-verts-ind</id>
+    <title>Jalon γ — phase 3.3 autorités : governance + contracts nés verts, index de migration ouvert</title>
+    <updated>2026-07-29T00:00:00Z</updated>
+    <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/gate-acceptance-log.md"/>
+    <category term="gate"/>
+    <summary>CLOS — PR #277, `ecosystem/migration-index.v1.yaml`, verdicts K4 sur la PR</summary>
+  </entry>
+  <entry>
     <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-29-jalon-phase-3-2-systeme-de-fiches-project-v1</id>
     <title>Jalon γ — phase 3.2 système de fiches (`project.v1`)</title>
     <updated>2026-07-29T00:00:00Z</updated>
