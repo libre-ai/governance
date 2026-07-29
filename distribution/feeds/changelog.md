@@ -6,9 +6,15 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-29 — [gate] Jalon γ — phase 3.2 système de fiches (`project.v1`)
+
+- Statut : CLOS
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PR #274, PR #275, `ecosystem/schemas/project.v1.schema.json`, `ecosystem/cards/`
+
 ## 2026-07-29 — [gate] Jalon γ — 3.2 banc d'essai des mécanismes de dépendance (design §5.2.6)
 
-- Statut : EXÉCUTÉ
+- Statut : EXÉCUTÉ puis rendu reproductible sous revue K4
 - Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
 - Référence : `distribution/evidence/2026-07-29-dependency-bench.md`
 

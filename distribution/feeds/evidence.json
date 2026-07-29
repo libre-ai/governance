@@ -3,11 +3,20 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-29-jalon-phase-3-2-systeme-de-fiches-project-v1",
+      "date": "2026-07-29",
+      "type": "gate",
+      "title": "Jalon γ — phase 3.2 système de fiches (`project.v1`)",
+      "status": "CLOS",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PR #274, PR #275, `ecosystem/schemas/project.v1.schema.json`, `ecosystem/cards/`"
+    },
+    {
       "id": "gate-2026-07-29-jalon-3-2-banc-d-essai-des-mecanismes-de-dependance-design-5",
       "date": "2026-07-29",
       "type": "gate",
       "title": "Jalon γ — 3.2 banc d'essai des mécanismes de dépendance (design §5.2.6)",
-      "status": "EXÉCUTÉ",
+      "status": "EXÉCUTÉ puis rendu reproductible sous revue K4",
       "artifact": "distribution/evidence/gate-acceptance-log.md",
       "reference": "`distribution/evidence/2026-07-29-dependency-bench.md`"
     },

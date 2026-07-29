@@ -16,8 +16,8 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 et 3.1 closes (évidence du 2026-07-28 et ADR-0020 signé le 2026-07-28) ;
-  aucun repo créé, aucun chemin n'a quitté le hub.
+  Phases γ 3.0, 3.1 et 3.2 closes (ADR-0020 signé le 2026-07-28, système de fiches
+  mergé le 2026-07-29) ; aucun repo créé, aucun chemin n'a quitté le hub.
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -67,11 +67,17 @@ phases:
           Schéma project.v1 + validateur + agrégateur + générateur + primitive du gate de
           divergence, TDD verts (le câblage du gate sur les README réels est la phase 3.6).
         weight: 6
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-29"
+          reference: "PR #274 (merge 1c1a1fae), gate-acceptance-log 2026-07-29 (ligne 3.2)"
       - id: dependency-bench
         text: Le banc d'essai des mécanismes de dépendance (design §5.2.6) est exécuté et son évidence versée.
         weight: 4
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-29"
+          reference: distribution/evidence/2026-07-29-dependency-bench.md
   - id: authorities
     title: γ 3.3 — Autorités governance + contracts
     exit_criteria:
