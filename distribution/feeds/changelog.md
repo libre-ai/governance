@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-29 — [gate] Jalon γ — 3.2 banc d'essai des mécanismes de dépendance (design §5.2.6)
+
+- Statut : EXÉCUTÉ
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : `distribution/evidence/2026-07-29-dependency-bench.md`
+
 ## 2026-07-28 — [gate] Jalon γ — 3.1 acte doctrinal : ADR-0020 (activation générale) + amendement LEXICON §8
 
 - Statut : SIGNÉ AU MERGE

@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-29-jalon-3-2-banc-d-essai-des-mecanismes-de-dependance-design-5",
+      "date": "2026-07-29",
+      "type": "gate",
+      "title": "Jalon γ — 3.2 banc d'essai des mécanismes de dépendance (design §5.2.6)",
+      "status": "EXÉCUTÉ",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "`distribution/evidence/2026-07-29-dependency-bench.md`"
+    },
+    {
       "id": "gate-2026-07-28-jalon-3-1-acte-doctrinal-adr-0020-activation-generale-amende",
       "date": "2026-07-28",
       "type": "gate",
