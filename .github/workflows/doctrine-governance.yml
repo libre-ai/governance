@@ -92,10 +92,17 @@ jobs:
           # "Libre AI" everywhere. The frozen-inputs and legacy-reference
           # exemptions were removed on 2026-07-28: ADR-0019 evicted both trees,
           # so the gate no longer needs a hole where they used to sit.
-          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA" \
+          # ADR-0020 (2026-07-28) extends the motifs to newly superseded doctrine
+          # statements; the superseding acts, the origin ADRs and the bannered
+          # historical sequencing document may cite them, nothing else may.
+          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA|partagé par plusieurs produits vit au socle|One .?bun\.lock.?, one Cargo workspace|One Bun and one Cargo workspace|source unique(\*\*)? de la topologie publique" \
             --include='*.md' . \
             | grep -v 'docs/reviews/' \
             | grep -v 'docs/adr/0008-' \
+            | grep -v 'docs/adr/0009-' \
+            | grep -v 'docs/adr/0020-' \
+            | grep -v 'docs/superpowers/specs/2026-07-28-multi-repo-activation-design.md' \
+            | grep -v 'docs/transformation/EXECUTION-SEQUENCING.md' \
             | grep -v 'docs/decisions/LEXICON.md' \
             | grep -v 'node_modules/' || true)
           if [ -n "$matches" ]; then

@@ -1,0 +1,29 @@
+# Index de migration — institué par ADR-0020 §2.6 (activation générale).
+#
+# Chaque chemin qui quitte le hub est tracé ici : destination (repo cible) et
+# SHA du premier commit de destination portant le contenu migré. La règle dure
+# de bascule s'applique : un chemin ne quitte le hub qu'après preuve verte côté
+# destination — jamais de fenêtre où un contenu n'existe nulle part en vert.
+#
+# Le gate d'orphelins (à câbler avec le système de fiches, design §3.6/§7.2)
+# échoue si un chemin suivi du hub n'a ni entrée ici, ni place déclarée dans la
+# topologie cible (design §4), ni entrée au registre d'oubli. Migré ≠ oublié
+# (I-23) : ce fichier est l'inverse fonctionnel d'ecosystem/FORGOTTEN.yaml —
+# le contenu migré a une destination vivante.
+#
+# Entrées de forme :
+#   - hub_path: <chemin du hub, préfixe>
+#     destination: libre-ai/<repo>
+#     destination_commit: <SHA du premier commit de destination>
+#     hub_removal_commit: <SHA du commit du hub qui retire le chemin>
+#     notes: <bornes, exemptions tracées — ex. borne DCO de greffe>
+
+schema_version: libre-ai.migration-index.v1
+
+hub_state: dismantling-pending  # → dismantling-in-progress à la première bascule → archived (acte propriétaire)
+
+entries: []
+
+# Remplacements tracés hors chemins (workflows et machineries éteints avec le
+# hub, jamais orphelins — design §4.5) :
+replacements: []

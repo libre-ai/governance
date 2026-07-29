@@ -1,90 +1,130 @@
 # Transformation status
 
-**Current phase:** G2 closed — wave 1 (layer-4 satellites) opening per `docs/transformation/EXECUTION-SEQUENCING.md`.
+**Current phase:** milestone γ — general multi-repository activation and hub dismantling (ADR-0020,
+owner decisions D1–D4 of 2026-07-28). Phase 3.0 is closed; phase 3.1, the doctrinal act, is the pull
+request that carries this rewrite. Phases 3.2 to 3.8 have not started.
+
+**Authority note.** This file stops being a phase authority. It migrates to the `governance`
+repository with the rest of the doctrine, and when the hub is archived the state of a project is read
+from its own `project.v1.yaml` card while the state of the hub is read from
+`ecosystem/migration-index.v1.yaml`. Until then, every line below is meant to be true at the moment
+it is written and traceable to a pull request, an ADR or a piece of recorded evidence.
+
+## Milestone γ — where the work stands
+
+- **3.0 housekeeping — closed (2026-07-28).** Every leftover of the preceding sessions was settled
+  under role-separated review: the activation design merged after a five-revision K4 cycle with two
+  independent reviewers (#268), the content-forgetting primitive merged (#265), two live security
+  defects closed through a reject → remediation → confirmation cycle (#269), the `policy` visibility
+  line and the secrets/PII re-audit evidence merged (#261, #271), the colour-system exploration
+  committed and merged after a full-tree audit (#267), and the model-policy delivery phases merged by
+  a parallel session with their K4 findings requalified as backlog issue #270 (#266). The hub
+  reference chain was then replayed on `5c1bf05`: **10/10 steps passed, digest
+  `f45dfad03581f3d56ea53ca74a7b9ac3034ef7ce7013eebe6eac71cc3959a89f`, byte-identical to the
+  WP-G2-Q01 closure digest of 2026-07-20** — the final photograph reproduces the G2 evidence exactly.
+  One split precondition surfaced and is recorded: the template end-to-end run resolves `@libre-ai/ui`
+  through an export condition pointing at an untracked `dist/`, so the chain needs that build first —
+  exactly the class of problem design §5.2.2 names for git-dep consumers. Evidence:
+  `distribution/evidence/2026-07-28-milestone-gamma-housekeeping.md`.
+- **3.1 doctrinal act — in progress.** The current pull request adds ADR-0020 and amends, in the same
+  change, the invariants register (I-02, I-03, I-04, I-05, I-08, I-15, I-16, plus an application note
+  on I-23), the decision register (D07 amended, scoping note on D02, new D29), the LEXICON and the
+  authority map. ADR-0020 §3 lists the full set of surfaces the act must bring in line; the phase is
+  not closed until each of them is aligned. Merging the pull request **is** the owner signature — a
+  hard stop no agent crosses.
+- **3.2 to 3.8 — not started.** Card system and dependency test bench, the two authority
+  repositories, the nineteen shared-code satellites, the eight product repositories plus `missions`,
+  the presentation wave, the cross-repository coherence report, then the hub archiving. Their
+  objectives, exit criteria and hard stops are in [`GOALS.md`](GOALS.md); their order in
+  [`ROADMAP.md`](ROADMAP.md).
+
+No repository has been created and no path has left the hub at the time of writing.
 
 ## Completed
 
-- canonical monorepo bootstrapped ;
-- Big Bang architecture accepted ;
-- Bun canary locally verified and snapshotted for macOS ARM64/Linux x64 ;
-- root Bun/Cargo workspaces and quality gates green ;
-- target repository map, app briefs, contracts and workstreams created ;
-- Website local work, `origin/main` and six corpus commits consolidated, cleaned and merged through GitHub PR #61 ;
-- Website 20 unit/script tests, static build, 40 Playwright tests, media/topology gates and JS/Rust supply-chain audits green ;
-- Website final remote SHA `0318c92`, repository archived ;
-- Design System visual/motion work committed and pushed at `c8fb246` ;
-- Design System 76-SVG rebuild, 22 targeted tests, distribution provenance and full pinned CI rebuild green ;
-- Design System repository archived after Website consumer reconciliation ;
-- all 18 historical repositories aligned and archived at recorded SHAs ;
-- 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
-- the one missing legacy remote (recorded in `ecosystem/LEGACY-MANIFEST.yaml`) recreated solely as a verified archive ;
-- canonical public GitHub repository created and initial history pushed ;
-- differentiated EUPL/Apache/CC BY governance accepted through ADR-0004, with historical grants preserved, REUSE/SPDX scopes, DCO, data provenance and trademark policy ;
-- Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
-- shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
-- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
-- `Licensing and contribution governance`, Bun quality and Rust quality are strict required checks on `main`; the historical PR #93 DCO failure is durably disclosed and retroactively attested without rewriting Git history ;
-- nine application specifications expanded to the G1 standard with an executable structure gate ;
-- G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority ;
-- the current canonical catalog contains 85 locked authorities: 60 strict JSON Schemas, 11 OpenAPI surfaces, 9 parsed WIT worlds, 4 Biscuit authority/policy sources and 1 retention policy ;
-- data lifecycle locked through an executable ADR-0002 retention policy, tenant ownership matrix, deletion receipt and restore/rollback rules ;
-- provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked ;
-- G1 initially closed with 26 machine-validated work packages, acyclic dependencies and explicit human gates.
+The complete record is the Git history and `distribution/evidence/gate-acceptance-log.md`, which
+holds every gate verdict with its verifiable reference. This section keeps only the load-bearing
+lines.
 
-## Current G2 entry
+- **G0 closed (2026-07-16):** the historical repositories aligned and archived at recorded SHAs,
+  unmerged local branch tips preserved as archive tags, `ecosystem/LEGACY-MANIFEST.yaml` complete.
+- **G1 closed (2026-07-16/17):** Specification Lock — 85 catalog authorities locked at closure after
+  role-separated reviews, the bounded ADR-0003 amendment opened and closed, cross-cutting product
+  decisions recorded in ADR-0002.
+- **Licensing and contribution governance accepted (ADR-0004):** differentiated EUPL / Apache-2.0 /
+  CC BY, DCO required, REUSE compliance, protected `main`, secret scanning and push protection,
+  private vulnerability reporting.
+- **G2 closed (2026-07-20, PR #132 / `5ea34f9`):** the reference chain runs the full foundation chain
+  green from a clean checkout — 10/10 steps, reproducible digest `f45dfad0…` — with tree-wide secret
+  and no-Clever gates, after an independent acceptance review.
+- **Notebook Gate B is approved on immutable candidate `9ee3f8d`** for the exact disabled
+  fixture-only host and the qualified 32+ GiB class (ADR-0005/0006/0007); it grants no activation, no
+  user-data path and no release.
+- **Data layer (PR #123, `43c85e7`):** application layer plus the mandatory PostgreSQL barrier —
+  isolated owner migrations, forced row-level security, append-only receipts, retention ceiling —
+  merged as the owner-pronounced bootstrap of the graduated-trust regime (ADR-0011 D4).
+- **Identity and authorization:** the web authentication foundation (PR #111) and the Biscuit
+  authorization capability with bounded attenuation, deny-by-default policies, verified revocation
+  and two-key Ed25519 rotation (PR #101) are closed.
+- **K1 in service (2026-07-20):** `authority-v2` and `agent-runs-v2` promoted `candidate → locked`
+  with two real consumers; per-agent revocation enforced at issuance (PR #149).
+- **K3 in service (2026-07-22):** `envelope-v1` promoted `candidate → locked`, its first real
+  consumer being the review fan-out that the forge itself uses.
+- **LEXICON signed (2026-07-20, PR #130)** as the name map of the ecosystem, and amended by ADR-0020
+  in the current pull request — new authority names, identifiers born after the map, the reversal of
+  its no-satellite reading, and the `agent-board` → `missions` regularisation.
+- **Wave-1 satellite publish-readiness re-verified (2026-07-24)** on the then-current `main`, on the
+  tarballs actually packed; no publication was performed — the registry day stays an owner act.
+- **Milestone γ phase 3.0 closed (2026-07-28)**, as detailed above.
 
-- `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
-- `WP-G2-C01` contract SDK and boundary validators was completed by PR #7: reproducible TypeScript/Rust projections and fail-closed runtime validation cover every canonical JSON Schema ;
-- `WP-G2-W01` Bun React web foundation was completed by PR #12 and merged as `521d1b8`: direct `Bun.serve` SSR/hydration/static/JSON, accessible design primitives, the canonical `bun-app` template and three-engine Playwright evidence are recorded in `distribution/templates/bun-app/G2-W01-QUALIFICATION.md`; the owner accepted `accessibility-foundation-review` on 2026-07-16 (`6218654`) with the product-level manual checklist retained, and no production authorization is granted ;
-- `WP-G2-Z01` Biscuit authorization capability was completed by PR #101 and merged as `a6bee98`: mandatory bounded attenuation, deny-by-default Sessions/Missions policies, verified root-family revocation and two-key Ed25519 rotation passed separate authorization-policy, key-rotation and candidate-integration reviews; the immutable rejects `87a802e` and `fbbe360` remain preserved, and no production use or key ceremony is authorized ;
-- ADR-0003 opened and closed a strictly bounded contract amendment for WP-G2-S01: Radar, Notebook Core, Policy Core, Boussole v2 and the shared engine-vector envelope are locked after role verdicts, promotion reviews and owner milestones ;
-- solo G2 governance requires attributable role-separated review-only passes on immutable commits; the same agent/session may perform serial authoring and review passes, while the repository owner retains explicit control milestones ;
-- Radar v2 Architecture and Security are approved and its seven authorities are locked; Policy v2 Architecture, Security and Privacy are approved on `d47feb9` and exactly six authorities are locked; Notebook Core v2 is locked after Gate A and Gate B is approved on `9ee3f8d`, while user backups, activation, production and release still require a separate owner milestone ;
-- Notebook has an exact product host disabled by default, three-engine crash/kill/restart recovery, a bounded APFS `ENOSPC` campaign, reproducible builds and a fresh physical 32+ GiB performance matrix on immutable candidates ;
-- ADR-0006 limits the required hardware matrix to the qualified 32+ GiB class and keeps 8/16–24 GiB optional and unsupported; ADR-0007 makes real browser-process OOM an optional diagnostic while retaining bounded process-fault recovery and forbidding unsafe host exhaustion ;
-- Notebook Gate B is approved on immutable candidate `9ee3f8d`: architecture, security, cryptography-runtime, France/EU privacy, performance/resources and Gate B synthesis all approve; this grants no activation, user-data or release authority ;
-- Policy v2 now has closed WIT refusals, byte-exact malformed-input vectors and preimplementation CPU/memory budgets, without an evaluation engine ;
-- Boussole v2 Architecture, Security, Methodology and France/EU Privacy are approved on `e83e142`; exactly five authorities transition to locked through a catalog-only promotion, while public scoring, any engine and real datasets remain NO-GO ;
-- the shared `engine-golden-vectors-v1` transitions to locked through a separate catalog-only promotion approved by promotion-integration on `3b47e96` and final owner `continue`, after candidate-integration, Architecture and Security approval at `ccf9d68` plus challenged acceptance of exact dev-only `entities@8.0.0`; this fixes contract meaning only and authorizes no engine/runtime/data/release scope ;
-- agent orchestration option B reaches contract Specification Lock after Architecture/Security/France-EU Privacy reviews, a remediated actual-Biscuit candidate-integration and catalog-only promotion of 14 unchanged authorities; simulation-only `WP-G2-A01` now has an accepted pure Rust decision core plus favorable result Architecture/Security/France-EU Privacy and conformance reviews on `7f31ec3`, Pi remains replaceable and no harness, worker launch or real mission is authorized ;
-- ADR-0008 ratifies the multi-repository target topology and the Libre AI brand posture (option C), supersedes the repository-projection doctrine and institutes the invariants register `docs/decisions/INVARIANTS.md` ;
-- no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator runtime/harness or Practices scorer is implemented; the accepted agent control crate is simulation-only and contract review/promotion milestones do not authorize further implementation ;
-- real Missions execution, production, another canary and Clever Cloud remain blocked.
-
-## Wave-execution decisions (ADR-0011, 2026-07-20)
-
-- **WP-G2-I01 (auth-web) closed** (PR #111). **WP-G2-D01 (tenant data/RLS) closed** (PR #123, `43c85e7`): application layer + the mandatory PostgreSQL barrier (isolated owner migrations, `FORCE ROW LEVEL SECURITY`, append-only receipts, 35-day CHECK ceiling), adapters and Redis/Cellar ports, developed against a PGlite harness (`packages/testing`); two independent K4 reviews (`rls-adversarial-review`, `migration-and-deletion-review`) approved with conditions, the first security-critical merge of the data layer pronounced by the owner (ADR-0011 D4 bootstrap), F-01/F-03 carried to G4. **WP-G2-Q01 (foundation quality harness) closed** (PR #132, `5ea34f9`): reference-chain harness runs the full foundation chain green from a clean checkout (Bun.serve/React, contracts, RLS, Biscuit, WIT, Proof/Artifact, three-engine Playwright — 10/10, reproducible digest `f45dfad0…`), plus tree-wide secret and no-Clever gates; independent g2-foundation-acceptance review CLEAN. **G2 is closed.**
-- **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
-- **Orchestrator Specification Lock (wave 3):** hard stop (ADR-0011 D3, hardened) — never pronounced in an autonomous run. An agent locks the loop-security kernel K1-K5, runs its independent adversarial review, produces the decision dossier, then stops; pronouncing the lock is an exclusive owner act. K3 (envelope integrity) now in service (dogfooding via fanout evidence wrapping).
-- **Security gates in autonomous runs (ADR-0011 D4, graduated trust):** the first security-critical merge of a layer (first D01 RLS barrier, first security review of each product layer) is a hard stop for owner pronouncement — bootstrapping the trust chain; subsequent merges of the same pattern auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved throughout).
-- **Autonomy ceilings (ADR-0011 D6):** numeric liveness and cost thresholds bound an autonomous run — per-PR ≤ 3 green attempts, 3 consecutive no-progress PRs per wave, per-PR > 400k output tokens, and per-wave token caps (Phase 0 300k, G2 1.5M, wave 1 1M, wave 2 2M, wave 4a 1M; α run total 6M). A breach stops with a progress dossier for an owner decision, never a silent kill.
-
-## Next controlled milestone
-
-- **Completed control:** Notebook Core v2 Gate B is approved for the exact disabled fixture-only host and the required physical macOS arm64 32+ GiB class ;
-- **Selected next product (ADR-0011):** Notebook is the pilot engine; no other engine implementation starts until the Notebook app pattern is validated end-to-end, after which Polaris orchestrates the rest in parallel ;
-- **Owner decision required:** Notebook user-data path activation, production, release, infrastructure or deployment still needs its own explicit milestone ;
-- **Optional evidence:** physical 8/16–24 GiB observations and real browser-process OOM diagnostics may extend confidence or support without reopening the approved current scope unless they reveal a source defect.
+The tree carries the packages, crates and applications recorded by the inventory; counts are derived
+from it and never graven here (I-14).
 
 ## Explicitly deferred
 
-- Clever Cloud provisioning, secrets, databases, DNS and deployment until G4 ;
-- activation of public product repositories until an explicit owner decision per product (ADR-0008) ;
-- **Live-token invalidation of a revoked agent** (validation-side control) lands with the agent
-  runtime consumer (orchestrator / harness); until then a revoked agent's outstanding tokens lapse
-  under the ≤900s TTL ceiling. Issuance-side per-agent revocation is in service (PR #149).
-- **`capability_scope` tool/write-path enforcement** is a responsibility of the (not-yet-built)
-  agent runtime; the token carries the fact, the runtime must check it (never granting CI/gate write).
+- Clever Cloud provisioning, secrets, databases, DNS and deployment: deferred to global integration.
+  I-07 names G4 for it and ADR-0020 does not amend that invariant, even though the G4 phase label is
+  superseded as a sequencing device.
+- Publication to npm and crates.io: an owner checkpoint outside milestone γ. Pinned GitHub git-deps
+  make it unnecessary for the migration itself, and the wave-1 publication runbook stays ready.
+- Live-token invalidation of a revoked agent: a validation-side control that lands with the agent
+  runtime consumer, in the `orchestrator` repository after γ. Until then a revoked agent's
+  outstanding tokens lapse under the ≤ 900 s TTL ceiling; issuance-side revocation is in service.
+- `capability_scope` tool and write-path enforcement: a responsibility of the agent runtime, which is
+  not built. The token carries the fact; the runtime must check it.
+- The six reserved names that are not instantiated — `proof`, `memory`, `harness`, `mcp-server`,
+  `corpus`, `docs` — stay reserved; no repository is created for them in milestone γ.
 
 ## Current risks
 
-- Bun stable remains `1.3.14`; the selected Rust-line commit exists only in `1.4.0-canary.1` ;
-- the Bun archive is a bootstrap-only LGPL/static-linking compliance path, not production approval ;
-- GitHub forge/CI is an accepted US-service exception for public code only, never runtime data or secrets ;
-- CODEOWNERS teams are target ownership, not enforced until at least two maintainers can review without deadlock ;
-- locked engine vectors define only contract behavior; runtime conformance, bounded-resource evidence
-  and end-to-end tenant/RLS proof remain separate G2 implementation evidence ;
-- no local physical 8 Gio or 16–24 Gio Notebook device is currently available; these classes remain optional and unsupported, while VM evidence stays diagnostic-only ;
-- real browser-process OOM remains unobserved portably across the three engines; it is an optional residual-risk diagnostic and global RAM/swap exhaustion is forbidden ;
-- logical buffer wiping cannot be promoted as physical RAM/OS erasure ;
-- the DCO gate now also verifies every commit a push introduces on `main`, requiring the merging maintainer's `Signed-off-by:` trailer inside GitHub-generated merge messages (anticipatory `WP-G2-Q01` change); detection on the merge commit itself is post-merge, so a violation surfaces as a failed `main` run remediated by a forward commit, and pre-gate merge commits remain unexamined accepted history.
+- **The product engines do not exist.** The applications are real, with tests and end-to-end
+  coverage; Radar, Boussole, Practices and the others have no engine, and only Notebook Core has a
+  qualification gate. The product repositories will carry their real application with engine phases
+  `not_started`, and their cards must say so — no inflated progress anywhere.
+- **The dependency mechanics are not yet proven by execution.** The test bench of design §5.2.6 (five
+  cases, including `tsc --noEmit` through a git-dep and the `[sources.allow-org]` key on the CI's
+  cargo-deny version) has not been run; the conclusions rest on Bun's source and Cargo's documented
+  semantics. It is a precondition of the migration plan, not an afterthought.
+- **Splitting the workspaces multiplies the continuous-integration surface** to roughly thirty-four
+  repositories. Mitigation: reusable workflows published by `governance` and pinned by SHA, plus a
+  template-drift gate; the bump cost is assumed.
+- **Pinned git-deps disarm two existing guards** — `cargo deny check sources` and the npm quarantine
+  delay. Bounded by an organisation-scoped source allowance, one reviewed pull request per SHA bump,
+  and the quarantine kept for every registry package (ADR-0020 §2.5).
+- **The fleet gates concentrate in `governance`**: cross-repository coherence, inventory and truth
+  drift, orphan detection, template drift and vendored-contract drift all run from one repository. It
+  is a single point of failure by construction, and its own availability is part of the risk.
+- **The hub reference chain stops being replayable** once the hub is dismantled. Mitigation: the
+  final green photograph and its digest are recorded, and the hub archive stays clonable.
+- **Vendored contract copies can drift** from their canonical source. Mitigation: a byte-exact drift
+  gate per consuming repository, pinned on a revision of the `contracts` repository.
+- **No migrated history is DCO-verified anywhere in the fleet.** The graft bound is named and traced
+  by ADR-0020 §2.6, asserted at each run against the migration index; I-11 is not amended — the DCO
+  stays mandatory on every new contribution.
+- **Three red windows are structural during the split** (repository creation versus inventory drift,
+  the hub in dismantling mode, re-hosting the toolchain asset). They are bounded, traced in the
+  milestone evidence, and never hidden.
+- **Bun stable remains `1.3.14`** while the selected Rust-line commit exists only in a canary; the
+  Bun archive is a bootstrap-only compliance path.
+- **GitHub forge and CI remain an accepted US-service exception** for public code only, never runtime
+  data or secrets.

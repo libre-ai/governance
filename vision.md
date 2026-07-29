@@ -1,8 +1,8 @@
 # Libre AI — Vision 2035 et architecture cible
 
-**Statut :** accepted — architecture cible et migration Big Bang
+**Statut :** accepted — architecture cible et migration Big Bang ; topologie amendée par ADR-0020 (activation générale, 2026-07-28)
 
-**Cible :** reconstruction greenfield dans un monorepo canonique
+**Cible :** reconstruction greenfield, d’abord dans un monorepo canonique, puis éclatée en topologie multi-repository (ADR-0020)
 
 **Stack web cible :** Bun fullstack + TypeScript strict + React 19
 
@@ -21,6 +21,15 @@
 > entretenue. Les applications peuvent rester indisponibles ou incomplètes
 > pendant la reconstruction ; la priorité est d’atteindre rapidement une cible
 > cohérente, intégrée et durable.
+
+> **Amendement ADR-0020 (2026-07-28) — activation générale.** La phase Big Bang
+> est exécutée et la topologie n’est plus un monorepo unique : chaque repo est
+> responsable de son périmètre, deux autorités séparées portent le partagé
+> (`governance` pour la doctrine, `contracts` pour les contrats canoniques), et
+> le hub `libre-ai/libre-ai` est démantelé en archive plus index de migration.
+> Les énoncés de topologie et d’autorité de ce document se lisent sous cet
+> amendement ; le récit de la migration Big Bang reste l’histoire de la
+> refondation, pas une prescription courante.
 
 ---
 
@@ -123,9 +132,10 @@ d’acteurs indépendants à reproduire, adopter ou contester le travail.
 
 ### 4.1 Canonical Core
 
-Libre AI possède une seule source d’écriture : un nouveau monorepo canonique.
-
-Il contient :
+Libre AI a possédé une seule source d’écriture, un nouveau monorepo canonique,
+le temps de la reconstruction. Depuis ADR-0020, l’écriture est répartie entre
+les repos responsables de leur périmètre, et l’index de migration trace la
+destination de chacun des contenus que le monorepo a portés :
 
 - les Knowledge Objects ;
 - les schémas et contrats ;
@@ -138,10 +148,14 @@ Il contient :
 - les outils de distribution ;
 - la gouvernance et les décisions.
 
-Les repositories publics sont soit le socle, soit de vrais repositories
-produits ou de famille construits sur lui, soit des archives. Aucun d'eux ne
-constitue une seconde autorité de contrats ou de spécifications : cette
-autorité reste au socle (ADR-0008).
+Les repositories publics sont de vrais lieux de développement, chacun
+responsable de son périmètre, plus des archives. Deux d’entre eux portent le
+partagé : `governance` pour la doctrine, les décisions, les invariants et
+l’outillage d’écosystème, `contracts` pour les autorités canoniques de contrats
+(ADR-0020, amendement I-03). La règle demeure — un sujet, une autorité unique :
+aucun autre repository ne constitue une seconde autorité de contrats ou de
+spécifications, et un contrat ne se duplique jamais ailleurs que comme
+projection vérifiée sous gate de dérive (I-05).
 
 ### 4.2 Reconstruction sans import d’historique
 
@@ -263,7 +277,10 @@ Après la baseline, tous les anciens repositories sont figés simultanément. Il
 restent consultables comme archives, mais ne reçoivent plus de fonctionnalité,
 de correction architecturale ou de mise à jour de stack.
 
-Le monorepo devient immédiatement l’unique autorité de développement :
+Le monorepo est devenu immédiatement l’unique autorité de développement, pour
+la durée de la reconstruction — clause de topologie supersédée depuis par
+ADR-0020 §2.2, qui rend chaque repo responsable de son périmètre et retire
+l’obligation d’intégration continue dans le monorepo :
 
 ```text
 freeze global de l’existant
@@ -329,8 +346,13 @@ apprentissage ou une release.
 
 ### Projection
 
-Artefact généré depuis le socle : site, documentation, graphe, diagramme,
-catalogue, SDK, context pack ou release note. Jamais un repository (ADR-0008).
+Artefact généré depuis une source canonique — un contrat, une fiche, un
+Knowledge Object : site, documentation, graphe, diagramme, catalogue, SDK,
+context pack ou release note. Une projection n’est jamais canonique et ne
+s’édite jamais à la main (I-05). Un repository de distribution peut porter des
+artefacts générés, dont le contenu reste non canonique ; une copie vendorée
+sous gate de dérive est une projection vérifiée ; et une application qui sert
+des projections reste une application, pas une projection (ADR-0020 §2.3).
 
 ---
 
@@ -470,18 +492,22 @@ pourra exécuter sous politique. Proof vérifie indépendamment. Artifact constr
 ### 7.6 Repositories publics
 
 ```text
-Socle canonique (contrats, specs, fondations)
-       ↓ dépendances versionnées
-Repositories produits et de famille (développement réel)
+Autorités séparées (governance : doctrine · contracts : contrats canoniques)
+       ↓ dépendances épinglées
+Satellites de code partagé (un repo par package ou crate)
+       ↓ dépendances épinglées
+Repositories produits et application de couche 2 (développement réel)
        ↓ artefacts générés (docs, SDK, packs)
 Publications
 ```
 
 Les repositories produits sont de vrais lieux de développement : issues, pull
-requests et releases. Ils consomment le socle comme dépendance versionnée et
-n'hébergent jamais l'autorité des contrats (ADR-0008). Les artefacts générés
-restent à sens unique et portent le SHA source, le chemin, le hash de contenu
-et la version du compilateur.
+requests et releases. Ils consomment les satellites et les contrats comme
+dépendances épinglées — git-deps GitHub bornées à l'organisation et fixées par
+SHA, copies vendorées sous gate de dérive pour ce qui est consommé à la
+compilation — et n'hébergent jamais l'autorité des contrats, qui reste au repo
+`contracts` (ADR-0020). Les artefacts générés restent à sens unique et portent
+le SHA source, le chemin, le hash de contenu et la version du compilateur.
 
 ### 7.7 GitHub et collaboration canoniques
 
@@ -489,10 +515,11 @@ La décision déjà prise est conservée : l’organisation GitHub `libre-ai` po
 les repositories, issues, pull requests, protections de branches et releases
 publiques.
 
-- `libre-ai/libre-ai` devient le repository canonique ;
-- les anciens repositories produits sont réservés comme emplacements des
-  futurs repositories produits ; les anciens repositories d'outillage sont
-  retirés après capture vérifiée (ADR-0008) ;
+- `libre-ai/libre-ai` a été le repository canonique de la reconstruction ; il
+  est démantelé en archive plus index de migration (ADR-0020 D2/D4) ;
+- les homes produits gelés sont activés et reçoivent leur histoire migrée par
+  greffe ; les anciens repositories d'outillage restent retirés après capture
+  vérifiée, leurs noms morts (ADR-0008, LEXICON §1.2) ;
 - les merges, tags et releases canoniques sont réalisés sur GitHub ;
 - aucune nouvelle forge ou infrastructure Git n’est ajoutée à cette migration ;
 - la souveraineté runtime et données reste assurée séparément par les choix
@@ -511,12 +538,14 @@ Le détail est décomposé par autorité (vague 0, ADR-0009) :
 
 - architecture cible : [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md) (autorité) et [`docs/architecture/DETAILED-TARGET.md`](docs/architecture/DETAILED-TARGET.md) (détail) ;
 - toolchain et politique de version : [`docs/architecture/TOOLCHAIN.md`](docs/architecture/TOOLCHAIN.md) ;
-- programme de la refondation : [`docs/transformation/PROGRAM.md`](docs/transformation/PROGRAM.md) ; séquencement courant : [`docs/transformation/EXECUTION-SEQUENCING.md`](docs/transformation/EXECUTION-SEQUENCING.md) ;
+- programme de la refondation : [`docs/transformation/PROGRAM.md`](docs/transformation/PROGRAM.md) ; séquencement des vagues 0 à 3, historique depuis ADR-0020 : [`docs/transformation/EXECUTION-SEQUENCING.md`](docs/transformation/EXECUTION-SEQUENCING.md) ; ordre d'exécution courant : design d'activation générale [`docs/superpowers/specs/2026-07-28-multi-repo-activation-design.md`](docs/superpowers/specs/2026-07-28-multi-repo-activation-design.md) §5.6 ;
 - invariants et décisions : [`docs/decisions/INVARIANTS.md`](docs/decisions/INVARIANTS.md), [`docs/adr/`](docs/adr/).
 
 ## 28. Non-objectifs
 
-- importer les historiques Git dans le nouveau monorepo ;
+- importer les contenus et historiques Git legacy dans l'arbre de travail — la
+  greffe d'histoire des repos produits (ADR-0020, design §5.1) n'est pas un
+  import de contenu legacy ;
 - maintenir les anciennes structures ou APIs par compatibilité interne ;
 - maintenir les anciens outils pendant la reconstruction ;
 - organiser des cutovers produit successifs ;

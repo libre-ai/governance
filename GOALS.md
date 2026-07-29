@@ -1,47 +1,130 @@
 # Transformation goals
 
-## G0 — Legacy cleanup and freeze
+**Authority note.** This file is a hub document and stops being a phase authority. ADR-0020 moves
+the doctrine to the `governance` repository: `GOALS.md`, `STATUS.md` and `ROADMAP.md` migrate there
+with the rest of the doctrine, and when the hub is archived its own surface becomes
+`ecosystem/migration-index.v1.yaml` — the migration index, not this file. After milestone γ there is
+no central goal list at all: each repository carries its objectives, weighted acceptance criteria
+and dated evidence in its own `project.v1.yaml` card (I-08 as amended by ADR-0020).
 
-**Status:** complete.
+## Closed history — G0 to G2
 
-Preserve user work, reconcile accepted branches, remove machine-local/generated debris, record final SHAs and archive every historical repository.
+| Goal                           | Status   | Outcome                                                                                                                                                                        | Evidence                                                                                                                      |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| G0 — Legacy cleanup and freeze | complete | the historical repositories were reconciled, aligned and archived at recorded SHAs, with no unreviewed local work lost                                                         | `docs/transformation/G0-FREEZE-EVIDENCE.md`, `ecosystem/LEGACY-MANIFEST.yaml`, gate log 2026-07-16                            |
+| G1 — Specification Lock        | complete | contracts, data ownership, identity/authorization, application specifications and naming locked after role-separated reviews; the bounded ADR-0003 amendment opened and closed | `contracts/catalog.v1.json` (85 locked authorities at closure — the catalog is the count of record, I-14), ADR-0001/0002/0003 |
+| G2 — Canonical foundations     | complete | the reference chain builds and verifies green from a clean checkout, 10/10 steps, reproducible digest `f45dfad0…`, without any Clever Cloud resource                           | PR #132 (`5ea34f9`), `verification/harness/wp-g2-q01-reference-chain-evidence.md`, gate log 2026-07-20 (« G2 CLOS »)          |
 
-**Acceptance:** no unreviewed local change lost; `LEGACY-MANIFEST.yaml` complete; no new work targets historical repos.
+Nothing in G0–G2 granted activation, production, release or user-data authority; those controls are
+unchanged by the present goals.
 
-## G1 — Specification Lock
+## G3, G4 and G5 are superseded
 
-**Status:** complete. The bounded ADR-0003 `WP-G2-S01` amendment is closed; all 85 catalog authorities are locked after role-separated reviews, promotion passes and owner controls.
+G3 (parallel reconstruction), G4 (global integration and cutover) and G5 (distribution), as written,
+assumed a single monorepo reconstructed in place and satellites activated wave by wave. ADR-0020
+(owner decisions D1–D4, 2026-07-28) replaces that reading: activation is general, the hub is
+dismantled into an archive plus a migration index, doctrine and contracts move to two separated
+authority repositories, and the migration is integral in one wave. The successor of G3–G5 is the
+milestone γ phase list below. What those goals still carried and milestone γ does not itself deliver
+— global integration, distribution to registries, the unimplemented product engines — becomes the
+roadmap of the repository that owns it, never a phase of this file.
 
-Complete contracts, data ownership, auth, refusal behavior, application specifications, naming and work packages.
+## Milestone γ — general activation and hub dismantling
 
-**Acceptance:** implementation agents receive no unresolved architecture decision.
+Each phase carries one objective, one exit criterion and its owner hard stops. No date and no
+percentage: a gate is crossed by a green run, an owner checkpoint by an explicit act.
 
-## G2 — Canonical foundations
+### γ 3.0 — Housekeeping — closed
 
-**Status:** complete. `WP-G2-T01`, `WP-G2-C01`, `WP-G2-W01`, `WP-G2-Z01`, the `WP-G2-S01` contract lock, Notebook Core v2 Gate B, `WP-G2-I01` (auth-web), `WP-G2-D01` (tenant data/RLS, bootstrap pronounced) and `WP-G2-Q01` (foundation quality harness) are complete. The reference chain builds and verifies green from a clean checkout (digest `f45dfad0…`). No first Radar, Policy, Boussole or Notebook product milestone is authorized until a new explicit owner selection; post-G2 execution follows the wave sequencing (wave 1 opens).
+- **Objective:** settle every session leftover before any split, and photograph the hub reference
+  chain green one last time.
+- **Exit criterion (met):** every leftover settled under role-separated review — seven pull requests
+  merged (#261, #265, #266, #267, #268, #269, #271), one set of review findings requalified as
+  backlog issue #270 — and the reference chain replayed 10/10 green on `5c1bf05` with digest
+  `f45dfad03581f3d56ea53ca74a7b9ac3034ef7ce7013eebe6eac71cc3959a89f`, byte-identical to the
+  WP-G2-Q01 closure digest (PR #132, 2026-07-20).
+- **Evidence:** `distribution/evidence/2026-07-28-milestone-gamma-housekeeping.md`, gate log entry
+  2026-07-28.
 
-Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized Rust boundaries, contracts, Proof, Artifact and a qualified Bun template.
+### γ 3.1 — Doctrinal act — in progress
 
-**Current control:** Notebook Gate B approves only the exact disabled fixture-only host and qualified 32+ GiB class. User backups, personal/tenant data, activation, production, release, infrastructure and any next product-engine implementation remain unauthorized pending a separate owner milestone.
+- **Objective:** enact the general activation in doctrine — ADR-0020 with its bounded supersessions,
+  the invariant amendments, the LEXICON amendment, the nominative regularisation of the `website`
+  activation, and the rewrite of every document authority the act makes stale.
+- **Exit criterion:** the ADR is accepted and each surface it names in its §3 is brought in line by
+  the same pull request, with the doctrine gates green.
+- **Hard stop:** merging that pull request **is** the owner signature (ADR-0020 status line, design
+  §5.6 step 2). An agent never pronounces it.
 
-**Acceptance:** reference chain builds and verifies from a clean checkout without Clever Cloud; Notebook Gate B must separately approve the exact product host and supported physical resource classes before any user backup or release.
+### γ 3.2 — Project-card system
 
-## G3 — Parallel reconstruction
+- **Objective:** build the `project.v1` card schema, its validator, the progress aggregator and the
+  generated sections inside the hub (they migrate later with `governance`), and prove the
+  cross-repository dependency mechanics empirically.
+- **Exit criterion:** schema, validator and aggregator run green in the hub, and the dependency test
+  bench (design §5.2.6, five cases — including `tsc --noEmit` through a git-dep and the
+  `[sources.allow-org]` key on the CI's cargo-deny version) has actually been executed with its
+  results recorded. Until it runs, the migration mechanics are documented semantics, not proof.
 
-Build all target applications and capabilities in their final paths, with continuous integration and no compatibility layer.
+### γ 3.3 — Authorities
 
-**Sequencing authority:** post-G2 execution is ordered by [`docs/transformation/EXECUTION-SEQUENCING.md`](docs/transformation/EXECUTION-SEQUENCING.md) (ADR-0009): foundations and agent layers ship first, applications are wave 4 — the former nine-apps-in-parallel reading is superseded.
+- **Objective:** create `governance` and `contracts`, migrate the doctrine and the canonical
+  contracts with preserved history (`git filter-repo` by default, never a squash), and institute
+  `ecosystem/migration-index.v1.yaml`.
+- **Exit criterion:** both repositories green on their migrated content, the CI template published by
+  `governance` as SHA-pinned reusable workflows, and the migration index in service with its orphan
+  gate running.
+- **Hard stop:** creating the batch of GitHub repositories is an owner checkpoint (class 9).
 
-**Acceptance:** all target workspaces compile and critical journeys have automated evidence.
+### γ 3.4 — Shared-code satellites (19)
 
-## G4 — Global integration and cutover
+- **Objective:** migrate the shared-code satellites, one repository per package or crate, in the
+  order imposed by the real dependency graph (`sdk-ts`, `web-platform`, `testing`, `sdk-rs` and
+  `envelope` first; `starter` only after the four bricks it consumes).
+- **Exit criterion:** each satellite's CI green on its migrated content **before** the path leaves the
+  hub (design §5.4), inter-repository dependencies pinned by SHA, and a byte-exact drift gate on
+  every vendored contract copy.
 
-Qualify security, data migration, accessibility, performance, operations and releases; configure Clever Cloud only here.
+### γ 3.5 — Products (8) and the layer-2 application
 
-**Acceptance:** global release candidate deploys and rolls back independently of historical repositories.
+- **Objective:** migrate the eight layer-1 product repositories and the `missions` application,
+  grafting the migrated tree onto their frozen history by a merge of unrelated histories.
+- **Exit criterion:** each repository green, no force push anywhere, the frozen history still fully
+  reachable, and the DCO bound asserted as the graft merge itself and cross-checked against the
+  migration index.
+- **Hard stop:** the first description or visibility switch of each product repository is an owner
+  checkpoint.
 
-## G5 — Distribution
+### γ 3.6 — Presentation
 
-Publish packages, documentation, context packs and reproducible evidence; activate real public product repositories on explicit owner decision (ADR-0008).
+- **Objective:** one `project.v1.yaml` card per repository, generated README sections, the org
+  README, the home page and dated comparisons on `website`, and GitHub descriptions updated.
+- **Exit criterion:** every card valid against the schema, every generated section identical to its
+  card under the coherence gate, and progress computed only from accepted weighted criteria backed by
+  evidence — projects without a stable perimeter display « not computable », which is information,
+  not a defect.
 
-**Acceptance:** an independent actor can reconstruct and verify a distributed capability.
+### γ 3.7 — Coherence and final report
+
+- **Objective:** run the cross-repository coherence gate from `governance` and produce the final
+  report: claims without evidence, non-computable percentages, phases without exit criteria, projects
+  without a user or an outcome, presentation-versus-code divergences, stale evidence, undocumented
+  dependencies.
+- **Exit criterion:** the fleet gate green and the report published, with the three reading levels
+  verified — understand, evaluate, verify.
+
+### γ 3.8 — Hub archiving
+
+- **Objective:** empty the hub, trace every path to its destination, replace its remaining surfaces
+  by the archive banner plus the migration index, and archive the repository.
+- **Exit criterion:** the orphan gate green — not one tracked path without a destination — and the
+  archive still clonable, so the `recoverable_at` references of I-23 keep resolving.
+- **Hard stop:** archiving the hub is a nominative owner act, the final hard stop of the milestone.
+
+## After milestone γ
+
+There is no successor phase list here. The roadmap lives per repository, in its `project.v1.yaml`
+card, aggregated and verified by `governance`. The engineering work that milestone γ does not itself
+deliver — the Polaris method work packages, the product engines that are not implemented — becomes
+the roadmap of the repository that owns it (`orchestrator`, the product repositories), and its state
+is read from that repository's card, never declared centrally.

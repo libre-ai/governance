@@ -2,7 +2,7 @@
   "schema_version": "libre-ai.repository-index.v1",
   "source": "ecosystem/repositories.v1.yaml",
   "source_schema_version": "libre-ai.repositories.v1",
-  "source_updated_on": "2026-07-24",
+  "source_updated_on": "2026-07-28",
   "exposure_scale": [
     "idea",
     "spec-published",
@@ -166,9 +166,9 @@
       "repository": "libre-ai/website",
       "name": "Website",
       "layer": "transverse",
-      "role": "reserved-projection-home",
+      "role": "active-application",
       "visibility": "public",
-      "lifecycle": "frozen-reserved",
+      "lifecycle": "active",
       "exposure": "spec-published",
       "canonical_paths": [
         "docs/apps/website.md"

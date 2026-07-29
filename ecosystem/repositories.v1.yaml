@@ -1,6 +1,9 @@
 schema_version: libre-ai.repositories.v1
-authority: single source of the public topology and exposure states (ADR-0009 §7)
-updated_on: 2026-07-24
+authority: single source of the public topology (ADR-0009 §7 as bounded by ADR-0020 — exposure states live in each repository's project.v1.yaml card)
+updated_on: 2026-07-28
+# Champs transitoires depuis ADR-0020 : `exposure` (et son échelle) migrent vers
+# les fiches project.v1.yaml en phase γ 3.2 — non-autoritatifs ici depuis l'acte,
+# conservés pour ne perdre aucune donnée avant la naissance des fiches.
 exposure_scale: [idea, spec-published, usable-verifiable, proven]
 # `benchmark` records the best-in-class product each couche-1 product and the
 # couche-2 application targets for parity (owner-established). It is a target, not
@@ -417,13 +420,15 @@ repositories:
         source: docs/parity/audits/
     criteria_status: owner-ratified
   - repository: libre-ai/website
-    role: reserved-projection-home
+    role: active-application
     layer: transverse
     product: Website
-    # CDC verrouillé (docs/apps/website.md, check-specification-lock) ; repo
-    # réservé créé le 2026-07-23 pour réconcilier l'inventaire observable.
+    # Activation de fait (7 PRs mergées dans un repo réservé) régularisée
+    # nominativement par ADR-0020 §2.4 : application du portefeuille qui SERT
+    # des projections (I-05 amendé), pas une « projection-repository ».
+    # CDC verrouillé (docs/apps/website.md).
     visibility: public
-    lifecycle: frozen-reserved
+    lifecycle: active
     exposure: spec-published
     benchmark: n/a (own public projection, not a parity target)
     owns:

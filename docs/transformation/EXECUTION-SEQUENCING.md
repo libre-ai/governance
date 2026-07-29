@@ -1,6 +1,18 @@
 # Execution sequencing — goals des vagues de migration (ADR-0009)
 
-Autorité de séquencement post-G2. Institué par l'ADR-0009 : la sortie du Big Bang s'exécute en vagues gated, chacune avec un objectif, une gate d'entrée, des livrables et une gate de sortie. Les phases G0–G5 de `GOALS.md` restent les phases de la refondation ; le présent document ordonne leur exécution après G2. Une vague ne s'ouvre que si sa gate d'entrée est verrouillée et ne se ferme que sur évidence publiée.
+> **SUPERSÉDÉ par ADR-0020 (2026-07-28).** Le séquencement par vagues ne se
+> relance plus : l'activation est générale et la migration intégrale se fait en
+> une vague (D1/D4), ADR-0009 §8, ADR-0011 D1 et le cadre de vagues d'ADR-0018
+> étant supersédés. L'ordre d'exécution du jalon γ vit désormais au design
+> d'activation générale
+> [`docs/superpowers/specs/2026-07-28-multi-repo-activation-design.md`](../superpowers/specs/2026-07-28-multi-repo-activation-design.md)
+> §5.6. Le présent document reste **l'histoire** des vagues 0 à 2 exécutées et
+> de la vague 3 ouverte : il n'ordonne plus rien et n'est pas une autorité
+> vivante. Les politiques de gate qu'il cite et qui restent en vigueur
+> (ADR-0011 D3 arrêt dur du lock orchestrateur, D4 confiance graduée,
+> D6 plafonds) tiennent de leur ADR, pas de ce document.
+
+Autorité de séquencement post-G2 jusqu'au 2026-07-28. Institué par l'ADR-0009 : la sortie du Big Bang s'exécute en vagues gated, chacune avec un objectif, une gate d'entrée, des livrables et une gate de sortie. Les phases G0–G5 de `GOALS.md` restent les phases de la refondation ; le présent document ordonne leur exécution après G2. Une vague ne s'ouvre que si sa gate d'entrée est verrouillée et ne se ferme que sur évidence publiée.
 
 ## Vague 0 — Vérité courante et instruments
 
@@ -9,7 +21,7 @@ Autorité de séquencement post-G2. Institué par l'ADR-0009 : la sortie du Big 
 - **Gate d'entrée :** ADR-0009 ratifié (fait, 2026-07-19).
 - **Livrables :**
   - `main` = vérité courante seule, socle et control plane (tag d'archive nommé puis retrait des strates obsolètes ; l'historique reste l'archive, on ne le réécrit pas) ;
-  - `ecosystem/repositories.v1.yaml` — inventaire machine-lisible, source unique de la topologie publique et des états d'exposition ; profil d'organisation et descriptions régénérés depuis lui ;
+  - `ecosystem/repositories.v1.yaml` — inventaire machine-lisible, source unique de la topologie publique ; il portait aussi l'état d'exposition des projets, clause supersédée depuis par ADR-0020 §2.2 (l'état d'un projet, exposition comprise, est porté par sa fiche `project.v1.yaml`) ; profil d'organisation et descriptions régénérés depuis lui ;
   - carte d'autorité documentaire (un sujet = une autorité) et décomposition de `vision.md` selon elle ;
   - première publication d'évidence de forge : journal public des verdicts de gates, rapports signés dans `distribution/evidence/` ;
   - audit de lignée pré-consolidation (optionnel, borné, sur décision propriétaire).

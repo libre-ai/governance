@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-28 — [gate] Jalon γ — 3.1 acte doctrinal : ADR-0020 (activation générale) + amendement LEXICON §8
+
+- Statut : SIGNÉ AU MERGE
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PR #273, `docs/adr/0020-general-activation-and-hub-dismantling.md`, `docs/decisions/LEXICON.md` §8
+
 ## 2026-07-28 — [gate] Jalon γ — phase 3.0 housekeeping (activation générale : reliquats statués, chaîne finale)
 
 - Statut : CLOS

@@ -10,6 +10,7 @@
 export const RETIRED_TOOLING_NAMES = [
   "agent-factory",
   "artifact-supply",
+  "benchmarks",
   "client-kit",
   "context-kit",
   "design-system",
@@ -18,9 +19,11 @@ export const RETIRED_TOOLING_NAMES = [
   "proof-kit",
 ] as const;
 
-// `website` and `benchmarks` are absent by design: ADR-0008 retires them as
-// *repositories* while REPOSITORY-MAP keeps `apps/website` and
-// `verification/benchmarks` as legitimate in-hub destinations.
+// `website` is absent by design: its de-facto activation as a real repository
+// is nominatively regularised by ADR-0020 §2.4 (the name left the dead list).
+// `benchmarks` joined the guard with ADR-0020: the in-hub destinations that
+// once justified its absence (`apps/website`, `verification/benchmarks`) no
+// longer exist in the tree.
 
 export interface RetiredNameEntry {
   /** Where the identifier was found, for the failure message. */

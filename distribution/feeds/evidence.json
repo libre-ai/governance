@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-28-jalon-3-1-acte-doctrinal-adr-0020-activation-generale-amende",
+      "date": "2026-07-28",
+      "type": "gate",
+      "title": "Jalon γ — 3.1 acte doctrinal : ADR-0020 (activation générale) + amendement LEXICON §8",
+      "status": "SIGNÉ AU MERGE",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PR #273, `docs/adr/0020-general-activation-and-hub-dismantling.md`, `docs/decisions/LEXICON.md` §8"
+    },
+    {
       "id": "gate-2026-07-28-jalon-phase-3-0-housekeeping-activation-generale-reliquats-s",
       "date": "2026-07-28",
       "type": "gate",
