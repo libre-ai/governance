@@ -57,8 +57,11 @@ if (import.meta.main) {
 
   // Workspace directories: the three families ADR-0008 §3 names (package, crate,
   // application). A directory is scanned whatever it contains — an orphan left
-  // by a rename is exactly the drift this guard exists to catch.
+  // by a rename is exactly the drift this guard exists to catch. A family
+  // absent from this repository (post-split, ADR-0020) is simply not scanned.
+  const { existsSync } = await import("node:fs");
   for (const family of ["apps", "crates", "packages"]) {
+    if (!existsSync(family)) continue;
     const glob = new Bun.Glob("*");
     for await (const name of glob.scan({ cwd: family, onlyFiles: false })) {
       if (name.includes("/") || name.includes(".")) continue;

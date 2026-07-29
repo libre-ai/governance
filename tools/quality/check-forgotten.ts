@@ -22,6 +22,8 @@ export interface ForgottenEntry {
 export interface ForgottenRegister {
   entries: readonly ForgottenEntry[];
   citation_allowlist: readonly string[];
+  /** Repository whose history anchors recoverable_at commits (hub archive since ADR-0020). */
+  anchor_repository?: string;
 }
 
 export interface Finding {
@@ -85,6 +87,13 @@ export function findForbiddenCitations(
 /** Resolves a commit to the paths it carries, or null when the object is absent. */
 export type TreeResolver = (commit: string) => readonly string[] | null;
 
+/**
+ * Sentinel tree a resolver may return when the declared anchor repository is
+ * unreachable (offline): presence is UNVERIFIED, not absent — the carries
+ * check is skipped, and CI (which always has the network) verifies for real.
+ */
+export const OFFLINE_UNVERIFIED = "__offline_unverified__";
+
 export function findWildForgetting(register: ForgottenRegister, resolve: TreeResolver): Finding[] {
   const findings: Finding[] = [];
   for (const entry of register.entries) {
@@ -97,6 +106,7 @@ export function findWildForgetting(register: ForgottenRegister, resolve: TreeRes
       });
       continue;
     }
+    if (tree.includes(OFFLINE_UNVERIFIED)) continue;
     for (const evicted of entry.evicted_paths) {
       const prefix = evicted.endsWith("/") ? evicted : `${evicted}/`;
       const carried = tree.some((path) => path === needle(evicted) || path.startsWith(prefix));
@@ -118,6 +128,7 @@ export function parseRegister(source: string): ForgottenRegister {
   return {
     entries: parsed.entries,
     citation_allowlist: parsed.citation_allowlist ?? [],
+    anchor_repository: parsed.anchor_repository,
   };
 }
 
@@ -136,13 +147,37 @@ if (import.meta.main) {
     readable.map(async (path) => ({ path, text: await Bun.file(path).text() })),
   );
 
+  // Local history first; since the governance split (ADR-0020) the anchors
+  // may live in the hub archive — resolve them through the GitHub API when
+  // `anchor_repository` is declared. Offline (or without `gh`), remote
+  // verification is skipped with an explicit warning: CI has the network
+  // and always verifies for real.
   const resolve: TreeResolver = (commit) => {
     const probe = Bun.spawnSync(["git", "cat-file", "-e", `${commit}^{commit}`]);
-    if (probe.exitCode !== 0) return null;
-    return new TextDecoder()
-      .decode(Bun.spawnSync(["git", "ls-tree", "-r", "--name-only", commit]).stdout)
-      .split("\n")
-      .filter(Boolean);
+    if (probe.exitCode === 0) {
+      return new TextDecoder()
+        .decode(Bun.spawnSync(["git", "ls-tree", "-r", "--name-only", commit]).stdout)
+        .split("\n")
+        .filter(Boolean);
+    }
+    const anchor = register.anchor_repository;
+    if (anchor === undefined) return null;
+    const remote = Bun.spawnSync([
+      "gh",
+      "api",
+      `repos/${anchor}/git/trees/${commit}?recursive=1`,
+      "--jq",
+      ".tree[].path",
+    ]);
+    if (remote.exitCode === 0) {
+      return new TextDecoder().decode(remote.stdout).split("\n").filter(Boolean);
+    }
+    const stderr = new TextDecoder().decode(remote.stderr);
+    if (/HTTP 4\d\d/.test(stderr)) return null;
+    console.warn(
+      `WARN: recoverable_at ${commit} not resolvable offline (anchor ${anchor} unreachable) — CI verifies with the network.`,
+    );
+    return [OFFLINE_UNVERIFIED];
   };
 
   const findings = [

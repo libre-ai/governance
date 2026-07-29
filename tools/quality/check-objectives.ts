@@ -18,8 +18,8 @@ const requiredFiles = [
   "docs/specifications/DATA-LIFECYCLE.md",
   "docs/specifications/IDENTITY-AUTHORIZATION.md",
   "docs/adr/0002-g1-cross-cutting-product-decisions.md",
-  "contracts/catalog.v1.json",
-  "contracts/COMPATIBILITY.md",
+  // contracts/catalog.v1.json and contracts/COMPATIBILITY.md moved to the
+  // `contracts` authority repository (ADR-0020): its own gates require them.
   "prompts/00-cleanup.md",
   "prompts/01-specification-lock.md",
   "prompts/02-foundation-build.md",

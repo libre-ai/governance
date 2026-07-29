@@ -192,12 +192,18 @@ describe("buildDependencyInventory", () => {
   test("parses the real repository lockfiles without error", async () => {
     // Guard against lockfile format drift: the real inputs of SOV-03 must
     // always parse, and this repository has no git/url dependency today.
+    // Cargo.lock is optional since the governance split (ADR-0020): this
+    // repository has no Rust workspace; repositories that do keep both
+    // lockfiles covered.
     const repoRoot = new URL("../../", import.meta.url);
     const bunLock = await Bun.file(new URL("bun.lock", repoRoot)).text();
-    const cargoLock = await Bun.file(new URL("Cargo.lock", repoRoot)).text();
+    const cargoLockFile = Bun.file(new URL("Cargo.lock", repoRoot));
+    const cargoLock = (await cargoLockFile.exists()) ? await cargoLockFile.text() : "";
     const inventory = buildDependencyInventory(bunLock, cargoLock);
     expect(inventory.bun.totalExternal).toBeGreaterThan(0);
-    expect(inventory.cargo.totalExternal).toBeGreaterThan(0);
+    if (await cargoLockFile.exists()) {
+      expect(inventory.cargo.totalExternal).toBeGreaterThan(0);
+    }
     const unknowns = [...inventory.bun.packages, ...inventory.cargo.packages].filter(
       (p) => p.registry === "unknown",
     );

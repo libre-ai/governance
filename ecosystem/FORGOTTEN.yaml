@@ -14,6 +14,13 @@
 
 version: 1
 
+# Where `recoverable_at` commits resolve. Since the governance split
+# (ADR-0020), this repository's history is a filtered rewrite: the anchors
+# live in the hub archive, and the guard resolves them there (GitHub API)
+# when they are absent locally. Offline, that verification is explicitly
+# skipped with a warning — CI always has the network and always verifies.
+anchor_repository: libre-ai/libre-ai
+
 entries:
   - id: forgotten.website-cdc-bmad
     evicted_paths:

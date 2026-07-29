@@ -412,7 +412,11 @@ if (import.meta.main) {
   for (const entry of excluded) console.log(`  excluded ${entry.path}: ${entry.reason}`);
 
   const failures: string[] = [];
-  if (targets.length === 0) {
+  // Zero manifests discovered means the gate lost its inputs (wrong cwd, broken
+  // scan) and cannot prove anything. Zero PUBLISHABLE packages while private
+  // manifests were discovered and classified is the legitimate state of an
+  // authority repository (ADR-0020): there is simply nothing to prove here.
+  if (targets.length === 0 && bunManifests.length === 0 && cargoManifests.length === 0) {
     failures.push(
       "examined 0 publishable packages — the gate lost its inputs and cannot prove anything",
     );

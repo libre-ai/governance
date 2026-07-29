@@ -36,7 +36,14 @@ const requiredSections = [
 ];
 const failures: string[] = [];
 
-for (const application of applications) {
+// Application specifications were dispatched to their product repositories
+// with the governance split (ADR-0020, design §4.2): they are only checked
+// where docs/apps/ exists. The five transverse G1 locks below are always
+// checked — they live in this repository.
+const { existsSync } = await import("node:fs");
+const applicationsPresent = existsSync("docs/apps") ? applications : [];
+
+for (const application of applicationsPresent) {
   const path = `docs/apps/${application}.md`;
   const file = Bun.file(path);
   if (!(await file.exists())) {
