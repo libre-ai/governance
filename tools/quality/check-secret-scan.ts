@@ -33,6 +33,9 @@ export interface SecretFinding {
 }
 
 const IGNORED_PREFIXES = ["node_modules/", "target/", "dist/", ".git/", "docs/reviews/"];
+// Nested workspaces (a repository can carry a sub-package with its own
+// node_modules since the split — e.g. orchestrator's tools/review):
+const IGNORED_SEGMENTS = ["/node_modules/", "/target/", "/dist/"];
 const IGNORED_SUBSTRINGS = ["/evidence/"];
 // Exact paths only: the detector pair (it holds the patterns), this gate's own
 // pair (anti-pattern fixtures by design) and the scanner vector corpus.
@@ -55,7 +58,11 @@ const LINE_EXEMPTION_FILES = new Set([
 ]);
 
 function isIgnored(path: string): boolean {
-  if (IGNORED_PREFIXES.some((prefix) => path.startsWith(prefix))) return true;
+  if (
+    IGNORED_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
+    IGNORED_SEGMENTS.some((segment) => path.includes(segment))
+  )
+    return true;
   if (IGNORED_SUBSTRINGS.some((part) => path.includes(part))) return true;
   return IGNORED_FILES.has(path);
 }
