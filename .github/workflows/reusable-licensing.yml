@@ -90,6 +90,10 @@ jobs:
           repository: libre-ai/governance
           ref: ${{ inputs.tooling_ref }}
           path: .governance-tooling
+      - name: Exclude the tooling checkout from VCS-aware scanners
+        # reuse lint is git-aware: the pinned governance checkout carries its
+        # own licence set and must not be linted as caller content.
+        run: echo ".governance-tooling/" >> .git/info/exclude
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
