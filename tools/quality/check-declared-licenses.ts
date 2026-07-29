@@ -242,8 +242,17 @@ export function filesOwnedBy(
   const nested = manifestDirectories
     .filter((candidate) => candidate !== directory && `${candidate}/`.startsWith(prefix))
     .map((candidate) => `${candidate}/`);
+  // Vendored third-party trees are out of scope for FILES exactly as they
+  // are for manifests (LICENSING.md keeps their upstream licence and the
+  // published tarball never embarks them): since the repository split, a
+  // publishable package can BE the repository root and carry a
+  // third_party/ tree beside its sources.
+  const thirdParty = `${prefix}third_party/`;
   return attributions.filter(
-    (file) => file.path.startsWith(prefix) && !nested.some((inner) => file.path.startsWith(inner)),
+    (file) =>
+      file.path.startsWith(prefix) &&
+      !file.path.startsWith(thirdParty) &&
+      !nested.some((inner) => file.path.startsWith(inner)),
   );
 }
 
