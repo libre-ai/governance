@@ -55,3 +55,7 @@ jobs:
           fi
       - name: Reconcile inventory with the observable organization
         run: bun ecosystem/check-inventory-drift.ts
+      - name: Fleet template pins match the declared generations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-fleet-pins.ts

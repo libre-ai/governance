@@ -12,17 +12,360 @@
 # le contenu migré a une destination vivante.
 #
 # Entrées de forme :
+# Un hub_path peut apparaître dans PLUSIEURS entrées (une par couple
+# chemin × destination) : l'outillage partagé essaime — le gate d'orphelins
+# vérifie qu'un chemin a AU MOINS une destination, cette carte les liste
+# TOUTES pour décrire la topologie réelle (finding K4 AUTH-02).
 #   - hub_path: <chemin du hub, préfixe>
 #     destination: libre-ai/<repo>
-#     destination_commit: <SHA du premier commit de destination>
-#     hub_removal_commit: <SHA du commit du hub qui retire le chemin>
+#     destination_commit: <SHA du PREMIER commit de destination portant le
+#       contenu migré — immuable une fois écrit>
+#     verified_at_commit: <dernier commit de destination dont les gates sont
+#       mesurés verts — avance avec les preuves (K4 AUTH-R2-01)>
+#     hub_removal_commit: <SHA du commit du hub qui retire le chemin,
+#       ou `pending` — état intermédiaire : contenu porté et vert à
+#       destination, chemin pas encore retiré du hub (la règle dure de
+#       bascule autorise la double présence, jamais l'absence)>
 #     notes: <bornes, exemptions tracées — ex. borne DCO de greffe>
 
 schema_version: libre-ai.migration-index.v1
 
-hub_state: dismantling-pending  # → dismantling-in-progress à la première bascule → archived (acte propriétaire)
+hub_state: dismantling-in-progress  # première bascule : γ 3.3, autorités nées vertes (2026-07-29) → archived (acte propriétaire)
 
-entries: []
+entries:
+  # γ 3.3 — governance authority (CI 5/5 green at destination_commit).
+  # Perimeter refinements vs design §4.1, each traced in the destination
+  # history: product-proof surfaces returned to the hub pipeline
+  # (tools/qualification/notebook-core-v2 → notebook, tools/quality/
+  # build-policy-core-wasm.ts → policy, tools/ops/run-retention* → data),
+  # contract-vector verifiers stay hub-owned until sdk-ts;
+  # verification/dependency-bench (born in γ 3.2) travels with governance.
+  - hub_path: docs/ # everything except docs/apps/ and docs/API-STABILITY.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: docs/apps/* migrate with their products (γ 3.5); docs/API-STABILITY.md with contracts
+  - hub_path: GOALS.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: STATUS.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: ROADMAP.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: vision.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: ecosystem/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: tools/ # except tools/review/ (orchestrator) and the returned product surfaces
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: tools/review → orchestrator (γ 3.4); notebook-core-v2 qualification → notebook, build-policy-core-wasm → policy, run-retention → data; contract-vector verifiers → sdk-ts conformance
+  - hub_path: verification/adoption/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: verification/sovereignty/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: verification/harness/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: WP-G2-Q01 foundation harness (homonym of the couche-2 brick) — reference chain stays replayable from governance
+  - hub_path: verification/dependency-bench/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: verification/README.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: prompts/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: distribution/ # except distribution/templates/ (starter)
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: distribution/templates/* → starter (γ 3.4)
+  - hub_path: toolchains/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: Bun toolchain release asset still served from the hub archive — re-hosting under governance is the traced follow-up (design §5.4.3)
+  - hub_path: infrastructure/
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: LICENSING.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: TRADEMARKS.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: DATA-PROVENANCE.md
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: REUSE.toml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: each repository carries its own REUSE manifest; the hub keeps its own until archive
+  - hub_path: deny.toml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+    notes: the hub keeps its copy while its Rust workspace lives (until γ 3.4/3.5)
+  - hub_path: llms.txt
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/doctrine-governance.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/inventory-drift.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/truth-drift.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/feeds-freshness.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/adoption-proof.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  - hub_path: .github/workflows/sovereignty-report.yml
+    destination: libre-ai/governance
+    destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
+    verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
+    hub_removal_commit: pending
+  # γ 3.3 — contracts authority (CI 2/2 green at destination_commit; the
+  # hub removal only happens after green proof, per the hard flip rule).
+  - hub_path: contracts/
+    destination: libre-ai/contracts
+    destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
+    hub_removal_commit: pending
+  - hub_path: docs/API-STABILITY.md
+    destination: libre-ai/contracts
+    destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
+    hub_removal_commit: pending
+  - hub_path: tools/quality/ # the self-verification subset contracts carries
+    destination: libre-ai/contracts
+    destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
+    hub_removal_commit: pending
+    notes: >-
+      check-contracts, policy-core-raw-inputs, public-source-scanner(+test)
+      only — the repository's own gate. The bun floor, security scanners and
+      licensing gate are CONSUMED from governance (reusable workflows +
+      pinned git-dep, design §5.3), never duplicated (K4 AUTH-01 closed)
+
+  # γ 3.4 — wave-A Bun satellites (each verified green in its own CI).
+  - hub_path: packages/contracts/
+    destination: libre-ai/sdk-ts
+    destination_commit: c1c90491207bfdf24f78b91c7900596c9f05cbec
+    verified_at_commit: da9d510cce0c28283837bfb6c9efe82641cbe083
+    hub_removal_commit: pending
+    notes: package renamed to the repository root (a pinned git-dep installs the root); vendored schemas re-proven byte-exact against the contracts authority pin
+  - hub_path: packages/envelope/
+    destination: libre-ai/envelope
+    destination_commit: 5571b6e5e75086a204798cda267d84d6c1ef5a1f
+    verified_at_commit: ad0e1a6d014ee531dd1938ed04c6b678c605dc9c
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/web-platform/
+    destination: libre-ai/web-platform
+    destination_commit: 9ee1c02fbe5fd52e0570335ef15b7b63766a7c03
+    verified_at_commit: a0754b69b4205e31a0c560f9729bd8d2d8556357
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/testing/
+    destination: libre-ai/testing
+    destination_commit: 2390b8cb9a30298fe3020ad8acf92fd15d3248f8
+    verified_at_commit: 28a317462660898f069974009ab4a1ff99bb9dac
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+
+  - hub_path: crates/contract-types/
+    destination: libre-ai/sdk-rs
+    destination_commit: c0e64450a721a6178eea9aabf97e1a241ae5e91f
+    verified_at_commit: 02214613c5cb0549d0618484d9b479c4cfb3c7ce
+    hub_removal_commit: pending
+    notes: crate renamed to the repository root; authority schemas vendored under a byte-exact drift gate (61 files), vector fixtures from the pinned contracts git-dep — born green first try (CI 2/2)
+
+  # γ 3.4 — independent satellites, each born green FIRST TRY (CI 2/2).
+  - hub_path: packages/provenance/
+    destination: libre-ai/provenance
+    destination_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
+    verified_at_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/knowledge/
+    destination: libre-ai/knowledge
+    destination_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
+    verified_at_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
+    hub_removal_commit: pending
+    notes: renamed to the repository root; canonical ecosystem schemas resolve from the pinned governance git-dep
+  - hub_path: packages/rgpd-kit/
+    destination: libre-ai/rgpd-kit
+    destination_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
+    verified_at_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/classification/
+    destination: libre-ai/classification
+    destination_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
+    verified_at_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/collab-core/
+    destination: libre-ai/collab-core
+    destination_commit: c9b10b03321eeebace7ec12b78563df277dae630
+    verified_at_commit: c9b10b03321eeebace7ec12b78563df277dae630
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/collab-relay/
+    destination: libre-ai/collab-relay
+    destination_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
+    verified_at_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+
+  # γ 3.4 — wave B/C and Rust satellites. Seventeen of the nineteen were
+  # born green first try; two (ui, ecosystem-engine) were greened at the
+  # next commit — nineteen green, no red masked (the destination/verified
+  # split states exactly which is which).
+  - hub_path: packages/auth-web/
+    destination: libre-ai/auth
+    destination_commit: d23fcb7edc6108429247fd9b52f9fdd3d62d07fe
+    verified_at_commit: bcbc011365fc0395961d073a73e7bd3f74eef584
+    hub_removal_commit: pending
+    notes: renamed to the repository root; internal bricks consumed as peerDependencies after the minimally-reproduced bun same-pin dedupe limitation
+  - hub_path: packages/data/
+    destination: libre-ai/data
+    destination_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
+    verified_at_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
+    hub_removal_commit: pending
+    notes: renamed to the repository root; retention contract resolves from the pinned contracts authority
+  - hub_path: packages/ui/
+    destination: libre-ai/ui
+    destination_commit: 65455c3c2fa23c4ecad1c79a0c8d821fbcd2277d
+    verified_at_commit: 46fa2956fcc86731f40772bcd3dff129c3792c46
+    hub_removal_commit: pending
+    notes: carries the packages/design-system ancestry (design §4.3); third_party/dtcg follows its consumer with its W3C licence
+  - hub_path: packages/design-system/
+    destination: libre-ai/ui
+    destination_commit: 65455c3c2fa23c4ecad1c79a0c8d821fbcd2277d
+    verified_at_commit: 46fa2956fcc86731f40772bcd3dff129c3792c46
+    hub_removal_commit: pending
+    notes: history-only ancestry carried by the ui repository (§5.1)
+  - hub_path: crates/authz-biscuit/
+    destination: libre-ai/authz-biscuit
+    destination_commit: 73725a69f11abb4b5811e5bbb0c26f3705271412
+    verified_at_commit: 73725a69f11abb4b5811e5bbb0c26f3705271412
+    hub_removal_commit: pending
+    notes: authz datalog policies vendored under a byte-exact drift gate (committed vendoring is the only correct form for include_str! sources consumed by git-dep)
+  - hub_path: crates/ecosystem-engine/
+    destination: libre-ai/ecosystem-engine
+    destination_commit: f87ff5343764f6a4f1663b645c10b1f7beb399fe
+    verified_at_commit: a55f57fead0b5e1a3f951c3cb609a01e58aae9f0
+    hub_removal_commit: pending
+    notes: authz/wit/ecosystem artefacts vendored against two authority pins; knowledge objects resolve from the pinned governance git-dep
+  - hub_path: crates/artifact/
+    destination: libre-ai/artifacts
+    destination_commit: a285bc607be6c4f5a1d0ce546a44e9d5261781ee
+    verified_at_commit: a285bc607be6c4f5a1d0ce546a44e9d5261781ee
+    hub_removal_commit: pending
+    notes: first intra-org Cargo git-dep — libre-ai-contract-types via github.com/libre-ai/sdk-rs under [sources.allow-org]
+  - hub_path: crates/agent-orchestrator/
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+    notes: crate at the root; Cargo git-dep sdk-rs
+  - hub_path: tools/review/
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+    notes: review fan-out with @libre-ai/envelope as a sha-pinned git-dep; own chain link check:review-tools
+  - hub_path: verification/agent-orchestrator/
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+    notes: capability-boundary proof surface travels with its brick
+  - hub_path: docs/apps/harness.md
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+  - hub_path: docs/apps/memory.md
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+  - hub_path: docs/apps/orchestrator.md
+    destination: libre-ai/orchestrator
+    destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
+    hub_removal_commit: pending
+  - hub_path: distribution/templates/
+    destination: libre-ai/starter
+    destination_commit: 0462e0a16d50c8db1702bf2f6ac2dcd7db8988dd
+    verified_at_commit: 0462e0a16d50c8db1702bf2f6ac2dcd7db8988dd
+    hub_removal_commit: pending
+    notes: both templates consume the four workshop bricks as sha-pinned git-deps; auth's peerDependencies pattern fixed fleet-wide after the bun same-pin dedupe repro
 
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :

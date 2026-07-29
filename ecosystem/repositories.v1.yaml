@@ -76,6 +76,223 @@ repositories:
     owns:
       - canonical contract authorities and vectors (contracts/)
       - contract catalog and compatibility policy
+  - repository: libre-ai/sdk-ts
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # TypeScript SDK projection of the locked contracts (fail-closed validators, generated types). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/contracts)
+  - repository: libre-ai/envelope
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Integrity envelope for untrusted content (K3 kernel). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/envelope)
+  - repository: libre-ai/web-platform
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Shared web platform brick (Bun.serve foundations). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/web-platform)
+  - repository: libre-ai/testing
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Shared testing brick. Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/testing)
+  - repository: libre-ai/sdk-rs
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Rust SDK projection of the locked contracts — compile-time embedded
+    # schemas under a byte-exact drift gate. Born from the hub dismantling
+    # (γ 3.4), history carried by git filter-repo; consumed as a sha-pinned
+    # Cargo git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the crate at the repository root (formerly crates/contract-types)
+  - repository: libre-ai/provenance
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Content provenance brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/provenance)
+  - repository: libre-ai/knowledge
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Knowledge objects brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/knowledge)
+  - repository: libre-ai/rgpd-kit
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # GDPR lifecycle brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/rgpd-kit)
+  - repository: libre-ai/classification
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Content classification brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/classification)
+  - repository: libre-ai/collab-core
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Collaboration core brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/collab-core)
+  - repository: libre-ai/collab-relay
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Collaboration relay brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/collab-relay)
+  - repository: libre-ai/authz-biscuit
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Biscuit deny-by-default authorization crate (formerly crates/authz-biscuit). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/ecosystem-engine
+    role: satellite
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Ecosystem engine crate (formerly crates/ecosystem-engine). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/auth
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Web authentication brick (formerly packages/auth-web). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/data
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Data lifecycle brick (formerly packages/data). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/ui
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Shared UI brick (formerly packages/ui, carrying packages/design-system history). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/artifacts
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Artifact crate (formerly crates/artifact). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/orchestrator
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Agent orchestration brick (formerly crates/agent-orchestrator, with tools/review and its proof surface). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/starter
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Starter templates (formerly distribution/templates/starter and bun-app). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse

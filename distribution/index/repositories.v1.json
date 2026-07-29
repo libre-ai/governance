@@ -34,6 +34,33 @@
       ]
     },
     {
+      "repository": "libre-ai/artifacts",
+      "name": "artifacts",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/auth",
+      "name": "auth",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/authz-biscuit",
+      "name": "authz-biscuit",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/boussole-politique",
       "name": "Boussole Politique",
       "layer": "couche-1",
@@ -60,6 +87,33 @@
       ]
     },
     {
+      "repository": "libre-ai/classification",
+      "name": "classification",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/collab-core",
+      "name": "collab-core",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/collab-relay",
+      "name": "collab-relay",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/contracts",
       "name": "contracts",
       "layer": "transverse",
@@ -69,10 +123,37 @@
       "exposure": "usable-verifiable"
     },
     {
+      "repository": "libre-ai/data",
+      "name": "data",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/db-inspect",
       "name": "db-inspect",
       "layer": "transverse",
       "role": "standalone-tool",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/ecosystem-engine",
+      "name": "ecosystem-engine",
+      "layer": "transverse",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/envelope",
+      "name": "envelope",
+      "layer": "couche-3",
+      "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
       "exposure": "usable-verifiable"
@@ -99,6 +180,15 @@
       "visibility": "public",
       "lifecycle": "active",
       "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/knowledge",
+      "name": "knowledge",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
     },
     {
       "repository": "libre-ai/libre-ai",
@@ -139,6 +229,15 @@
       ]
     },
     {
+      "repository": "libre-ai/orchestrator",
+      "name": "orchestrator",
+      "layer": "couche-2",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/policy",
       "name": "Model Policy",
       "layer": "couche-1",
@@ -151,6 +250,42 @@
         "apps/model-policy",
         "crates/policy-core"
       ]
+    },
+    {
+      "repository": "libre-ai/provenance",
+      "name": "provenance",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/rgpd-kit",
+      "name": "rgpd-kit",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/sdk-rs",
+      "name": "sdk-rs",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/sdk-ts",
+      "name": "sdk-ts",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
     },
     {
       "repository": "libre-ai/sessions",
@@ -179,6 +314,42 @@
       "canonical_paths": [
         "apps/specifications"
       ]
+    },
+    {
+      "repository": "libre-ai/starter",
+      "name": "starter",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/testing",
+      "name": "testing",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/ui",
+      "name": "ui",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/web-platform",
+      "name": "web-platform",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
     },
     {
       "repository": "libre-ai/website",

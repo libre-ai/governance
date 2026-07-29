@@ -1,0 +1,22 @@
+# Declared template-pin generations of the fleet (K4 WAVE-A-02 / FINAL-01).
+#
+# Every satellite/authority repository pins the governance gate template
+# twice — the reusable workflows (`uses: libre-ai/governance/...@<sha>`)
+# and the tooling git-dep (`github:libre-ai/governance#<sha>`) — and the
+# two pins must be the SAME sha. `bun ecosystem/check-fleet-pins.ts`
+# (network gate, like inventory-drift) enumerates the observed pins across
+# the organization and fails on any pin absent from this register or on an
+# internally inconsistent repository. A template evolution is: commit in
+# governance → add the new generation here → bump consumers → retire the
+# old generation from this list.
+schema_version: libre-ai.fleet-pins.v1
+generations:
+  - sha: 9511c4087f284d0242fc4a202b2f1452228c16c3
+    added_on: 2026-07-29
+    note: tooling-checkout excluded from VCS-aware scanners
+  - sha: 8b641394ed436fe68f03fe0c2073b4fe978dd3ac
+    added_on: 2026-07-29
+    note: third-party files out of a package's licence scope
+  - sha: 4fd6e18346672189d3053e07c196c77d127e608d
+    added_on: 2026-07-29
+    note: secret scan skips nested workspace artefacts
