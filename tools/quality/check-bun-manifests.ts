@@ -19,6 +19,15 @@ const selectedPackageManager = `bun@${policy.revision.split("+")[0]}`;
 const root = (await Bun.file("package.json").json()) as PackageManifest;
 const failures: string[] = [];
 
+// Consumers of the governance tooling git-dep (pinned github:libre-ai/
+// governance#<sha>, ADR-0020 §2.5 / design §5.3) run the same scripts from
+// node_modules — both forms satisfy the root contract.
+const TOOLING = ["tools/quality", "node_modules/@libre-ai/governance/tools/quality"];
+const runtimeForms = TOOLING.map((base) => `bun ${base}/check-bun-minimum.ts`);
+const manifestForms = TOOLING.map(
+  (base) => `bun run check:bun:runtime && bun ${base}/check-bun-manifests.ts`,
+);
+
 if (!isBunVersionAtLeast(policy.version, policy.minimumVersion)) {
   failures.push("toolchains/bun.json: selected version is below the minimum");
 }
@@ -28,13 +37,10 @@ if (root.packageManager !== selectedPackageManager) {
 if (root.engines?.bun !== expectedEngine) {
   failures.push(`package.json: engines.bun must be ${expectedEngine}`);
 }
-if (root.scripts?.["check:bun:runtime"] !== "bun tools/quality/check-bun-minimum.ts") {
+if (!runtimeForms.includes(root.scripts?.["check:bun:runtime"] ?? "")) {
   failures.push("package.json: check:bun:runtime must verify the active Bun process");
 }
-if (
-  root.scripts?.["check:bun"] !==
-  "bun run check:bun:runtime && bun tools/quality/check-bun-manifests.ts"
-) {
+if (!manifestForms.includes(root.scripts?.["check:bun"] ?? "")) {
   failures.push("package.json: check:bun must verify runtime and workspace manifests");
 }
 // check:toolchain and build are optional since the governance split
