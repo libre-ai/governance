@@ -55,16 +55,53 @@ async function write(path: string, content: string): Promise<void> {
   await Bun.write(join(bench, path), content);
 }
 
-// --- Case 1: GitHub transport — deferred, the rule that bounds it printed.
-record({
-  id: "1",
-  title: "Bun git-dep SHA-pin over GitHub transport",
-  outcome: "DEFERRED",
-  detail:
-    "bun does not support git+file:// (exit 128), so the transport cannot be exercised " +
-    "locally. To confirm as the first act of the first satellite, before any hub path " +
-    "removal (design §5.4).",
-});
+// --- Case 1: GitHub transport. The positive half is proven by real use:
+// contracts/bun.lock pins github:libre-ai/governance#<full sha> WITH an
+// integrity hash, re-verified by every `bun install --frozen-lockfile` of
+// its CI — stronger than any one-shot fixture (K4 CLOSE33-01). What needs a
+// replayable artefact is the COUNTER-PROOF: an unreachable sha must fail
+// the install, establishing that the pin is enforced, not silently
+// bypassed. Network required — replayed with --online.
+async function caseOne(): Promise<void> {
+  if (!online) {
+    record({
+      id: "1",
+      title: "Bun git-dep SHA-pin over GitHub transport",
+      outcome: "SKIP",
+      detail:
+        "Positive half proven by real use (contracts/bun.lock pins the full sha with an " +
+        "integrity hash, re-verified each CI install). Counter-proof (unreachable sha must " +
+        "fail) requires network — replay with --online.",
+    });
+    return;
+  }
+  await write(
+    "transport-neg/package.json",
+    JSON.stringify(
+      {
+        name: "@libre-ai/bench-transport-negative",
+        private: true,
+        dependencies: {
+          "@libre-ai/governance":
+            "github:libre-ai/governance#deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  const install = await $`bun install`.cwd(join(bench, "transport-neg")).quiet().nothrow();
+  const failedToResolve =
+    install.exitCode !== 0 && install.stderr.toString().includes("failed to resolve");
+  record({
+    id: "1",
+    title: "Bun git-dep SHA-pin over GitHub transport — counter-proof",
+    outcome: failedToResolve ? "PASS" : "FAIL",
+    detail: failedToResolve
+      ? "an unreachable sha fails the install (exit non-zero, « failed to resolve ») — the pin is enforced, never silently bypassed; positive half carried by contracts/bun.lock, re-verified by its real CI"
+      : `expected failure, got exit=${install.exitCode}: ${install.stderr.toString().slice(0, 200)}`,
+  });
+}
 
 // --- Case 2: exports.bun → TS source, no dist, no lifecycle, tsc through it.
 async function caseTwo(): Promise<void> {
@@ -270,6 +307,7 @@ libre-ai-artifact = { git = "https://github.com/libre-ai/libre-ai.git", rev = "5
 }
 
 try {
+  await caseOne();
   await caseTwo();
   await caseThree();
   await caseFour();
