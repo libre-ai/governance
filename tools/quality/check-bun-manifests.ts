@@ -13,7 +13,21 @@ interface BunToolchainPolicy {
   revision: string;
 }
 
-const policy = (await Bun.file("toolchains/bun.json").json()) as BunToolchainPolicy;
+async function readToolchainPolicy(): Promise<BunToolchainPolicy> {
+  // The toolchain contract is fleet governance: local file first (the
+  // governance repository itself, and the hub during dismantling), then the
+  // pinned governance git-dep (satellite consumers, design §5.3).
+  for (const path of [
+    "toolchains/bun.json",
+    "node_modules/@libre-ai/governance/toolchains/bun.json",
+  ]) {
+    const file = Bun.file(path);
+    if (await file.exists()) return (await file.json()) as BunToolchainPolicy;
+  }
+  throw new Error("toolchains/bun.json not found locally nor in the governance git-dep");
+}
+
+const policy = await readToolchainPolicy();
 const expectedEngine = `>=${policy.minimumVersion}`;
 const selectedPackageManager = `bun@${policy.revision.split("+")[0]}`;
 const root = (await Bun.file("package.json").json()) as PackageManifest;

@@ -7,7 +7,21 @@ interface BunToolchain {
   preRelease: boolean;
 }
 
-const expected = (await Bun.file("toolchains/bun.json").json()) as BunToolchain;
+async function readToolchainPolicy(): Promise<BunToolchain> {
+  // The toolchain contract is fleet governance: local file first (the
+  // governance repository itself, and the hub during dismantling), then the
+  // pinned governance git-dep (satellite consumers, design §5.3).
+  for (const path of [
+    "toolchains/bun.json",
+    "node_modules/@libre-ai/governance/toolchains/bun.json",
+  ]) {
+    const file = Bun.file(path);
+    if (await file.exists()) return (await file.json()) as BunToolchain;
+  }
+  throw new Error("toolchains/bun.json not found locally nor in the governance git-dep");
+}
+
+const expected = await readToolchainPolicy();
 const revisionResult = Bun.spawnSync({
   cmd: [process.execPath, "--revision"],
   stdout: "pipe",
