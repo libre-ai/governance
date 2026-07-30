@@ -17,6 +17,7 @@ export const ADAPTED_FILES: ReadonlySet<string> = new Set([
   // canonical copies here keep the full fleet shape.
   "libre-ai/governance:tools/quality/check-bun-manifests.ts",
   "libre-ai/governance:tools/quality/check-retired-names.ts",
+  "libre-ai/governance:tools/quality/check-declared-licenses.ts",
   // sdk-ts — authority read through the pinned contracts git-dep
   "libre-ai/sdk-ts:scripts/generate-types.ts",
   "libre-ai/sdk-ts:scripts/sync-schemas.ts",
