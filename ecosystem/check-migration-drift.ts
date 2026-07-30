@@ -47,7 +47,6 @@ export const ADAPTED_FILES: ReadonlySet<string> = new Set([
   "libre-ai/auth:e2e/serve-e2e.ts",
   "libre-ai/auth:src/http/handlers.test.ts",
   "libre-ai/auth:src/http/handlers.ts",
-  "libre-ai/auth:src/session/store.test.ts",
   // data — retention contract via the pinned contracts git-dep
   "libre-ai/data:src/retention-sweep.ts",
   // ui — DTCG schema path follows the vendored third_party tree
@@ -160,8 +159,9 @@ if (import.meta.main) {
   const destTrees = new Map<string, Map<string, string> | null>();
   const failures: string[] = [];
   let asserted = 0;
-  let adapted = 0;
+  const adapted = 0;
   let bootstrap = 0;
+  let seenAdaptations = 0;
   for (const entry of index.entries) {
     if (entry.hub_removal_commit !== "pending") continue;
     if (entry.destination_path === undefined) {
@@ -183,9 +183,17 @@ if (import.meta.main) {
     }
     const result = compareTrees(entry, hubTree, destTree);
     asserted += result.asserted;
-    adapted += result.excludedAdapted;
+    seenAdaptations += result.excludedAdapted;
     bootstrap += result.excludedBootstrap;
     failures.push(...result.failures);
+  }
+  // Anti-phantom control (K4 DRIFT-R2-01): a listed adaptation that matches
+  // no hub path is an exception without an object — it would silently
+  // exclude a future file nobody decided to exclude.
+  if (seenAdaptations < ADAPTED_FILES.size) {
+    failures.push(
+      `${ADAPTED_FILES.size - seenAdaptations} listed adaptation(s) match no pending hub path — remove the phantom entries`,
+    );
   }
   if (failures.length > 0) {
     for (const failure of failures) console.error(`DRIFT: ${failure}`);
@@ -193,6 +201,6 @@ if (import.meta.main) {
     process.exit(1);
   }
   console.log(
-    `Migration drift gate: ${asserted} paths asserted byte-identical, ${adapted} listed adaptations, ${bootstrap} bootstrap manifests excluded — no divergence`,
+    `Migration drift gate: ${asserted} paths asserted byte-identical, ${seenAdaptations} listed adaptations, ${bootstrap} bootstrap manifests excluded — no divergence`,
   );
 }

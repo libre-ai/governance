@@ -54,7 +54,7 @@ describe("compareTrees", () => {
     expect(r2.failures).toEqual([]);
   });
 
-  test("the adaptation list is the reviewed 32 plus the two the hardened gate itself caught", () => {
-    expect(ADAPTED_FILES.size).toBe(35);
+  test("the adaptation list is the reviewed 32 plus the two the hardened gate itself caught (34, no phantoms)", () => {
+    expect(ADAPTED_FILES.size).toBe(34);
   });
 });
