@@ -64,6 +64,13 @@ constat est mesuré à la date du rapport ; les commandes sont rejouables.
 - **Adoption d'URL toolchain par la flotte** : les workflows des 32
   autres dépôts pointent encore la release du hub (archivé, les releases
   restent servies) ; bascule à chaque bump de génération.
+- **Deny-list doctrine sans famille « stacks abandonnées »** : le balayage
+  exhaustif post-activation (358 fichiers, 2026-07-30) n'a trouvé aucune
+  prescription vivante de stack abandonnée — mais rien ne l'empêche
+  machinalement à l'avenir. Ajouter une famille de motifs est une décision
+  de conception de gate sur surface doctrinale (≈15 exclusions de citeurs
+  légitimes, contrainte anti-motifs-inertes) : revue role-separated et
+  jalon propriétaire requis, jamais une édition mécanique.
 - **Retraits `pending` restants** : les entrées d'archive à double
   présence volontaire (registres, chaîne minimale, toolchain) restent
   `pending` par construction jusqu'à l'archivage ; le gate d'orphelins

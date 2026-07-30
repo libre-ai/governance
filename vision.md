@@ -56,8 +56,8 @@ Elle reflète cependant une succession d’explorations et de refontes :
 - documentation et statuts dupliqués ;
 - plusieurs chaînes de build et lockfiles ;
 - dépendances inter-repositories épinglées par SHA ;
-- Dioxus, Axum, Tokio et SQLx présents dans des produits qui peuvent désormais
-  être servis plus directement par une stack Bun/TypeScript ;
+- Dioxus, Axum, Tokio et SQLx étaient présents dans des produits désormais
+  servis plus directement par une stack Bun/TypeScript (greffes γ 3.5) ;
 - contrats utiles mélangés à des implémentations qui ne constituent plus la
   cible ;
 - coût élevé de contexte, de synchronisation et de release pour les humains et
