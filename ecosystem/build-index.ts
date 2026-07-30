@@ -17,7 +17,7 @@
  * Writes: distribution/index/repositories.v1.json
  */
 
-export const INDEX_SCHEMA_VERSION = "libre-ai.repository-index.v1";
+export const INDEX_SCHEMA_VERSION = "libre-ai.repository-index.v2";
 export const INVENTORY_SOURCE = "ecosystem/repositories.v1.yaml";
 
 export type Visibility = "public" | "private";
@@ -29,9 +29,7 @@ export interface InventoryEntry {
   role: string;
   visibility: Visibility;
   lifecycle: string;
-  exposure: string;
-  criteria_status?: string;
-  benchmark_url?: string;
+  card?: string;
   canonical_paths?: string[];
 }
 
@@ -40,7 +38,6 @@ export interface RepositoryIndex {
   source: typeof INVENTORY_SOURCE;
   source_schema_version: string;
   source_updated_on: string;
-  exposure_scale: string[];
   repositories: InventoryEntry[];
 }
 
@@ -106,16 +103,6 @@ function publicName(record: Record<string, unknown>, repository: string, path: s
   return bare;
 }
 
-/** Evidence link: only a structured benchmark carries a URL; the string forms
- * ("TBD…", "n/a…") are prose, not links. */
-function benchmarkUrl(record: Record<string, unknown>, path: string): string | undefined {
-  const benchmark = record.benchmark;
-  if (typeof benchmark !== "object" || benchmark === null || Array.isArray(benchmark)) {
-    return undefined;
-  }
-  return optionalString(asRecord(benchmark, `${path}.benchmark`), "url", `${path}.benchmark`);
-}
-
 function toEntry(value: unknown, index: number): InventoryEntry {
   const path = `repositories[${index}]`;
   const record = asRecord(value, path);
@@ -127,12 +114,9 @@ function toEntry(value: unknown, index: number): InventoryEntry {
     role: asString(record.role, `${path}.role`),
     visibility: asVisibility(record.visibility, `${path}.visibility`),
     lifecycle: asString(record.lifecycle, `${path}.lifecycle`),
-    exposure: asString(record.exposure, `${path}.exposure`),
   };
-  const criteriaStatus = optionalString(record, "criteria_status", path);
-  if (criteriaStatus !== undefined) entry.criteria_status = criteriaStatus;
-  const url = benchmarkUrl(record, path);
-  if (url !== undefined) entry.benchmark_url = url;
+  const card = optionalString(record, "card", path);
+  if (card !== undefined) entry.card = card;
   if (record.canonical_paths !== undefined) {
     entry.canonical_paths = asStringArray(record.canonical_paths, `${path}.canonical_paths`);
   }
@@ -141,7 +125,6 @@ function toEntry(value: unknown, index: number): InventoryEntry {
 
 export function buildIndex(yamlText: string): RepositoryIndex {
   const document = asRecord(yamlApi.parse(yamlText), "document");
-  const exposureScale = asStringArray(document.exposure_scale, "exposure_scale");
   const rawEntries = document.repositories;
   if (!Array.isArray(rawEntries) || rawEntries.length === 0) {
     fail("repositories", "a non-empty sequence", rawEntries);
@@ -154,11 +137,6 @@ export function buildIndex(yamlText: string): RepositoryIndex {
       throw new Error(`${INVENTORY_SOURCE}: duplicate repository entry ${entry.repository}`);
     }
     seen.add(entry.repository);
-    if (!exposureScale.includes(entry.exposure)) {
-      throw new Error(
-        `${INVENTORY_SOURCE}: ${entry.repository}: exposure "${entry.exposure}" is not on the exposure_scale`,
-      );
-    }
   }
 
   // Code-unit comparison, not localeCompare: the sort must be identical on
@@ -174,7 +152,6 @@ export function buildIndex(yamlText: string): RepositoryIndex {
     source: INVENTORY_SOURCE,
     source_schema_version: asString(document.schema_version, "schema_version"),
     source_updated_on: asString(document.updated_on, "updated_on"),
-    exposure_scale: exposureScale,
     repositories,
   };
 }

@@ -30,45 +30,37 @@ describe("buildIndex", () => {
     expect(renderIndex(buildIndex(text))).toBe(renderIndex(buildIndex(text)));
   });
 
-  test("omits evidence fields when the source has none", async () => {
+  test("omits optional fields when the source has none", async () => {
     const index = buildIndex(await Bun.file(fixtureUrl).text());
     const hub = index.repositories.find((entry) => entry.repository === "libre-ai/alpha-hub");
     expect(hub).toBeDefined();
-    expect(hub?.benchmark_url).toBeUndefined();
+    expect(hub?.card).toBeUndefined();
     expect(hub?.canonical_paths).toBeUndefined();
-    expect(hub?.criteria_status).toBeUndefined();
+  });
+
+  test("carries the card pointer when the source declares one", async () => {
+    const index = buildIndex(await Bun.file(fixtureUrl).text());
+    const zeta = index.repositories.find((entry) => entry.repository === "libre-ai/zeta-product");
+    expect(zeta?.card).toBe("project.v1.yaml");
   });
 
   test("rejects a duplicate repository entry", () => {
     const yaml = [
       "schema_version: v",
       "updated_on: 2026-07-24",
-      "exposure_scale: [idea]",
       "repositories:",
-      "  - { repository: libre-ai/twin, role: hub, layer: moyeu, visibility: public, lifecycle: active, exposure: idea }",
-      "  - { repository: libre-ai/twin, role: hub, layer: moyeu, visibility: public, lifecycle: active, exposure: idea }",
+      "  - { repository: libre-ai/twin, role: hub, layer: moyeu, visibility: public, lifecycle: active }",
+      "  - { repository: libre-ai/twin, role: hub, layer: moyeu, visibility: public, lifecycle: active }",
     ].join("\n");
     expect(() => buildIndex(yaml)).toThrow("duplicate repository entry libre-ai/twin");
-  });
-
-  test("rejects an exposure state outside the declared scale", () => {
-    const yaml = [
-      "schema_version: v",
-      "updated_on: 2026-07-24",
-      "exposure_scale: [idea]",
-      "repositories:",
-      "  - { repository: libre-ai/x, role: hub, layer: moyeu, visibility: public, lifecycle: active, exposure: legendary }",
-    ].join("\n");
-    expect(() => buildIndex(yaml)).toThrow('exposure "legendary" is not on the exposure_scale');
   });
 
   test("rejects a visibility outside public/private", () => {
     const yaml = [
       "schema_version: v",
       "updated_on: 2026-07-24",
-      "exposure_scale: [idea]",
       "repositories:",
-      "  - { repository: libre-ai/x, role: hub, layer: moyeu, visibility: internal, lifecycle: active, exposure: idea }",
+      "  - { repository: libre-ai/x, role: hub, layer: moyeu, visibility: internal, lifecycle: active }",
     ].join("\n");
     expect(() => buildIndex(yaml)).toThrow('expected "public" or "private"');
   });

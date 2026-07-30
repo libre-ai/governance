@@ -1,14 +1,8 @@
 {
-  "schema_version": "libre-ai.repository-index.v1",
+  "schema_version": "libre-ai.repository-index.v2",
   "source": "ecosystem/repositories.v1.yaml",
-  "source_schema_version": "libre-ai.repositories.v1",
-  "source_updated_on": "2026-07-29",
-  "exposure_scale": [
-    "idea",
-    "spec-published",
-    "usable-verifiable",
-    "proven"
-  ],
+  "source_schema_version": "libre-ai.repositories.v2",
+  "source_updated_on": "2026-07-30",
   "repositories": [
     {
       "repository": "libre-ai/.github",
@@ -16,8 +10,7 @@
       "layer": "transverse",
       "role": "org-profile",
       "visibility": "public",
-      "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "lifecycle": "active"
     },
     {
       "repository": "libre-ai/ai-practices",
@@ -26,9 +19,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://www.datacamp.com",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/practices"
       ]
@@ -40,7 +31,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/auth",
@@ -49,7 +40,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/authz-biscuit",
@@ -58,7 +49,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/boussole-politique",
@@ -67,8 +58,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/boussole"
       ]
@@ -80,8 +70,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-reserved",
-      "exposure": "idea",
-      "criteria_status": "owner-ratified",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/carriere"
       ]
@@ -93,7 +82,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/collab-core",
@@ -102,7 +91,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/collab-relay",
@@ -111,7 +100,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/contracts",
@@ -120,7 +109,7 @@
       "role": "authority",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/data",
@@ -129,7 +118,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/db-inspect",
@@ -138,7 +127,7 @@
       "role": "standalone-tool",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/ecosystem-engine",
@@ -147,7 +136,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/envelope",
@@ -156,7 +145,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/feed-radar",
@@ -165,9 +154,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://www.inoreader.com",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/radar"
       ]
@@ -179,7 +166,7 @@
       "role": "authority",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/knowledge",
@@ -188,7 +175,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/libre-ai",
@@ -197,7 +184,7 @@
       "role": "hub",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "ecosystem/cards/libre-ai.project.v1.yaml"
     },
     {
       "repository": "libre-ai/missions",
@@ -206,9 +193,7 @@
       "role": "reserved-application-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-3",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://github.com/multica-ai/multica",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/missions"
       ]
@@ -220,9 +205,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://github.com/siyuan-note/siyuan",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/notebook",
         "crates/notebook-core"
@@ -235,7 +218,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/policy",
@@ -244,8 +227,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/model-policy",
         "crates/policy-core"
@@ -258,7 +240,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/rgpd-kit",
@@ -267,7 +249,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/sdk-rs",
@@ -276,7 +258,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/sdk-ts",
@@ -285,7 +267,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/sessions",
@@ -294,9 +276,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://miro.com",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/sessions"
       ]
@@ -308,9 +288,7 @@
       "role": "reserved-product-home",
       "visibility": "public",
       "lifecycle": "frozen-until-wave-4",
-      "exposure": "spec-published",
-      "criteria_status": "owner-ratified",
-      "benchmark_url": "https://www.notion.so",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/specifications"
       ]
@@ -322,7 +300,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/testing",
@@ -331,7 +309,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/ui",
@@ -340,7 +318,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/web-platform",
@@ -349,7 +327,7 @@
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "usable-verifiable"
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/website",
@@ -358,7 +336,7 @@
       "role": "active-application",
       "visibility": "public",
       "lifecycle": "active",
-      "exposure": "spec-published",
+      "card": "project.v1.yaml",
       "canonical_paths": [
         "docs/apps/website.md"
       ]

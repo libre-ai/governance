@@ -63,3 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-migration-drift.ts
+      - name: Every repository card is valid and its README status matches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-fleet-presentation.ts
