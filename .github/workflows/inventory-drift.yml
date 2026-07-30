@@ -67,3 +67,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-fleet-presentation.ts
+      - name: Every hub path has a destination, replacement or eviction
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-hub-orphans.ts
