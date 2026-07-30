@@ -10,6 +10,15 @@ on:
         description: governance ref providing tools/licensing and tools/quality
         required: true
         type: string
+      dco_boundary:
+        description: >-
+          Graft DCO bound (design §5.1): commits reachable from this sha are
+          carried history — already reviewed where it was written — and are
+          exempt from the push-range DCO check; everything after the bound
+          stays verified. Leave empty for repositories without a graft.
+        required: false
+        type: string
+        default: 
 
 permissions:
   contents: read
@@ -42,6 +51,7 @@ jobs:
         env:
           BEFORE_SHA: ${{ github.event.before }}
           AFTER_SHA: ${{ github.event.after }}
+          DCO_EXCLUDE: ${{ inputs.dco_boundary != '' && format('^{0}', inputs.dco_boundary) || '' }}
         run: |
           # Anticipatory WP-G2-Q01 change: the pull_request step above cannot
           # see the forge-generated integration commit because it does not
@@ -83,7 +93,7 @@ jobs:
                 missing=1
               fi
             fi
-          done < <(git rev-list "$BEFORE_SHA..$AFTER_SHA")
+          done < <(git rev-list "$BEFORE_SHA..$AFTER_SHA" $DCO_EXCLUDE)
           exit "$missing"
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
