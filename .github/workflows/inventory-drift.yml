@@ -59,3 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-fleet-pins.ts
+      - name: Hub and destination copies stay identical during the pending window
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-migration-drift.ts

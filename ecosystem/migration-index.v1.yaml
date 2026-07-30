@@ -22,6 +22,9 @@
 #       contenu migré — immuable une fois écrit>
 #     verified_at_commit: <dernier commit de destination dont les gates sont
 #       mesurés verts — avance avec les preuves (K4 AUTH-R2-01)>
+#     destination_path: <chemin du contenu à destination quand il diffère du
+#       hub_path — « . » pour un renommage à la racine ; absent = identique.
+#       Mapping MACHINE du gate de dérive hub↔destination (K4 AUTH-05)>
 #     hub_removal_commit: <SHA du commit du hub qui retire le chemin,
 #       ou `pending` — état intermédiaire : contenu porté et vert à
 #       destination, chemin pas encore retiré du hub (la règle dure de
@@ -212,24 +215,28 @@ entries:
 
   # γ 3.4 — wave-A Bun satellites (each verified green in its own CI).
   - hub_path: packages/contracts/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/sdk-ts
     destination_commit: c1c90491207bfdf24f78b91c7900596c9f05cbec
     verified_at_commit: da9d510cce0c28283837bfb6c9efe82641cbe083
     hub_removal_commit: pending
     notes: package renamed to the repository root (a pinned git-dep installs the root); vendored schemas re-proven byte-exact against the contracts authority pin
   - hub_path: packages/envelope/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/envelope
     destination_commit: 5571b6e5e75086a204798cda267d84d6c1ef5a1f
     verified_at_commit: ad0e1a6d014ee531dd1938ed04c6b678c605dc9c
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/web-platform/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/web-platform
     destination_commit: 9ee1c02fbe5fd52e0570335ef15b7b63766a7c03
     verified_at_commit: a0754b69b4205e31a0c560f9729bd8d2d8556357
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/testing/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/testing
     destination_commit: 2390b8cb9a30298fe3020ad8acf92fd15d3248f8
     verified_at_commit: 28a317462660898f069974009ab4a1ff99bb9dac
@@ -237,6 +244,7 @@ entries:
     notes: renamed to the repository root
 
   - hub_path: crates/contract-types/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/sdk-rs
     destination_commit: c0e64450a721a6178eea9aabf97e1a241ae5e91f
     verified_at_commit: 02214613c5cb0549d0618484d9b479c4cfb3c7ce
@@ -245,36 +253,42 @@ entries:
 
   # γ 3.4 — independent satellites, each born green FIRST TRY (CI 2/2).
   - hub_path: packages/provenance/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/provenance
     destination_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
     verified_at_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/knowledge/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/knowledge
     destination_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
     verified_at_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
     hub_removal_commit: pending
     notes: renamed to the repository root; canonical ecosystem schemas resolve from the pinned governance git-dep
   - hub_path: packages/rgpd-kit/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/rgpd-kit
     destination_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
     verified_at_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/classification/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/classification
     destination_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
     verified_at_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/collab-core/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/collab-core
     destination_commit: c9b10b03321eeebace7ec12b78563df277dae630
     verified_at_commit: c9b10b03321eeebace7ec12b78563df277dae630
     hub_removal_commit: pending
     notes: renamed to the repository root
   - hub_path: packages/collab-relay/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/collab-relay
     destination_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
     verified_at_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
@@ -286,18 +300,21 @@ entries:
   # next commit — nineteen green, no red masked (the destination/verified
   # split states exactly which is which).
   - hub_path: packages/auth-web/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/auth
     destination_commit: d23fcb7edc6108429247fd9b52f9fdd3d62d07fe
     verified_at_commit: bcbc011365fc0395961d073a73e7bd3f74eef584
     hub_removal_commit: pending
     notes: renamed to the repository root; internal bricks consumed as peerDependencies after the minimally-reproduced bun same-pin dedupe limitation
   - hub_path: packages/data/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/data
     destination_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
     verified_at_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
     hub_removal_commit: pending
     notes: renamed to the repository root; retention contract resolves from the pinned contracts authority
   - hub_path: packages/ui/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/ui
     destination_commit: 65455c3c2fa23c4ecad1c79a0c8d821fbcd2277d
     verified_at_commit: 46fa2956fcc86731f40772bcd3dff129c3792c46
@@ -310,24 +327,28 @@ entries:
     hub_removal_commit: pending
     notes: history-only ancestry carried by the ui repository (§5.1)
   - hub_path: crates/authz-biscuit/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/authz-biscuit
     destination_commit: 73725a69f11abb4b5811e5bbb0c26f3705271412
     verified_at_commit: 73725a69f11abb4b5811e5bbb0c26f3705271412
     hub_removal_commit: pending
     notes: authz datalog policies vendored under a byte-exact drift gate (committed vendoring is the only correct form for include_str! sources consumed by git-dep)
   - hub_path: crates/ecosystem-engine/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/ecosystem-engine
     destination_commit: f87ff5343764f6a4f1663b645c10b1f7beb399fe
     verified_at_commit: a55f57fead0b5e1a3f951c3cb609a01e58aae9f0
     hub_removal_commit: pending
     notes: authz/wit/ecosystem artefacts vendored against two authority pins; knowledge objects resolve from the pinned governance git-dep
   - hub_path: crates/artifact/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/artifacts
     destination_commit: a285bc607be6c4f5a1d0ce546a44e9d5261781ee
     verified_at_commit: a285bc607be6c4f5a1d0ce546a44e9d5261781ee
     hub_removal_commit: pending
     notes: first intra-org Cargo git-dep — libre-ai-contract-types via github.com/libre-ai/sdk-rs under [sources.allow-org]
   - hub_path: crates/agent-orchestrator/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/orchestrator
     destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
     verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
@@ -361,6 +382,7 @@ entries:
     verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
     hub_removal_commit: pending
   - hub_path: distribution/templates/
+    destination_path: . # renamed to the repository root
     destination: libre-ai/starter
     destination_commit: 0462e0a16d50c8db1702bf2f6ac2dcd7db8988dd
     verified_at_commit: 0462e0a16d50c8db1702bf2f6ac2dcd7db8988dd
