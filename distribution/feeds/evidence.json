@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-29-jalon-phase-3-4-satellites-les-dix-neuf-repos-de-code-partag",
+      "date": "2026-07-29",
+      "type": "gate",
+      "title": "Jalon γ — phase 3.4 satellites : les dix-neuf repos de code partagé nés verts",
+      "status": "CLOS",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PRs #279, #280, #281, #282, #283, `ecosystem/migration-index.v1.yaml` (49 entrées), `governance/ecosystem/fleet-pins.v1.yaml`"
+    },
+    {
       "id": "gate-2026-07-29-jalon-phase-3-3-autorites-governance-contracts-nes-verts-ind",
       "date": "2026-07-29",
       "type": "gate",

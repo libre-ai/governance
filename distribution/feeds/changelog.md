@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-29 — [gate] Jalon γ — phase 3.4 satellites : les dix-neuf repos de code partagé nés verts
+
+- Statut : CLOS
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PRs #279, #280, #281, #282, #283, `ecosystem/migration-index.v1.yaml` (49 entrées), `governance/ecosystem/fleet-pins.v1.yaml`
+
 ## 2026-07-29 — [gate] Jalon γ — phase 3.3 autorités : governance + contracts nés verts, index de migration ouvert
 
 - Statut : CLOS
