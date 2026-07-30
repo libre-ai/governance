@@ -12,7 +12,7 @@ repositories:
     role: hub
     layer: moyeu
     visibility: public
-    lifecycle: active
+    lifecycle: archived # acte propriétaire du 2026-07-30 (gate-acceptance-log ligne 3.8)
     owns:
       - contracts, specifications, doctrine (invariants register)
       - shared foundations and high-churn bricks (layers 3-4 workshop)

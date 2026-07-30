@@ -183,7 +183,7 @@
       "layer": "moyeu",
       "role": "hub",
       "visibility": "public",
-      "lifecycle": "active",
+      "lifecycle": "archived",
       "card": "ecosystem/cards/libre-ai.project.v1.yaml"
     },
     {
