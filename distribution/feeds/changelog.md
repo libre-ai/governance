@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-30 — [gate] Jalon γ — phase 3.8 archivage du hub : acte propriétaire final
+
+- Statut : PRONONCÉ SOUS GO PROPRIÉTAIRE DONNÉ PAR AVANCE
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PR hub #293, `ecosystem/check-hub-orphans.ts`, rapport final, cette ligne
+
 ## 2026-07-30 — [gate] Jalon γ — phase 3.7 cohérence : le hub atteint sa forme d'archive, gate d'orphelins vert, rapport final publié
 
 - Statut : CLOS

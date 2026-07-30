@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-30-jalon-phase-3-8-archivage-du-hub-acte-proprietaire-final",
+      "date": "2026-07-30",
+      "type": "gate",
+      "title": "Jalon γ — phase 3.8 archivage du hub : acte propriétaire final",
+      "status": "PRONONCÉ SOUS GO PROPRIÉTAIRE DONNÉ PAR AVANCE",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PR hub #293, `ecosystem/check-hub-orphans.ts`, rapport final, cette ligne"
+    },
+    {
       "id": "gate-2026-07-30-jalon-phase-3-7-coherence-le-hub-atteint-sa-forme-d-archive",
       "date": "2026-07-30",
       "type": "gate",
