@@ -54,7 +54,7 @@ describe("compareTrees", () => {
     expect(r2.failures).toEqual([]);
   });
 
-  test("the adaptation list is the reviewed 34 plus the two hub gates the γ 3.7 dismantling adjusts (37)", () => {
-    expect(ADAPTED_FILES.size).toBe(37);
+  test("the adaptation list is the reviewed 34 plus the two hub gates the γ 3.7 dismantling adjusts plus the re-hosted toolchain policy (38)", () => {
+    expect(ADAPTED_FILES.size).toBe(38);
   });
 });
