@@ -123,16 +123,19 @@ export type ProgressReport =
 export const NOT_COMPUTABLE_DISPLAY = "Avancement non calculable — périmètre à clarifier";
 
 /**
- * Rounded percent with two hard guards: never « 100 % » while anything is
- * still pending, never « 0 % » while anything is accepted (design §7.5 —
- * planned capability is never presented as available, and real progress is
- * never erased by rounding).
+ * Exact percent to one decimal place — the owner arbitration of 2026-07-30
+ * dissolves the floor/round question (open since γ 3.2): the display shows
+ * the measured value (62,5 %), never an optimistic or pessimistic rounding.
+ * The two hard guards remain: never « 100 % » while anything is still
+ * pending, never « 0 % » while anything is accepted (design §7.5). French
+ * decimal comma, formatted by hand so the output is locale-independent.
  */
 function displayPercent(overall: number): string {
-  let percent = Math.round(overall * 100);
-  if (overall < 1) percent = Math.min(percent, 99);
-  if (overall > 0) percent = Math.max(percent, 1);
-  return `${percent} % du périmètre actuellement déclaré`;
+  let value = Math.round(overall * 1000) / 10;
+  if (overall < 1) value = Math.min(value, 99.9);
+  if (overall > 0) value = Math.max(value, 0.1);
+  const text = Number.isInteger(value) ? String(value) : String(value).replace(".", ",");
+  return `${text} % du périmètre actuellement déclaré`;
 }
 
 /**

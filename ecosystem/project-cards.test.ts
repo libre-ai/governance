@@ -268,11 +268,31 @@ describe("aggregateProgress", () => {
     expect(report.computable).toBe(true);
     if (!report.computable) throw new Error("unreachable");
     expect(report.overall_ratio).toBeLessThan(1);
-    expect(report.display).toBe("99 % du périmètre actuellement déclaré");
+    expect(report.display).toBe("99,5 % du périmètre actuellement déclaré");
+  });
+
+  test("displays the measured half exactly — owner arbitration of 2026-07-30", () => {
+    // 5 accepted over 8 applicable = 62,5 %: the historic floor/round case.
+    const card = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (card.phases as any)[0].exit_criteria = [
+      {
+        id: "five",
+        text: "Cinq points de poids sont acceptés avec preuve datée.",
+        weight: 5,
+        status: "accepted",
+        evidence: { date: "2026-07-29", reference: "PR #999" },
+      },
+      { id: "three", text: "Trois points restent ouverts.", weight: 3, status: "pending" },
+    ];
+    const report = aggregateProgress(card);
+    expect(report.computable).toBe(true);
+    if (!report.computable) throw new Error("unreachable");
+    expect(report.display).toBe("62,5 % du périmètre actuellement déclaré");
   });
 
   test("never displays 0 % while any criterion is accepted", () => {
-    // 1 accepted over 301 applicable: Math.round would say 0 %.
+    // 1 accepted over 301 applicable: an integer floor would say 0 %.
     const card = minimalCard();
     // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
     (card.phases as any)[0].exit_criteria = [
@@ -291,7 +311,7 @@ describe("aggregateProgress", () => {
     expect(report.computable).toBe(true);
     if (!report.computable) throw new Error("unreachable");
     expect(report.overall_ratio).toBeGreaterThan(0);
-    expect(report.display).toBe("1 % du périmètre actuellement déclaré");
+    expect(report.display).toBe("0,3 % du périmètre actuellement déclaré");
   });
 
   test("throws on a card the schema rejects instead of aggregating it", () => {

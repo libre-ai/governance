@@ -52,10 +52,13 @@ constat est mesuré à la date du rapport ; les commandes sont rejouables.
 
 ## Reliquats ouverts, nommés (aucun silencieux)
 
-- **Arbitrage propriétaire floor/round** (ouvert depuis γ 3.2) : la carte
-  du hub affiche 88 % pour 87,5 % mesurés (Math.round documenté).
-- **Amendement LEXICON §2** (couches manquantes) : à signature
-  propriétaire, jamais auto-prononcé.
+- **Arbitrage floor/round — TRANCHÉ (propriétaire, 2026-07-30)** :
+  l'affichage montre la valeur mesurée exacte à une décimale (« 62,5 % »),
+  gardes conservés ; l'arbitrage est dissous, plus aucun arrondi
+  directionnel (`displayPercent`, test du cas historique inclus).
+- **Amendement LEXICON §2 (couches manquantes)** : produit et signé par
+  merge sous le GO propriétaire explicite du 2026-07-30 (§9 du LEXICON —
+  six briques cartographiées, quatre couches déclarées, un outil nommé).
 - **CL36-03** : le tableau généré du README d'organisation n'a pas encore
   son gate de dérive dédié (seule surface générée non gardée) — suivi
   routé depuis la clôture 3.6.
@@ -69,8 +72,10 @@ constat est mesuré à la date du rapport ; les commandes sont rejouables.
   prescription vivante de stack abandonnée — mais rien ne l'empêche
   machinalement à l'avenir. Ajouter une famille de motifs est une décision
   de conception de gate sur surface doctrinale (≈15 exclusions de citeurs
-  légitimes, contrainte anti-motifs-inertes) : revue role-separated et
-  jalon propriétaire requis, jamais une édition mécanique.
+  légitimes, contrainte anti-motifs-inertes). **TRANCHÉ (propriétaire,
+  2026-07-30) : statu quo — s'appuyer sur les revues**, le balayage
+  exhaustif ayant montré zéro occurrence vivante ; ré-ouvrable si un cas
+  réel apparaît.
 - **Retraits `pending` restants** : les entrées d'archive à double
   présence volontaire (registres, chaîne minimale, toolchain) restent
   `pending` par construction jusqu'à l'archivage ; le gate d'orphelins
