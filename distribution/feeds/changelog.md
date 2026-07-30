@@ -10,7 +10,7 @@ des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-
 
 - Statut : CLOS
 - Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
-- Référence : PRs hub #289/#291 (merges ba3761b4, 42dffb4d), governance @a3ee5826/@c1a3ac33/@d63daef0, `ecosystem/check-hub-orphans.ts`, `docs/reports/2026-07-30-general-activation-final-report.md`
+- Référence : PRs hub #289/#291 (merges ba3761b4, 42dffb473c), governance @a3ee5826/@c1a3ac33/@d63daef0, `ecosystem/check-hub-orphans.ts`, `docs/reports/2026-07-30-general-activation-final-report.md`
 
 ## 2026-07-29 — [gate] Jalon γ — phase 3.4 satellites : les dix-neuf repos de code partagé nés verts
 
