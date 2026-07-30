@@ -54,7 +54,7 @@ describe("compareTrees", () => {
     expect(r2.failures).toEqual([]);
   });
 
-  test("the adaptation list is the reviewed 32 plus the two the hardened gate itself caught (34, no phantoms)", () => {
-    expect(ADAPTED_FILES.size).toBe(34);
+  test("the adaptation list is the reviewed 34 plus the two hub gates the γ 3.7 dismantling adjusts (36)", () => {
+    expect(ADAPTED_FILES.size).toBe(36);
   });
 });

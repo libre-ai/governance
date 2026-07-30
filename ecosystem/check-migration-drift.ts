@@ -12,6 +12,11 @@ interface Entry {
  * root-path readers redirected to pinned git-deps or vendored copies.
  */
 export const ADAPTED_FILES: ReadonlySet<string> = new Set([
+  // governance — hub-side dismantling adjustments (γ 3.7, design §5.4.2):
+  // the hub copies of these two gates shrink with the hub tree while the
+  // canonical copies here keep the full fleet shape.
+  "libre-ai/governance:tools/quality/check-bun-manifests.ts",
+  "libre-ai/governance:tools/quality/check-retired-names.ts",
   // sdk-ts — authority read through the pinned contracts git-dep
   "libre-ai/sdk-ts:scripts/generate-types.ts",
   "libre-ai/sdk-ts:scripts/sync-schemas.ts",
@@ -187,13 +192,31 @@ if (import.meta.main) {
     bootstrap += result.excludedBootstrap;
     failures.push(...result.failures);
   }
-  // Anti-phantom control (K4 DRIFT-R2-01): a listed adaptation that matches
-  // no hub path is an exception without an object — it would silently
-  // exclude a future file nobody decided to exclude.
+  // Anti-phantom control (K4 DRIFT-R2-01, amended for the removal waves of
+  // γ 3.7): a listed adaptation not seen on the hub side is still alive if
+  // the adapted file exists at its destination — the hub source left with
+  // its removal wave. It is a phantom only when it exists NOWHERE.
   if (seenAdaptations < ADAPTED_FILES.size) {
-    failures.push(
-      `${ADAPTED_FILES.size - seenAdaptations} listed adaptation(s) match no pending hub path — remove the phantom entries`,
-    );
+    const seenKeys = new Set<string>();
+    for (const [path] of hubTree) {
+      for (const entry of index.entries) {
+        if (!path.startsWith(entry.hub_path)) continue;
+        const rest = path.slice(entry.hub_path.length);
+        const destPath = entry.destination_path === "." ? rest : path;
+        seenKeys.add(`${entry.destination}:${destPath}`);
+      }
+    }
+    for (const key of ADAPTED_FILES) {
+      if (seenKeys.has(key)) continue;
+      const colon = key.indexOf(":");
+      const repo = key.slice(0, colon);
+      const destPath = key.slice(colon + 1);
+      if (!destTrees.has(repo)) destTrees.set(repo, treeOf(repo, "main"));
+      if (destTrees.get(repo)?.has(destPath)) continue;
+      failures.push(
+        `adaptation ${key} matches no hub path and is absent at destination — remove the phantom entry`,
+      );
+    }
   }
   if (failures.length > 0) {
     for (const failure of failures) console.error(`DRIFT: ${failure}`);
