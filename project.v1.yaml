@@ -1,0 +1,49 @@
+# Fiche d'état du projet — autorité de l'état depuis ADR-0020 (design §6.2).
+# La section statut du README est générée depuis cette fiche (sentinelles).
+schema_version: libre-ai.project.v1
+project: governance
+repository: libre-ai/governance
+kind: authority
+layer: transverse
+statement:
+  for: "les projets de la constellation Libre AI"
+  who_faces: "le coût et la dérive de machineries recopiées d'un repo à l'autre"
+  enables: "s'appuyer sur une doctrine et des gates uniques au lieu de règles recopiées"
+  producing:
+    - "un gabarit de flotte consommé par SHA et des gates qui surveillent toute la constellation"
+  without_depending_on:
+    - "aucun service tiers, aucune copie non vérifiée — consommation épinglée et gates de dérive"
+summary: "Autorité de doctrine : décisions, invariants, index d'écosystème, schéma de fiches, outillage de flotte."
+current_situation: >-
+  Née verte en γ 3.3 (375 commits d'histoire filtrée), autorité des décisions et de l'index ; ses gates de flotte surveillent inventaire, pins et dérive de migration en continu.
+scope:
+  - "Autorité de doctrine : décisions, invariants, index d'écosystème, schéma de fiches, outillage de flotte."
+non_goals:
+  - "aucune seconde implémentation durable de ce domaine ailleurs dans la constellation"
+dependencies:
+  - on: libre-ai/governance
+    why: "gabarit de flotte et gates de qualité"
+    pinned: "épinglée par SHA (ou release pour les outils) là où elle est consommée"
+maturity: usable
+confidence: medium
+exposure: usable-verifiable
+freshness:
+  last_verified_on: "2026-07-30"
+scope_stability: stable
+benchmark:
+  none: "n/a (governance authority, no external parity target)"
+phases:
+  - id: service
+    title: En service dans la constellation
+    exit_criteria:
+      - id: consumed-pinned
+        text: "Le gabarit de flotte (workflows réutilisables + outillage qualité) est consommé épinglé par les 30 repos de code de la constellation, les gates de flotte (inventaire, pins, dérive de migration) tournent en service continu."
+        weight: 1
+        status: accepted
+        evidence:
+          date: "2026-07-29"
+          reference: "gate-acceptance-log 2026-07-29 (ligne 3.3), PR hub #277"
+      - id: compat-policy
+        text: "L'API est couverte par une politique de compatibilité déclarée et un versionnage de rupture outillé."
+        weight: 1
+        status: pending
