@@ -195,3 +195,40 @@ Porté par la pull request de l'ADR-0020, même procédure que la signature de c
 
 `agent-board` → `missions` : la carte rattrape l'arbitrage propriétaire du 2026-07-23 (ADR-0008 amendé) — le repo GitHub et l'inventaire étaient déjà alignés, c'est la documentation qui avait dérivé. `website` : sortie de la liste §1.2 des noms retirés, régularisée par ADR-0020 §2.4.
 
+## 9. Amendement du 2026-07-30 — carte des couches complétée (reliquat γ 3.4)
+
+Amendement produit selon la procédure de ce document (production → revue K4
+role-separated → merge = signature), sous le GO propriétaire explicite du
+2026-07-30. Il régularise la carte §2 sur ce qui est **déjà en service vert**
+(inventaire topologique v2, fiches d'état) — rien n'est inventé, rien ne
+change de nom.
+
+### 9.1 Six briques nées satellites en γ 3.4, absentes de la carte
+
+| Brique         | Repo satellite           | Package                    | Couche   |
+| -------------- | ------------------------ | -------------------------- | -------- |
+| `testing`      | `libre-ai/testing`       | `@libre-ai/testing`        | couche 4 |
+| `rgpd-kit`     | `libre-ai/rgpd-kit`      | `@libre-ai/rgpd-kit`       | couche 4 |
+| `classification` | `libre-ai/classification` | `@libre-ai/classification` | couche 4 |
+| `collab-core`  | `libre-ai/collab-core`   | `@libre-ai/collab-core`    | couche 4 |
+| `collab-relay` | `libre-ai/collab-relay`  | `@libre-ai/collab-relay`   | couche 4 |
+| `data`         | `libre-ai/data`          | `@libre-ai/data`           | couche 4 |
+
+### 9.2 Couches des quatre briques du §2.5 (nommées sans couche)
+
+| Brique             | Couche     |
+| ------------------ | ---------- |
+| `knowledge`        | couche 4   |
+| `web-platform`     | couche 4   |
+| `authz-biscuit`    | couche 3   |
+| `ecosystem-engine` | transverse |
+
+### 9.3 Outil autonome, nommé pour exhaustivité
+
+`db-inspect` (`libre-ai/db-inspect`, transverse) — outil CI fail-closed
+antérieur à l'activation générale, consommé épinglé par release ; hors
+famille brique, listé pour que la carte n'ait aucun angle mort.
+
+Les briques « à naître » du §2 (proof, memory, harness, mcp-server, corpus,
+docs) restent à naître : leurs noms sont réservés par cette carte, aucun
+repo n'existe, rien ne se crée sans arrêt dur propriétaire.
