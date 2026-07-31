@@ -1,3 +1,16 @@
+# Base dependency policy of the constellation, inherited by every Rust
+# repository; a Rust repository adds `[sources.allow-org] github = ["libre-ai"]`
+# to it (ADR-0020 §2.5), which is what bounds git-dep trust to the
+# organisation.
+#
+# NOT enforced here, and cannot be: this repository has no Cargo workspace
+# (AGENTS.md, Stack), so `cargo deny check` exits 1 on a missing Cargo.toml.
+# The gate that executes this policy is published as the reusable workflow
+# `.github/workflows/reusable-dependency-policy.yml` and runs in the
+# repositories that own a Cargo graph. Editing the allowlist below changes
+# nothing on its own — it reaches a graph only through a repository that
+# inherits it.
+
 [graph]
 all-features = true
 
