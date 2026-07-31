@@ -47,4 +47,15 @@ describe("renderOrgSection", () => {
     // Never the lifecycle alone: the hub row is the dismantling sentence.
     expect(section).not.toContain("| hub |");
   });
+
+  test("states the archived hub in French, never the raw lifecycle token", () => {
+    const migration = summarizeMigration(
+      "hub_state: archived\nentries:\n  - hub_removal_commit: pending\n  - hub_removal_commit: abc123\n",
+    );
+    const section = renderOrgSection(status, migration);
+    expect(section).toContain("est archivé");
+    // The public landing page is French prose: an untranslated enum leaks the
+    // machine vocabulary into the shop window.
+    expect(section).not.toContain("est archived");
+  });
 });

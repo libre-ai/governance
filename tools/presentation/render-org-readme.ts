@@ -21,6 +21,11 @@ const LAYER_LABEL: Record<string, string> = {
   moyeu: "Moyeu",
 };
 
+const HUB_STATE_LABEL: Record<string, string> = {
+  "dismantling-in-progress": "en démantèlement",
+  archived: "archivé",
+};
+
 export interface MigrationSummary {
   readonly total: number;
   readonly removed: number;
@@ -57,11 +62,14 @@ export function renderOrgSection(status: FleetStatus, migration: MigrationSummar
       `| [${row.project}](https://github.com/${row.repository}) | ${row.summary} | ${row.display} | ${row.maturity} | ${row.last_verified_on} |`,
     );
   }
+  // The landing page is French prose: every lifecycle the index can carry needs
+  // its label here, or the raw machine token leaks into the shop window.
+  const archived = migration.hub_state === "archived";
   lines.push(
     "",
-    "### Moyeu en démantèlement",
+    archived ? "### Moyeu archivé" : "### Moyeu en démantèlement",
     "",
-    `Le hub historique [libre-ai/libre-ai](https://github.com/libre-ai/libre-ai) est ${migration.hub_state === "dismantling-in-progress" ? "en démantèlement" : migration.hub_state} : ${migration.removed}/${migration.total} chemins tracés à l'index de migration ont quitté le hub (double présence tant que la preuve verte n'est pas faite à destination — jamais d'absence).`,
+    `Le hub historique [libre-ai/libre-ai](https://github.com/libre-ai/libre-ai) est ${HUB_STATE_LABEL[migration.hub_state] ?? migration.hub_state} : ${migration.removed}/${migration.total} chemins tracés à l'index de migration ont quitté le hub (double présence tant que la preuve verte n'est pas faite à destination — jamais d'absence).`,
     "",
     STATUS_SECTION_END,
   );
