@@ -21,6 +21,19 @@ const LAYER_LABEL: Record<string, string> = {
   moyeu: "Moyeu",
 };
 
+/**
+ * Heading and sentence for each lifecycle the migration index can carry.
+ *
+ * Both used to be decided separately — a ternary for the heading, a lookup for
+ * the sentence — so a state present in one and absent from the other rendered
+ * the raw machine token under the wrong title. Keeping them in one entry makes
+ * that shape unrepresentable.
+ */
+const HUB_STATE_COPY: Record<string, { readonly heading: string; readonly label: string }> = {
+  "dismantling-in-progress": { heading: "Moyeu en démantèlement", label: "en démantèlement" },
+  archived: { heading: "Moyeu archivé", label: "archivé" },
+};
+
 export interface MigrationSummary {
   readonly total: number;
   readonly removed: number;
@@ -57,11 +70,20 @@ export function renderOrgSection(status: FleetStatus, migration: MigrationSummar
       `| [${row.project}](https://github.com/${row.repository}) | ${row.summary} | ${row.display} | ${row.maturity} | ${row.last_verified_on} |`,
     );
   }
+  // The landing page is French prose. A lifecycle nobody wrote copy for is a
+  // gap in the shop window, not a value to print: fail rather than publish the
+  // machine vocabulary to the public profile.
+  const copy = HUB_STATE_COPY[migration.hub_state];
+  if (copy === undefined) {
+    throw new Error(
+      `hub_state "${migration.hub_state}" has no French copy — add it to HUB_STATE_COPY before it reaches the organization profile`,
+    );
+  }
   lines.push(
     "",
-    "### Moyeu en démantèlement",
+    `### ${copy.heading}`,
     "",
-    `Le hub historique [libre-ai/libre-ai](https://github.com/libre-ai/libre-ai) est ${migration.hub_state === "dismantling-in-progress" ? "en démantèlement" : migration.hub_state} : ${migration.removed}/${migration.total} chemins tracés à l'index de migration ont quitté le hub (double présence tant que la preuve verte n'est pas faite à destination — jamais d'absence).`,
+    `Le hub historique [libre-ai/libre-ai](https://github.com/libre-ai/libre-ai) est ${copy.label} : ${migration.removed}/${migration.total} chemins tracés à l'index de migration ont quitté le hub (double présence tant que la preuve verte n'est pas faite à destination — jamais d'absence).`,
     "",
     STATUS_SECTION_END,
   );
