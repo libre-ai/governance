@@ -59,14 +59,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-fleet-pins.ts
-      # The toolchain source is a fleet value with a single live declaration
-      # (toolchains/bun.json). Checking it per-repository is impossible: each
-      # repository reads that declaration through its PINNED git-dep, so a
-      # stale pin compares a stale workflow to a stale policy and stays green.
-      - name: Every workflow installs the Bun toolchain from the declared source
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bun ecosystem/check-toolchain-source.ts
       - name: Hub and destination copies stay identical during the pending window
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,3 +71,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-hub-orphans.ts
+      # The toolchain source is a fleet value with a single live declaration
+      # (toolchains/bun.json). Checking it per-repository is impossible: each
+      # repository reads that declaration through its PINNED git-dep, so a
+      # stale pin compares a stale workflow to a stale policy and stays green.
+      # Last of the job on purpose: this gate is knowingly red until the
+      # toolchain migration wave lands, and a step that fails early would mask
+      # every gate placed after it for the whole duration of the wave.
+      - name: Every workflow installs the Bun toolchain from the declared source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-toolchain-source.ts
