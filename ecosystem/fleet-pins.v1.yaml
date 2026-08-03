@@ -1,14 +1,40 @@
 # Declared template-pin generations of the fleet (K4 WAVE-A-02 / FINAL-01).
 #
-# Every satellite/authority repository pins the governance gate template
-# twice — the reusable workflows (`uses: libre-ai/governance/...@<sha>`)
-# and the tooling git-dep (`github:libre-ai/governance#<sha>`) — and the
-# two pins must be the SAME sha. `bun ecosystem/check-fleet-pins.ts`
-# (network gate, like inventory-drift) enumerates the observed pins across
-# the organization and fails on any pin absent from this register or on an
-# internally inconsistent repository. A template evolution is: commit in
-# governance → add the new generation here → bump consumers → retire the
-# old generation from this list.
+# Every satellite/authority repository lets a governance revision into its
+# required checks through several surfaces, and they must all carry the SAME
+# sha: each `uses: libre-ai/governance/...@<sha>` in ANY workflow file, the
+# `tooling_ref:` input (the revision reusable-licensing.yml checks governance
+# out at to run its tooling), and the tooling git-dep
+# (`github:libre-ai/governance#<sha>`) in package.json.
+# `bun ecosystem/check-fleet-pins.ts` (network gate, like inventory-drift)
+# enumerates every one of them across the organization and fails on a ref that
+# is not a 40-character sha, on surfaces that disagree, or on a sha absent
+# from this register. A template evolution is: commit in governance → add the
+# new generation here → bump consumers → retire the old generation from this
+# list.
+#
+# PUBLISHING A NEW TEMPLATE (not an evolution of an existing one) follows the
+# same order, and its first two steps cannot be merged into one: the
+# generation sha is the governance commit that carries the template, so it
+# does not exist until that commit is on main.
+#
+#   1. Merge the governance PR publishing `.github/workflows/reusable-*.yml`.
+#      It declares no generation — it cannot yet name its own sha. No gate is
+#      red: no repository observes the new template.
+#   2. Merge a second governance PR adding that sha here. A declared
+#      generation nobody pins is not a failure; the register is only ever read
+#      to answer "is this observed pin declared?".
+#   3. In ONE pull request per consumer, move EVERY pin surface of that
+#      repository to the new sha and add the job consuming the new template.
+#      Partial adoption fails: `pins disagree` names each surface and the
+#      generation it still carries. This is where a `workflow_call` wiring is
+#      proved for the first time — the consumer's own required check runs it.
+#   4. Retire superseded generations here once no repository carries them.
+#
+# Running step 3 before step 2 is the one ordering that turns a gate red:
+# governance's own Inventory drift job reports `pin <sha> is not a declared
+# generation` on its next run (push to main, any pull request, or the Monday
+# cron). Declare, then bump — the order the fleet already acted on in γ 3.4.
 schema_version: libre-ai.fleet-pins.v1
 generations:
   - sha: 9511c4087f284d0242fc4a202b2f1452228c16c3
