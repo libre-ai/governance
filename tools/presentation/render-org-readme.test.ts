@@ -58,4 +58,28 @@ describe("renderOrgSection", () => {
     // machine vocabulary into the shop window.
     expect(section).not.toContain("est archived");
   });
+  test("the heading follows the state, not only the sentence", () => {
+    // A mutation of the heading ternary survived the first version of this
+    // test: it asserted the sentence and never looked at the section title.
+    const archived = summarizeMigration(
+      "hub_state: archived\nentries:\n  - hub_removal_commit: abc123\n",
+    );
+    expect(renderOrgSection(status, archived)).toContain("### Moyeu archivé");
+    expect(renderOrgSection(status, archived)).not.toContain("### Moyeu en démantèlement");
+
+    const open = summarizeMigration(
+      "hub_state: dismantling-in-progress\nentries:\n  - hub_removal_commit: pending\n",
+    );
+    expect(renderOrgSection(status, open)).toContain("### Moyeu en démantèlement");
+    expect(renderOrgSection(status, open)).not.toContain("### Moyeu archivé");
+  });
+
+  test("a lifecycle nobody wrote copy for is refused, never rendered raw", () => {
+    // The previous fallback printed the machine token under the wrong heading:
+    // the same defect the French label closed, moved one state along.
+    const unknown = summarizeMigration(
+      "hub_state: dismantled\nentries:\n  - hub_removal_commit: abc123\n",
+    );
+    expect(() => renderOrgSection(status, unknown)).toThrow(/dismantled/);
+  });
 });
