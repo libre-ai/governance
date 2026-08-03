@@ -36,11 +36,23 @@ constat est mesuré à la date du rapport ; les commandes sont rejouables.
    `statement` complet (for/who_faces/enables/producing/without) ;
    33/33 fiches valides.
 5. **Divergences présentation↔code** : 0 au gate de flotte ; les copies
-   vendorées de contrats restent sous gates byte-exacts par repo ; le
-   gate de dérive de migration asserte les doubles présences restantes
-   (38 adaptations déclarées, contrôle anti-fantôme amendé pour les
-   vagues de retrait : une adaptation est vivante si son fichier existe
-   à destination).
+   vendorées de contrats restent sous gates byte-exacts par repo.
+   **Rectificatif du 2026-08-03.** Ce point affirmait que « le gate de
+   dérive de migration asserte les doubles présences restantes (38
+   adaptations déclarées) ». C'est faux, et ça l'était déjà à la
+   publication. Exécuté, le gate imprimait `0 paths asserted
+byte-identical, 0 listed adaptations` et sortait en 0 : son
+   `SKIP_PREFIXES` couvrait exactement les familles restées des deux
+   côtés, et il lisait la copie de l'index figée à γ 3.3 dans ce dépôt
+   (56 entrées, toutes `pending`) au lieu de l'index d'autorité du hub
+   (88 entrées, 5 `pending`). Neuf fichiers divergent réellement entre
+   l'archive et ce dépôt — tous pour des raisons légitimes, l'archive
+   ayant rétréci avec son arbre — dont cinq n'étaient pas déclarés. Le
+   gate lit désormais l'autorité, refuse de rendre vert un passage qui
+   n'asserte rien tant que la fenêtre est ouverte, et déclare la
+   fenêtre close depuis l'archivage plutôt que de se faire passer pour
+   une vérification. Le retirer ou le réaffecter reste une décision
+   propriétaire.
 6. **Preuves obsolètes** : `freshness.last_verified_on` ∈
    {2026-07-29, 2026-07-30} sur les 33 fiches au jour du rapport ; le
    champ est re-daté à chaque re-vérification et le validateur refuse
