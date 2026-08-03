@@ -36,8 +36,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      # The toolchain resolves from the calling repository's
-      # rust-toolchain.toml, keeping the verdict a function of its commit.
+      # This action installs `stable` — its own default, moving every six
+      # weeks — and nothing here reads the calling repository's
+      # rust-toolchain.toml: rustup honours that file when `cargo` runs in the
+      # working directory, and only if the repository carries one. The
+      # blocking verdict below survives that movement because bans, licences
+      # and sources are read from the committed Cargo.lock and deny.toml, not
+      # produced by the compiler; the pre-flight step states which toolchain
+      # actually ran, so a log never has to be trusted on the point.
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable action
 
       # Both tools are pinned by exact version AND by the sha256 of the release
@@ -66,11 +72,30 @@ jobs:
 
       # A gate that only prints "ok" cannot be distinguished from a gate that
       # checked nothing: state the enforcing binaries and the policy they read.
+      #
+      # The two preconditions are stated here rather than discovered by a
+      # downstream `cat`: a repository without deny.toml has no policy to
+      # enforce, which is a wiring mistake to name as such, not a "No such
+      # file" from a shell. A repository without rust-toolchain.toml runs
+      # whatever `stable` means today — reported, not blocked: the blocking
+      # verdict does not depend on the compiler version, and every Rust
+      # repository of the fleet does not yet pin one.
       - name: State the policy under enforcement
         run: |
           set -euo pipefail
+          if [ ! -f deny.toml ]; then
+            echo "::error::This repository has no deny.toml: there is no dependency policy to enforce. Add one (the base policy lives in libre-ai/governance) before wiring this gate."
+            exit 1
+          fi
           cargo-deny --version
           cargo-audit --version
+          echo "toolchain in force: $(rustc --version)"
+          if [ -f rust-toolchain.toml ]; then
+            echo "toolchain pinned by rust-toolchain.toml:"
+            cat rust-toolchain.toml
+          else
+            echo "::warning::No rust-toolchain.toml in this repository — the toolchain above is whatever 'stable' resolves to today. The blocking verdict is read from Cargo.lock and deny.toml and does not depend on it."
+          fi
           echo "policy file: deny.toml (blocking: bans, licenses, sources)"
           echo "::group::deny.toml as enforced"
           cat deny.toml
