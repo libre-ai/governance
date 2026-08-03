@@ -103,6 +103,65 @@ export interface Comparison {
   readonly failures: readonly string[];
 }
 
+export interface DriftVerdict {
+  readonly ok: boolean;
+  readonly message: string;
+}
+
+/**
+ * Anti-inertness control, plus the honest end state.
+ *
+ * This gate reported success while asserting nothing: its skip list had grown
+ * to cover every family still present on both sides, so "no divergence found"
+ * and "nothing was compared" printed the same line and exited the same way.
+ * A run whose assertion count can reach zero without failing measures only
+ * itself. Declared adaptations and bootstrap exclusions never count — they are
+ * precisely the paths the gate agreed NOT to compare.
+ *
+ * The dual-presence window closes when the hub is archived: what remains on
+ * both sides is the archive's own runtime, frozen forever, while the canonical
+ * copies here go on evolving. Asserting byte-equality against a frozen tree
+ * would then tax every future edit with an adaptation entry and prove nothing.
+ * So a closed window is reported as such — never dressed up as a check.
+ */
+export function driftVerdict(summary: {
+  readonly windowClosed: boolean;
+  readonly asserted: number;
+  readonly adaptations: number;
+  readonly bootstrap: number;
+  readonly failures: readonly string[];
+}): DriftVerdict {
+  if (summary.failures.length > 0) {
+    // Not every failure is a divergence: a phantom adaptation and an unreadable
+    // tree land here too, and saying "diverge during the pending window" when
+    // the window is closed is the same class of untruth this gate is fixing.
+    return {
+      ok: false,
+      message: summary.windowClosed
+        ? "Migration drift gate failed with the dual-presence window closed — read the DRIFT lines above; they are not divergences."
+        : "Hub and destination copies diverge during the pending window.",
+    };
+  }
+  if (summary.windowClosed) {
+    return {
+      ok: true,
+      message:
+        "Migration drift gate: the hub is archived, the dual-presence window is closed — nothing left to assert. Retiring or repurposing this gate is an owner decision on the record.",
+    };
+  }
+  if (summary.asserted === 0) {
+    return {
+      ok: false,
+      message:
+        "Migration drift gate asserted no path while the window is open — every candidate was skipped or adapted, so this run proves nothing. Narrow SKIP_PREFIXES.",
+    };
+  }
+  return {
+    ok: true,
+    message: `Migration drift gate: ${summary.asserted} paths asserted byte-identical, ${summary.adaptations} listed adaptations, ${summary.bootstrap} bootstrap manifests excluded — no divergence`,
+  };
+}
+
 export function compareTrees(
   entry: Entry,
   hubTree: ReadonlyMap<string, string>,
@@ -157,9 +216,28 @@ function treeOf(repo: string, ref: string): Map<string, string> | null {
 }
 
 if (import.meta.main) {
-  const index = Bun.YAML.parse(await Bun.file("ecosystem/migration-index.v1.yaml").text()) as {
+  // The hub owns the migration index — the copy in this repository is the
+  // snapshot that travelled with `ecosystem/` at γ 3.3 and has not advanced
+  // since (56 entries, all `pending`, against the authority's 88 with 5).
+  // Reading it here is what made every entry look in-flight and every path
+  // skippable. The orphan gate already reads the authority live; so does this
+  // one now.
+  const indexRead = Bun.spawnSync([
+    "gh",
+    "api",
+    "repos/libre-ai/libre-ai/contents/ecosystem/migration-index.v1.yaml",
+    "-H",
+    "Accept: application/vnd.github.raw+json",
+  ]);
+  if (indexRead.exitCode !== 0) {
+    console.error("cannot read the hub migration index — network gate needs the API");
+    process.exit(1);
+  }
+  const index = Bun.YAML.parse(new TextDecoder().decode(indexRead.stdout)) as {
+    readonly hub_state?: string;
     readonly entries: readonly Entry[];
   };
+  const windowClosed = index.hub_state === "archived";
   const hubTree = treeOf("libre-ai/libre-ai", "main");
   if (hubTree === null) {
     console.error("cannot read the hub tree — network gate needs the API");
@@ -168,7 +246,6 @@ if (import.meta.main) {
   const destTrees = new Map<string, Map<string, string> | null>();
   const failures: string[] = [];
   let asserted = 0;
-  const adapted = 0;
   let bootstrap = 0;
   let seenAdaptations = 0;
   for (const entry of index.entries) {
@@ -222,12 +299,17 @@ if (import.meta.main) {
       );
     }
   }
-  if (failures.length > 0) {
+  const verdict = driftVerdict({
+    windowClosed,
+    asserted,
+    adaptations: seenAdaptations,
+    bootstrap,
+    failures,
+  });
+  if (!verdict.ok) {
     for (const failure of failures) console.error(`DRIFT: ${failure}`);
-    console.error("Hub and destination copies diverge during the pending window.");
+    console.error(verdict.message);
     process.exit(1);
   }
-  console.log(
-    `Migration drift gate: ${asserted} paths asserted byte-identical, ${seenAdaptations} listed adaptations, ${bootstrap} bootstrap manifests excluded — no divergence`,
-  );
+  console.log(verdict.message);
 }

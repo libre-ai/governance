@@ -36,11 +36,51 @@ constat est mesuré à la date du rapport ; les commandes sont rejouables.
    `statement` complet (for/who_faces/enables/producing/without) ;
    33/33 fiches valides.
 5. **Divergences présentation↔code** : 0 au gate de flotte ; les copies
-   vendorées de contrats restent sous gates byte-exacts par repo ; le
-   gate de dérive de migration asserte les doubles présences restantes
-   (38 adaptations déclarées, contrôle anti-fantôme amendé pour les
-   vagues de retrait : une adaptation est vivante si son fichier existe
-   à destination).
+   vendorées de contrats restent sous gates byte-exacts par repo.
+   **Rectificatif du 2026-08-03.** Ce point affirmait que « le gate de
+   dérive de migration asserte les doubles présences restantes (38
+   adaptations déclarées) ». C'est faux, et ça l'était déjà à la
+   publication. Exécuté, le gate imprimait `0 paths asserted
+byte-identical, 0 listed adaptations` et sortait en 0 : son
+   `SKIP_PREFIXES` couvrait exactement les familles restées des deux
+   côtés, et il lisait la copie de l'index figée à γ 3.3 dans ce dépôt
+   (56 entrées, toutes `pending`) au lieu de l'index d'autorité du hub
+   (88 entrées, 5 `pending`).
+
+   Ce que le gate aurait trouvé, mesuré le 2026-08-03 en forçant la
+   fenêtre ouverte et sans aucun skip — méthode : comparer, pour chaque
+   entrée `pending`, les blobs du hub à ceux de la destination.
+
+   | Catégorie                                                   | Compte |
+   | ----------------------------------------------------------- | ------ |
+   | Fichiers présents des deux côtés avec des octets différents | **12** |
+   | — dont déclarés dans `ADAPTED_FILES`                        | 4      |
+   | — dont registres propres à l'archive (`ecosystem/`)         | 3      |
+   | — dont non déclarés                                         | 5      |
+   | Chemins du hub absents chez `libre-ai/contracts`            | **23** |
+
+   Les 12 divergences sont toutes légitimes, mais pas pour la même
+   raison : trois gates ont rétréci côté archive avec l'arbre qu'ils
+   inspectaient, deux copies d'ici ont au contraire **grandi** de
+   capacités flotte (`check-toolchain.ts` résout aussi depuis la git-dep
+   épinglée, `check-secret-scan.ts` ignore les workspaces imbriqués), et
+   les trois `ecosystem/` sont les registres que l'archive possède en
+   propre — comparer sa carte d'état à la nôtre n'a pas de sens.
+
+   Les 23 absences sont la catégorie la plus nombreuse et l'argument le
+   plus fort de l'arbitrage retenu : `libre-ai/contracts` ne porte que
+   le sous-ensemble d'auto-vérification et **consomme** le reste de
+   l'outillage au lieu de le dupliquer. Rétrécir `SKIP_PREFIXES` les
+   ferait toutes remonter en `missing at destination` et exigerait 23
+   déclarations pour du contenu délibérément non dupliqué.
+
+   Le gate lit désormais l'autorité, refuse de rendre vert un passage
+   qui n'asserte rien tant que la fenêtre est ouverte, et déclare la
+   fenêtre close depuis l'archivage plutôt que de se faire passer pour
+   une vérification. Le retirer ou le réaffecter reste une décision
+   propriétaire — non tranchée ici, et à porter au registre de décision
+   plutôt qu'à la seule ligne de log du chemin vert.
+
 6. **Preuves obsolètes** : `freshness.last_verified_on` ∈
    {2026-07-29, 2026-07-30} sur les 33 fiches au jour du rapport ; le
    champ est re-daté à chaque re-vérification et le validateur refuse
