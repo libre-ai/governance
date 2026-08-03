@@ -107,14 +107,42 @@ jobs:
       # Names every licence resolved across the graph and the crates carrying
       # it, so the log shows what the allowlist actually admitted rather than
       # only that it admitted everything.
+      #
+      # `!cancelled()` for the same reason as the advisory step below: GitHub
+      # skips every remaining step of a job once one has failed. Unguarded,
+      # this mapping is absent from the one run that most needs it — the run
+      # where the allowlist just refused a licence and the reader wants to know
+      # which dependency carried it in.
       - name: Licences resolved across the dependency graph
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           echo "::group::Licence to crate mapping"
           cargo-deny list
           echo "::endgroup::"
 
+      # `!cancelled()`: `continue-on-error` alone only stops this step from
+      # failing the job — GitHub still skips it once an earlier step has
+      # failed, so the advisory report evaporates exactly when a reader of a
+      # red job wants to know whether there is also a live vulnerability.
+      # Measured on `orchestrator`, one branch, three minutes apart: run
+      # 30628367309 (unguarded) reports the blocking step `failure` and this
+      # one `skipped`; run 30628546036 (guarded) reports the same `failure` and
+      # this one `success`.
+      #
+      # SIGNAL ON FINDINGS — settled here, since this template is the fleet's
+      # convergence target and its choice becomes the norm. Findings emit a
+      # `::warning` AND `exit 1`, so the step outcome is `failure` inside a job
+      # that stays green. The deployed variant that warns and exits 0 is
+      # rejected: it makes `continue-on-error` decorative, and leaves
+      # `steps.advisory.outcome == 'success'` whether the scan was clean or
+      # found a live CVE — no job summary, badge or downstream expression can
+      # then tell the two apart. A verdict nothing can read is the same defect
+      # as a policy nothing executes, which is the defect this gate exists to
+      # remove. `id` is declared so consumers can project that outcome.
       - name: Advisory scan (reported, non-blocking)
+        id: advisory
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           set -uo pipefail
