@@ -104,4 +104,19 @@ describe("driftVerdict", () => {
     expect(verdict.ok).toBe(true);
     expect(verdict.message).toContain("25");
   });
+  test("a failure with the window closed is not announced as a divergence", () => {
+    // A phantom adaptation and an unreadable tree both land on the failure
+    // path. Saying "diverge during the pending window" when the window is shut
+    // is the same untruth this gate exists to remove, one branch along.
+    const verdict = driftVerdict({
+      windowClosed: true,
+      asserted: 0,
+      adaptations: 0,
+      bootstrap: 0,
+      failures: ["adaptation x matches no hub path"],
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.message).not.toContain("diverge during the pending window");
+    expect(verdict.message).toContain("window closed");
+  });
 });

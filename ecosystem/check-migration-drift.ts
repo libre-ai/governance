@@ -132,7 +132,15 @@ export function driftVerdict(summary: {
   readonly failures: readonly string[];
 }): DriftVerdict {
   if (summary.failures.length > 0) {
-    return { ok: false, message: "Hub and destination copies diverge during the pending window." };
+    // Not every failure is a divergence: a phantom adaptation and an unreadable
+    // tree land here too, and saying "diverge during the pending window" when
+    // the window is closed is the same class of untruth this gate is fixing.
+    return {
+      ok: false,
+      message: summary.windowClosed
+        ? "Migration drift gate failed with the dual-presence window closed — read the DRIFT lines above; they are not divergences."
+        : "Hub and destination copies diverge during the pending window.",
+    };
   }
   if (summary.windowClosed) {
     return {
