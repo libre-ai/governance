@@ -1,4 +1,11 @@
-export {};
+import { concludeGate, GateReport } from "./gate-report";
+
+// Three independent verifications live here, and the old success line counted
+// only the first: `Objective files verified: 22` said nothing about the
+// forbidden-statement scan or the vision corpus. A glob that stopped matching
+// would have silenced two thirds of this gate without changing its output.
+// Every verification now carries its own assertion, and a scan that inspected
+// no file fails instead of passing quietly.
 
 const requiredFiles = [
   "vision.md",
@@ -32,25 +39,40 @@ const forbiddenStatements = [
   "portage produit par produit",
   "Dioxus actuel devient legacy",
 ];
-const failures: string[] = [];
+const report = new GateReport();
 
 for (const path of requiredFiles) {
-  if (!(await Bun.file(path).exists())) failures.push(`Missing objective file: ${path}`);
+  const exists = await Bun.file(path).exists();
+  report.check(path, exists, exists ? "objective file present" : "missing objective file");
 }
 
 const glob = new Bun.Glob("**/*.{md,json,yaml,yml,toml,ts,tsx}");
+const staleStatements: string[] = [];
+let scanned = 0;
 for await (const path of glob.scan({ cwd: ".", dot: true, onlyFiles: true })) {
   if (path === "tools/quality/check-objectives.ts") continue;
   if ([".git/", ".tools/", "node_modules/", "target/"].some((prefix) => path.startsWith(prefix))) {
     continue;
   }
+  scanned += 1;
   const text = await Bun.file(path).text();
   for (const statement of forbiddenStatements) {
     if (text.toLowerCase().includes(statement.toLowerCase())) {
-      failures.push(`${path}: forbidden stale statement ${JSON.stringify(statement)}`);
+      staleStatements.push(`${path}: forbidden stale statement ${JSON.stringify(statement)}`);
     }
   }
 }
+// A scan that matched nothing proves nothing: the count is part of the verdict,
+// not decoration.
+report.check(
+  "forbidden-statement scan",
+  scanned > 0 && staleStatements.length === 0,
+  scanned === 0
+    ? "the corpus glob matched no file — the scan asserted nothing"
+    : staleStatements.length > 0
+      ? staleStatements.join("; ")
+      : `${scanned} tracked files carry none of the ${forbiddenStatements.length} stale statements`,
+);
 
 // Wave 0 (ADR-0009): vision.md is decomposed by authority; the anchored
 // decisions live across the durable vision and its authority documents.
@@ -71,13 +93,12 @@ for (const decision of [
   "Bun fullstack",
   "Rust spécialisé",
 ]) {
-  if (!visionCorpus.includes(decision))
-    failures.push(`Vision corpus is missing decision: ${decision}`);
+  const anchored = visionCorpus.includes(decision);
+  report.check(
+    `vision corpus: ${decision}`,
+    anchored,
+    anchored ? "anchored in the vision corpus" : "missing from the vision corpus",
+  );
 }
 
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
-}
-
-console.log(`Objective files verified: ${requiredFiles.length}`);
+concludeGate("Objectives", report);
