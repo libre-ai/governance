@@ -262,15 +262,25 @@ if (import.meta.main) {
   }
   findings.push(...scanPersonalIdentifiers(targets));
 
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const report = new GateReport();
+  for (const finding of findings) {
+    const at = finding.line === undefined ? finding.path : `${finding.path}:${finding.line}`;
+    report.check(at, false, finding.reason);
+  }
   if (findings.length > 0) {
-    for (const finding of findings) {
-      const at = finding.line === undefined ? finding.path : `${finding.path}:${finding.line}`;
-      console.error(`${at}: ${finding.reason}`);
-    }
     console.error(
       "Personal-data boundary violated (ADR-0012, I-21). This repository publishes code, not instance data: curated organisation records belong to a private Radar tenant, anything about a natural person stays on-device in Notebook.",
     );
-    process.exit(1);
+  } else {
+    // The scan is the assertion: the tracked-file count is part of the verdict.
+    report.check(
+      "personal-data boundary (ADR-0012, I-21)",
+      paths.length > 0,
+      paths.length > 0
+        ? `${paths.length} tracked files carry no dataset path nor personal identifier`
+        : "git tracked no file — the scan asserted nothing",
+    );
   }
-  console.log(`Personal-data boundary verified across ${paths.length} tracked files`);
+  concludeGate("Personal-data boundary", report);
 }

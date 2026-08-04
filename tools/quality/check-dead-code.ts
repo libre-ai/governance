@@ -329,25 +329,26 @@ console.log(`  entry points discovered: ${entryPoints.size}`);
 for (const check of checks) console.log(`  examined ${check.examined} ${check.label}`);
 
 const failures: string[] = [];
+const { concludeGate, GateReport } = await import("./gate-report");
+const report = new GateReport();
 for (const check of checks) {
-  if (check.examined === 0) {
-    failures.push(`examined 0 ${check.label} — the gate lost its inputs and cannot prove anything`);
-  }
+  // The local anti-empty rule this file already carried, now uniform: an
+  // examination of zero inputs is a red check, not a silent pass.
+  report.check(
+    check.label,
+    check.examined > 0,
+    check.examined > 0
+      ? `examined ${check.examined} ${check.label}`
+      : `examined 0 ${check.label} — the gate lost its inputs and cannot prove anything`,
+  );
 }
 for (const file of unreachedFiles) {
-  failures.push(`unreached source, no entry point can import it: ${file}`);
+  report.check(file, false, "unreached source, no entry point can import it");
 }
 for (const { file, name } of unreferencedExports) {
-  failures.push(`exported but never referenced anywhere: ${file} -> ${name}`);
+  report.check(`${file} -> ${name}`, false, "exported but never referenced anywhere");
 }
 for (const entry of unusedDependencies) {
-  failures.push(`declared but never imported: ${entry}`);
+  report.check(entry, false, "declared but never imported");
 }
-
-if (failures.length > 0) {
-  console.error(`\n${failures.length} dead-code failure(s):`);
-  for (const failure of failures) console.error(`  - ${failure}`);
-  process.exit(1);
-}
-
-console.log("No dead code detected.");
+concludeGate("Dead code", report);
