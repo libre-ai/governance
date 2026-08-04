@@ -46,9 +46,10 @@ if (!actualRevision.includes(expected.sourceCommit.slice(0, 9))) {
   failures.push("Bun revision does not contain the pinned source commit");
 }
 
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
+const { concludeGate, GateReport } = await import("./gate-report");
+const report = new GateReport();
+for (const failure of failures) report.check("bun toolchain", false, failure);
+if (failures.length === 0) {
+  report.check("bun toolchain", true, `revision ${actualRevision} matches the declared toolchain`);
 }
-
-console.log(`Bun toolchain verified: ${actualRevision}`);
+concludeGate("Bun toolchain", report);

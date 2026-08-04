@@ -121,11 +121,21 @@ if (import.meta.main) {
     index.replacements.flatMap((r) => [...r.hub_paths]),
     (forgotten.entries ?? []).flatMap((e) => [...(e.evicted_paths ?? [])]),
   );
+  const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
+  const gate = new GateReport();
   for (const orphan of report.orphans) {
-    console.error(`::error::hub orphan: ${orphan} has no destination, replacement or eviction`);
+    gate.check(orphan, false, "hub path with no destination, replacement or eviction");
   }
-  console.log(
-    `Hub orphan gate: ${report.covered}/${hubPaths.length} tracked paths accounted for, ${report.orphans.length} orphan(s)`,
-  );
-  process.exit(report.orphans.length > 0 ? 1 : 0);
+  if (report.orphans.length === 0) {
+    // The coverage ratio is the verdict's evidence: zero tracked paths would
+    // mean the hub listing itself broke, and that is a red, not a green.
+    gate.check(
+      "hub tracked paths",
+      hubPaths.length > 0,
+      hubPaths.length > 0
+        ? `${report.covered}/${hubPaths.length} accounted for by a destination, replacement or eviction`
+        : "the hub listing returned no path — the reconciliation asserted nothing",
+    );
+  }
+  concludeGate("Hub orphans", gate);
 }

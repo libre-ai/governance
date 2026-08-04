@@ -130,12 +130,21 @@ if (import.meta.main) {
 
   const { drifts, notes } = reconcileInventory(declared, await fetchLiveRepositories());
   for (const note of notes) console.log(note);
-  for (const drift of drifts) console.error(drift);
-  if (drifts.length > 0) {
-    console.error(`${drifts.length} divergence(s) between ${ORGANIZATION} and the inventory`);
-    process.exit(1);
+  const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
+  const report = new GateReport();
+  for (const drift of drifts) {
+    report.check(drift.split(":")[0] ?? drift, false, drift);
   }
-  console.log(
-    `inventory matches the observable ${ORGANIZATION} organization (${declared.length} declared)`,
-  );
+  if (drifts.length === 0) {
+    // An inventory of zero declared repositories reconciling against a live
+    // organization is a broken read, not an agreement.
+    report.check(
+      `${ORGANIZATION} inventory`,
+      declared.length > 0,
+      declared.length > 0
+        ? `${declared.length} declared repositories match the observable organization`
+        : "the inventory declares no repository — the reconciliation asserted nothing",
+    );
+  }
+  concludeGate("Inventory drift", report);
 }
