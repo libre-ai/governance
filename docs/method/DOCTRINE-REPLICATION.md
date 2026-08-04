@@ -182,6 +182,51 @@ dizaines de lignes de shell par contexte) est très inférieur au coût d'une
 fuite inter-contextes, qui est irréversible dès lors qu'un des contextes est
 public.
 
+## Deux régimes : ce qui doit converger, ce qui doit diverger
+
+Tout ce qui précède suppose une chose sans la dire : que **toute divergence est
+un défaut**. C'est vrai des objets que ce patron a été écrit pour protéger —
+invariant, garde-fou, code de refus, contrat — où deux copies qui diffèrent
+signifient qu'au moins une est fausse, et où le contrôle de dérive est le seul
+moyen de savoir laquelle.
+
+Ce n'est pas vrai de tout ce qu'on réplique. Un prompt, un seuil, une définition
+locale de « fait », un choix de modèle par rôle : ces objets sont du **jugement
+local**. Deux copies qui divergent peuvent être justes toutes les deux, parce
+qu'elles répondent à deux contextes différents. Les tenir sous contrôle de
+dérive produit un objet qui ne colle à aucun contexte, que chacun finit par
+contourner plutôt qu'éditer — et un contournement ne laisse pas de trace, là où
+une édition en laisse une.
+
+**Le test qui range un objet dans son régime :** si deux copies divergent, l'une
+des deux est-elle nécessairement fausse ? Oui → régime convergent. Non →
+régime divergent.
+
+|                   | Régime convergent                           | Régime divergent                                          |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------- |
+| Objets            | invariants, gates, codes de refus, contrats | prompts, seuils, rosters, définitions locales             |
+| Ce qu'on réplique | le contenu, à l'identique                   | le point de départ, une fois                              |
+| Ce qu'on contrôle | l'**écart** — canonique ↔ golden ↔ déployé  | la **provenance** — de quelle version cette copie descend |
+| Divergence        | échec du contrôle                           | comportement attendu                                      |
+| Échec du régime   | la copie dérive en silence                  | la copie ne sait plus d'où elle vient                     |
+
+En régime divergent, le mécanisme n'est donc pas un rendu golden mais un
+**en-tête de provenance** dans la copie : la source et la révision dont elle
+descend. Le contrôle vérifie que cet en-tête est présent et résoluble, jamais
+que le contenu est identique. Une copie sans provenance est le vrai défaut de ce
+régime — pas une copie qui a changé.
+
+**Le piège est le mauvais rangement, dans les deux sens.** Un garde-fou traité
+comme du jugement local devient une doctrine locale que personne ne gouverne. Un
+prompt traité comme une norme devient une norme que tout le monde contourne.
+
+> **Provenance de la distinction.** Confrontation, le 2026-08-04, avec une
+> fabrique d'agents tierce qui applique le régime inverse et l'assume : elle
+> tamponne son outillage dans un dépôt cible une fois, puis pose que les prompts
+> appartiennent au dépôt qui les reçoit et que rien n'est censé survivre intact
+> au contact d'une base de code. Ce n'est pas l'opposé de ce patron ; c'est le
+> même patron appliqué à l'autre classe d'objets.
+
 ## Responsabilités par niveau (poupées russes)
 
 La doctrine se hiérarchise. Chaque niveau porte l'intégralité de ce qui est
