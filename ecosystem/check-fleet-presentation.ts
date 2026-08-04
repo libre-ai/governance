@@ -96,26 +96,23 @@ function fetchFromGitHub(repository: string, path: string): string | null {
 
 if (import.meta.main) {
   const fleet = parseFleet(await Bun.file("ecosystem/repositories.v1.yaml").text());
-  const failures: string[] = [];
-  let checked = 0;
-  let skipped = 0;
+  const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
+  const report = new GateReport();
   for (const entry of fleet) {
     const review = reviewRepository(entry, fetchFromGitHub);
     if (review.skipped) {
-      skipped += 1;
-      console.log(`${entry.repository}: no card declared — skipped`);
+      // Asserted, not silent: "this repository declares no card" is a
+      // statement about the repository, and it counts as an inspection.
+      report.check(entry.repository, true, "no card declared — nothing to present");
       continue;
     }
-    checked += 1;
-    if (review.failures.length === 0) {
-      console.log(`${entry.repository}: card valid, README status coherent`);
-    } else {
-      failures.push(...review.failures);
-    }
+    report.check(
+      entry.repository,
+      review.failures.length === 0,
+      review.failures.length === 0
+        ? "card valid, README status coherent"
+        : review.failures.join("; "),
+    );
   }
-  for (const failure of failures) console.error(`::error::${failure}`);
-  console.log(
-    `Fleet presentation: ${checked} repositories verified, ${skipped} skipped, ${failures.length} failures`,
-  );
-  process.exit(failures.length > 0 ? 1 : 0);
+  concludeGate("Fleet presentation", report);
 }

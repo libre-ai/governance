@@ -60,11 +60,21 @@ for (const repo of targets) {
     }
   }
 }
-if (failures.length > 0) {
-  for (const failure of failures) console.error(`DRIFT: ${failure}`);
-  console.error("Fleet template pins drift from the declared generations.");
-  process.exit(1);
+const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
+const report = new GateReport();
+for (const failure of failures) {
+  const colon = failure.indexOf(":");
+  report.check(failure.slice(0, colon), false, `DRIFT: ${failure.slice(colon + 2)}`);
 }
-console.log(
-  `Fleet pins verified: ${covered} pinned repositories, ${declared.size} declared generations`,
-);
+if (failures.length === 0) {
+  // Zero covered repositories would mean the observation itself broke — the
+  // fleet demonstrably pins the template; count is part of the verdict.
+  report.check(
+    "fleet template pins",
+    covered > 0,
+    covered > 0
+      ? `${covered} pinned repositories match the ${declared.size} declared generations`
+      : "no pinned repository observed — the enumeration asserted nothing",
+  );
+}
+concludeGate("Fleet pins", report);

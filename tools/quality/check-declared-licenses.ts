@@ -443,15 +443,22 @@ if (import.meta.main) {
     }
   }
 
-  if (failures.length > 0) {
-    console.error(`\n${failures.length} licence-claim failure(s):`);
-    for (const failure of failures) console.error(`  - ${failure}`);
-    console.error(
-      "\nREUSE is authoritative (LICENSING.md, machine-readable precedence): correct the manifest,",
-    );
-    console.error("or change the grant in REUSE.toml if the permissive claim is the intended one.");
-    process.exit(1);
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const report = new GateReport();
+  for (const failure of failures) {
+    const colon = failure.indexOf(":");
+    report.check(colon > 0 ? failure.slice(0, colon) : failure, false, failure);
   }
-
-  console.log("\nEvery publishable manifest restates the licence REUSE resolves for its files.");
+  if (failures.length === 0) {
+    report.check(
+      "publishable manifests",
+      true,
+      `${targets.length} publishable target(s) restate the licence REUSE resolves (${bunManifests.length + cargoManifests.length} manifests classified, ${excluded.length} excluded)`,
+    );
+  } else {
+    console.error(
+      "REUSE is authoritative (LICENSING.md, machine-readable precedence): correct the manifest, or change the grant in REUSE.toml if the permissive claim is the intended one.",
+    );
+  }
+  concludeGate("Declared licences", report);
 }

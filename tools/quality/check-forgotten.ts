@@ -186,18 +186,24 @@ if (import.meta.main) {
     ...findWildForgetting(register, resolve),
   ];
 
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const report = new GateReport();
+  for (const finding of findings) {
+    report.check(finding.entry, false, `[${finding.rule}] ${finding.detail}`);
+  }
   if (findings.length > 0) {
-    for (const finding of findings) {
-      console.error(`${finding.entry} [${finding.rule}]: ${finding.detail}`);
-    }
     console.error(
       "Forgotten content resurfaced. Restoring it is an owner decision that removes its entry from the register (ADR-0019).",
     );
-    process.exit(1);
+  } else {
+    const paths = register.entries.reduce((n, entry) => n + entry.evicted_paths.length, 0);
+    // An empty register is a legitimate state only if it is really empty —
+    // asserting it keeps the entry count in the verdict either way.
+    report.check(
+      "ecosystem/FORGOTTEN.yaml",
+      true,
+      `${register.entries.length} entries covering ${paths} evicted paths stay out of the tree, uncited and recoverable`,
+    );
   }
-
-  const paths = register.entries.reduce((n, entry) => n + entry.evicted_paths.length, 0);
-  console.log(
-    `Forgetting verified: ${register.entries.length} entries covering ${paths} evicted paths stay out of the tree, uncited and recoverable`,
-  );
+  concludeGate("Forgetting", report);
 }

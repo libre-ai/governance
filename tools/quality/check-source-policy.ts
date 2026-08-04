@@ -8,21 +8,29 @@ const forbiddenLockfiles = new Set([
 ]);
 const forbiddenSourceExtensions = [".js", ".jsx", ".mjs", ".cjs"];
 const ignoredPrefixes = [".git/", ".tools/", "node_modules/", "target/", "dist/"];
-const failures: string[] = [];
 const glob = new Bun.Glob("**/*");
+const { concludeGate, GateReport } = await import("./gate-report");
+const report = new GateReport();
+let scanned = 0;
 
 for await (const path of glob.scan({ cwd: ".", dot: true, onlyFiles: true })) {
   if (ignoredPrefixes.some((prefix) => path.startsWith(prefix))) continue;
+  scanned += 1;
   const name = path.split("/").at(-1) ?? path;
-  if (forbiddenLockfiles.has(name)) failures.push(`Forbidden lockfile: ${path}`);
+  if (forbiddenLockfiles.has(name)) report.check(path, false, "forbidden lockfile");
   if (forbiddenSourceExtensions.some((extension) => path.endsWith(extension))) {
-    failures.push(`Forbidden JavaScript source: ${path}`);
+    report.check(path, false, "forbidden JavaScript source");
   }
 }
 
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
+// The scan is the assertion: the corpus size is part of the verdict.
+if (report.violations.length === 0) {
+  report.check(
+    "source policy",
+    scanned > 0,
+    scanned > 0
+      ? `${scanned} tracked files carry no forbidden lockfile nor JavaScript source`
+      : "the corpus glob matched no file — the scan asserted nothing",
+  );
 }
-
-console.log("Source policy verified");
+concludeGate("Source policy", report);
