@@ -167,10 +167,16 @@ if (import.meta.main) {
     concludeGate("No transmission", report);
   }
 
+  // Vendored and generated trees under a root are not the app's source: a
+  // dependency's own use of fetch (playwright-core's type declarations were
+  // the live case) says nothing about what THIS app transmits. The dependency
+  // surface is licence-gated and lockfile-pinned elsewhere.
+  const VENDORED_SEGMENTS = ["/node_modules/", "/dist/", "/build/", "/target/"];
   for (const root of roots) {
     const glob = new Bun.Glob(`${root}**/*.{ts,tsx}`);
     const targets: ScanTarget[] = [];
     for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) {
+      if (VENDORED_SEGMENTS.some((segment) => path.includes(segment))) continue;
       targets.push({ path, content: await Bun.file(path).text() });
     }
     const findings = scanForTransmission(targets, [root], allow);
