@@ -1,9 +1,10 @@
 # ADR-0021 — Qui porte l'état du monde : la demande de fusion, ou la flotte
 
-- **Statut :** proposed — **aucun arbitrage propriétaire n'a eu lieu**. Cet ADR
-  est une proposition rédigée à partir d'un incident mesuré ; son passage en
-  `accepted`, avec la ligne d'arbitrage que la gate exige, est un acte
-  propriétaire nominatif qui n'est pas anticipé ici.
+- **Statut :** accepted — la ratification est le merge propriétaire de cette
+  pull request.
+- **Arbitrage :** propriétaire, session du 2026-08-04 — les trois décisions
+  (D1, D2, D3) sont retenues telles que proposées, séquencées D1 puis D2 ;
+  l'alternative du `bun audit` bloquant généralisé reste écartée.
 - **Date de rédaction :** 2026-08-04
 - **Portée :** garde-fous de sécurité des dépendances — où s'observe une
   vulnérabilité publiée, et ce qu'elle bloque.
@@ -52,7 +53,7 @@ conséquences que l'incident rend visibles : une demande est jugée sur des fait
 qu'elle n'a pas produits, et vingt-neuf dépôts sur trente ne portent aucun
 jugement du tout.
 
-## Décisions proposées
+## Décisions
 
 ### D1 — Un contrôle de flotte périodique porte l'état du monde
 
@@ -93,14 +94,18 @@ future sur une transitive commune arrêterait simultanément tout travail en
 cours, sur trente et un dépôts, et le réflexe acquis serait de merger malgré le
 rouge.
 
-Elle reste défendable si l'arbitrage privilégie le fail-closed intégral sur le
-coût de convoi. Ce compromis appartient au propriétaire, pas à cette
-proposition : c'est précisément ce que la ligne d'arbitrage manquante doit
-trancher.
+Elle restait défendable si l'arbitrage avait privilégié le fail-closed intégral
+sur le coût de convoi. L'arbitrage du 2026-08-04 tranche l'inverse : une
+demande de fusion est jugée sur son contenu, et l'état du monde appartient au
+contrôle de flotte. Sa réintroduction exigerait un nouvel arbitrage sur pièce —
+un cas mesuré où le partage D1/D2 aurait laissé passer ce que le blocage
+intégral aurait retenu.
 
-## Conséquences si les décisions sont ratifiées
+## Conséquences
 
-- Un contrôle de flotte de plus, avec ses cinq champs de boucle déclarés.
+- Un contrôle de flotte de plus, avec ses six champs de boucle déclarés
+  (l'inventaire des boucles impose depuis le 2026-08-04 la nature de l'échec
+  en sixième champ).
 - Le gate par demande de fusion devient différentiel : plus complexe qu'un
   `bun audit` nu, et cette complexité est le prix de la propriété « une demande
   est jugée sur son contenu ».
@@ -110,7 +115,10 @@ trancher.
 
 ## Ce qui n'est pas décidé ici
 
-- La correction de la protection de branche de `notebook` : défaut de
-  configuration, à traiter séparément, également acte propriétaire.
+- La correction de la protection de branche de `notebook` — réglée par un acte
+  propriétaire distinct le même jour (retrait du contexte `Dependabot`, produit
+  uniquement par les runs Dependabot Updates contre `main`, jamais sur une
+  demande de fusion humaine ; vérifié par un scan des trente et une protections,
+  seul cas de la flotte).
 - Le choix de l'outil d'audit et sa cadence.
 - Toute automatisation de mise à jour des dépendances.
