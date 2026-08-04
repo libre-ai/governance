@@ -206,12 +206,27 @@ if (import.meta.main) {
     );
   }
 
-  if (failures.length > 0) {
-    for (const failure of failures) console.error(`DRIFT: ${failure}`);
-    console.error("Fleet template pins drift from the declared generations.");
-    process.exit(1);
+  // Merge adaptation: main migrated this gate's verdict to gate-report
+  // (wave 2) while this branch rewrote the enumeration. The enumeration —
+  // including its own anti-empty rule above, which feeds `failures` — is the
+  // branch's; only the reporting shell is converted, so the two changes
+  // compose instead of one overwriting the other.
+  const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
+  const report = new GateReport();
+  for (const failure of failures) {
+    const colon = failure.indexOf(":");
+    report.check(
+      colon > 0 ? failure.slice(0, colon) : "fleet pins",
+      false,
+      `DRIFT: ${colon > 0 ? failure.slice(colon + 2) : failure}`,
+    );
   }
-  console.log(
-    `Fleet pins verified: ${inspected} pins across ${covered} repositories, ${declared.size} declared generations`,
-  );
+  if (failures.length === 0) {
+    report.check(
+      "fleet template pins",
+      true,
+      `${inspected} pins across ${covered} repositories match the ${declared.size} declared generations`,
+    );
+  }
+  concludeGate("Fleet pins", report);
 }
