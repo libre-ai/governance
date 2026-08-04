@@ -156,4 +156,9 @@ jobs:
       # examined and fails on zero, so a moved directory turns this red instead
       # of passing on an empty set.
       - run: bun tools/quality/check-dead-code.ts
-      - run: bun audit
+      # ADR-0021 D2: judge only what the change introduces into the lockfile.
+      # A bare `bun audit` turned the state of the world into a verdict on a
+      # change — on 2026-08-04 four green pull requests went red overnight,
+      # two of them documentation-only. Pre-existing advisories belong to the
+      # fleet control (fleet-advisories.yml, D1).
+      - run: bun tools/quality/check-audit-delta.ts

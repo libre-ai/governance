@@ -1,0 +1,39 @@
+name: Fleet advisories
+
+# ADR-0021 D1: the periodic control that owns the state of the world for
+# dependency advisories. It audits every living repository's lockfile and
+# notifies through a red run — it never blocks a pull request; what a change
+# introduces is judged by the audit-delta gate in each repository's own CI
+# (D2). Loop fields declared in docs/method/AGENTIC-LOOP-INVENTORY.md; a red
+# run — or the absence of a recent run — is the observable failure.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fleet-advisories:
+    name: Every living lockfile is free of known advisories
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/governance/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify exact CI revision
+        run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
+      # Repo-local imports only — no `bun install`, so this control does not
+      # depend on the very supply chain it audits.
+      - name: Audit every living repository's lockfile
+        run: bun tools/security/check-fleet-advisories.ts
