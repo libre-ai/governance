@@ -83,17 +83,32 @@ if (import.meta.main) {
     if (declared) entries.push({ location: path, identifier: declared });
   }
 
-  const findings = scanForRetiredNames(entries);
-  if (findings.length > 0) {
-    for (const finding of findings) {
-      console.error(
-        `${finding.location}: "${finding.retired}" is a retired tooling name (ADR-0008 §3) — it is never reused as a repository, package or crate`,
-      );
-    }
-    process.exit(1);
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const report = new GateReport();
+
+  // Absence of one family was already anticipated above; absence of ALL of them
+  // was not. Post-dispatch this repository holds no apps/, crates/ or packages/,
+  // so the guard scanned zero identifiers and still printed a green
+  // `verified: 0`. Emptiness here is legitimate — the guard travels with the
+  // families it protects — but it must be declared, so an operator reads that
+  // this run proved nothing rather than inferring safety from a zero.
+  if (entries.length === 0) {
+    report.allowEmpty(
+      "no apps/, crates/ or packages/ family lives in this repository since the ADR-0020 dispatch — this guard proves nothing here and belongs to the repositories that hold those families",
+    );
   }
 
-  console.log(
-    `Retired names verified: ${entries.length} workspace identifiers carry none of the ${RETIRED_TOOLING_NAMES.length} retired tooling names`,
-  );
+  const findings = new Map(scanForRetiredNames(entries).map((f) => [f.location, f.retired]));
+  for (const entry of entries) {
+    const retiredName = findings.get(entry.location);
+    report.check(
+      entry.location,
+      retiredName === undefined,
+      retiredName === undefined
+        ? `"${bareIdentifier(entry.identifier)}" is not a retired tooling name`
+        : `"${retiredName}" is a retired tooling name (ADR-0008 §3) — it is never reused as a repository, package or crate`,
+    );
+  }
+
+  concludeGate("Retired names", report);
 }
