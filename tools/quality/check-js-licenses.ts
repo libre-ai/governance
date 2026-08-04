@@ -1,4 +1,4 @@
-export {};
+import { concludeGate, GateReport } from "./gate-report";
 
 const allowed = new Set([
   "MIT",
@@ -37,10 +37,19 @@ for await (const path of glob.scan({ cwd: ".", dot: true, onlyFiles: true })) {
   }
 }
 
-if (checked.size === 0) failures.push("No installed JavaScript dependency found");
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
+const report = new GateReport();
+for (const failure of failures) {
+  const subject = failure.slice(0, failure.indexOf(":"));
+  report.check(subject, false, failure.slice(subject.length + 2));
 }
-
-console.log(`JavaScript dependency licenses verified: ${checked.size}`);
+if (failures.length === 0) {
+  // An empty node_modules is not a clean audit — it is an audit of nothing.
+  report.check(
+    "installed JavaScript dependencies",
+    checked.size > 0,
+    checked.size > 0
+      ? `${checked.size} dependencies, every license in the allowed set`
+      : "no installed dependency found — run bun install before auditing licenses",
+  );
+}
+concludeGate("JavaScript licenses", report);

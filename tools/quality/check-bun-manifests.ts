@@ -1,4 +1,5 @@
 import { isBunVersionAtLeast } from "./bun-version";
+import { concludeGate, GateReport } from "./gate-report";
 
 interface PackageManifest {
   name?: string;
@@ -129,13 +130,19 @@ for (const path of [...manifestPaths].sort()) {
 
 // Zero workspace manifests is the normal state of a single-package
 // repository after the workspace split (D07 as amended by ADR-0020); the
-// root contract above still applies.
+// root contract above still applies — which is why this gate can never be
+// empty: the root manifest check below is always asserted.
 
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
+const report = new GateReport();
+for (const failure of failures) {
+  const colon = failure.indexOf(":");
+  report.check(failure.slice(0, colon), false, failure.slice(colon + 2));
 }
-
-console.log(
-  `Bun manifests verified: root + ${manifestPaths.size} package/template manifests require ${expectedEngine}`,
-);
+if (failures.length === 0) {
+  report.check(
+    "package.json",
+    true,
+    `root + ${manifestPaths.size} package/template manifests require ${expectedEngine}`,
+  );
+}
+concludeGate("Bun manifests", report);

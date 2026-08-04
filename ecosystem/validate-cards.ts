@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 
+import { concludeGate, GateReport } from "../tools/quality/gate-report";
 import { aggregateProgress, collectPathReferences, validateCard } from "./project-cards";
 
 /**
@@ -15,40 +16,38 @@ const paths: string[] = [];
 for (const glob of globs) {
   for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) paths.push(path);
 }
-const failures: string[] = [];
-let checked = 0;
+const report = new GateReport();
 
 for (const path of paths.sort()) {
-  checked += 1;
   let value: unknown;
   try {
     value = Bun.YAML.parse(await Bun.file(path).text());
   } catch (error) {
-    failures.push(`${path}: invalid YAML (${(error as Error).message})`);
+    report.check(path, false, `invalid YAML (${(error as Error).message})`);
     continue;
   }
   const errors = validateCard(value);
   if (errors.length > 0) {
-    for (const error of errors) failures.push(`${path}${error}`);
+    report.check(path, false, errors.map((error) => error.replace(/^: /, "")).join("; "));
     continue;
   }
   // A path-looking evidence reference must resolve: a dangling reference was
   // found during phase 3.1 review, and this gate is the guard it called for.
   // existsSync, not Bun.file().exists(): a directory is a verifiable target.
-  for (const reference of collectPathReferences(value)) {
-    if (!existsSync(reference)) {
-      failures.push(`${path}: evidence reference does not resolve: ${reference}`);
-    }
-  }
-  const report = aggregateProgress(value);
+  const dangling = collectPathReferences(value).filter((reference) => !existsSync(reference));
+  const progress = aggregateProgress(value);
   const name = (value as { project?: string }).project ?? path;
-  console.log(`card ${name}: ${report.display}`);
+  report.check(
+    `card ${name}`,
+    dangling.length === 0,
+    dangling.length === 0
+      ? `schema valid, references resolve — ${progress.display}`
+      : `evidence reference(s) do not resolve: ${dangling.join(", ")}`,
+  );
 }
 
-if (checked === 0) failures.push("No project card found under ecosystem/cards/");
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  console.error("Project cards invalid (γ 3.2, design §6).");
-  process.exit(1);
+// Zero cards trips the empty-gate rule on its own; the message names the home.
+if (report.asserted === 0) {
+  report.check("ecosystem/cards/", false, "no project card found (γ 3.2, design §6)");
 }
-console.log(`Project cards verified: ${checked}`);
+concludeGate("Project cards", report);

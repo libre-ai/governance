@@ -92,6 +92,7 @@ export function scanForProvisioningClaims(targets: readonly ScanTarget[]): Provi
 
 // Executable entrypoint: scan the living tree when run directly.
 if (import.meta.main) {
+  const { concludeGate, GateReport } = await import("./gate-report");
   const glob = new Bun.Glob("**/*.{ts,tsx,json,yaml,yml,toml,md,rs}");
   const targets: ScanTarget[] = [];
   for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) {
@@ -100,13 +101,20 @@ if (import.meta.main) {
     }
     targets.push({ path, content: await Bun.file(path).text() });
   }
-  const findings = scanForProvisioningClaims(targets);
-  if (findings.length > 0) {
-    for (const finding of findings) {
-      console.error(`${finding.path}:${finding.line}: ${finding.reason}`);
-    }
-    console.error("Clever Cloud resource or production claim found (WP-G2-Q01 acceptance 3).");
-    process.exit(1);
+  const report = new GateReport();
+  for (const finding of scanForProvisioningClaims(targets)) {
+    report.check(`${finding.path}:${finding.line}`, false, finding.reason);
   }
-  console.log("No Clever resource or production claim (WP-G2-Q01 acceptance 3) verified");
+  // The scan itself is the assertion: a glob that matched nothing proves
+  // nothing, so the count is part of the verdict rather than decoration.
+  if (report.violations.length === 0) {
+    report.check(
+      "provisioning scan (WP-G2-Q01 acceptance 3)",
+      targets.length > 0,
+      targets.length > 0
+        ? `${targets.length} living files carry no Clever resource nor production claim`
+        : "the corpus glob matched no file — the scan asserted nothing",
+    );
+  }
+  concludeGate("No Clever production", report);
 }
