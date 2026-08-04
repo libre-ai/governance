@@ -1,13 +1,13 @@
 import Ajv2020, { type ErrorObject } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { concludeGate, GateReport } from "./gate-report";
 
 const schema = (await Bun.file("ecosystem/schemas/knowledge-object.schema.json").json()) as object;
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
 const validate = ajv.compile(schema);
 const glob = new Bun.Glob("ecosystem/objects/**/*.json");
-const failures: string[] = [];
-let checked = 0;
+const report = new GateReport();
 
 function safeError(error: ErrorObject): string {
   const message = error.message ?? "invalid";
@@ -15,26 +15,24 @@ function safeError(error: ErrorObject): string {
 }
 
 for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) {
-  checked += 1;
   let value: unknown;
   try {
     value = await Bun.file(path).json();
   } catch {
-    failures.push(`${path}: invalid JSON`);
+    report.check(path, false, "invalid JSON");
     continue;
   }
 
-  if (!validate(value)) {
-    for (const error of validate.errors ?? []) {
-      failures.push(`${path}${safeError(error)}`);
-    }
-  }
+  const valid = validate(value);
+  report.check(
+    path,
+    valid,
+    valid ? "schema valid" : (validate.errors ?? []).map(safeError).join("; "),
+  );
 }
 
-if (checked === 0) failures.push("No Knowledge Object found");
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  process.exit(1);
+// Zero objects trips the empty-gate rule on its own; the message names the home.
+if (report.asserted === 0) {
+  report.check("ecosystem/objects/", false, "no Knowledge Object found");
 }
-
-console.log(`Knowledge Objects verified: ${checked}`);
+concludeGate("Knowledge Objects", report);

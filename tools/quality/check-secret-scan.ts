@@ -95,13 +95,21 @@ if (import.meta.main) {
     }
     targets.push({ path, content: await Bun.file(path).text() });
   }
-  const findings = scanForSecrets(targets);
-  if (findings.length > 0) {
-    for (const finding of findings) {
-      console.error(`${finding.path}:${finding.line}: committed credential marker`);
-    }
-    console.error("Secret scan failed (WP-G2-Q01 acceptance 2): a credential marker was found.");
-    process.exit(1);
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const report = new GateReport();
+  for (const finding of scanForSecrets(targets)) {
+    report.check(`${finding.path}:${finding.line}`, false, "committed credential marker");
   }
-  console.log("Secret scan clean (WP-G2-Q01 acceptance 2) verified");
+  // The scan itself is the assertion: a glob that matched nothing proves
+  // nothing, so the file count is part of the verdict.
+  if (report.violations.length === 0) {
+    report.check(
+      "secret scan (WP-G2-Q01 acceptance 2)",
+      targets.length > 0,
+      targets.length > 0
+        ? `${targets.length} living files carry no credential marker`
+        : "the corpus glob matched no file — the scan asserted nothing",
+    );
+  }
+  concludeGate("Secret scan", report);
 }

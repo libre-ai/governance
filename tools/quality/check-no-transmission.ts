@@ -45,8 +45,13 @@ export interface TransmissionFinding {
   readonly reason: string;
 }
 
-// Only the local-only apps are in scope. The scanner's own test carries
-// transmission anti-pattern fixtures by design, so it excludes itself.
+// The scoped roots are the CALLER's statement, never inferred from what
+// happens to exist on disk. The historical default below matched the hub
+// topology — and matched NOTHING after the ADR-0020 dispatch moved both apps
+// to their product repositories, which left this guard green over an empty
+// scan while the invariant it carries (a locked privacy guarantee) was
+// enforced nowhere. Run as a gate, it now requires --roots; the default only
+// serves the pure function's tests.
 const SCOPED_PREFIXES = ["apps/boussole/", "apps/practices/"];
 const SELF_TEST_SUFFIX = "check-no-transmission.test.ts";
 
@@ -62,10 +67,10 @@ const ALLOWLISTED_PATHS: ReadonlySet<string> = new Set([
   "apps/practices/scripts/build-service-worker.ts",
 ]);
 
-function inScope(path: string): boolean {
+function inScope(path: string, prefixes: readonly string[], allow: ReadonlySet<string>): boolean {
   if (path.endsWith(SELF_TEST_SUFFIX)) return false;
-  if (ALLOWLISTED_PATHS.has(path)) return false;
-  return SCOPED_PREFIXES.some((prefix) => path.startsWith(prefix));
+  if (allow.has(path)) return false;
+  return prefixes.some((prefix) => path.startsWith(prefix));
 }
 
 // A comment line cannot transmit; skip it so prose like "exposes no network path"
@@ -104,10 +109,14 @@ const SIGNALS: readonly { readonly test: RegExp; readonly reason: string }[] = [
   },
 ];
 
-export function scanForTransmission(targets: readonly ScanTarget[]): TransmissionFinding[] {
+export function scanForTransmission(
+  targets: readonly ScanTarget[],
+  prefixes: readonly string[] = SCOPED_PREFIXES,
+  allow: ReadonlySet<string> = ALLOWLISTED_PATHS,
+): TransmissionFinding[] {
   const findings: TransmissionFinding[] = [];
   for (const target of targets) {
-    if (!inScope(target.path)) continue;
+    if (!inScope(target.path, prefixes, allow)) continue;
     const lines = target.content.split("\n");
     for (let i = 0; i < lines.length; i += 1) {
       const line = lines[i] ?? "";
@@ -123,22 +132,60 @@ export function scanForTransmission(targets: readonly ScanTarget[]): Transmissio
   return findings;
 }
 
-// Executable entrypoint: scan the local-only apps when run directly.
+// Executable entrypoint. The caller names the roots it guarantees local-only:
+//
+//   bun check-no-transmission.ts --roots src            (a product repository)
+//   bun check-no-transmission.ts --roots src --allow src/scripts/build-sw.ts
+//
+// No default roots: a default tied to a topology is how this gate went green
+// over an empty scan for a whole dispatch.
 if (import.meta.main) {
-  const glob = new Bun.Glob("apps/{boussole,practices}/**/*.{ts,tsx}");
-  const targets: ScanTarget[] = [];
-  for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) {
-    targets.push({ path, content: await Bun.file(path).text() });
-  }
-  const findings = scanForTransmission(targets);
-  if (findings.length > 0) {
-    for (const finding of findings) {
-      console.error(`${finding.path}:${finding.line}: ${finding.reason}`);
+  const { concludeGate, GateReport } = await import("./gate-report");
+  const argv = process.argv.slice(2);
+  const rootsFlag = argv.indexOf("--roots");
+  const allowFlag = argv.indexOf("--allow");
+  const takeAfter = (flag: number): string[] => {
+    const values: string[] = [];
+    if (flag === -1) return values;
+    for (let i = flag + 1; i < argv.length; i += 1) {
+      const arg = argv[i] ?? "";
+      if (arg.startsWith("--")) break;
+      values.push(arg);
     }
-    console.error(
-      "Outbound transmission primitive found in a local-only app (boussole/practices must never send user data off-device).",
+    return values;
+  };
+  const roots = takeAfter(rootsFlag).map((r) => (r.endsWith("/") ? r : `${r}/`));
+  const allow: ReadonlySet<string> = new Set(takeAfter(allowFlag));
+
+  const report = new GateReport();
+  if (roots.length === 0) {
+    report.check(
+      "--roots",
+      false,
+      "no root named — this gate scans what the caller declares local-only, never a topology default",
     );
-    process.exit(1);
+    concludeGate("No transmission", report);
   }
-  console.log("No-transmission guarantee verified for boussole and practices");
+
+  for (const root of roots) {
+    const glob = new Bun.Glob(`${root}**/*.{ts,tsx}`);
+    const targets: ScanTarget[] = [];
+    for await (const path of glob.scan({ cwd: ".", onlyFiles: true })) {
+      targets.push({ path, content: await Bun.file(path).text() });
+    }
+    const findings = scanForTransmission(targets, [root], allow);
+    for (const finding of findings) {
+      report.check(`${finding.path}:${finding.line}`, false, finding.reason);
+    }
+    if (findings.length === 0) {
+      report.check(
+        root,
+        targets.length > 0,
+        targets.length > 0
+          ? `${targets.length} files carry no outbound transmission primitive`
+          : "root matched no file — wrong path, or the app moved again",
+      );
+    }
+  }
+  concludeGate("No transmission", report);
 }

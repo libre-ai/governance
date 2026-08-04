@@ -143,10 +143,12 @@ jobs:
       # Wired here, in the Q01 writePath, rather than in the root package.json.
       - run: bun tools/quality/check-secret-scan.ts
       - run: bun tools/quality/check-no-clever-production.ts
-      # Front-C local-only guarantee (WP-G3-B01 boussole, WP-G3-P01 practices):
-      # user data never leaves the device — no outbound transmission primitive in
-      # those apps' source.
-      - run: bun tools/quality/check-no-transmission.ts
+      # The Front-C local-only guarantee (WP-G3-B01/P01) is no longer checked
+      # HERE: both apps left with the ADR-0020 dispatch, and from then until
+      # 2026-08-04 this step scanned an empty glob and passed — green over
+      # nothing. The scanner now requires the caller to name its roots, and its
+      # enforcement point is the product repositories (boussole-politique,
+      # ai-practices) through the pinned governance tooling.
       # Personal-data boundary (ADR-0012, I-21/I-22): this repository publishes
       # code, never instance data. Curated organisation records belong to a
       # private tenant, anything about a natural person stays on-device.
