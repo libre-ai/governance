@@ -156,18 +156,20 @@ celui d'après, sur les mêmes cibles.
 
 | Mécanisme importé                                           | Où il a atterri                         | `implementationStatus` | `evaluationStatus` | Ce qui clôt le palier valeur                                                         |
 | ----------------------------------------------------------- | --------------------------------------- | ---------------------- | ------------------ | ------------------------------------------------------------------------------------ |
-| Un gate rend ses preuves ; vacuité déclarée, jamais inférée | `tools/quality/gate-report.ts`          | `merged-pending`       | `not-run`          | nombre de gates dont l'assertion était vide, avant / après migration complète        |
-| Nature de l'échec : rattrapable ou terminal                 | `docs/method/AGENTIC-LOOP-INVENTORY.md` | `merged-pending`       | `not-run`          | une boucle qui cesse de rejouer un échec terminal, observée sur un incident réel     |
-| Deux régimes de réplication (convergent / divergent)        | `docs/method/DOCTRINE-REPLICATION.md`   | `merged-pending`       | `not-run`          | un objet mal rangé détecté par le test des deux copies                               |
-| Journal d'événements rejouable par passe                    | `orchestrator:tools/review/`            | `merged-pending`       | `not-run`          | trois runs de fan-out réels ; le replay contredit-il jamais le run observé ?         |
+| Un gate rend ses preuves ; vacuité déclarée, jamais inférée | `tools/quality/gate-report.ts`          | `merged`               | `challenger-pass`  | **mesuré le 2026-08-04, migration complète** : avant — 3 gates verts sur zéro assertion, 1 compteur ne couvrant qu'un tiers de son gate, et 1 invariant de confidentialité appliqué nulle part (no-transmission, découvert par la migration) ; après — 20 des 25 gates concluent par gate-report, 2 exceptions documentées dans le commit de vague 3, zéro assertion vide |
+| Nature de l'échec : rattrapable ou terminal                 | `docs/method/AGENTIC-LOOP-INVENTORY.md` | `merged`               | `not-run`          | une boucle qui cesse de rejouer un échec terminal, observée sur un incident réel     |
+| Deux régimes de réplication (convergent / divergent)        | `docs/method/DOCTRINE-REPLICATION.md`   | `merged`               | `not-run`          | un objet mal rangé détecté par le test des deux copies                               |
+| Journal d'événements rejouable par passe                    | `orchestrator:tools/review/`            | `merged`               | `not-run`          | trois runs de fan-out réels ; le replay contredit-il jamais le run observé ?         |
 | Coût itemisé et occupation de fenêtre                       | —                                       | `not-started`          | `not-run`          | conditionné au mécanisme précédent : n'ouvre que si le journal se révèle insuffisant |
 | Vérification a posteriori du change-set écrit               | —                                       | `not-started`          | `not-run`          | relève d'une phase B du package challenger, pas de cet import                        |
 
-**Aucune ligne n'est au-delà de `not-run`, et c'est le point.** Les suites de
-tests des dépôts touchés sont vertes — cela prouve l'intégration et rien
-d'autre, exactement ce que ce document interdit de confondre avec de la valeur.
-Un mécanisme dont l'`evaluationStatus` reste `not-run` après plusieurs mois
-d'usage n'est pas validé par l'habitude : il est candidat au retrait.
+**Une seule ligne a atteint `challenger-pass`, et par la mesure, pas par
+l'usage** : la migration complète des gates a compté les assertions vides avant
+et après — c'est le run apparié de ce mécanisme, exécuté le jour même. Les
+trois autres restent `not-run` : leurs suites vertes prouvent l'intégration et
+rien d'autre. Un mécanisme dont l'`evaluationStatus` reste `not-run` après
+plusieurs mois d'usage n'est pas validé par l'habitude : il est candidat au
+retrait.
 
 ### Ce que l'import a révélé de l'existant
 
