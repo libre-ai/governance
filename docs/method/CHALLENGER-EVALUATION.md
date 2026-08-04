@@ -140,6 +140,58 @@ une couverture identique à l'existant pour un coût supérieur. La règle appli
 **une réintroduction exigerait d'abord un échec baseline reproductible.** Sans
 cette règle, un composant rejeté revient par conviction plutôt que par mesure.
 
+## Corpus d'évaluation — import de doctrine du 2026-08-04
+
+Première application de cette méthode à un import de **doctrine** plutôt qu'à un
+harness challenger : la source confrontée est une fabrique d'agents tierce
+(Python, worker Pi, trace SQLite, licence MIT), et rien de son code n'a été
+repris — seules des logiques d'architecture, réécrites dans les langages et les
+autorités d'ici.
+
+L'écart de nature vaut d'être noté, parce qu'il déplace le palier « challenge ».
+Un composant exécutable se compare par runs appariés sur un même corpus. Une
+logique de doctrine se compare à ce que l'existant produisait **avant** sur la
+même surface : le run apparié devient l'exécution du garde-fou d'avant contre
+celui d'après, sur les mêmes cibles.
+
+| Mécanisme importé                                           | Où il a atterri                         | `implementationStatus` | `evaluationStatus` | Ce qui clôt le palier valeur                                                         |
+| ----------------------------------------------------------- | --------------------------------------- | ---------------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| Un gate rend ses preuves ; vacuité déclarée, jamais inférée | `tools/quality/gate-report.ts`          | `merged-pending`       | `not-run`          | nombre de gates dont l'assertion était vide, avant / après migration complète        |
+| Nature de l'échec : rattrapable ou terminal                 | `docs/method/AGENTIC-LOOP-INVENTORY.md` | `merged-pending`       | `not-run`          | une boucle qui cesse de rejouer un échec terminal, observée sur un incident réel     |
+| Deux régimes de réplication (convergent / divergent)        | `docs/method/DOCTRINE-REPLICATION.md`   | `merged-pending`       | `not-run`          | un objet mal rangé détecté par le test des deux copies                               |
+| Journal d'événements rejouable par passe                    | `orchestrator:tools/review/`            | `merged-pending`       | `not-run`          | trois runs de fan-out réels ; le replay contredit-il jamais le run observé ?         |
+| Coût itemisé et occupation de fenêtre                       | —                                       | `not-started`          | `not-run`          | conditionné au mécanisme précédent : n'ouvre que si le journal se révèle insuffisant |
+| Vérification a posteriori du change-set écrit               | —                                       | `not-started`          | `not-run`          | relève d'une phase B du package challenger, pas de cet import                        |
+
+**Aucune ligne n'est au-delà de `not-run`, et c'est le point.** Les suites de
+tests des dépôts touchés sont vertes — cela prouve l'intégration et rien
+d'autre, exactement ce que ce document interdit de confondre avec de la valeur.
+Un mécanisme dont l'`evaluationStatus` reste `not-run` après plusieurs mois
+d'usage n'est pas validé par l'habitude : il est candidat au retrait.
+
+### Ce que l'import a révélé de l'existant
+
+Conformément au constat de ce document — la valeur principale d'un challenger
+est souvent dans les défauts qu'il expose — la confrontation a trouvé trois
+gates verts qui n'assertaient rien, sur une même classe de défaut :
+
+- `ecosystem/check-migration-drift.ts` (K4 AUTH-05), **déjà corrigé** avant cet
+  import et devenu le modèle de référence interne : il portait localement la
+  règle que l'import ne fait que généraliser.
+- `tools/quality/check-specification-lock.ts` : vidait sa propre liste
+  d'applications depuis la ventilation ADR-0020, puis affichait `verified: 13` —
+  la longueur de la liste écartée, pas du travail fait. Zéro spécification
+  inspectée, compteur à treize.
+- `tools/quality/check-retired-names.ts` : affichait `verified: 0` depuis que
+  les familles `apps/`, `crates/` et `packages/` ont quitté ce dépôt.
+
+S'y ajoute une variante : `tools/quality/check-objectives.ts` comptait ses
+fichiers requis sans rien dire de son scan de motifs interdits ni du corpus
+vision — un glob qui cesse de matcher y rendait muets deux tiers du gate sans
+changer sa sortie.
+
+Ces quatre constats valent plus que les mécanismes qui les ont révélés.
+
 ## Ce que la méthode n'autorise pas
 
 - **Promouvoir parce que c'est implémenté.** Aucune capacité n'est promue au
