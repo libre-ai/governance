@@ -1,0 +1,12 @@
+{
+  "subject": "retro-K4 governance PR #16 — scope: the change this commit introduces over its first parent (start with `git show HEAD`): fix(quality): an empty gate cannot be declared quietly",
+  "commit": "7eaa13d4adecb1e765989ef4736d73064548e798",
+  "roles": ["architecture", "security"],
+  "mode": "specialized-role",
+  "evidence": ["docs/reviews/AGENT-REVIEW-PROTOCOL.md"],
+  "concurrency": 5,
+  "provider": "openai-codex",
+  "model": "gpt-5.6-terra",
+  "thinking": "xhigh",
+  "outputDir": "docs/reviews/retro-k4-gate-report/7eaa13d"
+}

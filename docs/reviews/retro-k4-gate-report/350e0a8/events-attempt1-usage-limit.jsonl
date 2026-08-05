@@ -1,0 +1,10 @@
+{"reviewPassId":"rp-350e0a8-28093453-ecec-4694-bd24-517359106626","role":"architecture","type":"pass_start","at":"2026-08-04T15:15:06.368Z","detail":{"commit":"350e0a8c10c0657265d61ccfacaa8af571a40223","mode":"specialized-role"}}
+{"reviewPassId":"rp-350e0a8-663ec23a-64ab-4a66-b4bc-f74569ca8f3f","role":"security","type":"pass_start","at":"2026-08-04T15:15:06.368Z","detail":{"commit":"350e0a8c10c0657265d61ccfacaa8af571a40223","mode":"specialized-role"}}
+{"reviewPassId":"rp-350e0a8-663ec23a-64ab-4a66-b4bc-f74569ca8f3f","role":"security","type":"worktree_ready","at":"2026-08-04T15:15:06.474Z"}
+{"reviewPassId":"rp-350e0a8-28093453-ecec-4694-bd24-517359106626","role":"architecture","type":"worktree_ready","at":"2026-08-04T15:15:06.476Z"}
+{"reviewPassId":"rp-350e0a8-663ec23a-64ab-4a66-b4bc-f74569ca8f3f","role":"security","type":"agent_call","at":"2026-08-04T15:15:06.475Z","endedAt":"2026-08-04T15:15:10.079Z","detail":{"exitCode":1,"provider":"openai-codex","model":"gpt-5.6-terra","thinking":"xhigh"}}
+{"reviewPassId":"rp-350e0a8-663ec23a-64ab-4a66-b4bc-f74569ca8f3f","role":"security","type":"worktree_removed","at":"2026-08-04T15:15:10.128Z"}
+{"reviewPassId":"rp-350e0a8-663ec23a-64ab-4a66-b4bc-f74569ca8f3f","role":"security","type":"pass_end","at":"2026-08-04T15:15:10.128Z","detail":{"ok":false,"durationMs":3760}}
+{"reviewPassId":"rp-350e0a8-28093453-ecec-4694-bd24-517359106626","role":"architecture","type":"agent_call","at":"2026-08-04T15:15:06.476Z","endedAt":"2026-08-04T15:15:10.158Z","detail":{"exitCode":1,"provider":"openai-codex","model":"gpt-5.6-terra","thinking":"xhigh"}}
+{"reviewPassId":"rp-350e0a8-28093453-ecec-4694-bd24-517359106626","role":"architecture","type":"worktree_removed","at":"2026-08-04T15:15:10.217Z"}
+{"reviewPassId":"rp-350e0a8-28093453-ecec-4694-bd24-517359106626","role":"architecture","type":"pass_end","at":"2026-08-04T15:15:10.217Z","detail":{"ok":false,"durationMs":3849}}
