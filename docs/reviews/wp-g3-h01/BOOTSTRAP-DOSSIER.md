@@ -241,3 +241,40 @@ l'ensemble `denied`), et la borne de sortie s'applique au flux cadré, donc
 **Trois rounds, trois rejets.** Le dossier ne prétend pas à un livrable prêt :
 il enregistre un composant dont la revue indépendante a arrêté chaque version
 avant merge, et dont les écarts restants sont nommés plutôt que réduits.
+
+## Après le round 3 — `81e8208`
+
+Quatre traitements, dont un qui défait une revendication de cette session :
+
+- **Revendication réfutée, annulée.** `worker_transport_isolation` avait été
+  promue dans le profil sur l'argument « `verifyOsPeer` tient par
+  construction ». Le round 3 l'a démoli : le pair au moment de l'écriture est
+  l'enfant **et tout descendant** héritant du descripteur — précisément la
+  population qu'un contrôle de crédentiels distinguerait. La capacité sort du
+  moteur et du profil, le bloc `workerTransport` sort du périmètre attesté.
+  Le jeton de run reste : il est réellement appliqué, il n'est pas tout le bloc.
+- **Les deux bloquants sécurité du round 2, enfin traités** : la borne de durée
+  couvre désormais l'écriture (une charge utile jamais lue ne bloque plus le
+  harness), et le groupe est reapé aussi sur le chemin EOF — celui qui
+  produisait des attestations en laissant un descendant vivant.
+- **Deux régressions introduites par mes propres remédiations, corrigées** : le
+  matcher laissait un `*` littéral du sujet consommer le joker du motif
+  (fail-open dans `denied`), et la borne de sortie était dépensée sur le cadre
+  de transport.
+
+**Ouvert, et sans chemin dans le code :**
+
+1. `verifyOsPeer` — exige `SO_PEERCRED`, donc une dépendance hors allowlist ou
+   un amendement d'ADR. Tant qu'il n'est pas tranché, le bloc transport reste
+   hors du périmètre attesté et la capacité hors du profil : l'écart est
+   déclaré, pas masqué.
+2. Le pin du moteur sandbox reste asserté par l'appelant, jamais vérifié par le
+   harness contre la déclaration du profil.
+3. La projection du digest effectif est bloc-granulaire là où l'application est
+   champ-granulaire : tout bloc mixte est faux dans un sens ou dans l'autre.
+
+**Ce que trois rounds ont établi de plus utile n'est pas dans le code** : à
+chaque tour, la revue indépendante a arrêté une version que l'implémenteur
+tenait pour prête, et deux fois elle a arrêté une remédiation qui aggravait le
+défaut qu'elle prétendait clore. L'arrêt dur d'amorçage n'a pas été une
+formalité : il a fonctionné quatre fois.
