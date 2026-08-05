@@ -278,3 +278,46 @@ chaque tour, la revue indépendante a arrêté une version que l'implémenteur
 tenait pour prête, et deux fois elle a arrêté une remédiation qui aggravait le
 défaut qu'elle prétendait clore. L'arrêt dur d'amorçage n'a pas été une
 formalité : il a fonctionné quatre fois.
+
+## L'arbitrage `verifyOsPeer`, exécuté et invalidé par son exécution
+
+Décision propriétaire : ajouter une dépendance à l'allowlist pour lire les
+crédentiels de pair. Exécutée — `rustix` plutôt que `libc`, parce que chaque
+appel `libc` serait un bloc `unsafe` et que le crate interdit `unsafe` au
+niveau crate.
+
+**Le mécanisme ne peut pas répondre à la question sur ce transport.**
+`SO_PEERCRED` sur une `socketpair()` renvoie les crédentiels du processus
+*créateur*, **aux deux bouts** — donc le harness. Il n'existe pas de
+`connect()` pour capturer l'identité d'un pair : le syscall répond « qui a créé
+ce socket », jamais « qui est à l'autre bout ». La comparaison avec le pid de
+l'enfant ne pouvait que diverger, et c'est la **CI Linux qui l'a démontré** —
+macOS avait laissé passer, le contrôle y étant refusé pour indisponibilité.
+
+Traitement (`1004b04`) : la capacité ressort plutôt que d'être attestée sur un
+contrôle qui prouve autre chose ; `rustix` et le module sont retirés plutôt que
+laissés en poids mort ; la raison est écrite dans `controls.rs` pour que le
+prochain lecteur ne retente pas le même chemin.
+
+**Ce que la granularité par champ a rendu possible** : `/workerTransport/kind`
+et `/runBoundToken` restent dans le périmètre attesté — ils sont appliqués —
+tandis que `/verifyOsPeer` et `/hostLoopbackAllowed` en sortent. Une règle par
+bloc aurait forcé les quatre dedans ou les quatre dehors ; c'est précisément
+le défaut que le round 3 avait nommé.
+
+**Survivent de l'arbitrage, verts** : la vérification du pin de moteur —
+l'identité du moteur attesté est désormais une propriété du binaire, le
+manifeste voyageant avec le crate et son digest étant confronté à ce que le
+profil épingle — et la projection au grain du champ.
+
+**Coût désormais chiffré de la seule voie restante** : appliquer `verifyOsPeer`
+exige un socket **nommé** avec `connect`/`accept`, donc un transport différent,
+un changement de garde, et un protocole worker qui n'hérite plus de stdio. Le
+contrat verrouille pourtant le champ à `const: true`. Deux issues, toutes deux
+propriétaires : construire ce transport, ou amender ADR-0018 D2 pour que le
+contrat décrive ce que la couche peut tenir.
+
+Deux défauts de plateforme ont par ailleurs été attrapés par la CI Linux et
+corrigés en vol : un lockfile absent du commit, et un reap sur le chemin EOF
+qui tuait le worker venant de terminer normalement — macOS masquait le second,
+le kill y arrivant après la sortie du processus.
