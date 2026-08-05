@@ -80,18 +80,85 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
 3. Un mot parasite dans le message du commit local de l'étape 8 (l'amend a été
    refusé par le garde-fou de session) — sans effet si merge squash.
 
-## Verdicts K4 indépendants — EN ATTENTE
+## Verdicts K4 indépendants — **DEUX REJETS** (2026-08-05)
 
-Le fan-out (rôles architecture + security, modèle non-Claude, pattern
-`retro-k4`) sur `5bee6a3` est **bloqué par la limite d'usage du provider**
-(Codex ; clever-ai sans clé, google sans clé). Les verdicts seront ajoutés ici
-(`architecture.verdict.json`, `security.verdict.json`, plan + journal) dès
-déblocage — veille armée. **Le prononcé sur pièce complète attend ces deux
-verdicts** ; le présent dossier fige tout le reste.
+`5bee6a3/architecture.verdict.json` et `5bee6a3/security.verdict.json` —
+enveloppes `review-verdict.v0.1`, enregistrements immuables, worktrees
+détachés propres après chaque passe.
+
+**Les deux rôles rejettent, sur le même défaut central, trouvé
+indépendamment** : _l'attestation lie des contrôles que le run n'applique
+pas_. C'est précisément le non-goal du spec (« attester ce qui n'a pas été
+appliqué ») et la promesse même du composant.
+
+| Constat bloquant                                                                                                                                                                                                                                                                                                                                                                                               | Rôle         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `filesystem_confinement` est lié dans l'attestation mais **jamais appliqué au worker** : l'observateur est construit puis abandonné (`let _observer = …`), le spawn ne reçoit ni racine, ni `current_dir`, ni chroot — les ensembles readOnly/writable/denied ne médient aucun accès réel                                                                                                                      | archi + sécu |
+| `killProcessGroup`, `maxProcesses`, `dedicatedIdentity`, `dropAmbientCapabilities`, `verifyOsPeer`, `runBoundToken` sont **parsés puis jetés** (`ProfileWire` ne lit que `maxDurationSeconds` et `kind`) ; le timeout ne tue que l'enfant direct → **un petit-fils survit à la borne de durée** et retient le transport ; `effectiveProfileDigest == requestedProfileDigest` affirme pourtant le profil entier | archi + sécu |
+
+Majeurs : manifeste du moteur sandbox **asserté par l'appelant**, jamais
+vérifié par le harness ; présence de `setpriv` prise du plan appelant au lieu
+d'être observée (et `uid 0` accepté comme identité dédiée) ; `--regid` et le
+drop des capacités ambiantes absents alors que l'identité est attestée.
+Mineurs : garde de capacités contournable par import groupé (régression face à
+la garde sœur) ; `chrono` inutile mais rendu obligatoire par la requiredlist ;
+assertion e2e figée sur `linux-x86_64` ; `sudo --preserve-env=PATH` en CI.
+
+**Ce que les revues confirment par ailleurs** : couches pures solides (digests,
+politique, assemblage/vérification d'attestation), 13/13 codes couverts par des
+tests adversariaux, base64url strict, Ed25519 correct avec séparation de
+domaine, aucun `unsafe`, aucun secret journalisé, `env_clear` vérifié,
+descripteurs harness non fuités (CLOEXEC).
+
+**Conséquence : le prononcé est bloqué.** Le livrable n'est pas mergeable en
+l'état — non parce qu'il ferait moins que promis en volume, mais parce qu'il
+**dirait plus qu'il ne fait**, dans le document même dont la valeur est d'être
+exact. Remédiation nécessaire avant re-revue :
+
+1. Soit appliquer les contrôles (médiation fs réelle dans le spawn, `setsid` +
+   `killpg`, `RLIMIT_NPROC`, `--regid`, drop des capacités ambiantes,
+   lecture complète du bloc `process`/`workerTransport`), soit **refuser à la
+   résolution** tout profil prescrivant ce que ce moteur n'applique pas — le
+   patron de refus existe déjà dans le diff, il n'est simplement pas appliqué
+   à ces sous-contrôles.
+2. `effectiveProfileDigest` doit refléter le profil **effectif**, jamais
+   ré-échoer le demandé par construction.
+3. Le harness résout et vérifie lui-même l'identité de son moteur.
+4. Les faits d'hôte sont observés, pas assertés (sonde `setpriv`, `uid` validé).
+
+### Note d'honnêteté sur l'indépendance des passes
+
+Ces deux passes sont **role-séparées, review-only, sur commit immuable en
+worktree détaché vérifié propre** — la règle d'indépendance du protocole
+(« Agent/session inequality is not an independence criterion ») est donc
+satisfaite. En revanche la **diversité de modèle n'est pas atteinte** : le
+provider tiers (Codex) a été retiré de l'outillage sur décision propriétaire
+en cours de session, les deux passes tournent donc sur le même modèle que
+l'implémenteur. Cette limite est déclarée ici, pas contournée : elle affaiblit
+la détection de biais partagés, et les rejets ci-dessus ne doivent pas être
+lus comme une couverture équivalente à un challenge inter-modèles.
 
 ## Décision demandée au propriétaire
 
-`accept` (merge squash de #13, message propre) / `hold` / `reject` — après
-lecture des verdicts K4 à venir. Un `accept` amorce la chaîne de confiance
-D4 : les répétitions du même pattern (packages harness suivants) se prononcent
-ensuite automatiquement sur dossier propre.
+**Aucun `accept` n'est demandé sur `5bee6a3`** : deux rejets indépendants
+tiennent le prononcé fermé, et l'arrêt dur d'amorçage a donc fait exactement
+son travail — le premier pattern de la couche a été arrêté avant merge par sa
+propre revue, pas après.
+
+Le fork ouvert est celui de la **remédiation** :
+
+- **A — Enforcer** ce que le profil prescrit (médiation fs dans le spawn,
+  `setsid`/`killpg`, `RLIMIT_NPROC`, `--regid`, capacités ambiantes). Le
+  livrable tient alors sa promesse entière ; coût : la surface d'hôte double,
+  et chaque mécanisme ajouté demande ses propres tests adversariaux.
+- **B — Rétrécir la prescription** : un profil d'amorçage qui ne prescrit que
+  ce que ce moteur applique réellement, et un refus à la résolution pour tout
+  ce qu'il ne sait pas appliquer. Le livrable dit alors moins, mais dit vrai —
+  ce que le spec exige (« un contrôle qui ne peut être appliqué est un refus »).
+- **A+B recommandé** : B immédiatement (l'honnêteté de l'attestation est
+  l'invariant, elle ne peut pas attendre), A par incréments nommés ensuite,
+  chacun élargissant le profil d'amorçage une prescription à la fois.
+
+Dans les trois cas, une **nouvelle passe K4 sur le commit remédié** est
+requise avant tout prononcé ; les deux rejets ci-dessus restent des
+enregistrements immuables de l'historique de ce package.
