@@ -40,7 +40,7 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
   digest profil `b3e3198e…`, digest attestation `4526db20…`, **signature Ed25519
   du vecteur vérifiée** ; signature retournée / clé étrangère / contenu falsifié
   → refusés.
-- **62 tests verts** sur le workspace (54 à `5bee6a3`) ; `bun run check` exit 0 ; `cargo fmt` +
+- **66 tests verts** sur le workspace (54 à `5bee6a3`) ; `bun run check` exit 0 ; `cargo fmt` +
   `clippy -D warnings` propres. CI de #13 : 5/5 checks verts.
 - **La première exécution confinée réelle attestée a eu lieu** — job « First
   confined execution, attested (privileged e2e) », run CI
@@ -213,3 +213,26 @@ adversariales à 500 k tokens ont trouvé et re-trouvé un thème d'architecture
 deux finders orientés correction ont trouvé un panic et un hang que ces quatre
 passes avaient explicitement déclarés absents. Et la vérification par lecture
 a coûté deux commandes là où 14 agents dédiés en auraient coûté ~700 k.
+
+## État des constats bloquants des deux rounds K4
+
+| Constat | Traitement | Commit |
+| --- | --- | --- |
+| le bloc `process` prescrit était parsé puis jeté | appliqué par la chaîne `setsid` → `prlimit` → `setpriv`, ou run refusé | `2a157c8` |
+| `filesystem_confinement` attesté sans mécanisme | retiré des capacités du moteur ; tout profil l'exigeant est refusé | `f27b3c9` |
+| une capture courte silencieuse était signée | fait consigné, groupe reapé, refus `output_scan_incomplete` | `db05339` |
+| `effectiveProfileDigest` ré-échoait le demandé | digest du périmètre réellement appliqué ; règle de projection publique et rejouable | `f5e3bcd` |
+| `verifyOsPeer` / `runBoundToken` inertes | **ouvert** — sortis du digest effectif, donc plus attestés, mais toujours ni appliqués ni refusés | — |
+
+Le dernier constat est le seul qui reste, et il ne se ferme pas dans le code :
+le contrat verrouillé fixe les deux champs à `const: true`, donc « rétrécir la
+prescription » est indisponible et « refuser » reviendrait à refuser tout
+profil valide. Les trois issues sont : implémenter un jeton lié au run et une
+vérification de pair (le premier est faisable, le second demande une
+dépendance hors allowlist ou un argument par construction assumé), amender
+ADR-0018 D2 pour nommer ce que « processus local confiné » recouvre, ou
+laisser l'écart déclaré tel quel dans ce dossier.
+
+**Aucune nouvelle passe K4 n'est lancée avant cet arbitrage** : un relecteur
+rejetterait sur ce point quel que soit l'état du reste, et la passe serait
+dépensée pour un verdict connu d'avance.
