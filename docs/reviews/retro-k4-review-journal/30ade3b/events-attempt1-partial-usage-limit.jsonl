@@ -1,0 +1,11 @@
+{"reviewPassId":"rp-30ade3b-82560647-b941-40ac-8b58-dd0de995bb4f","role":"security","type":"pass_start","at":"2026-08-04T15:12:17.915Z","detail":{"commit":"30ade3bf62e9d7a7d4147da1ac7bed446f84241a","mode":"specialized-role"}}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"pass_start","at":"2026-08-04T15:12:17.915Z","detail":{"commit":"30ade3bf62e9d7a7d4147da1ac7bed446f84241a","mode":"specialized-role"}}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"worktree_ready","at":"2026-08-04T15:12:17.935Z"}
+{"reviewPassId":"rp-30ade3b-82560647-b941-40ac-8b58-dd0de995bb4f","role":"security","type":"worktree_ready","at":"2026-08-04T15:12:17.936Z"}
+{"reviewPassId":"rp-30ade3b-82560647-b941-40ac-8b58-dd0de995bb4f","role":"security","type":"agent_call","at":"2026-08-04T15:12:17.936Z","endedAt":"2026-08-04T15:15:01.393Z","detail":{"exitCode":1,"provider":"openai-codex","model":"gpt-5.6-terra","thinking":"xhigh"}}
+{"reviewPassId":"rp-30ade3b-82560647-b941-40ac-8b58-dd0de995bb4f","role":"security","type":"worktree_removed","at":"2026-08-04T15:15:01.410Z"}
+{"reviewPassId":"rp-30ade3b-82560647-b941-40ac-8b58-dd0de995bb4f","role":"security","type":"pass_end","at":"2026-08-04T15:15:01.410Z","detail":{"ok":false,"durationMs":163495}}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"agent_call","at":"2026-08-04T15:12:17.935Z","endedAt":"2026-08-04T15:15:11.252Z","detail":{"exitCode":0,"provider":"openai-codex","model":"gpt-5.6-terra","thinking":"xhigh"}}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"verdict_recorded","at":"2026-08-04T15:15:11.268Z","detail":{"outputPath":"docs/reviews/retro-k4-review-journal/30ade3b/architecture.verdict.json"}}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"worktree_removed","at":"2026-08-04T15:15:11.280Z"}
+{"reviewPassId":"rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e","role":"architecture","type":"pass_end","at":"2026-08-04T15:15:11.281Z","detail":{"ok":true,"durationMs":173366}}
