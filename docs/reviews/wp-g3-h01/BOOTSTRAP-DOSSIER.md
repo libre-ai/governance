@@ -214,25 +214,30 @@ deux finders orientés correction ont trouvé un panic et un hang que ces quatre
 passes avaient explicitement déclarés absents. Et la vérification par lecture
 a coûté deux commandes là où 14 agents dédiés en auraient coûté ~700 k.
 
-## État des constats bloquants des deux rounds K4
+## État des constats bloquants — corrigé après le round 3
 
-| Constat | Traitement | Commit |
+Le tableau précédent surdéclarait : il annonçait « quatre des cinq clos » en
+comptant cinq constats là où les deux rounds en portaient six, et en omettant
+les deux bloquants de sécurité du round 2. Version exacte, vérifiée par le
+round 3 (`0ab2a20/security.verdict.json`) :
+
+| Constat bloquant | Round | État réel |
 | --- | --- | --- |
-| le bloc `process` prescrit était parsé puis jeté | appliqué par la chaîne `setsid` → `prlimit` → `setpriv`, ou run refusé | `2a157c8` |
-| `filesystem_confinement` attesté sans mécanisme | retiré des capacités du moteur ; tout profil l'exigeant est refusé | `f27b3c9` |
-| une capture courte silencieuse était signée | fait consigné, groupe reapé, refus `output_scan_incomplete` | `db05339` |
-| `effectiveProfileDigest` ré-échoait le demandé | digest du périmètre réellement appliqué ; règle de projection publique et rejouable | `f5e3bcd` |
-| `verifyOsPeer` / `runBoundToken` inertes | **ouvert** — sortis du digest effectif, donc plus attestés, mais toujours ni appliqués ni refusés | — |
+| le bloc `process` prescrit était parsé puis jeté | 2 (archi) | **clos** — `2a157c8` |
+| `filesystem_confinement` attesté sans mécanisme | 1 (les deux rôles) | **clos** — `f27b3c9` |
+| une capture courte silencieuse était signée | xhigh | **clos** — `db05339` |
+| `effectiveProfileDigest` ré-échoait le demandé | 2 (archi) | **partiel** — l'écho a disparu (`f5e3bcd`), mais la projection admet quatre prescriptions non appliquées et en omet d'appliquées |
+| `workerTransport` inerte (`runBoundToken`) | 2 (archi) | **clos** — `0ab2a20`, jeton réellement exigé |
+| `workerTransport` inerte (`verifyOsPeer`) | 2 (archi) | **ouvert, et aggravé** — l'argument « par construction » est réfuté : le pair est l'enfant *et tout descendant* par héritage de fd ; la capacité est désormais signée alors qu'elle ne l'était pas |
+| `killProcessGroup` jamais reapé sur un chemin qui attesté | 2 (sécu) | **ouvert** — jamais traité, absent du tableau précédent |
+| `maxDurationSeconds` ne borne pas le run (`write_all` avant l'horloge) | 2 (sécu) | **ouvert** — jamais traité, absent du tableau précédent |
 
-Le dernier constat est le seul qui reste, et il ne se ferme pas dans le code :
-le contrat verrouillé fixe les deux champs à `const: true`, donc « rétrécir la
-prescription » est indisponible et « refuser » reviendrait à refuser tout
-profil valide. Les trois issues sont : implémenter un jeton lié au run et une
-vérification de pair (le premier est faisable, le second demande une
-dépendance hors allowlist ou un argument par construction assumé), amender
-ADR-0018 D2 pour nommer ce que « processus local confiné » recouvre, ou
-laisser l'écart déclaré tel quel dans ce dossier.
+S'y ajoutent deux défauts **introduits par les remédiations** et trouvés par le
+round 3 : la réécriture du matcher de globs change le langage reconnu (un `*`
+littéral dans le sujet peut désormais échapper à un motif — fail-open dans
+l'ensemble `denied`), et la borne de sortie s'applique au flux cadré, donc
+44 octets plus large que ce que l'attestation content-adresse.
 
-**Aucune nouvelle passe K4 n'est lancée avant cet arbitrage** : un relecteur
-rejetterait sur ce point quel que soit l'état du reste, et la passe serait
-dépensée pour un verdict connu d'avance.
+**Trois rounds, trois rejets.** Le dossier ne prétend pas à un livrable prêt :
+il enregistre un composant dont la revue indépendante a arrêté chaque version
+avant merge, et dont les écarts restants sont nommés plutôt que réduits.
