@@ -1,9 +1,13 @@
 # WP-G3-H01 — Dossier d'arrêt dur d'amorçage : première exécution confinée, attestée
 
 - **Objet du prononcé :** merge de [orchestrator#13](https://github.com/libre-ai/orchestrator/pull/13)
-  (`feat/wp-g3-h01-confined-execution`, tête `5bee6a3`) — premier merge
-  sécurité-critique de la couche 2 (ADR-0011 D4, I-17). Aucun merge par
-  l'agent ; ce dossier est produit pour le prononcé propriétaire.
+  (`feat/wp-g3-h01-confined-execution`) — premier merge sécurité-critique de
+  la couche 2 (ADR-0011 D4, I-17). Aucun merge par l'agent ; ce dossier est
+  produit pour le prononcé propriétaire.
+- **Têtes successives :** `5bee6a3` (revue round 1 → 2 rejets), `f27b3c9`
+  (remédiation → revue round 2 → 2 rejets), **`db05339`** (remédiation +
+  traitement de la revue xhigh, CI verte). Le prononcé reste fermé : une
+  nouvelle passe K4 sur `db05339` est requise.
 - **Cadre :** ADR-0018 D2 — première capacité réelle ouverte : exécution d'un
   processus local confiné par le harness, produisant sa première attestation
   signée. Restent fermés : réseau sortant, secrets, providers, persistance,
@@ -28,7 +32,7 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
 | `host/process.rs`                | spawn confiné : paire Unix anonyme, env vidé, cap d'octets dur, kill au timeout ; plan privilégié (uid dédié + setpriv)                                                | —                                                                                                         |
 | `host/run.rs`                    | le chemin D2 bout-en-bout : résoudre → refuser l'inapplicable → confiner → borner → attester ; `WorkerFault` distinct de la matrice                                    | —                                                                                                         |
 | `verification/agent-harness/`    | garde mécanique : réseau + `std::env` bannis partout, `std::fs`/`std::process` sous `src/host/` seul, allowlist+requiredlist de dépendances, dans `check:capabilities` | —                                                                                                         |
-| `profiles/local-process.v1.json` | profil canonique content-addressed (`ea8e56cd…`), plateformes Linux seules ; `engine-manifest.v1.json` (`380ce5c3…`)                                                   | —                                                                                                         |
+| `profiles/local-process.v1.json` | profil canonique content-addressed (`de9b3af5…` depuis `f27b3c9`), plateformes Linux seules ; `engine-manifest.v1.json` (`db11edba…`)                                                   | —                                                                                                         |
 
 ## Preuves
 
@@ -36,7 +40,7 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
   digest profil `b3e3198e…`, digest attestation `4526db20…`, **signature Ed25519
   du vecteur vérifiée** ; signature retournée / clé étrangère / contenu falsifié
   → refusés.
-- **54 tests verts** sur le workspace ; `bun run check` exit 0 ; `cargo fmt` +
+- **62 tests verts** sur le workspace (54 à `5bee6a3`) ; `bun run check` exit 0 ; `cargo fmt` +
   `clippy -D warnings` propres. CI de #13 : 5/5 checks verts.
 - **La première exécution confinée réelle attestée a eu lieu** — job « First
   confined execution, attested (privileged e2e) », run CI
@@ -77,7 +81,10 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
    porté) — borné par uid dédié + no-new-privs + timeout.
 2. `verifyOsPeer` est satisfait par construction (paire anonyme héritée), pas
    par vérification de crédentiels pairs — documenté dans le code.
-3. Un mot parasite dans le message du commit local de l'étape 8 (l'amend a été
+3. Deux messages de commit dégradés par l'outillage (un mot parasite à l'étape
+   8, des identifiants perdus entre backticks sur `db05339`) — sans effet sur
+   `main`, le message de squash étant rédigé au merge.
+4. Un mot parasite dans le message du commit local de l'étape 8 (l'amend a été
    refusé par le garde-fou de session) — sans effet si merge squash.
 
 ## Verdicts K4 indépendants — **DEUX REJETS** (2026-08-05)
@@ -162,3 +169,47 @@ Le fork ouvert est celui de la **remédiation** :
 Dans les trois cas, une **nouvelle passe K4 sur le commit remédié** est
 requise avant tout prononcé ; les deux rejets ci-dessus restent des
 enregistrements immuables de l'historique de ce package.
+
+## Troisième passe — revue workflow xhigh du 2026-08-05 (`f27b3c9`)
+
+Passe d'un autre genre que les deux précédentes : cadrée sur les **bugs de
+correction** plutôt que sur l'architecture, avec interdiction explicite de
+re-signaler les constats déjà enregistrés.
+
+**Exécution partielle, déclarée comme telle.** 19 des 22 agents sont morts sur
+la limite d'usage du compte, dont les 14 vérificateurs. Le rapport brut
+annonçait « aucun finding n'a survécu à la vérification » : artefact de la
+coupure, aucune vérification n'ayant eu lieu. Deux finders sur six ont abouti
+et produit 15 candidats, vérifiés ensuite par lecture directe du code au
+commit cible — six confirmés avec chemin d'échec reproduit, deux plausibles,
+sept écartés (redites des deux rounds, ou chemin d'échec non établi).
+
+**Ce que la passe a trouvé, et que les deux rounds adversariaux avaient
+qualifié de « couches pures solides et bien testées » :**
+
+| Défaut | Preuve |
+| --- | --- |
+| le matcher de globs découpait un segment à des offsets d'octets : `café.txt` jugé contre `*.txt` **paniquait** au lieu de refuser | `start byte index 4 is not a char boundary; it is inside 'é'` |
+| le même matcher explorait tous les points de coupe par étoile | `a*a*a*a*a*a*a*b` contre 64 caractères : **34,8 s** dans une décision sans timeout propre |
+| `Err(_) => break` avalait toute erreur de lecture non-timeout | capture courte, `truncated=false`, attestation signée par-dessus |
+| `sign_attestation` signait n'importe quels identifiants de contrôle | une attestation revendiquant `filesystem_confinement` était signée et vérifiée |
+| une clé de vérification malformée était rapportée `attestation_unsigned` | l'opérateur conclut au faux plutôt qu'à sa propre erreur d'encodage |
+| la garde exemptait toute ligne contenant `forbid(unsafe_code)` | `unsafe { … } // forbid(unsafe_code)` passait ; une prose sur l'unsafety échouait |
+| les en-têtes TOML `[[bench]]` étaient invisibles au parseur de sections | les clés du bloc devenaient des noms de dépendances |
+
+**Traitement (`db05339`, CI verte).** Sept corrigés, chacun avec le test qui
+reproduit le défaut : matcher caractère-à-caractère à point de retour unique
+(0,44 s au lieu de 34,8 s, plus aucun découpage d'octets) ; capture échouée
+devenue un fait consigné, groupe reapé, run refusé via
+`harness.output_scan_incomplete` ; `assemble` refuse tout identifiant que le
+moteur n'offre pas ; `VerificationError` sépare l'entrée malformée du
+vérificateur d'un verdict sur le document ; garde corrigée sur ses deux
+défauts. Le huitième — la borne totale du ledger, inatteignable tant qu'un run
+est un seul spawn — est **laissé ouvert et nommé dans le code**.
+
+**Enseignement de méthode**, à porter dans `CHALLENGER-EVALUATION.md` : le
+fan-out n'a pas produit la valeur, l'**angle** l'a produite. Quatre passes
+adversariales à 500 k tokens ont trouvé et re-trouvé un thème d'architecture ;
+deux finders orientés correction ont trouvé un panic et un hang que ces quatre
+passes avaient explicitement déclarés absents. Et la vérification par lecture
+a coûté deux commandes là où 14 agents dédiés en auraient coûté ~700 k.
