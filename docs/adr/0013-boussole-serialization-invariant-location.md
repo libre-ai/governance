@@ -1,6 +1,6 @@
 # ADR-0013 — Lieu des invariants de sérialisation des résultats Boussole
 
-- **Statut :** proposed — question ouverte ; aucune option n'est retenue par cet ADR
+- **Statut :** deferred (2026-08-18, ADR-0023 — Domain A re-ratification) — fond arbitré en phase produits de la remise à plat 2026-08 ; question ouverte inchangée, aucune option retenue par cet ADR
 - **Date :** 2026-07-25
 - **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas et n'autorise aucun amendement de contrat.
 - **Portée :** contrats Boussole v2 — `contracts/schemas/local-comparison.v2.schema.json`, `contracts/schemas/boussole-method.v2.schema.json`, `contracts/wit/boussole-scoring-v2/SEMANTICS.md`
