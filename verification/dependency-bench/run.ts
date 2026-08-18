@@ -24,6 +24,12 @@
  *      (a real GitHub git-dep): only replayed with `--online`.
  *
  * Usage: bun verification/dependency-bench/run.ts [--online]
+ *
+ * Manual by design (owner decision 2026-08-18): this is a point-in-time study
+ * of dependency mechanics, re-run when one of the five cases above is
+ * revisited or a new mechanic is added — not a recurring gate. Its conclusions
+ * are evidence committed to `distribution/evidence/`, not a status this
+ * repository keeps continuously green.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";

@@ -8,6 +8,11 @@
  * entries must include LICENSE and no test file; the four satellites must
  * share one linked version. Analysis is pure (unit-tested); only the CLI
  * touches the filesystem.
+ *
+ * Manual by design (owner decision 2026-08-18): run this the day of an npm
+ * publish, immediately before `bun publish` — not on a schedule, not in CI.
+ * There is nothing to gate between publishes; wiring it to a cron would audit
+ * a tarball nobody is about to ship.
  */
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
