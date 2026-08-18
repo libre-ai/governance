@@ -196,6 +196,14 @@ repositories:
     lifecycle: active
     owns:
       - the content at the repository root
+  - repository: libre-ai/harness
+    card: project.v1.yaml
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    owns:
+      - the content at the repository root
   - repository: libre-ai/starter
     card: project.v1.yaml
     role: satellite
@@ -347,6 +355,25 @@ repositories:
     # Draft block thinner than the others on purpose: Carrière has no parity
     # audit yet (benchmark TBD, owner to set); values derive from the owner
     # decision of 2026-07-23 and the product CDC, not from a PARITY-*.md.
+  - repository: libre-ai/travel-agent
+    card: project.v1.yaml
+    role: reserved-product-home
+    layer: couche-1
+    product: Travel Agent
+    # 9th couche-1 product, added by owner decision 2026-08-18 (structured
+    # arbitration, remise à plat domain B): repository created with only
+    # content verified free of personal information; the sealed-repo phase
+    # (isolation gate proven both ways) was exited before the first push.
+    visibility: public
+    lifecycle: active
+    owns:
+      - itinerary planning over verified city facts; trip instances never tracked
+    consumes:
+      - governance fleet gates (pinned reusable workflows)
+    canonical_paths:
+      - src
+      - data/cities
+      - prompts
   - repository: libre-ai/website
     card: project.v1.yaml
     role: active-application

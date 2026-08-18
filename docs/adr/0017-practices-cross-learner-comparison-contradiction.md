@@ -1,6 +1,6 @@
 # ADR-0017 — Contradiction sur la comparaison inter-apprenants (Practices)
 
-- **Statut :** proposed — question ouverte ; aucune option n'est retenue par cet ADR
+- **Statut :** deferred (2026-08-18, ADR-0023 — Domain A re-ratification) — fond arbitré en phase produits de la remise à plat 2026-08 ; question ouverte inchangée, aucune option retenue par cet ADR
 - **Date :** 2026-07-25
 - **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas.
 - **Portée :** spécification produit Practices — `docs/apps/practices.md`, `contracts/openapi/practices.v1.yaml`, garde-fou `tools/quality/check-no-transmission.ts`

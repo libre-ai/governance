@@ -200,7 +200,7 @@ et ailleurs — hors du périmètre du présent ADR, qui n'admet que
 ## Conséquences
 
 - Le registre des invariants gagne I-25, sourcé par le présent ADR ; le
-  registre des décisions gagne D32.
+  registre des décisions gagne D33.
 - `docs/decisions/LEXICON.md` §4 (glossaire produit) gagne l'entrée
   `skills` qui désambiguïse la collection de `patterns-skills`.
 - `docs/README.md` (carte d'autorité) gagne la ligne « Collection de skills

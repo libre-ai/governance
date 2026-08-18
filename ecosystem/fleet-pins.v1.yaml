@@ -52,3 +52,9 @@ generations:
   - sha: f767f2fb96c93e86eb6451d4dd1e80d250da2027
     added_on: 2026-08-04
     note: wave-1 gate-report scanners, parameterized no-transmission guard
+  - sha: 9cd1d421d318129db99456d963f4bc1cfad67b33
+    added_on: 2026-08-18
+    note: >-
+      reusable-dependency-policy.yml published (e1232c1) and declarable for
+      the first time — libre-ai/harness is the first consumer to wire it
+      (step 3 of the process above, harness domain F chantier A)
