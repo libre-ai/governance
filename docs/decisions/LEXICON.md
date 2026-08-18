@@ -1,7 +1,7 @@
 # LEXICON — carte de noms cible et glossaire produit (Phase 0, Lexicon Lock)
 
 - **Statut :** signé — signature propriétaire prononcée le 2026-07-20, journalisée dans [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md) (PR #130, merge = signature). Cette carte est en vigueur : elle est l'autorité unique des noms cibles, et tout nom hors carte est un défaut bloquant (garde-fou classe 4).
-- **Date :** 2026-07-20. **Amendé :** 2026-07-28 par ADR-0020 (activation générale), même procédure que la signature — production → revue K4 → arrêt dur → merge = signature propriétaire. Le §8 porte l'amendement ; les corrections ciblées dans le corps sont marquées « (ADR-0020) ».
+- **Date :** 2026-07-20. **Amendé :** 2026-07-28 par ADR-0020 (activation générale), 2026-07-30 (§9, carte des couches complétée), 2026-08-18 (§10, harness créé — domaine F chantier A), même procédure que la signature — production → revue K4 → arrêt dur → merge = signature propriétaire. Le §8 porte le premier amendement ; les corrections ciblées dans le corps sont marquées « (ADR-0020) ».
 - **Arbitrage :** accompli — la signature propriétaire de cette carte est l'acte de clôture de la Phase 0 (Lexicon Lock). Procédure suivie : production solo → revue K4 (relecteurs indépendants : cohérence, collisions, doctrine) → arrêt dur → signature propriétaire → renommage et écriture des noms cibles comme acquis.
 - **Portée :** tous les noms cibles de la constellation — repositories, produits, briques, packages npm, crates, familles — et le glossaire produit. Le glossaire de **méthode** (socle, control plane, satellite, vague, gate, WP, traceur…) est déjà fixé et ne relève pas de cette carte.
 - **Règle d'anti-hallucination :** tant que cette carte n'est pas signée, aucun agent n'écrit un nom cible comme acquis dans un artefact ; après signature, tout nom hors carte est un défaut bloquant (garde-fou classe 4).
@@ -13,15 +13,15 @@ Doctrine applicable : les URLs des produits historiques sont **réservées** com
 
 ### 1.1 Homes produits et application (conservés, gelés jusqu'à activation)
 
-| Legacy (repo)        | Cible (repo)                       | Produit / application   | Couche | Activation                                   |
-| -------------------- | ---------------------------------- | ----------------------- | ------ | -------------------------------------------- |
-| `feed-radar`         | `feed-radar` (inchangé, réservé)   | Radar                   | 1      | vague 4b                                     |
-| `notebook`           | `notebook` (inchangé, réservé)     | Notebook                | 1      | vague 4a                                     |
-| `ai-practices`       | `ai-practices` (inchangé, réservé) | AI Practices            | 1      | vague 4b                                     |
-| `sessions`           | `sessions` (inchangé, réservé)     | Sessions                | 1      | vague 4b                                     |
-| `boussole-politique` | `boussole-politique` (inchangé)    | Boussole Politique      | 1      | vague 4b                                     |
-| `spec-studio`        | `spec-studio` (inchangé, réservé)  | Spec Studio             | 1      | vague 4b                                     |
-| `policy`             | `policy` (inchangé, réservé)       | Model Policy            | 1      | vague 4b (public après re-audit secrets/PII) |
+| Legacy (repo)        | Cible (repo)                                                                                      | Produit / application   | Couche | Activation                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- | ------ | -------------------------------------------- |
+| `feed-radar`         | `feed-radar` (inchangé, réservé)                                                                  | Radar                   | 1      | vague 4b                                     |
+| `notebook`           | `notebook` (inchangé, réservé)                                                                    | Notebook                | 1      | vague 4a                                     |
+| `ai-practices`       | `ai-practices` (inchangé, réservé)                                                                | AI Practices            | 1      | vague 4b                                     |
+| `sessions`           | `sessions` (inchangé, réservé)                                                                    | Sessions                | 1      | vague 4b                                     |
+| `boussole-politique` | `boussole-politique` (inchangé)                                                                   | Boussole Politique      | 1      | vague 4b                                     |
+| `spec-studio`        | `spec-studio` (inchangé, réservé)                                                                 | Spec Studio             | 1      | vague 4b                                     |
+| `policy`             | `policy` (inchangé, réservé)                                                                      | Model Policy            | 1      | vague 4b (public après re-audit secrets/PII) |
 | `agent-board`        | `missions` (ADR-0020 : la carte rattrape l'arbitrage propriétaire du 2026-07-23, ADR-0008 amendé) | Missions (app couche 2) | 2      | activation générale                          |
 
 Sept produits (Radar, Notebook, AI Practices, Sessions, Boussole Politique, Spec Studio, Model Policy) ; `agent-board`/Missions est l'**application** de la couche 2, pas un huitième produit (ADR-0009 §2, inventaire).
@@ -165,23 +165,23 @@ Porté par la pull request de l'ADR-0020, même procédure que la signature de c
 
 ### 8.1 Noms d'autorité
 
-| Brique | Repo cible | Note |
-| --- | --- | --- |
-| `governance` | `libre-ai/governance` | doctrine, invariants, ADR, cette carte, index d'écosystème, schéma des fiches, outillage d'écosystème, evidence, gates de flotte |
-| `contracts` | `libre-ai/contracts` | les autorités canoniques de contrats, catalog, gates contrats. **Désambiguïsation** : le repo `libre-ai/contracts` (autorités) et le package npm `@libre-ai/contracts` (projection SDK TypeScript, repo `sdk-ts`, nom conservé §2.1) sont deux objets distincts |
+| Brique       | Repo cible            | Note                                                                                                                                                                                                                                                            |
+| ------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `governance` | `libre-ai/governance` | doctrine, invariants, ADR, cette carte, index d'écosystème, schéma des fiches, outillage d'écosystème, evidence, gates de flotte                                                                                                                                |
+| `contracts`  | `libre-ai/contracts`  | les autorités canoniques de contrats, catalog, gates contrats. **Désambiguïsation** : le repo `libre-ai/contracts` (autorités) et le package npm `@libre-ai/contracts` (projection SDK TypeScript, repo `sdk-ts`, nom conservé §2.1) sont deux objets distincts |
 
 ### 8.2 Identifiants nés après la signature de la carte
 
-| Brique | Repo satellite cible | Package/crate | Source socle |
-| --- | --- | --- | --- |
-| `testing` | `libre-ai/testing` | `@libre-ai/testing` | `packages/testing` |
-| `data` | `libre-ai/data` | `@libre-ai/data` | `packages/data` |
-| `rgpd-kit` | `libre-ai/rgpd-kit` | `@libre-ai/rgpd-kit` | `packages/rgpd-kit` |
-| `classification` | `libre-ai/classification` | `@libre-ai/classification` | `packages/classification` |
-| `collab-core` | `libre-ai/collab-core` | `@libre-ai/collab-core` | `packages/collab-core` |
-| `collab-relay` | `libre-ai/collab-relay` | `@libre-ai/collab-relay` | `packages/collab-relay` |
-| — | rejoint le repo produit `policy` | `@libre-ai/policy-core-ref` | `packages/policy-core-ref` |
-| — | rejoint le repo produit `policy` | crate `policy-core` (conservé sans préfixe — quatrième exception, §5) | `crates/policy-core` |
+| Brique           | Repo satellite cible             | Package/crate                                                         | Source socle               |
+| ---------------- | -------------------------------- | --------------------------------------------------------------------- | -------------------------- |
+| `testing`        | `libre-ai/testing`               | `@libre-ai/testing`                                                   | `packages/testing`         |
+| `data`           | `libre-ai/data`                  | `@libre-ai/data`                                                      | `packages/data`            |
+| `rgpd-kit`       | `libre-ai/rgpd-kit`              | `@libre-ai/rgpd-kit`                                                  | `packages/rgpd-kit`        |
+| `classification` | `libre-ai/classification`        | `@libre-ai/classification`                                            | `packages/classification`  |
+| `collab-core`    | `libre-ai/collab-core`           | `@libre-ai/collab-core`                                               | `packages/collab-core`     |
+| `collab-relay`   | `libre-ai/collab-relay`          | `@libre-ai/collab-relay`                                              | `packages/collab-relay`    |
+| —                | rejoint le repo produit `policy` | `@libre-ai/policy-core-ref`                                           | `packages/policy-core-ref` |
+| —                | rejoint le repo produit `policy` | crate `policy-core` (conservé sans préfixe — quatrième exception, §5) | `crates/policy-core`       |
 
 ### 8.3 Promotions par renversement du §2.5
 
@@ -205,14 +205,14 @@ change de nom.
 
 ### 9.1 Six briques nées satellites en γ 3.4, absentes de la carte
 
-| Brique         | Repo satellite           | Package                    | Couche   |
-| -------------- | ------------------------ | -------------------------- | -------- |
-| `testing`      | `libre-ai/testing`       | `@libre-ai/testing`        | couche 4 |
-| `rgpd-kit`     | `libre-ai/rgpd-kit`      | `@libre-ai/rgpd-kit`       | couche 4 |
+| Brique           | Repo satellite            | Package                    | Couche   |
+| ---------------- | ------------------------- | -------------------------- | -------- |
+| `testing`        | `libre-ai/testing`        | `@libre-ai/testing`        | couche 4 |
+| `rgpd-kit`       | `libre-ai/rgpd-kit`       | `@libre-ai/rgpd-kit`       | couche 4 |
 | `classification` | `libre-ai/classification` | `@libre-ai/classification` | couche 4 |
-| `collab-core`  | `libre-ai/collab-core`   | `@libre-ai/collab-core`    | couche 4 |
-| `collab-relay` | `libre-ai/collab-relay`  | `@libre-ai/collab-relay`   | couche 4 |
-| `data`         | `libre-ai/data`          | `@libre-ai/data`           | couche 4 |
+| `collab-core`    | `libre-ai/collab-core`    | `@libre-ai/collab-core`    | couche 4 |
+| `collab-relay`   | `libre-ai/collab-relay`   | `@libre-ai/collab-relay`   | couche 4 |
+| `data`           | `libre-ai/data`           | `@libre-ai/data`           | couche 4 |
 
 ### 9.2 Couches des quatre briques du §2.5 (nommées sans couche)
 
@@ -231,4 +231,53 @@ famille brique, listé pour que la carte n'ait aucun angle mort.
 
 Les briques « à naître » du §2 (proof, memory, harness, mcp-server, corpus,
 docs) restent à naître : leurs noms sont réservés par cette carte, aucun
-repo n'existe, rien ne se crée sans arrêt dur propriétaire.
+repo n'existe, rien ne se crée sans arrêt dur propriétaire. **Corrigé par
+le §10 pour `harness` seul** — la phrase ci-dessus décrivait l'état du
+2026-07-30 ; `harness` a un repository depuis le 2026-08-18.
+
+## 10. Amendement du 2026-08-18 — harness créé (domaine F chantier A)
+
+Amendement produit selon la procédure de ce document (production → revue
+K4 role-separated → merge = signature), sous arrêt dur propriétaire
+explicite du 2026-08-18 (ADR-0026, re-ratification du domaine F). `harness`
+sort de son statut de nom réservé : le repository existe.
+
+### 10.1 §8.4 corrigé — `harness` n'est plus un nom réservé re-scopé
+
+Le §8.4 disait : « `harness` et `memory` sont re-scopés comme roadmap du
+repo `orchestrator` (contenu ADR-0018/WP-G3-H01), leur réservation de nom
+demeure. » Ce n'est plus exact pour `harness` : par décision propriétaire
+explicite du 2026-08-18, `libre-ai/harness` est un repository satellite
+couche 2 à part entière, créé pour porter la frontière d'exécution
+confinée et sa spécification — migrée depuis
+`orchestrator/docs/apps/harness.md` (ADR-0018 D3), contenu inchangé, seul
+le chemin de crate mis à jour vers la réalité de ce nouveau dépôt. Le §8.4
+reste la référence historique de la décision du 2026-07-28 ; il ne décrit
+plus l'état courant pour `harness`. **`memory` reste re-scopé comme
+roadmap du repo `orchestrator`** — ce chantier ne le touche pas.
+
+| Brique    | Repo satellite     | Package/crate      | Couche   |
+| --------- | ------------------ | ------------------ | -------- |
+| `harness` | `libre-ai/harness` | `libre-ai-harness` | couche 2 |
+
+### 10.2 La mention WP-G3-H01 pendante est résolue
+
+`orchestrator/docs/apps/harness.md`, cité depuis le §8.4 comme le contenu
+du re-scope roadmap (ADR-0018/WP-G3-H01), est retiré d'`orchestrator` dans
+le même chantier et remplacé par un pointeur d'une ligne vers ce
+repository. La mention « WP-G3-H01 » que portait le §8.4 est résolue par
+cette création — elle ne désigne plus un contenu roadmap sans repository,
+elle désigne la spécification de ce repository. Cela ne préempte pas la
+pull request `orchestrator#13` (`crates/agent-harness`, arrêt dur
+d'amorçage ADR-0011 D4, réservé au propriétaire) : elle reste ouverte,
+non fusionnée, hors du périmètre du présent chantier — la réconciliation
+entre son contenu et ce repository est un acte propriétaire distinct, non
+tranché ici.
+
+### 10.3 §9.3 corrigé par renvoi
+
+La phrase de clôture du §9.3 (« Les briques "à naître" du §2 … restent à
+naître ») portait encore `harness` dans son énumération après cette
+création ; la note ajoutée à cet endroit renvoie ici plutôt que de
+réécrire l'énumération, pour ne pas dupliquer l'autorité de ce fait entre
+deux paragraphes.

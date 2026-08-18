@@ -169,6 +169,15 @@
       "card": "project.v1.yaml"
     },
     {
+      "repository": "libre-ai/harness",
+      "name": "harness",
+      "layer": "couche-2",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "card": "project.v1.yaml"
+    },
+    {
       "repository": "libre-ai/knowledge",
       "name": "knowledge",
       "layer": "couche-4",
