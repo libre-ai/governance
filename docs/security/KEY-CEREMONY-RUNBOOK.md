@@ -2,6 +2,13 @@
 
 **Jalon :** WP-G2-Z01 · **Date :** 2026-07-22 · **Objet :** Upgrade vers signature d'origine Ed25519 (asymétrique) pour les briques de provenance et preuve (couche 3).
 
+> **Déclencheur (arbitrage propriétaire 2026-08-18).** Cette cérémonie s'exécute au
+> prononcé de l'orchestrator lock — c'est lui le premier consommateur réel de
+> lignage signé. Dormant jusque-là : K3 (`LOOP-SECURITY-KERNEL.md`) sert
+> aujourd'hui en HMAC sur l'intégralité des chemins de rappel model-facing, et
+> l'upgrade Ed25519 documentée ci-dessous reste différée sans dégrader cette
+> garantie. Ne pas exécuter la cérémonie par anticipation du lock.
+
 Ce runbook vous guide pas-à-pas pour générer, sceller et enregistrer une clé privée Ed25519 qui signera les enveloppes de lignage d'agents (`AgentContributorLineage v1`, bouille de preuve). **La clé privée ne doit JAMAIS quitter votre machine air-gappée ni être committée dans git.** Seule la clé publique est enregistrée dans le dépôt.
 
 ## Prérequis de sécurité
