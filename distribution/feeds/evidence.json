@@ -3,6 +3,14 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "coverage-2026-08-18",
+      "date": "2026-08-18",
+      "type": "coverage",
+      "title": "Automation coverage measurement (last 100 commit(s) inspected per active repository)",
+      "status": "0% genuine automation",
+      "artifact": "distribution/evidence/coverage-2026-08-18.json"
+    },
+    {
       "id": "gate-2026-07-30-jalon-phase-3-8-archivage-du-hub-acte-proprietaire-final",
       "date": "2026-07-30",
       "type": "gate",

@@ -164,3 +164,10 @@ jobs:
       # two of them documentation-only. Pre-existing advisories belong to the
       # fleet control (fleet-advisories.yml, D1).
       - run: bun tools/quality/check-audit-delta.ts
+      # K4 redefinition (Domain A re-ratification, 2026-08-18, ADR-0023):
+      # documented adversarial review + owner merge = signature, mechanically
+      # backstopped. Wired here rather than as a doctrine-governance.yml step:
+      # that workflow is deliberately bun-free (bash + grep only); this gate
+      # needs a diff against the PR base the same way check-audit-delta.ts
+      # already does above, and bun-quality already installs the toolchain.
+      - run: bun tools/quality/check-review-evidence.ts

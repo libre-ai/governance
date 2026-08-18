@@ -6,6 +6,11 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-08-18 — [coverage] Automation coverage measurement (last 100 commit(s) inspected per active repository)
+
+- Statut : 0% genuine automation
+- Source : [`distribution/evidence/coverage-2026-08-18.json`](../../distribution/evidence/coverage-2026-08-18.json)
+
 ## 2026-07-30 — [gate] Jalon γ — phase 3.8 archivage du hub : acte propriétaire final
 
 - Statut : PRONONCÉ SOUS GO PROPRIÉTAIRE DONNÉ PAR AVANCE
