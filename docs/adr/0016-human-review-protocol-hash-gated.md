@@ -1,6 +1,6 @@
 # ADR-0016 — Protocole de revue humaine gaté par hash, distinct du protocole de revue par agents
 
-- **Statut :** proposed — question ouverte ; aucune option n'est retenue par cet ADR
+- **Statut :** deferred (2026-08-18, ADR-0023 — Domain A re-ratification) — fond arbitré en phase produits de la remise à plat 2026-08 ; question ouverte inchangée, aucune option retenue par cet ADR
 - **Date :** 2026-07-25
 - **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas et n'autorise aucun amendement de contrat.
 - **Portée :** gouvernance de revue — `docs/reviews/`, évidence de forge. **Aucun contrat n'est touché par le protocole lui-même.**
