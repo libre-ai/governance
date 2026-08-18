@@ -1,8 +1,9 @@
 # Transformation status
 
 **Current phase:** milestone γ — general multi-repository activation and hub dismantling (ADR-0020,
-owner decisions D1–D4 of 2026-07-28). Phase 3.0 is closed; phase 3.1, the doctrinal act, is the pull
-request that carries this rewrite. Phases 3.2 to 3.8 have not started.
+owner decisions D1–D4 of 2026-07-28) — **closed 2026-07-30**. All eight phases (3.0 housekeeping through
+3.8 hub archiving) are closed; `libre-ai/libre-ai` is archived and the organization carries 34
+repositories, 33 of them non-archived.
 
 **Authority note.** This file stops being a phase authority. It migrates to the `governance`
 repository with the rest of the doctrine, and when the hub is archived the state of a project is read
@@ -26,19 +27,40 @@ it is written and traceable to a pull request, an ADR or a piece of recorded evi
   through an export condition pointing at an untracked `dist/`, so the chain needs that build first —
   exactly the class of problem design §5.2.2 names for git-dep consumers. Evidence:
   `distribution/evidence/2026-07-28-milestone-gamma-housekeeping.md`.
-- **3.1 doctrinal act — in progress.** The current pull request adds ADR-0020 and amends, in the same
+- **3.1 doctrinal act — closed (2026-07-28).** PR #273 added ADR-0020 and amended, in the same
   change, the invariants register (I-02, I-03, I-04, I-05, I-08, I-15, I-16, plus an application note
   on I-23), the decision register (D07 amended, scoping note on D02, new D29), the LEXICON and the
-  authority map. ADR-0020 §3 lists the full set of surfaces the act must bring in line; the phase is
-  not closed until each of them is aligned. Merging the pull request **is** the owner signature — a
-  hard stop no agent crosses.
-- **3.2 to 3.8 — not started.** Card system and dependency test bench, the two authority
-  repositories, the nineteen shared-code satellites, the eight product repositories plus `missions`,
-  the presentation wave, the cross-repository coherence report, then the hub archiving. Their
-  objectives, exit criteria and hard stops are in [`GOALS.md`](GOALS.md); their order in
-  [`ROADMAP.md`](ROADMAP.md).
+  authority map. Merging the pull request **was** the owner signature.
+- **3.2 card system and dependency test bench — closed (2026-07-29).** Schema, validator, aggregator
+  and generator landed with TDD green (PR #274, merge `1c1a1fae`; anti-inert-pattern test PR #275);
+  the dependency test bench (design §5.2.6) ran with results recorded
+  (`distribution/evidence/2026-07-29-dependency-bench.md`).
+- **3.3 the two authority repositories — closed (2026-07-29).** `governance` (375 commits via
+  `git filter-repo`) and `contracts` (149 commits) were created and born green; the migration index
+  was instituted (PR #277, merge `52f567d9`).
+- **3.4 the nineteen shared-code satellites — closed (2026-07-29).** All nineteen satellites born
+  green in dependency-graph order, three generations of pins recorded in
+  `ecosystem/fleet-pins.v1.yaml` (PRs #279–#283, merge `d3cfcc47`).
+- **3.5 the eight product repositories plus `missions` — closed.** Grafted onto their frozen history;
+  `ecosystem/migration-index.v1.yaml` records a non-`pending` `hub_removal_commit` for each of the nine
+  destinations.
+- **3.6 the presentation wave — closed.** 33 of 34 repositories carry a validated `project.v1.yaml`
+  card (the org-profile repository `.github` has none by design); zero presentation-versus-card
+  divergences at the fleet gate (`docs/reports/2026-07-30-general-activation-final-report.md`).
+- **3.7 the cross-repository coherence report — closed (2026-07-30).** The hub was emptied from 1,596
+  to 50 tracked files across two reviewed removal waves (PRs hub #289/#291), the orphan gate ran
+  50/50 paths accounted with zero orphans, and the final report was published
+  (`docs/reports/2026-07-30-general-activation-final-report.md`).
+- **3.8 the hub archiving — closed (2026-07-30).** `libre-ai/libre-ai` was archived under the owner's
+  advance GO (PR hub #293); it reads `archived: true` on the GitHub API as of this writing.
 
-No repository has been created and no path has left the hub at the time of writing.
+Their objectives, exit criteria and hard stops are in [`GOALS.md`](GOALS.md); their order in
+[`ROADMAP.md`](ROADMAP.md).
+
+34 repositories exist in the organization, 33 of them non-archived (`libre-ai/libre-ai` is the sole
+archived one); the migration index (`ecosystem/migration-index.v1.yaml`) traces 88 hub-path entries to
+their destinations, 5 of them still `pending` as documented, legitimate dual-presence entries (archive
+registries, minimal chain, toolchain) that the orphan gate covers nominatively.
 
 ## Completed
 
