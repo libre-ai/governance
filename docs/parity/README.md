@@ -32,6 +32,11 @@ candidate CDC amendments (owner-signed).
   board; benchmark Multica + Linear).
 - `DRAFT-SPEC-memory.md` — Polaris memory service (benchmark Letta/Mem0/Zep;
   K1/K2/K3 invariants).
+- `DRAFT-SPEC-source-ingestion.md` — Sessions' `AttachSource` capability
+  (owner decision 2026-08-18 to reopen the design after the 2026-07-30
+  retirement of its Rust predecessor); topology, contract and K2/K3
+  neutralization boundary, plus a module-by-module reuse verdict on the
+  retired history.
 - `DRAFT-SPEC-ui.md`, `DRAFT-SPEC-auth-web.md` — layer-4 bricks elevated
   (Radix/shadcn ; Auth.js/Ory).
 - `DRAFT-SPEC-provenance-proof.md`, `DRAFT-SPEC-envelope.md` — layer-3 trust
