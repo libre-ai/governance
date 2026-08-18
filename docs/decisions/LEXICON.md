@@ -98,32 +98,34 @@ Le décompte des produits n'est pas gravé ici (I-14) : l'inventaire `ecosystem/
 
 ## 4. Glossaire produit
 
-| Terme              | Définition (une ligne)                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Libre AI           | La marque ombrelle : constellation de produits souverains, explicables, réversibles, gérée par la méthode.                         |
-| Polaris            | La méthode incarnée (couche 2 productisée) : orchestration gouvernable de flottes d'agents — plans bornés, refus, évidence, gates. |
-| Missions           | L'application humaine de Polaris : la surface où les missions d'agents se voient, s'approuvent, s'auditent.                        |
-| Radar              | Sélection de flux explicable et curation portable.                                                                                 |
-| Notebook           | Connaissance personnelle local-first, export de contexte contrôlé.                                                                 |
-| AI Practices       | Formation professionnelle à la pratique sourcée de l'IA.                                                                           |
-| Sessions           | Apprentissage collectif ancré aux sources, facilitation.                                                                           |
-| Boussole Politique | Comparaison civique privée contre les votes publics sourcés.                                                                       |
-| Spec Studio        | Décisions produit, spécifications et handoffs bornés.                                                                              |
-| Model Policy       | Sélection de modèles sous politique explicable.                                                                                    |
-| envelope           | Enveloppe d'intégrité du contenu non fiable : escape, marquage, signature vérifiable (K3).                                         |
-| provenance         | Traçabilité des contributions et lignées d'agents (`agent-contributor-lineage.v1`).                                                |
-| proof              | Rapports d'évidence signés et attestations de harness — la preuve opposable des gates.                                             |
-| artifacts          | Manifestes et chaîne d'approvisionnement des artefacts produits.                                                                   |
-| memory             | Mémoire d'agents gouvernée (rappel enveloppé, classification, effacement prouvable) — livrée avec le lock.                         |
-| orchestrator       | Le cœur d'exécution de Polaris : plans, autorisations, contrôle.                                                                   |
-| harness            | Le cadre d'exécution sécurisé des agents de Polaris.                                                                               |
-| ui                 | Primitives d'interface accessibles et vérifiables de l'atelier applicatif.                                                         |
-| auth               | Identité et autorisation (OIDC, session opaque, Biscuit) pour les apps de la constellation.                                        |
-| sdk-ts / sdk-rs    | Projections SDK TypeScript / Rust des contrats du socle.                                                                           |
-| starter            | Gabarit d'application souveraine, dérivé de la première app.                                                                       |
-| mcp-server         | Exposition MCP des capacités de la constellation.                                                                                  |
-| corpus             | La pratique documentée, opposable — corpus public.                                                                                 |
-| docs               | Documentation générée de la constellation (projection, jamais une autorité).                                                       |
+| Terme              | Définition (une ligne)                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Libre AI           | La marque ombrelle : constellation de produits souverains, explicables, réversibles, gérée par la méthode.                                                                                                                     |
+| Polaris            | La méthode incarnée (couche 2 productisée) : orchestration gouvernable de flottes d'agents — plans bornés, refus, évidence, gates.                                                                                             |
+| Missions           | L'application humaine de Polaris : la surface où les missions d'agents se voient, s'approuvent, s'auditent.                                                                                                                    |
+| Radar              | Sélection de flux explicable et curation portable.                                                                                                                                                                             |
+| Notebook           | Connaissance personnelle local-first, export de contexte contrôlé.                                                                                                                                                             |
+| AI Practices       | Formation professionnelle à la pratique sourcée de l'IA.                                                                                                                                                                       |
+| Sessions           | Apprentissage collectif ancré aux sources, facilitation.                                                                                                                                                                       |
+| Boussole Politique | Comparaison civique privée contre les votes publics sourcés.                                                                                                                                                                   |
+| Spec Studio        | Décisions produit, spécifications et handoffs bornés.                                                                                                                                                                          |
+| Model Policy       | Sélection de modèles sous politique explicable.                                                                                                                                                                                |
+| envelope           | Enveloppe d'intégrité du contenu non fiable : escape, marquage, signature vérifiable (K3).                                                                                                                                     |
+| provenance         | Traçabilité des contributions et lignées d'agents (`agent-contributor-lineage.v1`).                                                                                                                                            |
+| proof              | Rapports d'évidence signés et attestations de harness — la preuve opposable des gates.                                                                                                                                         |
+| artifacts          | Manifestes et chaîne d'approvisionnement des artefacts produits.                                                                                                                                                               |
+| memory             | Mémoire d'agents gouvernée (rappel enveloppé, classification, effacement prouvable) — livrée avec le lock.                                                                                                                     |
+| orchestrator       | Le cœur d'exécution de Polaris : plans, autorisations, contrôle.                                                                                                                                                               |
+| harness            | Le cadre d'exécution sécurisé des agents de Polaris.                                                                                                                                                                           |
+| ui                 | Primitives d'interface accessibles et vérifiables de l'atelier applicatif.                                                                                                                                                     |
+| auth               | Identité et autorisation (OIDC, session opaque, Biscuit) pour les apps de la constellation.                                                                                                                                    |
+| sdk-ts / sdk-rs    | Projections SDK TypeScript / Rust des contrats du socle.                                                                                                                                                                       |
+| starter            | Gabarit d'application souveraine, dérivé de la première app.                                                                                                                                                                   |
+| mcp-server         | Exposition MCP des capacités de la constellation.                                                                                                                                                                              |
+| corpus             | La pratique documentée, opposable — corpus public.                                                                                                                                                                             |
+| docs               | Documentation générée de la constellation (projection, jamais une autorité).                                                                                                                                                   |
+| skills             | Collection **présente**, versionnée et testée de compétences du harness d'ingénierie (`governance/skills/`, ADR-0025) — à ne pas confondre avec `patterns-skills` ci-dessous.                                                  |
+| patterns-skills    | Candidat **futur** du portfolio couche 2 (`ecosystem/portfolio.v1.yaml`, source Fabric, `exposure: idea`) : bibliothèque de patterns d'agent pour Polaris, pas encore construite — à ne pas confondre avec `skills` ci-dessus. |
 
 ## 5. Justification des noms
 
@@ -293,8 +295,8 @@ le repository).
 
 ### 11.1 Nom canonique
 
-| Produit        | Repo                   | Marque publique         | Couche |
-| -------------- | ---------------------- | ----------------------- | ------ |
+| Produit        | Repo                    | Marque publique                                                                           | Couche |
+| -------------- | ----------------------- | ----------------------------------------------------------------------------------------- | ------ |
 | `travel-agent` | `libre-ai/travel-agent` | Travel Agent (provisoire — marque publique définitive : décision propriétaire ultérieure) | 1      |
 
 Le décompte de produits couche 1 passe de huit à neuf ; comme pour `carriere`
