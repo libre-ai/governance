@@ -40,6 +40,7 @@
     "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:names && bun run check:forgotten && bun run check:cards && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:licenses && bun run check:dead-code && bun run check:allowances && bun run lint && bun run typecheck && bun test",
     "pretest": "bun run check:bun",
     "check:bun-snapshot": "bun run check:bun:runtime && bun tools/quality/verify-bun-snapshot.ts",
-    "check:toolchain": "bun run check:bun && bun tools/quality/check-toolchain.ts"
+    "check:toolchain": "bun run check:bun && bun tools/quality/check-toolchain.ts",
+    "check:context-conformance": "bun run check:bun:runtime && bun ecosystem/check-context-conformance.ts"
   }
 }

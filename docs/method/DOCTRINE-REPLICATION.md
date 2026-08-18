@@ -246,6 +246,11 @@ Une même règle énoncée à quatre niveaux est une dette : elle dérive. La r�
 vit **au niveau le plus haut où elle est vraie**, et les niveaux inférieurs y
 renvoient.
 
+L'instanciation concrète du niveau « Dépôt » pour un `AGENTS.md` de la flotte
+libre-ai — sections obligatoires et plafond de lignes par couche du registre —
+est fixée par `docs/method/CONTEXT-TEMPLATE.md` et vérifiée mécaniquement par
+`ecosystem/check-context-conformance.ts`.
+
 ## Mécanismes de chargement — vérifier avant de construire
 
 Le patron dépend de la façon dont chaque outil découvre son fichier de

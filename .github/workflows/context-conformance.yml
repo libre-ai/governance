@@ -1,0 +1,43 @@
+name: Context conformance
+
+# Domaine D (remise à plat, 2026-08-18): measures every repository in
+# ecosystem/repositories.v1.yaml against docs/method/CONTEXT-TEMPLATE.md
+# (ecosystem/check-context-conformance.ts). Deliberately NOT wired into ci.yml
+# and NOT a required status check yet — the fleet is massively
+# non-conformant today (see the script's own header for the 2026-08-18
+# survey), and making this required now would block every unrelated pull
+# request on a doctrine the fleet has not had a chance to adopt. This
+# workflow exists to keep measuring the baseline on a schedule while the
+# conformance wave runs; CONTEXT-TEMPLATE.md documents the flip to required
+# as a separate, deliberate follow-up change once that wave has passed.
+on:
+  schedule:
+    - cron: "29 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  context-conformance:
+    name: Every repository's AGENTS.md matches its layer's template
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/governance/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify exact CI revision
+        run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
+      - name: Measure context conformance against docs/method/CONTEXT-TEMPLATE.md
+        run: bun run check:context-conformance
