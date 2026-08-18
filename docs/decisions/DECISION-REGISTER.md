@@ -35,3 +35,14 @@
 | D31 | Owner-facing decisions are structured choices over restituted context  | ADR-0022 (owner arbitration 2026-08-11) fixes the agent-owner interaction protocol: the owner is never assumed to hold document contents in working memory; decision-relevant context is restituted inline (short excerpt or a 2–4-line decision summary plus its `path:line` source) instead of pointed at; genuine decision points (scope, architecture, dependency, reversibility, ambiguous intent) are presented through the harness's interactive-question mechanism as 2–4 mutually exclusive options with consequences, a recommendation first only when a real one exists and a free-text exit always offered; trivial, conventional or inferable choices are decided alone and flagged in one line; at most one question at a time, or one batch of at most 4 tightly related ones — no behavioural gate automates conformance, and establishing one would be an owner act (I-17) |
 
 Changes to this register require an ADR and explicit human approval.
+
+## Known gaps (2026-08-18)
+
+Six accepted ADRs have no corresponding D-entry above: ADR-0008
+(multi-repo target topology and brand), ADR-0009 (constellation portfolio
+and method), ADR-0010 (auth v1 session/revision/concurrency code),
+ADR-0011 (wave execution decisions), ADR-0012 (personal data boundary and
+third-party subjects), ADR-0018 (wave 3 opening — orchestrator and
+harness). This note only records the gap; per the closure clause above,
+filling it requires its own ADR and explicit human approval — it is not
+resolved here.
