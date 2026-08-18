@@ -20,16 +20,17 @@ future development and the policy below apply only in this monorepo.
 
 ## First-party software
 
-| Scope | Licence | Rationale |
-| --- | --- | --- |
-| Applications, services, control planes and first-party software by default | `EUPL-1.2` | Network reciprocity for strategic runtime code |
-| Strategic engines, including `crates/ecosystem-engine/**`, `crates/notebook-core/**` and `packages/knowledge/**` | `EUPL-1.2` | Improvements communicated as a service remain available as source |
-| Executable authorization and retention policies under `contracts/authz/**` and `contracts/data/**` | `EUPL-1.2` | These files are runtime policy, not merely interoperability contracts |
-| Operational prompts under `prompts/**` | `EUPL-1.2` | They are directly consumed by the canonical engineering workflow |
-| OpenAPI, JSON Schema, WIT, fixtures and other interoperability contracts, except executable policies | `Apache-2.0` | Broad adoption with an explicit patent grant |
-| Generated contract types and boundary validators | `Apache-2.0` | Friction-bounded reuse across implementations |
-| Client-facing design/web packages and application templates | `Apache-2.0` | Adoption and integration boundary |
-| Generic quality, migration, qualification and benchmark tooling | `Apache-2.0` | Reusable technical harnesses |
+| Scope                                                                                                            | Licence      | Rationale                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Applications, services, control planes and first-party software by default                                       | `EUPL-1.2`   | Network reciprocity for strategic runtime code                                                                                                                         |
+| Strategic engines, including `crates/ecosystem-engine/**`, `crates/notebook-core/**` and `packages/knowledge/**` | `EUPL-1.2`   | Improvements communicated as a service remain available as source                                                                                                      |
+| Executable authorization and retention policies under `contracts/authz/**` and `contracts/data/**`               | `EUPL-1.2`   | These files are runtime policy, not merely interoperability contracts                                                                                                  |
+| Operational prompts under `prompts/**`                                                                           | `EUPL-1.2`   | They are directly consumed by the canonical engineering workflow                                                                                                       |
+| OpenAPI, JSON Schema, WIT, fixtures and other interoperability contracts, except executable policies             | `Apache-2.0` | Broad adoption with an explicit patent grant                                                                                                                           |
+| Generated contract types and boundary validators                                                                 | `Apache-2.0` | Friction-bounded reuse across implementations                                                                                                                          |
+| Client-facing design/web packages and application templates                                                      | `Apache-2.0` | Adoption and integration boundary                                                                                                                                      |
+| Generic quality, migration, qualification and benchmark tooling                                                  | `Apache-2.0` | Reusable technical harnesses                                                                                                                                           |
+| Agent skills collection under `skills/**`                                                                        | `Apache-2.0` | Portable adoption artefact meant to be copied into another harness (ADR-0025); each `SKILL.md` also carries an inline SPDX header so the licence travels with the file |
 
 The EUPL grant is made under version 1.2 with the later-version mechanism in
 Article 5 of that licence. The SPDX identifier remains `EUPL-1.2`.

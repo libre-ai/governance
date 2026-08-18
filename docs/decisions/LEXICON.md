@@ -13,15 +13,15 @@ Doctrine applicable : les URLs des produits historiques sont **réservées** com
 
 ### 1.1 Homes produits et application (conservés, gelés jusqu'à activation)
 
-| Legacy (repo)        | Cible (repo)                       | Produit / application   | Couche | Activation                                   |
-| -------------------- | ---------------------------------- | ----------------------- | ------ | -------------------------------------------- |
-| `feed-radar`         | `feed-radar` (inchangé, réservé)   | Radar                   | 1      | vague 4b                                     |
-| `notebook`           | `notebook` (inchangé, réservé)     | Notebook                | 1      | vague 4a                                     |
-| `ai-practices`       | `ai-practices` (inchangé, réservé) | AI Practices            | 1      | vague 4b                                     |
-| `sessions`           | `sessions` (inchangé, réservé)     | Sessions                | 1      | vague 4b                                     |
-| `boussole-politique` | `boussole-politique` (inchangé)    | Boussole Politique      | 1      | vague 4b                                     |
-| `spec-studio`        | `spec-studio` (inchangé, réservé)  | Spec Studio             | 1      | vague 4b                                     |
-| `policy`             | `policy` (inchangé, réservé)       | Model Policy            | 1      | vague 4b (public après re-audit secrets/PII) |
+| Legacy (repo)        | Cible (repo)                                                                                      | Produit / application   | Couche | Activation                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- | ------ | -------------------------------------------- |
+| `feed-radar`         | `feed-radar` (inchangé, réservé)                                                                  | Radar                   | 1      | vague 4b                                     |
+| `notebook`           | `notebook` (inchangé, réservé)                                                                    | Notebook                | 1      | vague 4a                                     |
+| `ai-practices`       | `ai-practices` (inchangé, réservé)                                                                | AI Practices            | 1      | vague 4b                                     |
+| `sessions`           | `sessions` (inchangé, réservé)                                                                    | Sessions                | 1      | vague 4b                                     |
+| `boussole-politique` | `boussole-politique` (inchangé)                                                                   | Boussole Politique      | 1      | vague 4b                                     |
+| `spec-studio`        | `spec-studio` (inchangé, réservé)                                                                 | Spec Studio             | 1      | vague 4b                                     |
+| `policy`             | `policy` (inchangé, réservé)                                                                      | Model Policy            | 1      | vague 4b (public après re-audit secrets/PII) |
 | `agent-board`        | `missions` (ADR-0020 : la carte rattrape l'arbitrage propriétaire du 2026-07-23, ADR-0008 amendé) | Missions (app couche 2) | 2      | activation générale                          |
 
 Sept produits (Radar, Notebook, AI Practices, Sessions, Boussole Politique, Spec Studio, Model Policy) ; `agent-board`/Missions est l'**application** de la couche 2, pas un huitième produit (ADR-0009 §2, inventaire).
@@ -98,32 +98,34 @@ Le décompte des produits n'est pas gravé ici (I-14) : l'inventaire `ecosystem/
 
 ## 4. Glossaire produit
 
-| Terme              | Définition (une ligne)                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Libre AI           | La marque ombrelle : constellation de produits souverains, explicables, réversibles, gérée par la méthode.                         |
-| Polaris            | La méthode incarnée (couche 2 productisée) : orchestration gouvernable de flottes d'agents — plans bornés, refus, évidence, gates. |
-| Missions           | L'application humaine de Polaris : la surface où les missions d'agents se voient, s'approuvent, s'auditent.                        |
-| Radar              | Sélection de flux explicable et curation portable.                                                                                 |
-| Notebook           | Connaissance personnelle local-first, export de contexte contrôlé.                                                                 |
-| AI Practices       | Formation professionnelle à la pratique sourcée de l'IA.                                                                           |
-| Sessions           | Apprentissage collectif ancré aux sources, facilitation.                                                                           |
-| Boussole Politique | Comparaison civique privée contre les votes publics sourcés.                                                                       |
-| Spec Studio        | Décisions produit, spécifications et handoffs bornés.                                                                              |
-| Model Policy       | Sélection de modèles sous politique explicable.                                                                                    |
-| envelope           | Enveloppe d'intégrité du contenu non fiable : escape, marquage, signature vérifiable (K3).                                         |
-| provenance         | Traçabilité des contributions et lignées d'agents (`agent-contributor-lineage.v1`).                                                |
-| proof              | Rapports d'évidence signés et attestations de harness — la preuve opposable des gates.                                             |
-| artifacts          | Manifestes et chaîne d'approvisionnement des artefacts produits.                                                                   |
-| memory             | Mémoire d'agents gouvernée (rappel enveloppé, classification, effacement prouvable) — livrée avec le lock.                         |
-| orchestrator       | Le cœur d'exécution de Polaris : plans, autorisations, contrôle.                                                                   |
-| harness            | Le cadre d'exécution sécurisé des agents de Polaris.                                                                               |
-| ui                 | Primitives d'interface accessibles et vérifiables de l'atelier applicatif.                                                         |
-| auth               | Identité et autorisation (OIDC, session opaque, Biscuit) pour les apps de la constellation.                                        |
-| sdk-ts / sdk-rs    | Projections SDK TypeScript / Rust des contrats du socle.                                                                           |
-| starter            | Gabarit d'application souveraine, dérivé de la première app.                                                                       |
-| mcp-server         | Exposition MCP des capacités de la constellation.                                                                                  |
-| corpus             | La pratique documentée, opposable — corpus public.                                                                                 |
-| docs               | Documentation générée de la constellation (projection, jamais une autorité).                                                       |
+| Terme              | Définition (une ligne)                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Libre AI           | La marque ombrelle : constellation de produits souverains, explicables, réversibles, gérée par la méthode.                                                                                                                     |
+| Polaris            | La méthode incarnée (couche 2 productisée) : orchestration gouvernable de flottes d'agents — plans bornés, refus, évidence, gates.                                                                                             |
+| Missions           | L'application humaine de Polaris : la surface où les missions d'agents se voient, s'approuvent, s'auditent.                                                                                                                    |
+| Radar              | Sélection de flux explicable et curation portable.                                                                                                                                                                             |
+| Notebook           | Connaissance personnelle local-first, export de contexte contrôlé.                                                                                                                                                             |
+| AI Practices       | Formation professionnelle à la pratique sourcée de l'IA.                                                                                                                                                                       |
+| Sessions           | Apprentissage collectif ancré aux sources, facilitation.                                                                                                                                                                       |
+| Boussole Politique | Comparaison civique privée contre les votes publics sourcés.                                                                                                                                                                   |
+| Spec Studio        | Décisions produit, spécifications et handoffs bornés.                                                                                                                                                                          |
+| Model Policy       | Sélection de modèles sous politique explicable.                                                                                                                                                                                |
+| envelope           | Enveloppe d'intégrité du contenu non fiable : escape, marquage, signature vérifiable (K3).                                                                                                                                     |
+| provenance         | Traçabilité des contributions et lignées d'agents (`agent-contributor-lineage.v1`).                                                                                                                                            |
+| proof              | Rapports d'évidence signés et attestations de harness — la preuve opposable des gates.                                                                                                                                         |
+| artifacts          | Manifestes et chaîne d'approvisionnement des artefacts produits.                                                                                                                                                               |
+| memory             | Mémoire d'agents gouvernée (rappel enveloppé, classification, effacement prouvable) — livrée avec le lock.                                                                                                                     |
+| orchestrator       | Le cœur d'exécution de Polaris : plans, autorisations, contrôle.                                                                                                                                                               |
+| harness            | Le cadre d'exécution sécurisé des agents de Polaris.                                                                                                                                                                           |
+| ui                 | Primitives d'interface accessibles et vérifiables de l'atelier applicatif.                                                                                                                                                     |
+| auth               | Identité et autorisation (OIDC, session opaque, Biscuit) pour les apps de la constellation.                                                                                                                                    |
+| sdk-ts / sdk-rs    | Projections SDK TypeScript / Rust des contrats du socle.                                                                                                                                                                       |
+| starter            | Gabarit d'application souveraine, dérivé de la première app.                                                                                                                                                                   |
+| mcp-server         | Exposition MCP des capacités de la constellation.                                                                                                                                                                              |
+| corpus             | La pratique documentée, opposable — corpus public.                                                                                                                                                                             |
+| docs               | Documentation générée de la constellation (projection, jamais une autorité).                                                                                                                                                   |
+| skills             | Collection **présente**, versionnée et testée de compétences du harness d'ingénierie (`governance/skills/`, ADR-0025) — à ne pas confondre avec `patterns-skills` ci-dessous.                                                  |
+| patterns-skills    | Candidat **futur** du portfolio couche 2 (`ecosystem/portfolio.v1.yaml`, source Fabric, `exposure: idea`) : bibliothèque de patterns d'agent pour Polaris, pas encore construite — à ne pas confondre avec `skills` ci-dessus. |
 
 ## 5. Justification des noms
 
@@ -165,23 +167,23 @@ Porté par la pull request de l'ADR-0020, même procédure que la signature de c
 
 ### 8.1 Noms d'autorité
 
-| Brique | Repo cible | Note |
-| --- | --- | --- |
-| `governance` | `libre-ai/governance` | doctrine, invariants, ADR, cette carte, index d'écosystème, schéma des fiches, outillage d'écosystème, evidence, gates de flotte |
-| `contracts` | `libre-ai/contracts` | les autorités canoniques de contrats, catalog, gates contrats. **Désambiguïsation** : le repo `libre-ai/contracts` (autorités) et le package npm `@libre-ai/contracts` (projection SDK TypeScript, repo `sdk-ts`, nom conservé §2.1) sont deux objets distincts |
+| Brique       | Repo cible            | Note                                                                                                                                                                                                                                                            |
+| ------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `governance` | `libre-ai/governance` | doctrine, invariants, ADR, cette carte, index d'écosystème, schéma des fiches, outillage d'écosystème, evidence, gates de flotte                                                                                                                                |
+| `contracts`  | `libre-ai/contracts`  | les autorités canoniques de contrats, catalog, gates contrats. **Désambiguïsation** : le repo `libre-ai/contracts` (autorités) et le package npm `@libre-ai/contracts` (projection SDK TypeScript, repo `sdk-ts`, nom conservé §2.1) sont deux objets distincts |
 
 ### 8.2 Identifiants nés après la signature de la carte
 
-| Brique | Repo satellite cible | Package/crate | Source socle |
-| --- | --- | --- | --- |
-| `testing` | `libre-ai/testing` | `@libre-ai/testing` | `packages/testing` |
-| `data` | `libre-ai/data` | `@libre-ai/data` | `packages/data` |
-| `rgpd-kit` | `libre-ai/rgpd-kit` | `@libre-ai/rgpd-kit` | `packages/rgpd-kit` |
-| `classification` | `libre-ai/classification` | `@libre-ai/classification` | `packages/classification` |
-| `collab-core` | `libre-ai/collab-core` | `@libre-ai/collab-core` | `packages/collab-core` |
-| `collab-relay` | `libre-ai/collab-relay` | `@libre-ai/collab-relay` | `packages/collab-relay` |
-| — | rejoint le repo produit `policy` | `@libre-ai/policy-core-ref` | `packages/policy-core-ref` |
-| — | rejoint le repo produit `policy` | crate `policy-core` (conservé sans préfixe — quatrième exception, §5) | `crates/policy-core` |
+| Brique           | Repo satellite cible             | Package/crate                                                         | Source socle               |
+| ---------------- | -------------------------------- | --------------------------------------------------------------------- | -------------------------- |
+| `testing`        | `libre-ai/testing`               | `@libre-ai/testing`                                                   | `packages/testing`         |
+| `data`           | `libre-ai/data`                  | `@libre-ai/data`                                                      | `packages/data`            |
+| `rgpd-kit`       | `libre-ai/rgpd-kit`              | `@libre-ai/rgpd-kit`                                                  | `packages/rgpd-kit`        |
+| `classification` | `libre-ai/classification`        | `@libre-ai/classification`                                            | `packages/classification`  |
+| `collab-core`    | `libre-ai/collab-core`           | `@libre-ai/collab-core`                                               | `packages/collab-core`     |
+| `collab-relay`   | `libre-ai/collab-relay`          | `@libre-ai/collab-relay`                                              | `packages/collab-relay`    |
+| —                | rejoint le repo produit `policy` | `@libre-ai/policy-core-ref`                                           | `packages/policy-core-ref` |
+| —                | rejoint le repo produit `policy` | crate `policy-core` (conservé sans préfixe — quatrième exception, §5) | `crates/policy-core`       |
 
 ### 8.3 Promotions par renversement du §2.5
 
@@ -205,14 +207,14 @@ change de nom.
 
 ### 9.1 Six briques nées satellites en γ 3.4, absentes de la carte
 
-| Brique         | Repo satellite           | Package                    | Couche   |
-| -------------- | ------------------------ | -------------------------- | -------- |
-| `testing`      | `libre-ai/testing`       | `@libre-ai/testing`        | couche 4 |
-| `rgpd-kit`     | `libre-ai/rgpd-kit`      | `@libre-ai/rgpd-kit`       | couche 4 |
+| Brique           | Repo satellite            | Package                    | Couche   |
+| ---------------- | ------------------------- | -------------------------- | -------- |
+| `testing`        | `libre-ai/testing`        | `@libre-ai/testing`        | couche 4 |
+| `rgpd-kit`       | `libre-ai/rgpd-kit`       | `@libre-ai/rgpd-kit`       | couche 4 |
 | `classification` | `libre-ai/classification` | `@libre-ai/classification` | couche 4 |
-| `collab-core`  | `libre-ai/collab-core`   | `@libre-ai/collab-core`    | couche 4 |
-| `collab-relay` | `libre-ai/collab-relay`  | `@libre-ai/collab-relay`   | couche 4 |
-| `data`         | `libre-ai/data`          | `@libre-ai/data`           | couche 4 |
+| `collab-core`    | `libre-ai/collab-core`    | `@libre-ai/collab-core`    | couche 4 |
+| `collab-relay`   | `libre-ai/collab-relay`   | `@libre-ai/collab-relay`   | couche 4 |
+| `data`           | `libre-ai/data`           | `@libre-ai/data`           | couche 4 |
 
 ### 9.2 Couches des quatre briques du §2.5 (nommées sans couche)
 
