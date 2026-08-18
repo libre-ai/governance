@@ -27,6 +27,11 @@ export const DECLARED_ALLOWANCES: readonly Allowance[] = [
     because:
       "no apps/, crates/ or packages/ family lives in this repository since the ADR-0020 dispatch — the guard travels with the families it protects",
   },
+  {
+    file: "tools/quality/check-review-evidence.ts",
+    because:
+      "most pull requests do not touch docs/adr/**, docs/decisions/INVARIANTS.md or docs/decisions/DECISION-REGISTER.md — asserting nothing on those runs is the truth, not a silenced gate (it also allows-empty on non-pull_request runs, where no PR diff or description exists to inspect)",
+  },
 ];
 
 const SCANNED_DIRECTORIES = ["tools", "ecosystem"];
