@@ -63,6 +63,8 @@ La séparation personne / sujet n'est pas une commodité de rangement. C'est ell
 
 Sa limite est énoncée ici pour que son silence ne soit jamais pris pour une preuve : **il ne sait pas reconnaître un nom de personne, une opinion inférée ou une affiliation écrites en prose**. C'est précisément la matière que D3 gouverne. La prose est tenue par l'architecture — Notebook est local-only et sans primitive sortante — et par la règle des faits sourcés, pas par ce scanner. Il arrête le collage accidentel et le fichier évident, pas un rédacteur décidé.
 
+**Correction (2026-08-18).** À la ratification (2026-07-25), « Notebook est local-only et sans primitive sortante » était une affirmation d'architecture, pas encore un fait vérifié par garde-fou : `check-no-transmission.ts` (cité dans le tableau D1 comme garde-fou de la strate « Données personnelles ») existait dans `governance`, scopé à `apps/boussole`/`apps/practices` uniquement — aucun repository Notebook ne l'invoquait. Le mécanisme devient vrai le 2026-08-18, `libre-ai/notebook#21` : `check:no-transmission` câblé, scopé `apps/notebook/src`, dans le script `check` agrégé. Cette correction ne change aucune décision de D1 à D5 ; elle aligne la date à laquelle le garde-fou cité est devenu réel sur celle à laquelle il l'est devenu, plutôt que sur celle de la ratification.
+
 ### D5 — Aucun nouvel objet ; le graphe public reste fermé aux personnes
 
 Le besoin de veille-contribution est un **cas d'usage guide**, pas un produit. Il ne crée ni application, ni brique, ni marque. Il se loge dans les objets existants : acquisition et curation dans Radar, fiches et liens dans Notebook, rapprochement dans `memory` (vague 3), briefing en projection au sens I-05.
