@@ -22,13 +22,23 @@ export const INVENTORY_SOURCE = "ecosystem/repositories.v1.yaml";
 
 export type Visibility = "public" | "private";
 
+/**
+ * Closed enum (Domain A re-ratification, 2026-08-18, ADR-0023): a repository
+ * is either responsible for its own perimeter now, or archived. There is no
+ * third state and no wave token — general activation (ADR-0020 D1) retired
+ * the wave mechanism as doctrine on 2026-07-28; this type makes it
+ * structurally impossible for a free-form status (a `frozen-until-wave-N`
+ * value, or any other one-off string) to re-enter the inventory silently.
+ */
+export type Lifecycle = "active" | "archived";
+
 export interface InventoryEntry {
   repository: string;
   name: string;
   layer: string;
   role: string;
   visibility: Visibility;
-  lifecycle: string;
+  lifecycle: Lifecycle;
   card?: string;
   canonical_paths?: string[];
 }
@@ -78,6 +88,14 @@ function asVisibility(value: unknown, path: string): Visibility {
   return text;
 }
 
+function asLifecycle(value: unknown, path: string): Lifecycle {
+  const text = asString(value, path);
+  if (text !== "active" && text !== "archived") {
+    fail(path, '"active" or "archived"', value);
+  }
+  return text;
+}
+
 function optionalString(
   record: Record<string, unknown>,
   key: string,
@@ -113,7 +131,7 @@ function toEntry(value: unknown, index: number): InventoryEntry {
     layer: asString(record.layer, `${path}.layer`),
     role: asString(record.role, `${path}.role`),
     visibility: asVisibility(record.visibility, `${path}.visibility`),
-    lifecycle: asString(record.lifecycle, `${path}.lifecycle`),
+    lifecycle: asLifecycle(record.lifecycle, `${path}.lifecycle`),
   };
   const card = optionalString(record, "card", path);
   if (card !== undefined) entry.card = card;

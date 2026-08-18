@@ -1,11 +1,17 @@
 schema_version: libre-ai.repositories.v2
 authority: single source of the public topology (ADR-0009 §7 as amended by ADR-0020 — project STATE lives in each repository's project.v1.yaml card; this index carries topology only)
-updated_on: 2026-07-30
+updated_on: 2026-08-18
 # v2 (γ 3.6, design §6.2) : les champs d'état produit (exposure, benchmark,
 # hypothesis, evidence_required, promotion_criteria, kill_predicates) ont
 # MIGRÉ dans la fiche project.v1.yaml de chaque repo — preuve verte à
 # destination avant retrait, comme pour les chemins. `card` pointe la fiche.
 # Le gate check-fleet-presentation vérifie fiche et README de chaque repo.
+# 2026-08-18 (Domaine A, re-ratification propriétaire, ADR-0023) : dégel
+# total — les 9 entrées frozen-until-wave-3/4 et frozen-reserved passent
+# lifecycle: active (ADR-0020 D1 avait déjà supersédé le séquencement par
+# vagues le 2026-07-28 ; l'inventaire n'avait pas suivi). `lifecycle` est
+# un enum fermé active|archived vérifié mécaniquement par build-index.ts —
+# aucune valeur libre, aucun jeton de vague ne peut y résider.
 repositories:
   - repository: libre-ai/libre-ai
     card: ecosystem/cards/libre-ai.project.v1.yaml
@@ -213,7 +219,7 @@ repositories:
     layer: couche-1
     product: Radar
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - explainable feed selection and portable curation (at activation)
     consumes:
@@ -226,7 +232,7 @@ repositories:
     layer: couche-1
     product: Notebook
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - private local-first knowledge, controlled context export (at activation)
     consumes:
@@ -240,7 +246,7 @@ repositories:
     layer: couche-1
     product: AI Practices
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - professional training for sourced AI practice (at activation)
     consumes:
@@ -253,7 +259,7 @@ repositories:
     layer: couche-1
     product: Sessions
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - source-grounded collective learning and facilitation (at activation)
     consumes:
@@ -266,7 +272,7 @@ repositories:
     layer: couche-1
     product: Boussole Politique
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - private civic comparison against sourced public votes (at activation)
     consumes:
@@ -279,7 +285,7 @@ repositories:
     layer: couche-1
     product: Spec Studio
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - product decisions, specifications and bounded handoffs (at activation)
     consumes:
@@ -293,7 +299,7 @@ repositories:
     product: Model Policy
     visibility: public
     publication_evidence: docs/security/POLICY-SECRETS-PII-REAUDIT.md (ADR-0009 §8 re-audit, 2026-07-28)
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - model selection under explainable policy (at activation)
     consumes:
@@ -313,7 +319,7 @@ repositories:
     # (apps/agent-board, sans code encore) n'en est que la PROJECTION en
     # lecture seule. L'ancienne URL agent-board redirige vers missions.
     visibility: public
-    lifecycle: frozen-until-wave-3
+    lifecycle: active
     owns:
       - human surface of agent missions — authority (Missions) + read-only projection (Agent Board), at activation with the orchestrator lock
     consumes:
@@ -331,7 +337,7 @@ repositories:
     # Le décompte « sept produits » de §2 décrivait l'état du 2026-07-19 ; la
     # constellation croît par décision propriétaire.
     visibility: public
-    lifecycle: frozen-reserved
+    lifecycle: active
     owns:
       - sovereign, explainable job-search assistant for cadres (at activation)
     consumes:

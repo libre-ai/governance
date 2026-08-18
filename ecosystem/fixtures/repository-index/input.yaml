@@ -12,7 +12,7 @@ repositories:
     layer: couche-1
     product: Zeta
     visibility: public
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - fixture product surface
     consumes:
@@ -32,7 +32,7 @@ repositories:
     layer: couche-1
     product: Midden
     visibility: private
-    lifecycle: frozen-until-wave-4
+    lifecycle: active
     owns:
       - fixture private product
     consumes: []

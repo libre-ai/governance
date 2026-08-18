@@ -65,6 +65,21 @@ describe("buildIndex", () => {
     expect(() => buildIndex(yaml)).toThrow('expected "public" or "private"');
   });
 
+  test("rejects a lifecycle outside active/archived", () => {
+    // Domain A re-ratification (2026-08-18, ADR-0023): general activation
+    // (ADR-0020 D1) closed wave sequencing as doctrine three weeks before this
+    // inventory caught up — nine entries still carried frozen-until-wave-N
+    // values. The enum makes that regression structurally impossible: no wave
+    // token, or any other free-form status, can survive as a lifecycle value.
+    const yaml = [
+      "schema_version: v",
+      "updated_on: 2026-08-18",
+      "repositories:",
+      "  - { repository: libre-ai/x, role: reserved-product-home, layer: couche-1, visibility: public, lifecycle: frozen-until-wave-4 }",
+    ].join("\n");
+    expect(() => buildIndex(yaml)).toThrow('expected "active" or "archived"');
+  });
+
   test("the committed index matches a fresh regeneration from the inventory", async () => {
     const regenerated = renderIndex(buildIndex(await Bun.file(inventoryUrl).text()));
     expect(regenerated).toBe(await Bun.file(committedIndexUrl).text());

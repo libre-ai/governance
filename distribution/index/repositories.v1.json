@@ -2,7 +2,7 @@
   "schema_version": "libre-ai.repository-index.v2",
   "source": "ecosystem/repositories.v1.yaml",
   "source_schema_version": "libre-ai.repositories.v2",
-  "source_updated_on": "2026-07-30",
+  "source_updated_on": "2026-08-18",
   "repositories": [
     {
       "repository": "libre-ai/.github",
@@ -18,7 +18,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/practices"
@@ -57,7 +57,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/boussole"
@@ -69,7 +69,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-reserved",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/carriere"
@@ -153,7 +153,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/radar"
@@ -192,7 +192,7 @@
       "layer": "couche-2",
       "role": "reserved-application-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-3",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/missions"
@@ -204,7 +204,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/notebook",
@@ -226,7 +226,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/model-policy",
@@ -275,7 +275,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/sessions"
@@ -287,7 +287,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/specifications"
