@@ -133,6 +133,30 @@ repositories:
     preserved_unmerged_refs: 3
     freeze_status: archived
     github_status: removed-2026-07-19
+  - id: legacy.local-agent-harness-hardening
+    # Local-only research repository, never published to GitHub (agent
+    # command-risk classification, sandbox evaluation, anti-injection
+    # fixtures) — `remote` and `freeze_status` (a GitHub archive/removal
+    # lifecycle) do not apply here: there was nothing to freeze or unfreeze
+    # on a forge. Research closed 2026-08-18 (owner arbitration, domain B
+    # re-ratification, docs/adr/0024-domain-b-re-ratification.md). Withdrawn
+    # from local disk only after preservation was proved, not merely
+    # asserted: a `git bundle --all` verified with `git bundle verify`, a
+    # real clone from that bundle with `git fsck --full` clean and a
+    # matching tracked-file count, plus a separate tarball preserving the
+    # one dirty feature-branch worktree found at capture — all hashed in a
+    # SHA256SUMS manifest, owner-held, outside this repository (see
+    # policy.archive_medium above). Reusable elements identified before
+    # withdrawal (a command-risk taxonomy, a fail-closed capability
+    # registry, a runtime-verification skill, an anti-injection fixture, a
+    # benign-command corpus, a non-negotiable sandbox checklist, a
+    # proof-linked-to-verdict review method) are versed as inputs to the
+    # skills and agent-tooling domains of the ecosystem rewrite — see the
+    # ADR above, not restated here.
+    revision: 36fef260bb5fde9f88b046b2339da2fd2f75cf42
+    dirty_entries: 0
+    preserved_unmerged_refs: 2
+    github_status: never-published
   - id: legacy.notebook
     remote: https://github.com/libre-ai/notebook.git
     revision: dde02ed8e9a02381518c71cedf447c684b82d2de
