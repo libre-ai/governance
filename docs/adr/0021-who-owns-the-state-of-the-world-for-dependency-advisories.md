@@ -116,6 +116,8 @@ intégral aurait retenu.
   Process & CI), sourcé par le présent ADR : D1/D2/D3 ci-dessus, sans
   reformulation.
 
+Owner-arbitration: 2026-08-18
+
 ## Ce qui n'est pas décidé ici
 
 - La correction de la protection de branche de `notebook` — réglée par un acte
