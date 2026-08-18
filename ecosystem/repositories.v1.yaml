@@ -196,6 +196,14 @@ repositories:
     lifecycle: active
     owns:
       - the content at the repository root
+  - repository: libre-ai/harness
+    card: project.v1.yaml
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    owns:
+      - the content at the repository root
   - repository: libre-ai/starter
     card: project.v1.yaml
     role: satellite
