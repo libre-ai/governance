@@ -18,7 +18,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "private",
-      "lifecycle": "frozen-until-wave-4"
+      "lifecycle": "active"
     },
     {
       "repository": "libre-ai/zeta-product",
@@ -26,7 +26,7 @@
       "layer": "couche-1",
       "role": "reserved-product-home",
       "visibility": "public",
-      "lifecycle": "frozen-until-wave-4",
+      "lifecycle": "active",
       "card": "project.v1.yaml",
       "canonical_paths": [
         "apps/zeta"
