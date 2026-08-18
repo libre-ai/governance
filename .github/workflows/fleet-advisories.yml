@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   fleet-advisories:
@@ -37,3 +38,15 @@ jobs:
       # depend on the very supply chain it audits.
       - name: Audit every living repository's lockfile
         run: bun tools/security/check-fleet-advisories.ts
+      # A red run here is only visible to someone who opens the Actions tab
+      # (AGENTIC-LOOP-INVENTORY.md, "Contrôle d'advisories de flotte" —
+      # "absence de run récent" is its own failure mode). One red run stays a
+      # run; two in a row files a deduplicated governance issue.
+      - name: File an issue if this is the second consecutive failed run
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: Fleet advisories
+          WORKFLOW_FILE: fleet-advisories.yml
+          CURRENT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bun tools/security/repeat-failure-alert.ts
