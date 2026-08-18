@@ -281,3 +281,30 @@ naître ») portait encore `harness` dans son énumération après cette
 création ; la note ajoutée à cet endroit renvoie ici plutôt que de
 réécrire l'énumération, pour ne pas dupliquer l'autorité de ce fait entre
 deux paragraphes.
+
+## 11. Amendement du 2026-08-18 — neuvième produit couche 1 : `travel-agent`
+
+Décision propriétaire du 2026-08-18 (arbitrage structuré, remise à plat,
+domaine B) : `travel-agent` est un produit Libre AI de couche 1 — un
+planificateur d'itinéraires raisonnant sur des faits de ville vérifiés et
+sourcés, où le modèle compose et où le code oppose son veto, avec isolation
+stricte de l'instance de voyage (trois strates ; l'instance ne vit jamais dans
+le repository).
+
+### 11.1 Nom canonique
+
+| Produit        | Repo                   | Marque publique         | Couche |
+| -------------- | ---------------------- | ----------------------- | ------ |
+| `travel-agent` | `libre-ai/travel-agent` | Travel Agent (provisoire — marque publique définitive : décision propriétaire ultérieure) | 1      |
+
+Le décompte de produits couche 1 passe de huit à neuf ; comme pour `carriere`
+(§ registre, décision du 2026-07-23), la constellation croît par décision
+propriétaire (ADR-0009 §4), le décompte historique des sections signées
+antérieures n'est pas réécrit.
+
+### 11.2 Condition de publication honorée à la création
+
+Le repository est né après la sortie prouvée de sa phase `sealed-repo`
+(gate d'isolation démontré dans les deux sens, index initial audité sans
+instance de voyage, fiche valide, double licence Apache-2.0/ODbL) — preuves
+dans `travel-agent/docs/evidence/2026-08-18-sealed-repo.md`.
