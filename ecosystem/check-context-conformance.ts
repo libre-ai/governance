@@ -18,9 +18,14 @@
  *
  *   1. `AGENTS.md` exists at `main` for every `lifecycle: active` entry.
  *      Absence on a non-active entry is asserted as a pass, never a silent
- *      skip (gate-report's `check()` records it either way). The
- *      `libre-ai/.github` org-profile is the one standing exemption — no
- *      agent works there — and it is asserted too, not skipped.
+ *      skip (gate-report's `check()` records it either way). Two standing
+ *      exemptions, both asserted, never silently skipped: the
+ *      `libre-ai/.github` org-profile (no agent works there), and any
+ *      `lifecycle: archived` entry — content frozen read-only cannot be
+ *      brought into conformance, so no section, cap, pointer or marker
+ *      requirement applies to it (mechanical consequence of the domain D
+ *      arbitration, 2026-08-18: a requirement binds only what can still be
+ *      edited).
  *   2. The `## ` sections required for the entry's layer (and role, and
  *      lifecycle where the template distinguishes them) are all present.
  *   3. `AGENTS.md` does not exceed the layer's line cap — blocking; there is
@@ -75,9 +80,6 @@ export function resolveLayerSpec(
   }
   if (entry.layer === "couche-1" && entry.lifecycle === "active") {
     return { requiredSections: COUCHE1_ACTIVE_SECTIONS, maxLines: 60 };
-  }
-  if (entry.layer === "moyeu" && entry.lifecycle === "archived") {
-    return { requiredSections: BASE_SECTIONS, maxLines: 45 };
   }
   return null;
 }
@@ -233,6 +235,14 @@ export function reviewContext(
     return {
       failures: [],
       notes: ["AGENTS.md not required — org-profile exemption (no agent works here)"],
+      exempt: true,
+    };
+  }
+
+  if (entry.lifecycle === "archived") {
+    return {
+      failures: [],
+      notes: ["archived — content frozen read-only, conformance not applicable"],
       exempt: true,
     };
   }
