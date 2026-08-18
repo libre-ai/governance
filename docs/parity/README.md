@@ -11,6 +11,15 @@ specs.**
 
 ## audits/ — benchmark parity audits (8 products)
 
+**Statut de calibrage (2026-08-18, ADR-0027) :** les huit audits mesurent
+tous une spec, jamais du code livré — requalifiés « spec-baseline, non
+opposable » jusqu'à ré-exécution. Aucun `promotion_criteria`/`kill_predicate`
+de fiche produit ne peut s'appuyer sur eux avant cette ré-exécution ni avant
+le jalon dogfooding du produit ; la cible v1 opposable est le MVP que chaque
+audit recommande lui-même (ex. Radar : 32/105, pas les 70/105 que sa fiche
+fixe aujourd'hui), l'étalon complet devenant l'horizon `proven`. Voir
+`docs/adr/0027-parity-gates-fire-only-after-dogfooding.md`.
+
 | File                               | Product → benchmark             | Parité              |
 | ---------------------------------- | ------------------------------- | ------------------- |
 | `PARITY-notebook-siyuan.md`        | Notebook → SiYuan               | 29/143              |

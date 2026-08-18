@@ -1,5 +1,14 @@
 # Benchmark-Parity Audit: Libre AI Polaris vs. Multica
 
+> **Statut de calibrage (2026-08-18, ADR-0027) :** cet audit mesure la
+> **spec** du produit, pas son code livré — requalifié **« spec-baseline,
+> non opposable »** jusqu'à ré-exécution contre du code réellement livré.
+> Les chiffres de couverture restent un inventaire de traits utile, mais ne
+> peuvent fonder aucun `promotion_criteria`/`kill_predicate` de fiche
+> produit avant cette ré-exécution ni avant que le jalon dogfooding du
+> produit soit atteint. Voir
+> `docs/adr/0027-parity-gates-fire-only-after-dogfooding.md`.
+
 **Target:** Polaris (couche 2) orchestrator/harness/missions + K-controls ≥ Multica (github.com/multica-ai/multica) managed-agents platform  
 **Date:** 2026-07-22  
 **Scope:** Feature equivalence by design, not by implementation status
