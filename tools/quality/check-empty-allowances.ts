@@ -32,6 +32,11 @@ export const DECLARED_ALLOWANCES: readonly Allowance[] = [
     because:
       "most pull requests do not touch docs/adr/**, docs/decisions/INVARIANTS.md or docs/decisions/DECISION-REGISTER.md — asserting nothing on those runs is the truth, not a silenced gate (it also allows-empty on non-pull_request runs, where no PR diff or description exists to inspect)",
   },
+  {
+    file: "tools/quality/check-kernel-status-authority.ts",
+    because:
+      "defensive only: with three declared file allowances always present in this repository, the scan can never legitimately find zero markdown files to check — the branch exists so a future repository restructuring that empties the glob fails loudly instead of silently, not because it fires today",
+  },
 ];
 
 const SCANNED_DIRECTORIES = ["tools", "ecosystem"];
