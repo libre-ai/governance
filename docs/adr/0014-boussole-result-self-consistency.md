@@ -1,8 +1,8 @@
 # ADR-0014 — Auto-consistance vérifiable du résultat de comparaison Boussole
 
-- **Statut :** deferred (2026-08-18, ADR-0023 — Domain A re-ratification) — fond arbitré en phase produits de la remise à plat 2026-08 ; question ouverte inchangée, aucune option retenue par cet ADR
-- **Date :** 2026-07-25
-- **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas et n'autorise aucun amendement de contrat.
+- **Statut :** accepted (2026-08-18) — la ratification est le merge propriétaire de cette pull request. Requalifié `deferred` par ADR-0023 le 2026-08-18 ; arbitré au fond le même jour, phase produits de la remise à plat 2026-08.
+- **Date :** 2026-07-25 (question posée) ; 2026-08-18 (décision)
+- **Arbitrage :** propriétaire, 2026-08-18, par questions structurées (ADR-0022/I-24) — option B retenue. Voir « Décision retenue » ci-dessous. Owner-arbitration: 2026-08-18
 - **Portée :** contrats Boussole v2 — `contracts/schemas/local-comparison.v2.schema.json`, monde `contracts/wit/boussole-scoring-v2`
 - **Origine :** analyse d'écart du 2026-07-25 entre une spécification non versionnée retrouvée dans le dépôt `boussole-politique` (candidate jamais commitée) et les contrats Boussole verrouillés du monorepo.
 - **Lié à :** ADR-0013 (lieu des invariants de sérialisation), ADR-0016 (protocole de revue humaine).
@@ -90,6 +90,12 @@ Reprendre la forme candidate : sérialiser `responseValue_i`, `votesFor_i`, `vot
 | C      | majeure ×1 (monde WIT) | non                                 | oui                              |
 | D      | majeure ×2             | oui                                 | oui, par recalcul complet        |
 
-## Ce que cet ADR ne tranche pas
+## Décision retenue (2026-08-18)
 
-Aucune option n'est retenue. Aucun contrat n'est amendé, aucun vecteur golden n'est modifié, aucune approbation existante n'est invalidée par le présent document. La question de savoir si l'auto-consistance est une exigence du produit ou une commodité de vérification appartient au propriétaire ; elle conditionne le choix entre A/A′ d'une part et B/C/D d'autre part.
+**Option B — sérialiser la forme rationnelle exacte.** L'auto-consistance est retenue comme exigence du produit, pas seulement comme commodité de vérification : `local-comparison.v3` porte `weightedNumerator`/`scaledDenominator` (le couple entier exact `(Σ r_i(for_i−against_i), M×denominator)`) et, par contribution, `weightedTerm` (`r_i(for_i−against_i)`). `score` reste publié comme valeur arrondie, dérivée de ce couple — Option C (redéfinir le score comme l'arrondi de la recomposition, dégradant la correction) et Option D (dupliquer les entrées par énoncé) sont écartées : C sacrifiait l'exactitude par rapport à la valeur mathématique pour la cohérence, dans le sens inverse de ce que `SEMANTICS.md` exige partout ailleurs ; D dupliquait une partie du dataset déjà lié par digest.
+
+Implémenté dans `libre-ai/contracts` pull request [#8](https://github.com/libre-ai/contracts/pull/8) (draft), `contracts/schemas/local-comparison.v3.schema.json` : `sum(weightedTerm)` sur `contributions` égale `weightedNumerator`, et `score == round(weightedNumerator / scaledDenominator)` (six décimales, ties-to-even, cf. ADR-0013) sont désormais des invariants vérifiables sur le seul document `local-comparison`, en arithmétique entière, sans exécuter le moteur — l'exigence de recalcul indépendant que cet ADR posait.
+
+**Ce que la décision ne couvre pas encore :** le monde WIT `boussole-scoring-v3` que le tableau « Conséquences selon l'option » compte pour l'option B (« majeure ×2 ») n'existe pas — la pull request #8 amende le schéma JSON `local-comparison`, pas le monde WIT `boussole-scoring-v2` ni ses vecteurs golden/sécurité, qui continuent de nommer et de produire selon la majeure v2. Majeure corrélée restant à ouvrir, non close par le présent ADR.
+
+Le catalogue porte `local-comparison-v3` en `candidate` (`pending-independent-agent-review`), pas `locked`, pour la même raison qu'ADR-0013 : revue à rôles séparés requise (`COMPATIBILITY.md`), non fournie par une session solo — voir le dossier `docs/reviews/boussole-v3-numeric-polarity-omission-review.md` dans `contracts`, partagé avec ADR-0013 et ADR-0015 puisque les trois candidats se verrouillent ensemble.
