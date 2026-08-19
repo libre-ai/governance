@@ -134,5 +134,7 @@ conformité n'est jamais une question de longueur.
   pointeur vérifiables.
 - Il ne fixe pas de plancher : un stub conforme reste court.
 - Il ne rend pas la flotte conforme lui-même — c'est `check-context-conformance`
-  (non requis au merge tant que la vague de mise en conformité n'est pas
-  passée) qui mesure l'écart, repo par repo.
+  qui mesure l'écart, repo par repo. La vague de mise en conformité est passée
+  (36/36 entrées du registre conformes, 2026-08-19) : le workflow tourne
+  désormais aussi sur `pull_request`, et le check est requis au merge sur
+  `governance` (`tools/security/check-branch-protection.ts --fix`).
