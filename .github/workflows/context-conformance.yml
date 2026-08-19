@@ -8,17 +8,24 @@ name: Context conformance
 # the `bun run check` aggregate.
 #
 # The conformance wave that CONTEXT-TEMPLATE.md conditioned the required flip
-# on has passed (36/36 registry entries conform as of 2026-08-19). The
-# `pull_request` trigger below exists so this becomes eligible to be a
-# required status check at all: the branch-protection norm
+# on has passed (36/36 registry entries conform as of 2026-08-19). `push` and
+# `pull_request` below exist so this becomes eligible to be a required status
+# check at all: the branch-protection norm
 # (`tools/security/check-branch-protection.ts`, ADR-0021 domain I) forbids
-# requiring a check that never runs against a pull request's head commit — a
-# schedule- or dispatch-only job can only ever be a phantom requirement,
-# "Expected — waiting for status" forever. `schedule` stays so the baseline
-# keeps being measured even on a week with no pull request to this
-# repository; `workflow_dispatch` stays for an on-demand run (e.g. seeding a
-# check-run onto a fresh `main` HEAD before flipping branch protection).
+# requiring a check that never runs against a commit — a schedule- or
+# dispatch-only job can only ever be a phantom requirement, "Expected —
+# waiting for status" forever on a pull request, and invisible to the tool's
+# own default-ref audit (which reads `main` HEAD) on every push after a
+# squash-merge. Same pairing as every other required check in this
+# repository (`ci.yml`, `context-hygiene.yml`, `doctrine-governance.yml`,
+# `feeds-freshness.yml`, `inventory-drift.yml`) — this workflow was the one
+# outlier before this change. `schedule` stays so the baseline keeps being
+# measured even on a week with neither a push nor a pull request to this
+# repository; `workflow_dispatch` stays as the manual escape hatch `ci.yml`
+# documents for when GitHub fails to deliver an event.
 on:
+  push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: "29 7 * * 1"
