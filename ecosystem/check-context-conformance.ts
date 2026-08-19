@@ -421,6 +421,186 @@ async function fetchLastCommitDate(repository: string, path: string): Promise<st
   }
 }
 
+// --- GraphQL fleet batch: one request instead of ~70+ REST calls ---
+//
+// The REST `GITHUB_TOKEN` this workflow runs under is capped per
+// installation and shared with every other governance workflow that also
+// hits `gh api` (inventory-drift, fleet-pins, feeds-freshness) — under
+// concurrent fleet activity the cap is exceeded by construction, observed
+// live on 2026-08-19 as "API rate limit exceeded for installation" on every
+// repository this gate could not reach in time (see `reviewContext`'s
+// `agentsFetchError` branch, added the same day to stop that condition from
+// being misreported as "AGENTS.md is missing"). GraphQL draws from a
+// separate, points-based quota — batching the whole fleet into one query
+// removes the contention instead of only reporting it honestly.
+
+export interface FleetRepoResult {
+  readonly agents: GhFetchResult;
+  readonly claude: GhFetchResult;
+  readonly agentsLastModifiedOn: string | null;
+}
+
+function repoAlias(index: number): string {
+  return `repo${index}`;
+}
+
+/**
+ * One `query { repoN: repository(...) { ... } }` block per repository,
+ * aliased by index (never by repository name — GraphQL alias syntax
+ * disallows the hyphens several repository names carry). Owner/name are
+ * JSON-string-literal-escaped, which the GraphQL spec models its String
+ * grammar after; `ecosystem/repositories.v1.yaml` is this repository's own
+ * trusted registry, not external input, but the escaping costs nothing.
+ */
+export function buildBatchQuery(repositories: readonly string[]): string {
+  const blocks = repositories.map((repository, index) => {
+    const separator = repository.indexOf("/");
+    if (separator < 0) {
+      throw new Error(`malformed repository entry, expected "owner/name": ${repository}`);
+    }
+    const owner = JSON.stringify(repository.slice(0, separator));
+    const name = JSON.stringify(repository.slice(separator + 1));
+    return [
+      `  ${repoAlias(index)}: repository(owner: ${owner}, name: ${name}) {`,
+      `    agents: object(expression: "main:AGENTS.md") { ... on Blob { text } }`,
+      `    claude: object(expression: "main:CLAUDE.md") { ... on Blob { text } }`,
+      `    defaultBranchRef {`,
+      `      target {`,
+      `        ... on Commit {`,
+      `          history(first: 1, path: "AGENTS.md") { nodes { committedDate } }`,
+      `        }`,
+      `      }`,
+      `    }`,
+      `  }`,
+    ].join("\n");
+  });
+  return `query {\n${blocks.join("\n")}\n}`;
+}
+
+interface GraphQLBlobNode {
+  readonly text?: string | null;
+}
+interface GraphQLCommitHistoryNode {
+  readonly committedDate?: string;
+}
+interface GraphQLRepoNode {
+  readonly agents?: GraphQLBlobNode | null;
+  readonly claude?: GraphQLBlobNode | null;
+  readonly defaultBranchRef?: {
+    readonly target?: {
+      readonly history?: { readonly nodes?: readonly GraphQLCommitHistoryNode[] } | null;
+    } | null;
+  } | null;
+}
+
+const GRAPHQL_UNRESOLVED_REPO =
+  "repository not resolvable via GraphQL (see check-inventory-drift for real deletions/renames)";
+
+/**
+ * `node === null` for an alias means the whole `repository(...)` field came
+ * back null — a real NOT_FOUND (verified empirically: `gh api graphql`
+ * exits non-zero on a partial NOT_FOUND, but `data` still carries every
+ * other alias's full result plus `null` for the missing one), a permissions
+ * issue, or (structurally indistinguishable here) a rename. Reported as
+ * unable-to-verify rather than "missing AGENTS.md": the repository itself,
+ * not one file in it, is what could not be confirmed.
+ */
+export function parseBatchResponse(
+  repositories: readonly string[],
+  data: Readonly<Record<string, unknown>> | undefined,
+): Map<string, FleetRepoResult> {
+  const result = new Map<string, FleetRepoResult>();
+  repositories.forEach((repository, index) => {
+    const node = (data?.[repoAlias(index)] ?? null) as GraphQLRepoNode | null;
+    if (node === null) {
+      result.set(repository, {
+        agents: { text: null, error: GRAPHQL_UNRESOLVED_REPO },
+        claude: { text: null, error: GRAPHQL_UNRESOLVED_REPO },
+        agentsLastModifiedOn: null,
+      });
+      return;
+    }
+    const commitDate = node.defaultBranchRef?.target?.history?.nodes?.[0]?.committedDate;
+    result.set(repository, {
+      agents: { text: node.agents?.text ?? null, error: null },
+      claude: { text: node.claude?.text ?? null, error: null },
+      agentsLastModifiedOn: commitDate !== undefined ? (commitDate.split("T")[0] ?? null) : null,
+    });
+  });
+  return result;
+}
+
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+/**
+ * `data` is read from stdout regardless of exit code — a partial NOT_FOUND
+ * on one alias makes `gh` exit non-zero even though the response carries a
+ * complete, usable `data` object for every other alias (verified
+ * empirically against the live API). Only a `data`-less response — a
+ * genuine transport/rate-limit/auth failure — is retried, twice, before
+ * this returns `null` and the caller falls back to `fetchFleetViaRest`.
+ */
+async function fetchFleetViaGraphQL(
+  repositories: readonly string[],
+): Promise<Map<string, FleetRepoResult> | null> {
+  const query = buildBatchQuery(repositories);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
+      if (parsed.data !== undefined) return parseBatchResponse(repositories, parsed.data);
+    } catch {
+      // Not valid JSON (or no `data` key) — fall through to retry/backoff.
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(
+    `GraphQL fleet batch failed after ${RETRY_DELAYS_MS.length + 1} attempt(s), falling back to per-repository REST: ${lastError}`,
+  );
+  return null;
+}
+
+async function fetchFleetViaRest(
+  repositories: readonly string[],
+): Promise<Map<string, FleetRepoResult>> {
+  const result = new Map<string, FleetRepoResult>();
+  for (const repository of repositories) {
+    const agents = await fetchFile(repository, "AGENTS.md");
+    const claude =
+      agents.text !== null ? await fetchFile(repository, "CLAUDE.md") : { text: null, error: null };
+    const agentsLastModifiedOn =
+      agents.text !== null ? await fetchLastCommitDate(repository, "AGENTS.md") : null;
+    result.set(repository, { agents, claude, agentsLastModifiedOn });
+  }
+  return result;
+}
+
+/** GraphQL batch first; per-repository REST only if the whole batch could not be answered at all. */
+async function fetchFleetContext(
+  repositories: readonly string[],
+): Promise<Map<string, FleetRepoResult>> {
+  return (await fetchFleetViaGraphQL(repositories)) ?? (await fetchFleetViaRest(repositories));
+}
+
 function sh(argv: string[]): string | null {
   const result = Bun.spawnSync(argv, { stdout: "pipe", stderr: "pipe" });
   if (result.exitCode !== 0) return null;
@@ -478,27 +658,30 @@ if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const registry = parseRegistry(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const lifecycleHistory = buildLifecycleHistory();
+  const fleetContext = await fetchFleetContext(registry.map((entry) => entry.repository));
 
   const report = new GateReport();
   for (const entry of registry) {
-    const agentsFetch = await fetchFile(entry.repository, "AGENTS.md");
-    const claudeFetch =
-      agentsFetch.text !== null
-        ? await fetchFile(entry.repository, "CLAUDE.md")
-        : { text: null, error: null };
-    const agentsLastModifiedOn =
-      agentsFetch.text !== null ? await fetchLastCommitDate(entry.repository, "AGENTS.md") : null;
+    // Every entry in `registry` was passed to `fetchFleetContext` above, and
+    // both its GraphQL and REST paths set a result for every input
+    // repository — this fallback is defensive, not expected to fire, and
+    // stays honest (unable-to-verify, never "missing") if it ever does.
+    const fetched = fleetContext.get(entry.repository) ?? {
+      agents: { text: null, error: "no fetch outcome recorded for this repository" },
+      claude: { text: null, error: null },
+      agentsLastModifiedOn: null,
+    };
     const transitionedOn = lastLifecycleTransition(lifecycleHistory.get(entry.repository) ?? []);
 
     const outcome = reviewContext(
       entry,
       {
-        agents: agentsFetch.text,
-        agentsFetchError: agentsFetch.error,
-        claude: claudeFetch.text,
-        claudeFetchError: claudeFetch.error,
+        agents: fetched.agents.text,
+        agentsFetchError: fetched.agents.error,
+        claude: fetched.claude.text,
+        claudeFetchError: fetched.claude.error,
       },
-      { transitionedOn, agentsLastModifiedOn },
+      { transitionedOn, agentsLastModifiedOn: fetched.agentsLastModifiedOn },
     );
     const ok = outcome.failures.length === 0;
     const note = ok
