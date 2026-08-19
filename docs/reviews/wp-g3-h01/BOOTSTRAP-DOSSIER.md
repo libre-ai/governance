@@ -414,9 +414,13 @@ propriétaire nominatif, avant tout prononcé.
 ## Round 4 — passe d'entrée de la re-livraison (2026-08-19)
 
 La re-livraison ouvre comme l'arbitrage l'exigeait : par une vérification
-indépendante de l'état réel au head `0b5204f`, pas par l'affirmation de
-l'implémenteur. Deux passes role-séparées, review-only, worktree détaché
-vérifié propre avant et après — verdicts immuables sous
+indépendante de l'état réel au head `0b5204f` — le head de la branche
+conservée `feat/wp-g3-h01-confined-execution` d'`orchestrator`, donc la
+substance sur son layout d'origine (`crates/agent-harness/**`), PAS le code
+déjà transposé sur la structure racine de `libre-ai/harness` que l'ADR-0030
+D3 décrit — pas par l'affirmation de l'implémenteur. Deux passes
+role-séparées, review-only, worktree détaché vérifié propre avant et après —
+verdicts immuables sous
 `docs/reviews/wp-g3-h01/0b5204f/{architecture,security}.verdict.json`.
 
 **Première du package sur deux plans.** (1) Les deux rôles rendent `accept` —
@@ -441,13 +445,20 @@ et chaque verdict la consigne.
 **Obligations d'entrée de la pull request de re-livraison** (chacune écrite
 rouge avant correction, par-dessus la transposition) : les trois majors du
 verdict security (fenêtre pgid du chemin EOF ; complexité `**` bornée avec
-test ; `runBoundToken`/`denyOnMissing` lus ou critère de surface reformulé) et
+test ; `runBoundToken`/`denyOnMissing` lus ou critère de surface reformulé —
+le verdict architecture élargit ce dernier point à SIX pointers tenus par
+`const` + mécanisme inconditionnel sans lecture : `schemaVersion`,
+`runBoundToken`, les quatre `/attestation/*`, plus `denyOnMissing` ; le compte
+exact de la surface est 21 pointers, celui du verdict architecture) et
 les minors persistants nommés par les deux verdicts (vestige
 `worker_transport_isolation` en commentaire de `controls.rs` ; code
 `harness.verifying_key_malformed` hors matrice fermée ; protocole de
 vérification opérateur documenté face aux capacités du manifeste lié ;
 `unframe` et frame non terminé ; ordre binding/exit ; `Debug` sur le secret de
-run ; scan `unsafe` contournable par `//` en littéral de chaîne).
+run ; scan `unsafe` contournable par `//` en littéral de chaîne ; le bloc
+`filesystem` hors surface alors que `canonical_workspace` applique
+partiellement `canonicalizePaths` — sous-déclaration fail-safe héritée du
+round 3, assumée ou résorbée mais nommée).
 
 L'enseignement de méthode du round xhigh se répète : quatre passes avaient
 déclaré le matcher clos, l'angle « correction » du round 4 l'a rouvert un
