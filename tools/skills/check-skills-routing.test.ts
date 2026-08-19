@@ -181,4 +181,25 @@ describe("rankForQuery / checkPositiveTrigger", () => {
     const result = checkPositiveTrigger("biscuit-auth", ranking, 0.01);
     expect(result.ok).toBe(true);
   });
+
+  test("checkPositiveTrigger flags a perfect tie at rank 1 as tied", () => {
+    // Two skills score identically — the winner is only decided by array
+    // order (rankForQuery's stable sort), not by a real signal.
+    const ranking = [
+      { name: "biscuit-auth", score: 0.5 },
+      { name: "rgpd-dpia", score: 0.5 },
+    ];
+    const result = checkPositiveTrigger("biscuit-auth", ranking, 0.01);
+    expect(result.ok).toBe(true);
+    expect(result.tied).toBe(true);
+  });
+
+  test("checkPositiveTrigger reports no tie when the winner is unambiguous", () => {
+    const ranking = [
+      { name: "biscuit-auth", score: 0.7 },
+      { name: "rgpd-dpia", score: 0.3 },
+    ];
+    const result = checkPositiveTrigger("biscuit-auth", ranking, 0.01);
+    expect(result.tied).toBe(false);
+  });
 });

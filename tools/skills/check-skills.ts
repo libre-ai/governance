@@ -54,7 +54,7 @@ async function main(): Promise<void> {
       const lines = bodyLineCount(parsed.body);
       if (lines > BODY_LINE_WARNING) {
         console.warn(
-          `${skillPath}: body is ${lines} lines, past the ${BODY_LINE_WARNING}-line CI warning (target: ${BODY_LINE_TARGET}) — consider progressive disclosure into references/`,
+          `::warning::${skillPath}: body is ${lines} lines, past the ${BODY_LINE_WARNING}-line CI warning (target: ${BODY_LINE_TARGET}) — consider progressive disclosure into references/`,
         );
       }
     }
@@ -68,7 +68,14 @@ async function main(): Promise<void> {
       );
       continue;
     }
-    const raw = await Bun.file(evalPath).json();
+    let raw: unknown;
+    try {
+      raw = await Bun.file(evalPath).json();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      report.check(evalPath, false, `invalid JSON (${message})`);
+      continue;
+    }
     for (const finding of lintEvalFile(raw)) {
       report.check(`${evalPath} — ${finding.rule}`, finding.ok, finding.note);
     }
