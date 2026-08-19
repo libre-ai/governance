@@ -66,3 +66,11 @@ generations:
       reusable-dependency-policy.yml published (e1232c1) and declarable for
       the first time — libre-ai/harness is the first consumer to wire it
       (step 3 of the process above, harness domain F chantier A)
+  - sha: f9e7b5bab3d9ed71046df7b7dd2e70de1fe31436
+    added_on: 2026-08-19
+    note: >-
+      check-bun-manifests accepts the post-dispatch tools/quality path for
+      apps/*/packages/* manifests (#65) — required by consumers whose app
+      workspaces carry their own manifests; libre-ai/boussole-politique
+      pinned it out of necessity before this declaration (step 2 recorded
+      after the fact, caught by the widened fleet-pins gate)
