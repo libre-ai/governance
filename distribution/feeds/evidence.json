@@ -3,6 +3,14 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "coverage-2026-08-19",
+      "date": "2026-08-19",
+      "type": "coverage",
+      "title": "Automation coverage measurement (last 100 commit(s) inspected per active repository)",
+      "status": "0% genuine automation",
+      "artifact": "distribution/evidence/coverage-2026-08-19.json"
+    },
+    {
       "id": "sovereignty-2026-08-18-130738b",
       "date": "2026-08-18",
       "type": "sovereignty",

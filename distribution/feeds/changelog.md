@@ -6,6 +6,11 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-08-19 — [coverage] Automation coverage measurement (last 100 commit(s) inspected per active repository)
+
+- Statut : 0% genuine automation
+- Source : [`distribution/evidence/coverage-2026-08-19.json`](../../distribution/evidence/coverage-2026-08-19.json)
+
 ## 2026-08-18 — [sovereignty] Sovereignty report (commit 130738b) — 3 pass, 0 fail, 4 pending
 
 - Statut : pass
