@@ -1,0 +1,12 @@
+{
+  "subject": "retro-K4 governance PR #7 — scope: the change this commit introduces over its first parent (start with `git show HEAD`): fix(quality): a gate that asserted nothing now fails",
+  "commit": "1551d769739630371471a2d55d0d0d52460360dd",
+  "roles": ["architecture", "security"],
+  "mode": "specialized-role",
+  "evidence": ["docs/reviews/AGENT-REVIEW-PROTOCOL.md"],
+  "concurrency": 5,
+  "provider": "openai-codex",
+  "model": "gpt-5.6-terra",
+  "thinking": "xhigh",
+  "outputDir": "docs/reviews/retro-k4-gate-report/1551d76"
+}

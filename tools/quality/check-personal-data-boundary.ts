@@ -84,6 +84,16 @@ const RESERVED_INSTANCE_SEGMENTS: readonly string[] = [
 // real-world datasets".
 const FIXTURE_PREFIX = "contracts/fixtures/";
 
+// The second dataset exemption, same doctrine as the first — a named entry
+// with a reason that survives re-reading, never a loosened pattern. Fan-out
+// review journals under docs/reviews/ are forge-operational evidence, not
+// instance data: a closed event vocabulary (pass_start, agent_call,
+// verdict_recorded…) with counters, role names and repository paths — never
+// worker content, never a record about an organisation or a person. They stay
+// byte-identical because the replay that audits a run must read exactly what
+// the run wrote (CHALLENGER-EVALUATION.md, campagne rétro-K4 2026-08-04).
+const REVIEW_JOURNAL_PATTERN = /^docs\/reviews\/[A-Za-z0-9._/-]+\/events[A-Za-z0-9._-]*\.jsonl$/;
+
 function extensionOf(path: string): string {
   const dot = path.lastIndexOf(".");
   const slash = path.lastIndexOf("/");
@@ -106,6 +116,7 @@ export function scanDatasetPaths(paths: readonly string[]): BoundaryFinding[] {
       continue;
     }
     if (path.startsWith(FIXTURE_PREFIX)) continue;
+    if (REVIEW_JOURNAL_PATTERN.test(path)) continue;
     const extension = extensionOf(path);
     if (!DATASET_EXTENSIONS.has(extension)) continue;
     if (extension === ".sql" && isMigration(path)) continue;

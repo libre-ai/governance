@@ -37,6 +37,25 @@ describe("scanDatasetPaths", () => {
     ).toHaveLength(5);
   });
 
+  test("exempts fan-out review journals, and only them", () => {
+    // The named exemption: events*.jsonl under docs/reviews/ is forge
+    // evidence with a closed vocabulary, kept byte-identical for replay.
+    expect(
+      scanDatasetPaths([
+        "docs/reviews/retro-k4-gate-report/1551d76/events-attempt2-usage-limit.jsonl",
+        "docs/reviews/wp-g3-h01/5bee6a3/events.jsonl",
+      ]),
+    ).toHaveLength(0);
+    // The exemption does not travel: same extension elsewhere, or another
+    // basename in the same directory, stays a finding.
+    expect(
+      scanDatasetPaths([
+        "docs/veille/events.jsonl",
+        "docs/reviews/retro-k4-gate-report/1551d76/curated-items.jsonl",
+      ]),
+    ).toHaveLength(2);
+  });
+
   test("flags the personal-record interchange formats a veille workflow produces", () => {
     // .opml is a feed-subscription export, .vcf a contact card, .ics a calendar,
     // .mbox/.eml raw mail: each is exactly what a dogfooding session would be

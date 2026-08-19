@@ -1,0 +1,12 @@
+{
+  "subject": "retro-K4 orchestrator PR #4 — the worktree is the libre-ai/orchestrator repository tree at this commit (cross-repo pass run from governance; the review protocol is provided in the evidence digest). Scope: the change this commit introduces over its first parent (start with `git show HEAD`): feat(review): the fan-out keeps a replayable journal of every pass",
+  "commit": "30ade3bf62e9d7a7d4147da1ac7bed446f84241a",
+  "roles": ["architecture", "security"],
+  "mode": "specialized-role",
+  "evidence": ["tools/review/fanout-core.ts", "tools/review/fanout.ts"],
+  "concurrency": 5,
+  "provider": "openai-codex",
+  "model": "gpt-5.6-terra",
+  "thinking": "xhigh",
+  "outputDir": "docs/reviews/retro-k4-review-journal/30ade3b"
+}
