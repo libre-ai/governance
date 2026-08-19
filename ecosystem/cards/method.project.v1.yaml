@@ -97,7 +97,7 @@ kill_predicates:
       method operates nothing under agent identity; a re-examination ADR of
       the product-zero thesis becomes mandatory
     window: "2026-12-31"
-    source: distribution/evidence/coverage-2026-08-18.json
+    source: distribution/evidence/coverage-2026-08-19.json
 benchmark:
   product: "agentic fleet-engineering methods (industry practice: declarative doctrine, unproven guardrails)"
 phases:
@@ -111,27 +111,62 @@ phases:
       - id: context-conformance-fleet-green
         text: "Evidence item 1: conformance gate green fleet-wide and required."
         weight: 5
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-19"
+          reference: >-
+            governance #71/#73/#77/#80 — the AGENTS.md-template check is a
+            required status on governance main, self-sustaining (push:main
+            trigger), 36/36 assertions hold via the GraphQL batch gates
       - id: kernel-single-source
         text: "Evidence item 2: K1-K5 single status table with drift gate."
         weight: 4
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-18"
+          reference: >-
+            docs/specifications/LOOP-SECURITY-KERNEL.md single status table +
+            tools/quality/check-kernel-status-authority.ts wired into the
+            required Bun quality chain
       - id: fanout-real-campaign
         text: "Evidence item 3: review fan-out proven on a real campaign."
         weight: 4
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-19"
+          reference: >-
+            libre-ai/orchestrator #22 (aa219c3) —
+            docs/evidence/2026-08-19-first-real-fanout-campaign.md: 2/2 jobs,
+            schema-valid cross-checked verdicts, no --dry-run; both roles
+            independently rendered an honest reject on a real finding
       - id: compat-policy-accepted
         text: "Evidence item 4: orchestrator compat-policy accepted."
         weight: 3
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-19"
+          reference: >-
+            libre-ai/orchestrator #15 merged — public-surface and refusal-code
+            snapshots, breaking changes rehearsed blank
       - id: skills-gates-green
         text: "Evidence item 5: skills collection T1/T2 gates green in CI."
         weight: 4
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-19"
+          reference: >-
+            governance #67/#69/#79 — T1 84/84, T2 33/33 (max pairwise overlap
+            8.2%), wired into the required Bun quality check
       - id: protections-normalized
         text: "Evidence item 6: branch protections normalized and green."
         weight: 4
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-08-19"
+          reference: >-
+            final check-branch-protection audit on main (post-#76): 7/7
+            required checks match observed CI, 0 phantom, 0 decorative;
+            --fix is the only mutation path (ADR-0029)
       - id: weekly-loops-green
         text: "Evidence item 7: weekly evidence loops green two consecutive cycles."
         weight: 5
