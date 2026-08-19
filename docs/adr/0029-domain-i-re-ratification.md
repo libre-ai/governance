@@ -34,8 +34,9 @@ l'ont précédé :
 - chantier 3 — `tools/presentation/check-org-readme-drift.ts` (#58, mergé) ;
 - chantier 4 — trois outils de release/étude marqués manuels par design
   (#54, mergé) ;
-- chantier 5 — I-26 et le gate d'exhaustivité de citation d'invariant (#72,
-  remplace #59 fermée pour un historique DCO à refaire — voir §2.7) ;
+- chantier 5 — I-26 et le gate d'exhaustivité de citation d'invariant (#74,
+  troisième pull request de ce chantier après deux incidents DCO successifs
+  sur les précédentes — voir §2.7) ;
 - chantier 6 — migration de trois repositories (`carriere`, `db-inspect`,
   `website`) vers les workflows réutilisables de gouvernance (une pull
   request par repo, hors `governance` : website#15, db-inspect#4,
@@ -67,14 +68,19 @@ section `## Invariant` dédiée : « No invariant — this ADR records the
 factual dissolution of a contradiction […]; it creates no durable doctrine
 beyond that record. »
 
-**Incident DCO sur #59.** La pull request initiale du chantier 5 (#59) a
-reçu, pendant son ouverture, un commit de fusion créé sans trailer
-`Signed-off-by` correspondant à son auteur — le gate `Licensing and
+**Deux incidents DCO successifs sur le chantier 5.** La pull request
+initiale (#59) a reçu, pendant son ouverture, un commit de fusion créé sans
+trailer `Signed-off-by` correspondant à son auteur — le gate `Licensing and
 contribution governance` l'a détecté (vérifie chaque commit du diff, fusion
 comprise). Le dépôt interdisant tout `git push --force` par garde-fou local
 (`git-push-guard.sh`), la correction conforme n'était pas de réécrire
 l'historique poussé mais d'ouvrir une pull request de remplacement à partir
-d'un historique propre — #72, `#59` fermée avec renvoi. Aucun octroi
+d'un historique propre — #72, `#59` fermée avec renvoi. #72 a ensuite
+rencontré le même défaut sur une mise à jour de branche ultérieure (un
+`git merge --continue` après résolution de conflit perd le `--signoff` de
+la commande de fusion qui l'a précédé) : même diagnostic, même remède —
+#74, `#72` fermée avec renvoi, aucune réécriture d'historique poussé. Aucun
+octroi
 d'exception au garde-fou, aucun contournement : le chemin conforme existait,
 il a été pris.
 
@@ -160,10 +166,11 @@ réel n'est pas côté GitHub, il est côté machine — le hook local
 `git-push-guard.sh` refuse catégoriquement toute invocation de
 `gh pr merge --admin` (« bypasses required checks ») et tout `git push
 --force`/`--force-with-lease`, quel que soit l'appelant. Re-ratifié tel
-quel, et exercé sans exception pendant ce domaine même : l'incident DCO de
-#59 (§1) offrait une tentation directe de force-push, refusée par le hook,
-résolue par une pull request de remplacement au lieu d'une réécriture
-d'historique poussé. La protection de forge délimite ce qui est requis, le
+quel, et exercé sans exception pendant ce domaine même : les deux incidents
+DCO du chantier 5 (§1) offraient chacun une tentation directe de
+force-push, refusée par le hook les deux fois, résolue par une pull request
+de remplacement au lieu d'une réécriture d'historique poussé. La protection
+de forge délimite ce qui est requis, le
 hook local délimite ce qui peut le contourner, et les deux registres ne
 doivent jamais fusionner en un seul mécanisme.
 
