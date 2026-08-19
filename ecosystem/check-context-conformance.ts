@@ -2,17 +2,15 @@
  * Context conformance gate (remise à plat, Domaine D — Contexte agent,
  * 2026-08-18, owner arbitration; docs/method/CONTEXT-TEMPLATE.md).
  *
- * NOT wired into `bun run check`, and its CI workflow is NOT a required
- * status check. The fleet is massively non-conformant today (a 2026-08-18
- * survey found ~9-17 line prose stubs with zero `## ` sections on nearly
- * every satellite): forcing this gate red on every pull request across the
- * fleet before a single repository has been brought into shape would block
- * unrelated work for a doctrine none of it violates yet. This script and its
- * `check:context-conformance` package.json entry exist so the baseline can
- * be measured and re-measured; `docs/method/CONTEXT-TEMPLATE.md` states
- * explicitly that the gate becomes required once the conformance wave has
- * passed — that flip is a separate, deliberate change, not a side effect of
- * this one.
+ * NOT wired into `bun run check` — it is its own standalone CI workflow
+ * (`.github/workflows/context-conformance.yml`), like every other required
+ * check in this repository's branch protection. A 2026-08-18 survey found
+ * ~9-17 line prose stubs with zero `## ` sections on nearly every satellite;
+ * the conformance wave that followed brought all 36 registry entries into
+ * shape (verified 2026-08-19), which is the precondition
+ * `docs/method/CONTEXT-TEMPLATE.md` set for the workflow's `pull_request`
+ * trigger and this check becoming required on `governance` via
+ * `tools/security/check-branch-protection.ts --fix`.
  *
  * For every entry in `ecosystem/repositories.v1.yaml`, this gate verifies:
  *

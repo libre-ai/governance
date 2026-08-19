@@ -2,15 +2,31 @@ name: Context conformance
 
 # Domaine D (remise à plat, 2026-08-18): measures every repository in
 # ecosystem/repositories.v1.yaml against docs/method/CONTEXT-TEMPLATE.md
-# (ecosystem/check-context-conformance.ts). Deliberately NOT wired into ci.yml
-# and NOT a required status check yet — the fleet is massively
-# non-conformant today (see the script's own header for the 2026-08-18
-# survey), and making this required now would block every unrelated pull
-# request on a doctrine the fleet has not had a chance to adopt. This
-# workflow exists to keep measuring the baseline on a schedule while the
-# conformance wave runs; CONTEXT-TEMPLATE.md documents the flip to required
-# as a separate, deliberate follow-up change once that wave has passed.
+# (ecosystem/check-context-conformance.ts). Deliberately NOT wired into
+# ci.yml — it is its own workflow, matching how every other required check in
+# this repository's branch protection is a standalone job, never folded into
+# the `bun run check` aggregate.
+#
+# The conformance wave that CONTEXT-TEMPLATE.md conditioned the required flip
+# on has passed (36/36 registry entries conform as of 2026-08-19). `push` and
+# `pull_request` below exist so this becomes eligible to be a required status
+# check at all: the branch-protection norm
+# (`tools/security/check-branch-protection.ts`, ADR-0021 domain I) forbids
+# requiring a check that never runs against a commit — a schedule- or
+# dispatch-only job can only ever be a phantom requirement, "Expected —
+# waiting for status" forever on a pull request, and invisible to the tool's
+# own default-ref audit (which reads `main` HEAD) on every push after a
+# squash-merge. Same pairing as every other required check in this
+# repository (`ci.yml`, `context-hygiene.yml`, `doctrine-governance.yml`,
+# `feeds-freshness.yml`, `inventory-drift.yml`) — this workflow was the one
+# outlier before this change. `schedule` stays so the baseline keeps being
+# measured even on a week with neither a push nor a pull request to this
+# repository; `workflow_dispatch` stays as the manual escape hatch `ci.yml`
+# documents for when GitHub fails to deliver an event.
 on:
+  push:
+    branches: [main]
+  pull_request:
   schedule:
     - cron: "29 7 * * 1"
   workflow_dispatch:
