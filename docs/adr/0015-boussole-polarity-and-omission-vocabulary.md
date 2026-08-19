@@ -1,8 +1,8 @@
 # ADR-0015 — Traçabilité de la polarité éditoriale et vocabulaire d'omission (Boussole)
 
-- **Statut :** deferred (2026-08-18, ADR-0023 — Domain A re-ratification) — fond arbitré en phase produits de la remise à plat 2026-08 ; questions ouvertes inchangées, aucune option retenue par cet ADR
-- **Date :** 2026-07-25
-- **Arbitrage :** en attente de décision propriétaire. Cet ADR formule les questions et leurs options avec leurs conséquences ; il ne tranche pas et n'autorise aucun amendement de contrat.
+- **Statut :** accepted (2026-08-18) — la ratification est le merge propriétaire de cette pull request. Requalifié `deferred` par ADR-0023 le 2026-08-18 ; arbitré au fond le même jour, phase produits de la remise à plat 2026-08.
+- **Date :** 2026-07-25 (questions posées) ; 2026-08-18 (décision)
+- **Arbitrage :** propriétaire, 2026-08-18, par questions structurées (ADR-0022/I-24) — Q1-A et Q2-A retenues. Voir « Décision retenue » ci-dessous. Owner-arbitration: 2026-08-18
 - **Portée :** contrats Boussole v2 — `contracts/schemas/public-vote-dataset.v2.schema.json`, `contracts/schemas/local-comparison.v2.schema.json`, monde `contracts/wit/boussole-scoring-v2`
 - **Origine :** analyse d'écart du 2026-07-25 entre une spécification non versionnée retrouvée dans le dépôt `boussole-politique` (candidate jamais commitée) et les contrats Boussole verrouillés du monorepo.
 - **Lié à :** ADR-0013, ADR-0014 (mêmes contrats, même axe de vérifiabilité).
@@ -89,6 +89,22 @@ Laisser le contrat inchangé et énoncer en prose que `omitted` est un total de 
 
 - **Conséquence :** aucun amendement de schéma ; la sous-spécification cesse d'être silencieuse. Ne referme aucun des quatre écarts de distinction.
 
-## Ce que cet ADR ne tranche pas
+## Décision retenue (2026-08-18)
 
-Aucune option n'est retenue, pour aucune des deux questions. Q1 et Q2 sont indépendantes et peuvent recevoir des réponses de nature différente. Aucun contrat n'est amendé, aucune fixture n'est modifiée, aucune approbation existante n'est invalidée par le présent document. La ligne fausse du tableau de parité est signalée ici comme un fait vérifié, non corrigée : sa correction relève d'une pull request séparée.
+Q1 et Q2 reçoivent toutes deux la réponse contractuelle, dans la même majeure v3 (§"Contrainte commune" ci-dessus l'anticipait : une fermeture contractuelle de Q1 implique `public-vote-dataset.v3`, une fermeture de Q2 implique `local-comparison.v3` ; les deux fermetures partagent la pull request `contracts` [#8](https://github.com/libre-ai/contracts/pull/8), draft).
+
+### Q1 — **Option Q1-A, contractuelle**
+
+`public-vote-dataset.v3` porte `polarity` (`enum: [-1, 1]`), requis par énoncé — l'inversion de sens entre un scrutin et la formulation d'un énoncé est désormais déclarée par le contrat, pas seulement absorbée par la relecture du `wording`. Option Q1-B (rédactionnelle) et Q1-C (statu quo) sont écartées : le signe du score cesse de dépendre d'une seule relecture de prose.
+
+**Correction de la ligne fausse du tableau de parité, actée ici.** Le §"Contexte" ci-dessus enregistrait comme fait vérifié que la ligne « VAA statement layer + polarity » du tableau de parité pré-freeze était fausse (aucun contrat ne portait alors la polarité) et que sa correction restait sans objet, ces cartes ayant été oubliées par ADR-0019. Cette décision ne rouvre pas les cartes oubliées ; elle ferme le seul écart qui restait ouvert — l'absence contractuelle elle-même.
+
+### Q2 — **Option Q2-A, contractuelle**
+
+`local-comparison.v3` remplace le scalaire `omitted: integer` par une liste `omissions: [{statementId, reason}]`, motifs exclusifs. La taxonomie retenue le 2026-08-18 comporte quatre motifs fermés — `explicit-skip`, `abstention`, `vote-data-unavailable`, `representative-absent` — et non les cinq de la spécification candidate d'origine citée au §"Contexte" (qui distinguait en plus `skip` explicite de réponse absente comme deux motifs séparés ; le moteur documenté par `SEMANTICS.md` les traite déjà identiquement, « A skipped or missing response omits all votes... and emits no contribution », d'où leur fusion sous `explicit-skip` dans le contrat plutôt que la reconduction du cinquième motif). Options Q2-B (dérivation côté produit) et Q2-C (cadrage documentaire seul) sont écartées : la taxonomie est désormais gouvernée par le contrat plutôt que rederivée, potentiellement de façon divergente, par chaque consommateur.
+
+La distinction « donnée de vote indisponible vs absence de l'élu » que le §"Contexte" qualifiait d'inexprimable dans le modèle v2 (compteurs requis, plancher `minimumGroupSize ≥ 5`) reste, à ce stade, une distinction portée par le _vocabulaire de sortie_ (`vote-data-unavailable` et `representative-absent` sont deux valeurs distinctes de l'énumération) sans que le _dataset_ v3 gagne un moyen structurel de produire l'une plutôt que l'autre au-delà de ses compteurs `votesFor`/`votesAgainst`/`abstentions`/`absent` existants — cette dernière fermeture n'était pas demandée par la présente décision et reste ouverte.
+
+**Ce que la décision ne couvre pas encore :** comme pour ADR-0013 et ADR-0014, le monde WIT `boussole-scoring-v3` n'existe pas ; `contracts/wit/boussole-scoring-v2` et ses vecteurs golden/sécurité continuent de nommer et de produire selon la majeure v2, y compris pour l'énumération d'omission côté moteur que Q2-A évoque. Majeure corrélée restant à ouvrir.
+
+Le catalogue porte `public-vote-dataset-v3` et `local-comparison-v3` en `candidate` (`pending-independent-agent-review`), pas `locked`, pour la même raison qu'ADR-0013/ADR-0014 : revue à rôles séparés requise (`COMPATIBILITY.md`), non fournie par une session solo — voir le dossier partagé `docs/reviews/boussole-v3-numeric-polarity-omission-review.md` dans `contracts`.
