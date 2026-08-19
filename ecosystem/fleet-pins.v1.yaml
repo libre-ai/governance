@@ -74,3 +74,9 @@ generations:
       workspaces carry their own manifests; libre-ai/boussole-politique
       pinned it out of necessity before this declaration (step 2 recorded
       after the fact, caught by the widened fleet-pins gate)
+  - sha: 767ee84aabfab27be29adb9606584e76e15243b6
+    added_on: 2026-08-19
+    note: >-
+      personal-data boundary exempts events*.jsonl review journals (#30) +
+      DCO gate fix (#29) — needed by libre-ai/orchestrator to consign the
+      first real fanout campaign
