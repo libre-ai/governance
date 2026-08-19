@@ -32,12 +32,39 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          # Trailers are read with --no-divider in both steps: Dependabot ends
+          # its messages with a `---` metadata block, and by default
+          # git-interpret-trailers stops reading at that divider — the
+          # Signed-off-by placed below it vanished from the check entirely.
           missing=0
           while read -r commit; do
-            expected="Signed-off-by: $(git show --no-patch --format='%an <%ae>' "$commit")"
-            if ! git show --no-patch --format=%B "$commit" | git interpret-trailers --parse | grep -Fqx "$expected"; then
-              echo "::error::Missing author-matching Signed-off-by trailer on $commit"
-              missing=1
+            committer="$(git show --no-patch --format='%cn <%ce>' "$commit")"
+            parent_words="$(git rev-list --parents -n 1 "$commit" | wc -w)"
+            author_email="$(git show --no-patch --format='%ae' "$commit")"
+            trailers="$(git show --no-patch --format=%B "$commit" | git interpret-trailers --parse --no-divider)"
+            # A forge-authored commit — Dependabot, a web-UI edit, a branch
+            # update — is committed by GitHub and authored by a
+            # @users.noreply.github.com address (or is a merge commit). It can
+            # never carry an author-matching trailer: Dependabot signs off as
+            # support@github.com while GitHub authors it as
+            # 49699333+dependabot[bot]@users.noreply.github.com. Accept any
+            # valid Signed-off-by for those commits — the push step below
+            # already applies this exact rule to everything that reaches main,
+            # so the review surface merely stops being stricter than the
+            # integration surface it guards.
+            if [ "$committer" = "GitHub <noreply@github.com>" ] && \
+               { [ "$parent_words" -gt 2 ] || \
+                 printf '%s' "$author_email" | grep -Eq '@users\.noreply\.github\.com$'; }; then
+              if ! printf '%s\n' "$trailers" | grep -Eq '^Signed-off-by: .+ <.+@.+>$'; then
+                echo "::error::Forge-generated commit $commit lacks a valid Signed-off-by trailer in its message"
+                missing=1
+              fi
+            else
+              expected="Signed-off-by: $(git show --no-patch --format='%an <%ae>' "$commit")"
+              if ! printf '%s\n' "$trailers" | grep -Fqx "$expected"; then
+                echo "::error::Missing author-matching Signed-off-by trailer on $commit"
+                missing=1
+              fi
             fi
           done < <(git rev-list "$BASE_SHA..$HEAD_SHA")
           exit "$missing"
@@ -65,7 +92,7 @@ jobs:
             committer="$(git show --no-patch --format='%cn <%ce>' "$commit")"
             parent_words="$(git rev-list --parents -n 1 "$commit" | wc -w)"
             author_email="$(git show --no-patch --format='%ae' "$commit")"
-            trailers="$(git show --no-patch --format=%B "$commit" | git interpret-trailers --parse)"
+            trailers="$(git show --no-patch --format=%B "$commit" | git interpret-trailers --parse --no-divider)"
             # A forge-generated integration commit is committed by GitHub and
             # authored by the forge account (a @users.noreply.github.com
             # address) — true of both merge commits (2+ parents) and squashed
