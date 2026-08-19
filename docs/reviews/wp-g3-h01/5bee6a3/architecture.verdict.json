@@ -1,0 +1,87 @@
+{
+  "reviewPassId": "rp-5bee6a3-1B52A13E-E5A2-400E-B97C-1EF2C34C0F41",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "5bee6a30533f3872c31ac6a19d176d02a74e3ac4",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "a35211617b14ba225135f1127298af4b1d75e884e228809971334d1103f525f6"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "380ce5c38a53846e208d27fe4330c5e48bf6654afec35e905b8e043b6334cf0f"
+    }
+  ],
+  "commands": [
+    "git rev-parse HEAD",
+    "git log --oneline origin/main..HEAD",
+    "git diff origin/main...HEAD --stat",
+    "git diff origin/main...HEAD -- Cargo.toml package.json .github/workflows/ci.yml",
+    "read: docs/apps/harness.md, crates/agent-harness/**, verification/agent-harness/**, tests/**, root src/lib.rs, verification/agent-orchestrator/check-capabilities.ts",
+    "grep -rn chrono crates/agent-harness/src crates/agent-harness/tests",
+    "grep coverage of the 13 refusal codes across crates/agent-harness/tests",
+    "shasum -a 256 crates/agent-harness/profiles/local-process.v1.json crates/agent-harness/profiles/engine-manifest.v1.json",
+    "git status --porcelain (empty — worktree clean)"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The attested effective profile asserts prescriptions the run neither enforces nor refuses",
+        "detail": "Journey 2 commits every prescribed control to apply-or-refuse, and the non-goals ban both best-effort confinement and attesting what was not enforced. The delivered profile prescribes process.killProcessGroup, process.maxProcesses, process.dedicatedIdentity, process.dropAmbientCapabilities, workerTransport.verifyOsPeer and workerTransport.runBoundToken, yet ProfileWire deserializes only maxDurationSeconds from `process` and only `kind` from `workerTransport`, and resolve_controls evaluates none of these fields. At runtime spawn_confined kills only the direct child (no setsid/process-group kill), sets no process-count limit, accepts ConfinementPlan::privileged(0, ...) so the dedicated identity may be uid 0, performs no peer verification and enforces no run-bound token. run_confined_attested then binds resolved.digest() as effectiveProfileDigest, asserting to the verifying operator that the full profile was in force. The refusal pattern for expressible-but-unenforceable controls exists in this very diff (CLOSED_TRANSPORT_KINDS, unknown capabilities) but is not applied to these sub-controls; they are silently dropped. Fix direction: enforce them, or refuse any profile prescribing what this engine does not apply, before the bootstrap hard stop is pronounced."
+      }
+    ],
+    "major": [
+      {
+        "title": "sandboxEngineManifest binding is caller-asserted, never harness-verified",
+        "detail": "run_confined_attested takes engine_manifest from the caller and binds it unchecked. ProfileWire drops the profile's own sandboxEngine.manifest declaration, so the declared digest is compared against nothing and the harness never recomputes the digest of its own profiles/engine-manifest.v1.json. The orchestrator — which the spec says cannot relax a profile — thereby authors part of the attestation binding. The harness should resolve its engine identity itself and refuse a mismatch."
+      },
+      {
+        "title": "Filesystem judgment is dead code on the delivered end-to-end path",
+        "detail": "run_confined_attested constructs the observer and drops it. The judged-access primitive, adversarially tested, mediates no access in the attested run: filesystem_confinement's runtime meaning reduces to 'the workspace root canonicalizes' while readOnly/writable/denied apply to zero accesses. Either give the run a mediated access path, or narrow what the run claims until the tool surface lands."
+      },
+      {
+        "title": "A host fact is a caller assertion: setpriv presence taken from the plan",
+        "detail": "gather_host_facts builds HostFacts with setpriv_present = plan.is_privileged(). The crate's central asset is the observe/decide split, yet one of the three facts the pure resolver decides on is asserted by the caller. Combined with the unvalidated dedicated_uid (0 accepted), the caller can shape which controls resolve as enforceable. The host layer should probe for setpriv itself and validate the plan's uid."
+      }
+    ],
+    "minor": [
+      {
+        "title": "Capability verifier evadable by grouped std imports — regression against the sibling verifier",
+        "detail": "The harness verifier bans literal substrings; `use std::{env, fs};` contains none of them. The sibling orchestrator verifier carries std-os-capability and grouped-std-os-capability regexes for exactly this evasion; the harness copy dropped them."
+      },
+      {
+        "title": "chrono is declared, unused, and the verifier mandates its presence",
+        "detail": "No harness source references chrono, yet the manifest declares it and the verifier's symmetric requiredlist forces the dead weight to remain. The allowlist should be an upper bound, and the dependency removed."
+      },
+      {
+        "title": "Privileged e2e hardcodes linux-x86_64 although the profile supports linux-aarch64",
+        "detail": "The e2e asserts platform == linux-x86_64 in the privileged branch while the profile supports linux-aarch64 and PLATFORM is computed from the build target. A legitimate privileged aarch64 host fails a portable assertion."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "CI useradd step is not idempotent",
+        "detail": "The step runs useradd bare; on a non-ephemeral runner or a re-execution it fails on the pre-existing user. A guard would make the job environment-agnostic."
+      },
+      {
+        "title": "Workspace conversion shape is sound and documented",
+        "detail": "Root-package-plus-members with default-members and the green-by-omission comment is a correct transitional shape; conventions match the root crate (edition, rust-version, licence, pinned deps, forbid(unsafe_code), refusal-enum idiom, locked-vector include path)."
+      }
+    ]
+  },
+  "residualRisks": [
+    "A forking worker can outlive the duration bound: only the direct child is killed, and neither process-group kill nor a process-count limit exists; a grandchild inheriting the socket write end also delays EOF until timeout.",
+    "The worker's direct filesystem access is confined only by Unix DAC of the dedicated uid; the profile's path sets govern harness-mediated access alone, and no mediation channel exists yet.",
+    "TOCTOU window between hashing the worker binary and spawning it — the attested workerManifestDigest may not be the executed bytes.",
+    "generatedAt and all RunIdentity fields are caller-supplied assertions bound as-is; the Biscuit-token admission described in the spec is absent, so any holder of the crate API can request confined, attested runs.",
+    "The locked contract schemas were not materialised in the review worktree, so schema-validation behaviour and locked-vector reproduction are reviewed statically, not re-executed."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, same agent — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "worktree": "detached worktree at 5bee6a3, clean after the pass"
+  }
+}

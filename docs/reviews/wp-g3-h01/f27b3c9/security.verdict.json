@@ -1,0 +1,148 @@
+{
+  "reviewPassId": "rp-f27b3c9-E0E9554E-077E-4673-8D95-888CE1C40A4F",
+  "role": "security",
+  "mode": "specialized-role",
+  "commitSha": "f27b3c9656a56322fa0fcaa159b1380fd9a27a74",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "8b4008194ad5bb27b7d02f982f43026dec9752a76daa2071a0105663a027ca82"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "db11edba66efd95aaabc4b606afc58f410986747f32c9f38bb5637327aaaaca5"
+    }
+  ],
+  "commands": [
+    "git rev-parse HEAD; git log --oneline -12; git diff --stat origin/main..HEAD; git diff 5bee6a3..HEAD",
+    "shasum -a 256 on both fixtures; jq -S -cj 'del(.profileDigest)' | shasum -a 256 (independent recomputation, matches)",
+    "read: src/*.rs, src/host/*.rs, tests/*.rs, .github/workflows/ci.yml, verification/agent-harness/*.ts",
+    "read the locked authority: contracts/schemas/harness-profile.v1.schema.json and harness-attestation.v1.schema.json",
+    "grep: is_privileged|engine-manifest|worker_transport_isolation|verifyOsPeer|runBoundToken|hostLoopbackAllowed|privateByDefault|canonicalizePaths|enforcement|evaluate_path_access|WorkspaceObserver",
+    "git status --porcelain (final: empty)"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "killProcessGroup is const-locked and attested, yet the group is never reaped on any path that produces an attestation",
+        "detail": "reap() is called from exactly two places: the timeout branch and the truncation branch. Both force exit_ok=false; truncation is refused first by the ledger and !exit_ok returns WorkerFault BEFORE sign_attestation is reached. The process-group kill therefore can never coexist with an emitted attestation, and every attestation this harness emits is emitted with zero group teardown. On the nominal success path the loop exits on EOF and calls only child.wait(): a descendant that closed its inherited fd 0/1 causes EOF, exit_ok=true, and an attestation binding process_isolation — while the orphan keeps running under the dedicated identity with no duration bound. No test exercises the reaper: every unit test uses an unprivileged plan so kills_process_group() is false, and the e2e runs /bin/cat. The kill invocation, its -- handling, /bin/kill's availability and the grandchildren-die property have zero coverage."
+      },
+      {
+        "title": "maxDurationSeconds does not bound the run: the payload write blocks before the clock starts, with no write timeout and no reap",
+        "detail": "The order is spawn → write_all(payload) → shutdown(Write) → Instant::now() → set_read_timeout. No write timeout is ever set and SO_SNDBUF is never sized. A worker that does not drain stdin fills the socketpair buffer and write_all blocks forever: the clock has not started, the read timeout is not installed, reap is unreachable and wait() is never called. The const-locked maxDurationSeconds is therefore not a bound on the run — it bounds only the read phase, which a hostile worker can prevent from ever beginning."
+      }
+    ],
+    "major": [
+      {
+        "title": "verifyOsPeer and runBoundToken are const true, neither parsed, enforced nor refused — and worker_transport_isolation is attestable with nothing behind it",
+        "detail": "WorkerTransportWire deserializes only kind; the three other fields are dropped and appear nowhere in the crate. No run-bound token is generated and no peer credential is checked. Yet worker_transport_isolation is in ENGINE_CAPABILITIES and capability_enforceable falls through to true, so a profile requiring it gets it into effectiveControls and into the signature unconditionally. The canonical profile happens not to require it, which makes today's blast radius latent — but the engine advertises it in both the Rust const and the engine manifest."
+      },
+      {
+        "title": "effectiveProfileDigest is structurally tautological, so the attestation asserts about thirty inert const-locked prescriptions as applied",
+        "detail": "run.rs passes resolved.digest() as both fields; they are the same value by construction and can never diverge, while the contract and the spec keep them distinct precisely so a degraded confinement stays distinguishable. Never parsed, never enforced, never refused: filesystem.canonicalizePaths/resolveSymlinks/symlinkPolicy/copyIgnoredFiles, workerTransport's three, all six providerGateway fields, all ten privilegedToolBroker fields, outputs.privateByDefault, all six operationalLogs fields, all five attestation.* fields, and enforcement."
+      },
+      {
+        "title": "The profile's const-locked sandbox-engine pin is never checked; the attested manifest is a caller parameter copied verbatim",
+        "detail": "SandboxEngineWire parses only requiredCapabilities — the pinned artifactReference is discarded. run_confined_attested writes the caller's ArtifactRef straight into the signature with no comparison and no read of the on-disk manifest. The manifest file is referenced by no Rust, no test, no CI step. Consequences: a profile pinning a different engine is accepted and run by this engine; drift between the manifest's capabilities and ENGINE_CAPABILITIES is caught by nothing; the attested engine identity is a caller-asserted fact in a module whose own comment says a fact the caller supplies is not a host fact."
+      },
+      {
+        "title": "networkMode \"none\" is signed for a worker with unrestricted egress — the same overclaim shape just removed for filesystem_confinement",
+        "detail": "run.rs hardcodes \"none\" into every attestation. The engine has no namespaces and applies no seccomp or firewall, so the confined worker can open arbitrary outbound sockets; the capability guard bans network types in the harness's own source, which says nothing about the worker. A narrower reading exists (the enum's sibling is private-gateway-only, so the field may describe the egress path the harness provides), but nothing in the code, the profile or the spec disambiguates it, and an ambiguous field is not a safe thing to sign."
+      },
+      {
+        "title": "The digested worker and the executed worker can be different files",
+        "detail": "worker_manifest_digest is computed with fs::read(program) against the harness cwd; spawn_confined then sets current_dir(workspace) and env_clear(). Rust chdirs before exec and setpriv execvp's the inner program after that chdir, so a relative program resolves against the workspace — a different file from the one digested. A program with no slash is worse: with a cleared environment execvp falls back to confstr(_CS_PATH), so the attested digest describes an arbitrary file while a system binary runs. No absoluteness check, no canonicalization, no re-verification at exec time. bindWorkerManifests is const true; this breaks it silently."
+      },
+      {
+        "title": "A wrapper that fails to APPLY a control is reported as WorkerFault, and its diagnostics are discarded",
+        "detail": "If setsid, prlimit or setpriv exits non-zero (setpriv uses 127 for privilege errors), the worker never execs and the harness returns WorkerFault. It therefore cannot distinguish the confinement could not be applied — which harness.control_not_enforceable exists for, and which the spec makes a hard non-goal to soften — from the program returned 1. stderr(Stdio::null()) discards the wrappers' own messages, so the condition is undiagnosable after the fact. This does not fail open, but it mislabels a confinement failure."
+      },
+      {
+        "title": "resolve_controls judges resource_limits on the wrong tool, and killProcessGroup on nothing",
+        "detail": "capability_enforceable gates resource_limits on setpriv_present, but the ceiling is applied by prlimit and the duration bound by the harness loop; HostFacts carries no setsid and no prlimit observation, so process_isolation — offered in exchange for the whole const-locked process block — is decided by euid_is_root && setpriv_present alone. A missing prlimit or setsid is caught downstream by plan_wrapper_chain, so the run refuses rather than attesting falsely; the coupling is by luck of call order, not by construction."
+      },
+      {
+        "title": "The host-capability half of the verification guard is still plain-substring and evadable",
+        "detail": "The file's own comment says the regexes close the spaced and grouped evasions, but FORBIDDEN_SOURCE_PATTERNS is applied only by forbiddenEverywhere; forbiddenOutsideHost still uses source.includes verbatim, so `use std::{fs::read};` then read(path) acquires filesystem capability in a pure module with the gate green. Secondary, fail-closed: the grouped patterns use [\\s\\S]{0,500} which does not stop at the closing brace, so any std::{...} import within 500 chars of the word env or net is a false positive."
+      }
+    ],
+    "minor": [
+      {
+        "title": "setsid is the one wrapper that never receives a -- terminator",
+        "detail": "util-linux setsid's optstring is +-prefixed so getopt stops at the first non-option, which saves the current shape. It does not save the shape where killProcessGroup is the only surviving prescription — plan_wrapper_chain and ProcessPrescription::new are public — in which case a program path beginning with - is parsed by setsid as options."
+      },
+      {
+        "title": "max_processes == 0 silently skips prlimit instead of refusing",
+        "detail": "Every boolean in the same block refuses when its mechanism is absent; zero produces a chain with no ceiling and no refusal. The schema's minimum 1 prevents a valid profile from reaching it, but the public constructor is unvalidated."
+      },
+      {
+        "title": "euid is probed by spawning /usr/bin/id, and /bin/kill bypasses tool_path",
+        "detail": "geteuid is an unspoofable syscall available inside the host module; reap hardcodes /bin/kill instead of using the candidate list the same commit introduced. Both fail closed on absence, and both are moot against an attacker who can write /usr/bin — but they are needless spawns on the privileged path and inconsistent with the policy just established."
+      },
+      {
+        "title": "generatedAt and platform are signed as observed facts but are caller- and build-time facts",
+        "detail": "generated_at is a caller parameter copied into the signature, so freshness and replay windows become unverifiable. platform is a cfg! constant of the build target, and it is the same constant used to gate supportedPlatforms, so the check is self-consistent but describes the compiler's target rather than the running host."
+      },
+      {
+        "title": "attestation.bindKernelCapabilities is const true, and nothing in the attestation can carry it",
+        "detail": "The locked attestation schema has additionalProperties false and no kernel-capability member; assemble emits no such field and its completeness check only rejects empty manifests and controls. Yet the profile prescribes it and the spec claims the attestation binds the kernel capabilities present. The claim is unsatisfiable in the locked shape."
+      },
+      {
+        "title": "ConfinementPlan::is_privileged is dead public API and would mislead its first caller",
+        "detail": "No call site in src, tests, tools or verification. Its predicate does not require setsid or prlimit, so a caller reading privileged as able to honour the process block would be wrong on two of its five fields."
+      },
+      {
+        "title": "TOCTOU between tool and workspace resolution and exec, and between the worker digest and the exec",
+        "detail": "tool_path uses exists() at plan time; canonical_workspace canonicalizes then hands the path to current_dir, re-resolved by the child after fork; the worker binary is read for its digest and exec'd later. Impact is low — all three need write access to /usr/bin or the workspace parent — but current_dir is new in this commit and adds the third window."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "The previous pass's sudo minor is genuinely closed",
+        "detail": "CI now builds unprivileged with --no-run, extracts the test binary, asserts it is executable and runs sudo -- \"$binary\". No PATH/CARGO_HOME/RUSTUP_HOME crosses the privilege boundary and sudo never resolves a compiler. The identity step is idempotent and a useradd failure still fails under bash -e."
+      },
+      {
+        "title": "Wrapper argument syntax and outer ordering are correct util-linux",
+        "detail": "prlimit --nproc=16 -- and setpriv --no-new-privs --reuid=N --regid=N --clear-groups --inh-caps=-all --ambient-caps=-all --bounding-set=-all -- are valid spellings, and the previous pass's three identity gaps are closed. The ordering (setsid, prlimit, setpriv last) is right: the ceiling survives the execs and setpriv drops last. The setsid-fork question resolves benignly: Command does not call setpgid, so the child's pgid is the harness's and never equals its fresh pid, hence setsid never takes its fork-if-leader branch and -child.id() is the correct group. This is load-bearing and undocumented; setting Command::process_group() or adding --wait would silently break the reaper."
+      },
+      {
+        "title": "Digests recomputed independently and consistent",
+        "detail": "The JCS recomputation reproduces the embedded profileDigest and the manifest sha256 matches the profile's declaration. The two fixtures are mutually consistent on disk; the gap is that no code path checks this at runtime."
+      },
+      {
+        "title": "The e2e's Linux-without-identity leg passes green on a misconfiguration",
+        "detail": "If the identity probe returns None on Linux the test asserts a refusal and passes. CI arranges the account and would fail the step if useradd failed, so the confined leg is genuinely exercised today; the test alone cannot distinguish confined-run-proved from identity-absent-refusal-proved. Worth an env-gated assertion that the bootstrap leg actually ran."
+      },
+      {
+        "title": "The transport socket itself is sound",
+        "detail": "UnixStream::pair is created before the child exists and is anonymous, Rust sets CLOEXEC so the harness end is never inherited, the command's copies of the worker fds are dropped so EOF is reachable, and env_clear plus stderr(null) keep host state out of the worker. These are the parts of workerTransport that are real."
+      },
+      {
+        "title": "Journey 2 of the locked specification is not exercised by the run path",
+        "detail": "WorkspaceObserver and evaluate_path_access have no caller in src outside their own modules; the parsed path lists are consumed by nothing in the run. Consistent with the deliberate removal of filesystem_confinement, but the locked doc still states journey 2 as the sets applied, and check:specifications gates that doc."
+      },
+      {
+        "title": "Worktree unmodified",
+        "detail": "git status --porcelain returns empty; every command was read-only. No cargo and no bun were executed, so no gate verdict in this record is a reproduction."
+      }
+    ]
+  },
+  "residualRisks": [
+    "Every gate verdict cited in the pull request is unreproduced here: this pass ran no cargo and no bun. The confined e2e is the only place the wrapper chain is executed, and its greenness is asserted, not observed, in this record.",
+    "setpriv's internal ordering of the uid transition versus the bounding-set drop is version-dependent (dropping the bounding set needs CAP_SETPCAP, gone once all of ruid/euid/suid leave 0). The failure direction is closed, but it surfaces as WorkerFault with stderr discarded, so a host where the chain silently cannot apply is indistinguishable from a program that returned 1.",
+    "prlimit --nproc sets RLIMIT_NPROC, counted per REAL UID system-wide. With a single shared account, concurrent runs share one 16-process budget and one run's failures are attributable to another. The attestation binds tenantId while all tenants share one uid: a per-run or per-tenant uid, or a cgroup pids controller, is the shape that matches the claim.",
+    "The dedicated identity is nominated by the caller and verified only against 0: the harness does not check that the account is unprivileged, has no shell, owns nothing in the workspace, or is not shared. A caller passing a privileged service account gets a fully green attestation.",
+    "The signing seed is a caller parameter alongside every field it signs, so a hostile caller can already sign anything — which caps the severity of the unverified engine pin TODAY, and stops capping it the moment the key moves to the deferred owner ceremony.",
+    "The workspace is created and owned by the harness (root in the bootstrap path) while the worker runs as the dedicated uid; nothing establishes the workspace's ownership, mode or umask, so whether the worker can write its own out/ tree, or whether a prior run's residue is readable, is unspecified and untested.",
+    "No test asserts that ENGINE_CAPABILITIES and the engine manifest list the same capabilities; they agree by hand, and the manifest is referenced by no code, test or CI step."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, same agent — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "round": 2,
+    "priorVerdict": "docs/reviews/wp-g3-h01/5bee6a3/security.verdict.json",
+    "worktree": "detached worktree at f27b3c9, clean after the pass"
+  }
+}

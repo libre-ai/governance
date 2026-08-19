@@ -1,0 +1,88 @@
+{
+  "reviewPassId": "rp-5bee6a3-2A543421-5E8C-40D7-8AE8-552EE616BE66",
+  "role": "security",
+  "mode": "specialized-role",
+  "commitSha": "5bee6a30533f3872c31ac6a19d176d02a74e3ac4",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "a35211617b14ba225135f1127298af4b1d75e884e228809971334d1103f525f6"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "380ce5c38a53846e208d27fe4330c5e48bf6654afec35e905b8e043b6334cf0f"
+    }
+  ],
+  "commands": [
+    "git rev-parse HEAD",
+    "git log --oneline origin/main..HEAD",
+    "git diff origin/main...HEAD --stat",
+    "git diff origin/main...HEAD -- .github/workflows/ci.yml Cargo.toml package.json",
+    "cat crates/agent-harness/profiles/*.json",
+    "cat crates/agent-harness/src/*.rs crates/agent-harness/src/host/*.rs",
+    "cat verification/agent-harness/*.ts",
+    "cat crates/agent-harness/tests/*.rs",
+    "read docs/apps/harness.md and its provenance",
+    "shasum -a 256 crates/agent-harness/profiles/local-process.v1.json crates/agent-harness/profiles/engine-manifest.v1.json",
+    "git status --porcelain (empty — worktree clean)"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "filesystem_confinement is bound into the signed attestation but never applied to the spawned worker",
+        "detail": "run_confined_attested constructs the WorkspaceObserver and immediately drops it. spawn_confined receives no workspace root, no chroot/mount-namespace, no seccomp, and does not even set current_dir(workspace): the worker runs with the ambient filesystem view of its uid. The whole fs_policy/WorkspaceObserver machinery is exercised only in unit tests and never mediates the real process, yet filesystem_confinement is emitted in effectiveControls with requestedProfileDigest == effectiveProfileDigest — which the design defines as honoured without degradation. Journey 2 states the path sets are applied and 'attesting what was not enforced' is an explicit non-goal. An offline operator is told the marquee control was enforced when it was not: the worker can read every world-readable path and write anywhere its uid permits, outside the attested policy. No adversarial test asserts that a real spawned worker leaving the workspace is blocked — because it is not."
+      },
+      {
+        "title": "Process-group kill and process/resource limits are attested but not enforced; a worker's children survive the duration bound",
+        "detail": "On timeout and on output flood only child.kill() is issued — SIGKILL to the direct PID. No setsid()/new process group and no killpg, despite process.killProcessGroup: true. Because the worker's stdio are its fd 0/1 on the private socketpair, any grandchild inherits the output fd AND survives the kill: it runs past maxDurationSeconds and holds the transport open. maxProcesses (fork-bomb bound) is never applied — setpriv is passed no rlimit and ProfileWire drops the field. Yet resource_limits is bound in effectiveControls and the full profile is bound as effective == requested. This is both a live confinement escape and an over-attestation with no mechanism behind it."
+      }
+    ],
+    "major": [
+      {
+        "title": "Worker identity drop is incomplete: gid unchanged, ambient capabilities not dropped, while process_isolation is attested",
+        "detail": "The wrapper is `setpriv --no-new-privs --reuid <uid> --clear-groups`. There is no --regid, so the worker keeps the invoker's primary gid; the CI e2e runs as root, so the worker executes with gid 0 and --clear-groups removes only supplementary groups. Group-0-readable/writable files remain reachable. dropAmbientCapabilities is declared but setpriv is given no --ambient-caps/--inh-caps/--bounding-set. process_isolation and dedicatedIdentity are attested as effective while the identity transition is partial."
+      },
+      {
+        "title": "The profile's process and transport security block is inert — bound by digest as effective but never consumed",
+        "detail": "ProfileWire deserializes only process.max_duration_seconds; dedicatedIdentity, denyPrivilegeEscalation, dropAmbientCapabilities, killProcessGroup, maxProcesses and the whole workerTransport block are parsed away, so nothing can enforce them. Combined with effectiveProfileDigest == requestedProfileDigest and coarse capability-name granularity, this is exactly the silently degraded confinement the design claims impossible by construction — it is possible here for every process/transport field except the duration."
+      }
+    ],
+    "minor": [
+      {
+        "title": "Capability guard is a substring scan with evadable matching",
+        "detail": "The guard enforces via source.includes(...). Rust paths are whitespace-insensitive, so `use std :: env ;` evades the std::env entry, and parent-module aliasing slips past module-prefix entries. Real enforcement is compensating (forbid(unsafe_code), the closed dependency allowlist, cargo fmt --check normalising whitespace), but the guard is described as the mechanical boundary, so its evadability should be acknowledged or fixed with token-aware matching."
+      },
+      {
+        "title": "CI privileged e2e weakens sudo and runs the full toolchain as root",
+        "detail": "The step runs `sudo --preserve-env=PATH,... cargo test`, compiling the crate and its dependencies (build scripts, proc-macros) and running the test binary as root; --preserve-env=PATH defeats sudo's secure_path, a PATH-substitution escalation vector on shared runners. Prefer building unprivileged and running only the prebuilt test binary under sudo, with an absolute cargo path."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "The fail-closed output scan is a stub in the integration path",
+        "detail": "run_confined_attested hardcodes admit_scan(OutputScan::Complete): OutputScanIncomplete can never fire end to end, and no content inspection occurs before output leaves the boundary. Journey 4 is plumbed but not substantively realised at this stage."
+      },
+      {
+        "title": "Attestation binds the worker binary digest but not the invocation; networkMode wording is stronger than what is enforced",
+        "detail": "sha256(program) is bound but not args or payload, so an operator cannot see how the worker was invoked. networkMode 'none' records that the harness opened no network; it does not mean worker egress was prevented (no namespace, no seccomp). ADR-0018 D2 documents network as closed-at-stage, so this is a deferral, but the attested value reads as a guarantee it does not provide."
+      },
+      {
+        "title": "Positive controls confirmed",
+        "detail": "All 13 refusal codes have adversarial tests. base64url decode is strict with a re-encode round trip. Ed25519 verify recomputes the digest and rejects tampered content, wrong key and flipped signatures; the signed message carries schema-version domain separation. No unsafe (crate-level forbid). Dependency surface is a closed allowlist. The socketpair ends carry CLOEXEC, so the harness ends do not leak to the child. The signing seed is a caller parameter; no key material is logged or persisted. env_clear is verified to strip the host environment."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The pure layers (digesting, canonical policy, attestation assembly and verification) are strong and well tested; the defects are concentrated in the host/run wiring, where the attestation binds capabilities the confined spawn does not apply. The signed attestation is therefore not a faithful record of enforcement, which is this system's core promise.",
+    "Under the CI bootstrap the only containment actually applied is: dropped uid (not gid), no-new-privs, cleared supplementary groups, cleared environment, private socketpair stdio, output byte cap, best-effort direct-child duration kill.",
+    "ADR-0018 D2 network/secret closure holds for the harness's own code, but nothing prevents the confined worker from performing network egress; documented as deferred, yet the attested networkMode could be misread as egress prevention.",
+    "All findings are fixable within this crate: wire the observer mediation (or a real fs sandbox) into the spawn, add setsid+killpg, RLIMIT_NPROC, --regid and capability drops, parse the full process block, and either enforce or stop attesting the inert controls."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, same agent — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "worktree": "detached worktree at 5bee6a3, clean after the pass"
+  }
+}

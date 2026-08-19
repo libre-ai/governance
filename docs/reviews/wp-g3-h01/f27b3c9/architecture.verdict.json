@@ -1,0 +1,126 @@
+{
+  "reviewPassId": "rp-f27b3c9-AD099032-93E8-4E80-8CA6-C06EBCB9BA0F",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "f27b3c9656a56322fa0fcaa159b1380fd9a27a74",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "8b4008194ad5bb27b7d02f982f43026dec9752a76daa2071a0105663a027ca82"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "db11edba66efd95aaabc4b606afc58f410986747f32c9f38bb5637327aaaaca5"
+    }
+  ],
+  "commands": [
+    "git rev-parse HEAD; git log --oneline origin/main..HEAD; git diff origin/main...HEAD --stat",
+    "git diff --stat 5bee6a3~1..HEAD; git log -3 --format=full",
+    "read: crates/agent-harness/** (src, host, tests, profiles), verification/agent-harness/**, .github/workflows/ci.yml, Cargo.toml",
+    "grep: engine_manifest|sandboxEngine|ENGINE_CAPABILITIES|workspaceRoot|denyOnMissing|verifyOsPeer|runBoundToken",
+    "shasum -a 256 on both profile fixtures; python3 stdlib recomputation of the JCS profile digest",
+    "git status --porcelain (empty at start and end)"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The workerTransport prescriptions are still parsed away — round-1 blocking finding 1 closed for the process block, left open verbatim for the transport block",
+        "detail": "WorkerTransportWire reads exactly one field: kind. verifyOsPeer, runBoundToken and hostLoopbackAllowed are deserialized into nothing, reach no decision, and produce no refusal. resolve_controls touches the transport only to test kind against CLOSED_TRANSPORT_KINDS. Both fields are SILENTLY IGNORED — not enforced, not refused, not documented as moot. Nothing generates, injects or verifies any run-bound token, and no peer credential is read. Either the socketpair is argued in code and manifest to subsume both fields, or a profile prescribing them on a mechanism that implements neither must be refused."
+      },
+      {
+        "title": "effectiveProfileDigest is an unconditional echo of the requested digest, so the attestation asserts as effective five profile blocks this stage does not implement",
+        "detail": "run.rs passes resolved.digest() as BOTH requested and effective, and resolve_profile has already proven declared == requested: the two fields are the same string on every run that signs — structurally, not situationally. attestation.rs's own doc claims the opposite. The document bound as effective still contains filesystem, workerTransport, providerGateway, privilegedToolBroker and operationalLogs, none of which any code path applies. Removing filesystem_confinement from effectiveControls was right, but the same claim still stands in the field that binds the whole document."
+      },
+      {
+        "title": "maxDurationSeconds is still not a bound, and the process-group reap is host-conditional and untested",
+        "detail": "(a) sender.write_all(payload) runs BEFORE the duration clock starts and no write timeout is set — a worker that never reads stdin blocks the harness indefinitely. (b) child.wait() after the loop is unbounded, and the EOF and read-error paths reach it without reaping. (c) reap hardcodes /bin/kill with no existence check while every other tool goes through tool_path; when it is absent the code falls through to the direct-child kill round 1 rejected, with no refusal and an identical attestation. (d) No test exercises the fix: the only duration test uses an unprivileged plan, so kills_process_group() is false and it tests the pre-fix path; the e2e runs /bin/cat. No test spawns a grandchild under setsid and asserts it dies."
+      }
+    ],
+    "major": [
+      {
+        "title": "sandboxEngineManifest is still caller-asserted and never verified; a third hand-maintained copy of the same fact was added",
+        "detail": "SandboxEngineWire reads required_capabilities and nothing else: the pinned manifest id, digest, mediaType and denyOnMissing are deserialized away. run_confined_attested copies the caller's ArtifactRef verbatim into the signature with no comparison against the profile's pin and no read of the on-disk manifest. Three facts are now duplicated by hand with no gate (manifest sha256, profile pin, test constant), plus ENGINE_CAPABILITIES vs the manifest's capabilities array. All four are consistent today; nothing asserts any of them."
+      },
+      {
+        "title": "The attestation binds capability labels, never the mechanism that produced them",
+        "detail": "effectiveControls is computed from HostFacts before the wrapper chain is planned, so it describes what the host was judged capable of, not what the argv applied. Nothing binds setsid/prlimit/setpriv, their paths, flags, target uid/gid or nproc value. Two hosts applying materially different confinement emit byte-identical attestations. The predicates also do not name their own mechanisms: resource_limits is gated on setpriv_present though prlimit applies it."
+      },
+      {
+        "title": "The dedicated identity's GID is fabricated",
+        "detail": "The e2e probes id -u and returns (uid, uid) — it never queries id -g. useradd --system allocates UID and GID from independent counters; --regid=<uid> then places the worker in whatever unrelated group holds that GID. The harness accepts any caller-supplied non-zero pair and never verifies the ids exist, that the gid is the uid's primary group, or that they are not shared."
+      },
+      {
+        "title": "The public API exports a fully unconfined spawn path, and the tests institutionalize it",
+        "detail": "plan_wrapper_chain returns Ok with an EMPTY prefix when every prescription field is false/zero; spawn_confined then execs directly. lib.rs exports the constructors, so a consumer composes an unconfined run in four lines with no attestation and no refusal. The invariant lives entirely in the external JSON schema; the Rust types encode none of it."
+      },
+      {
+        "title": "A control firing is reported as a worker fault, and the matrix has no code for the duration bound",
+        "detail": "exit_ok folds timed_out into failure and run.rs turns it into RunError::WorkerFault, whose doc says a worker fault is a worker that failed inside honoured controls. A timeout is the opposite. The 13-code matrix has no duration-bound member, so the most attestation-worthy outcome — the confinement killed the worker — produces no signed evidence at all."
+      }
+    ],
+    "minor": [
+      {
+        "title": "The guard's hardening was applied to one of its two checkers",
+        "detail": "FORBIDDEN_SOURCE_PATTERNS is consumed only by forbiddenEverywhere. forbiddenOutsideHost still tests plain source.includes over std::process, std::fs, std::os::unix::net, std::thread, std::time, so `use std::{fs, process};` in a pure module passes."
+      },
+      {
+        "title": "The filesystem prescription is largely parsed away and never checked against the run's workspace",
+        "detail": "workspaceRoot, canonicalizePaths, resolveSymlinks, symlinkPolicy and copyIgnoredFiles are dropped; run_confined_attested never compares the caller's workspace against the profile's declared workspaceRoot. The three parsed lists feed evaluate_path_access, which no run path calls."
+      },
+      {
+        "title": "maxProcesses = 0 silently disables the process ceiling",
+        "detail": "The prlimit wrapper is gated on max_processes > 0; zero — the strictest reading — is implemented as no bound at all, with no refusal."
+      },
+      {
+        "title": "Host-fact probing is inconsistent with the crate's own tool-resolution discipline",
+        "detail": "gather_host_facts hardcodes /usr/bin/id and reap hardcodes /bin/kill, while tool_path probes /usr/bin then /bin for the other three. Both should go through tool_path, and kill should become a HostFact."
+      },
+      {
+        "title": "The mechanically-enforced boundary is narrower than lib.rs claims",
+        "detail": "The guard globs crates/agent-harness/src/**/*.rs only; tests/ is unscanned. Legitimate, but the claim should be scoped to src/."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "The recomputed fixture digests are correct",
+        "detail": "JCS(local-process minus profileDigest) = de9b3af5…, equal to the declared value; raw sha256 of the engine manifest = db11edba…, equal to the profile pin and the test constant; the manifest's 4 capabilities equal ENGINE_CAPABILITIES and the profile's 3 required are a subset. Only the pin and the capability equality are ungated."
+      },
+      {
+        "title": "Round-1 minor items other than the guard are genuinely closed",
+        "detail": "chrono is gone from the crate and from the allowlist, now an upper bound rather than a requiredlist; the e2e derives the platform from cfg!(target_arch); CI's identity creation is idempotent and the privileged step builds unprivileged then runs only the prebuilt binary under sudo with no preserved PATH."
+      },
+      {
+        "title": "RLIMIT_NPROC is a per-UID ceiling, not a per-run one",
+        "detail": "prlimit --nproc bounds processes owned by the real UID system-wide, and the dedicated identity is caller-nominated and reusable: concurrent runs share one ceiling. Second-order, setpriv's setuid can fail with EAGAIN once that uid holds the ceiling — fail-closed, but an availability coupling between unrelated runs."
+      },
+      {
+        "title": "The environment-clearing test can pass for the wrong reason",
+        "detail": "The test runs /bin/sh -c env under env_clear and asserts the absence of PATH= and HOME=. Common shells synthesize a default PATH, so on some hosts this asserts shell behaviour. Assert emptiness instead."
+      },
+      {
+        "title": "The closed dependency allowlist forces process spawning for facts the OS could answer",
+        "detail": "With no libc the harness execs /usr/bin/id for its own euid and /bin/kill to signal a group. A defensible sovereignty trade, but it converts two syscalls into two external-binary dependencies, each a fail-open or fail-closed hinge. Worth an explicit architecture note."
+      },
+      {
+        "title": "Worktree unmodified",
+        "detail": "git status --porcelain returned empty at the start and end of the pass; no cargo or bun was run."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The locked schema is not vendored in this worktree, so every const-true argument in comments and commit messages is unverifiable in a static pass.",
+    "The whole confinement rests on util-linux flag semantics this pass could not execute: whether the installed setpriv honours --ambient-caps/--bounding-set, whether --reuid sets the saved uid, whether setsid forks in the runner's process-group state. The argv shape and ordering are correct, but no test observes the resulting process's credentials or capability sets after exec.",
+    "No evidence exists that a confined run ever survived a real bound: the e2e worker is /bin/cat, which exits before any control fires. The first-confined-execution claim rests on an attestation whose effectiveControls the harness computed from its own host facts, not on any observation of the confined process.",
+    "The bootstrap identity persists on the runner across jobs and is shared by every run on that machine; combined with the per-UID RLIMIT_NPROC and the fabricated GID, one run's behaviour can affect another's.",
+    "Refusals and bound-firings produce no signed artifact, so the evidentiary chain covers only successful runs."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, same agent — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "round": 2,
+    "priorVerdict": "docs/reviews/wp-g3-h01/5bee6a3/architecture.verdict.json",
+    "worktree": "detached worktree at f27b3c9, clean after the pass"
+  }
+}

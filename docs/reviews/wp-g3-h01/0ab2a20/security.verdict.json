@@ -1,0 +1,127 @@
+{
+  "reviewPassId": "rp-0ab2a20-9ABE60F7-72F4-42C5-B643-9A71C295A777",
+  "role": "security",
+  "mode": "specialized-role",
+  "commitSha": "0ab2a20b239bf8c4dae89a666ffbd67bafa4f936",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "5f00a47ff718fd705151ff3f30332b523bde69291c307196bf63d169d7944791"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "db11edba66efd95aaabc4b606afc58f410986747f32c9f38bb5637327aaaaca5"
+    }
+  ],
+  "commands": [
+    "git rev-parse HEAD; git log --oneline -8; git status --porcelain (start and end: empty)",
+    "git diff --stat f27b3c9..HEAD; git diff f27b3c9..HEAD over src, profiles, verification and tests",
+    "read prior verdicts 5bee6a3/ and f27b3c9/ plus BOOTSTRAP-DOSSIER.md",
+    "read in full: src/*.rs, src/host/*.rs, check-capabilities.ts, the new tests, both profile fixtures, Cargo.toml",
+    "read the locked authority harness-profile.v1.schema.json from the pinned sdk-rs checkout",
+    "shasum -a 256 on both fixtures; jq recomputation of the profile digest (1743368a…) and of the projection (b2975f9e…)",
+    "grep: 'bind(' | UnixListener | unsafe | enforcement | privateByDefault",
+    "no cargo, no bun executed"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The delta promotes verifyOsPeer from latent to signed while no peer is verified, and the lint defending the by-construction argument guards the wrong invariant",
+        "detail": "f27b3c9 left worker_transport_isolation out of the canonical profile's requiredCapabilities, which is why round 2 graded it latent. This commit adds it, so resolve_controls emits it, assemble signs it, and the e2e asserts it in effectiveControls; simultaneously APPLIED_PROFILE_SURFACE takes workerTransport whole, so effectiveProfileDigest content-addresses verifyOsPeer:true as APPLIED. Nothing reads peer credentials, and capability_enforceable's catch-all grants the capability before any host fact is consulted and before the socket exists. The by-construction argument is sound for exactly one proposition — no unrelated process can connect to an anonymous socketpair — which is a property of UnixStream::pair, not of the guard, and is NOT the proposition the field names: the peer at write time is whoever holds worker_end, which by fd inheritance is the child AND every descendant it forks or execs. That is the same population as the still-open orphan finding of rounds 1 and 2, and peer-credential verification is precisely what would distinguish them. The guard is also a proxy for the wrong invariant and evadable: banning UnixListener and bind( leaves UnixStream::connect(path) and the whole UnixDatagram type usable inside src/host, so a named-socket peer is reachable with the gate green; and the guard only scans crates/agent-harness/src. The invariant that actually matters — the fd handed to the child is the anonymous pair created before the fork — lives in one function and has no test. Either read SO_PEERCRED (which needs an allowlist or ADR amendment), or keep the capability out of requiredCapabilities and workerTransport out of the surface, or name the gap in the attestation rather than in a source comment."
+      },
+      {
+        "title": "The effective-digest projection is advertised as what was actually applied yet admits four unapplied prescriptions, including the const-locked engine pin the harness never checks",
+        "detail": "APPLIED_PROFILE_SURFACE is sound in mechanism — deterministic, published, and independently reproduced (b2975f9e…) — but its membership is wrong on four counts, each verified against the wire structs. (1) enforcement appears nowhere in the crate except in the surface list itself; ProfileWire does not deserialize it. (2) outputs.privateByDefault: OutputsWire reads only the two byte bounds. (3) sandboxEngine.manifest (the engine pin) and denyOnMissing: SandboxEngineWire reads only requiredCapabilities, and run.rs still copies the CALLER's ArtifactRef into sandboxEngineManifest with no comparison against the pin. (4) workerTransport.hostLoopbackAllowed: never read. Point 3 is made worse by this delta rather than carried over: under the tautological digest the unverified pin was ambient overclaim; under a projection whose documented meaning is the content address of what was applied, an operator who sees the two digests differ is explicitly taught that the difference is the unapplied blocks, and will read every block inside the effective digest as applied — including the assertion that the engine that ran is the engine the profile pinned, which is a caller-supplied fact. Project at field granularity, or shrink the surface to the fields the code reads."
+      }
+    ],
+    "major": [
+      {
+        "title": "Applied prescriptions fall OUT of the surface: the projection is block-granular while application is field-granular",
+        "detail": "The attestation block is excluded wholesale, yet signed, bindRequestedProfile, bindEffectiveControls and bindWorkerManifests are exactly what assemble and sign_attestation do — applied, and not in the digest (bindKernelCapabilities, unsatisfiable per round 2, is the only member that belongs outside). filesystem is excluded wholesale, yet canonical_workspace does canonicalize the root, so canonicalizePaths is partially applied. Combined with the four over-claimed members, the projection is simultaneously over- and under-claiming: every block that mixes applied and unapplied fields is wrong one way or the other. The under-claim direction is fail-safe and the over-claim direction is not, but a digest inexact in both directions cannot support the sentence its doc comment writes for it."
+      },
+      {
+        "title": "The glob rewrite changes the matched language: a subject containing a literal star can now escape a pattern it used to match — fail-open in the denied set",
+        "detail": "The locked relativePath alphabet includes `*`, so a literal star is a legal path character and the subject shares the metacharacter with the pattern. The new matcher's first branch prefers the literal comparison when pattern and subject both hold a star, consuming it as a literal and destroying the backtrack point. Traced by hand: pattern `*.pem`, subject `*.x.pem` — the new matcher returns false where the byte-recursive one returned true, and glob semantics say true. In the denied set a false negative means a denied file stops being denied. Reachability today is nil (the canonical profile's only intra-segment stars are `**`, consumed earlier, and evaluate_path_access still has no caller in src), but the claim that the matcher covers exactly the contract's alphabet no longer holds and no test exercises a star in the subject. Everything else about the rewrite is correct: it is the canonical linear wildcard algorithm and the empty-pattern, empty-segment and trailing-star cases all check out."
+      }
+    ],
+    "minor": [
+      {
+        "title": "The output cap is applied to the framed stream, so the attested bound is 44 bytes wider than the applied one",
+        "detail": "The read loop caps raw bytes, which now include the 43-character token and the frame byte; unframe strips them afterwards, so the ledger sees len-44. A worker emitting exactly maxBytesPerTool of content is truncated and refused. Fail-closed, but outputs is one of the blocks the projection asserts as applied, so the attestation content-addresses a bound the run does not apply."
+      },
+      {
+        "title": "A worker with nothing to say cannot complete a run, and the obligation is documented only in a private module comment",
+        "detail": "An empty response fails the length check, so the run returns RunBindingUnproved. Every worker must echo the token even with no output — a protocol obligation absent from the profile, the schema and the public API docs."
+      },
+      {
+        "title": "unframe accepts an unterminated frame",
+        "detail": "A response of exactly the token, with the frame byte never written, is admitted as a clean bound empty response. A worker killed after writing 43 of the 44 header bytes is indistinguishable from one that deliberately answered nothing — the one place the check turns a partial write into a success."
+      },
+      {
+        "title": "The binding check precedes the exit check, so a hung worker is reported as unbound rather than timed out",
+        "detail": "run.rs evaluates the binding before exit_ok, and timed_out is computed then discarded. A worker that stalls to the duration bound produces an empty capture and therefore RunBindingUnproved, making the diagnostics of the one control round 2 already questioned harder to read."
+      },
+      {
+        "title": "VerificationError mints a harness.* code that is not in the closed matrix",
+        "detail": "code() returns harness.verifying_key_malformed, shaped exactly like the thirteen the contract enumerates but absent from them. A consumer validating codes against the contract will reject or mis-route it; the is_malformed_key predicate already expresses the separation without a code."
+      },
+      {
+        "title": "The engine-capability gate closes the signing side only",
+        "detail": "assemble refuses identifiers outside ENGINE_CAPABILITIES, which holds and is tested. verify_attestation checks schema, digest and signature and never consults the capability list, so an attestation claiming filesystem_confinement verifies green — in the very function journey 6 points an offline operator at."
+      },
+      {
+        "title": "The unsafe scan's comment stripping is defeated by a // inside a string literal, and block comments are still not stripped",
+        "detail": "`let s = \"//\"; unsafe { … }` passes the gate; `/* unsafe */` still fails it, which is the false-positive direction the fix set out to remove. The compensating control is real (the crate-level forbid is a compiler error), but the guard is presented as the mechanical boundary. The attribute-stripping regex also erases any whole-line attribute, and the guard never asserts the forbid attribute is present."
+      },
+      {
+        "title": "RunBinding derives Debug over its secret and exposes token() publicly",
+        "detail": "The token is shared with the untrusted worker so the impact is small, but a secret-bearing type that formats itself is the wrong default in a crate whose profile prescribes contentFieldsAllowed:false."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "The projection rule is genuinely operator-reproducible, and both digests recompute independently",
+        "detail": "The embedded profileDigest and the projection both reproduce from the requested profile alone. That half of the claim holds without reservation: nothing about the rule is secret, ordered by chance, or dependent on run state."
+      },
+      {
+        "title": "The framing survives split reads, short reads and partial first reads",
+        "detail": "unframe runs once on the whole accumulated buffer, never per-read, so chunking, WouldBlock and TimedOut cannot break the check. The alphabet makes the single-byte frame unambiguous; split_at_checked returns None rather than panicking; entropy failure is a refusal, not a fallback; the token is fresh per run and never reaches the attestation. Constant-time comparison is correctly judged irrelevant."
+      },
+      {
+        "title": "The panic and the exponential blowup are genuinely closed",
+        "detail": "No byte slicing remains anywhere in the matcher, the single backtrack point makes the worst case O(n*m), and both defects have a test reproducing the original failure. Only the literal-star divergence separates the new language from glob semantics."
+      },
+      {
+        "title": "The TOML section fix and the capture-failure surfacing are correct",
+        "detail": "The header regex sees both forms and both call sites share it. A read error now sets capture_failed, reaps the group and drives output_scan_incomplete before any signature, with exit_ok gated on it."
+      },
+      {
+        "title": "Profile, engine manifest and ENGINE_CAPABILITIES agree — still by hand",
+        "detail": "The manifest already listed worker_transport_isolation, so adding it to requiredCapabilities keeps the three sources consistent. No code, test or CI step checks that consistency; round 2's finding on that point is unchanged."
+      },
+      {
+        "title": "Worktree unmodified",
+        "detail": "git status --porcelain is empty at the start and end; every command was read-only. No cargo and no bun were executed."
+      }
+    ]
+  },
+  "residualRisks": [
+    "This is a deliberately frugal delta pass. The two BLOCKING findings of round 2 — killProcessGroup is never reaped on any path that produces an attestation, and maxDurationSeconds does not bound the run because write_all can block before the clock starts — are untouched by these commits and were not re-audited here. The payload write is now 44 bytes longer, which does not change either analysis. Neither appears in the dossier's own table of closed findings.",
+    "No cargo and no bun ran in this pass: every gate verdict cited in the pull request, including the privileged e2e that is the only place the wrapper chain and the new framing execute together, is asserted rather than observed in this record.",
+    "The run token is a secret handed to the untrusted party over the same descriptor on which it must be returned, so it can never authenticate the responder — it certifies only that whoever answered had read this run's stdin. Any descendant holding the inherited fd produces a valid frame, which is the same population as the unclosed orphan finding. The threat the code names (a previous run's lingering descriptor) was already impossible: a fresh anonymous socketpair cannot receive bytes from a prior run's fd.",
+    "effectiveProfileDigest is a pure function of the requested document and a compile-time constant. It can express which blocks a given engine BUILD implements; it can never express what a given RUN applied. That is acceptable only while every degradation is a refusal — the moment any control becomes best-effort, the field silently stops meaning what its doc comment says.",
+    "worker_transport_isolation is decided by the catch-all branch of capability_enforceable, before any host fact is consulted and before the transport exists. It joins the two capabilities round 2 already found to be decided by the wrong observation or by none.",
+    "The verifier half of this crate has no notion of engine capabilities, so an attestation from a future, older or hostile engine claiming any control verifies here on signature alone — and this verifier is what journey 6 offers the offline operator.",
+    "The capability guard scans only crates/agent-harness/src and reasons over strings. The premise the verifyOsPeer argument actually needs — that the descriptor handed to the child is the anonymous pair created before the fork — is a property of one function, is provable by a test, and is asserted by neither the guard nor any test."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, same agent — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "round": 3,
+    "scope": "delta f27b3c9..0ab2a20, frugal single-role pass",
+    "priorVerdicts": ["docs/reviews/wp-g3-h01/5bee6a3/", "docs/reviews/wp-g3-h01/f27b3c9/"],
+    "worktree": "detached worktree at 0ab2a20, clean after the pass"
+  }
+}
