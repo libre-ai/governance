@@ -80,40 +80,203 @@ export function reconcileInventory(
   return { drifts, notes };
 }
 
-async function fetchLiveRepositories(): Promise<LiveRepository[]> {
-  const proc = Bun.spawn(
-    [
-      "gh",
-      "api",
-      "--paginate",
-      `orgs/${ORGANIZATION}/repos?per_page=100`,
-      "--jq",
-      ".[] | [.name, (.private | tostring)] | @tsv",
-    ],
-    { stdout: "pipe", stderr: "pipe" },
+/** Two retries beyond the first attempt — 1s then 3s — same budget as ecosystem/check-context-conformance.ts's ghWithRetry. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * REST fallback, retried but otherwise unchanged. Proved insufficient on
+ * its own on 2026-08-19: a single call still failed all 3 attempts within
+ * ~5s, in a window independently confirmed to have zero other governance
+ * workflow runs in flight — the installation's REST quota was exhausted for
+ * a sustained duration, not momentarily contended, so no in-run backoff
+ * budget outlasts it. Kept as the last resort if the GraphQL path below
+ * (which draws from a separate, points-based quota) cannot be answered
+ * either.
+ */
+async function fetchLiveRepositoriesViaRest(): Promise<LiveRepository[]> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const proc = Bun.spawn(
+      [
+        "gh",
+        "api",
+        "--paginate",
+        `orgs/${ORGANIZATION}/repos?per_page=100`,
+        "--jq",
+        ".[] | [.name, (.private | tostring)] | @tsv",
+      ],
+      { stdout: "pipe", stderr: "pipe" },
+    );
+    const [output, errors, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    if (exitCode === 0) {
+      return output
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => {
+          const [name, isPrivate] = line.split("\t");
+          if (name === undefined || (isPrivate !== "true" && isPrivate !== "false")) {
+            throw new Error(`unexpected gh api output line: ${JSON.stringify(line)}`);
+          }
+          return { name, isPrivate: isPrivate === "true" };
+        });
+    }
+    // Retried below on any non-zero exit (rate limit, other 4xx/5xx, network)
+    // — there is no confirmed-empty-org answer that looks like a failure
+    // here (an empty org is exit 0 with no output), so every failure is
+    // genuinely transient-or-unverifiable, never a real "zero repositories"
+    // answer worth trusting on the first try.
+    lastError = errors.trim() || `gh api orgs/${ORGANIZATION}/repos failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  // Fail closed: an unreachable API must fail the gate — loudly, as "unable
+  // to verify" — never silently pass it, and never launder it into a
+  // fabricated drift finding (no drift is ever asserted below this point).
+  throw new Error(
+    `unable to verify the ${ORGANIZATION} organization after ${RETRY_DELAYS_MS.length + 1} attempt(s): ${lastError}`,
   );
-  const [output, errors, exitCode] = await Promise.all([
+}
+
+// --- GraphQL primary path: same escape from the shared REST quota as
+// ecosystem/check-context-conformance.ts's fetchFleetViaGraphQL. One
+// request per page (the fleet fits in one, verified empirically — 36
+// repositories, `hasNextPage: false`) instead of gh api --paginate's many
+// sequential REST calls under the hood.
+
+function ghApiGraphQLArgs(): string[] {
+  return ["api", "graphql", "-F", "query=@-"];
+}
+
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", ...ghApiGraphQLArgs()], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (exitCode !== 0) {
-    // Fail closed: an unreachable API must fail the gate, not pass it silently.
-    throw new Error(
-      `gh api orgs/${ORGANIZATION}/repos failed (exit ${exitCode}): ${errors.trim()}`,
-    );
-  }
-  return output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [name, isPrivate] = line.split("\t");
-      if (name === undefined || (isPrivate !== "true" && isPrivate !== "false")) {
-        throw new Error(`unexpected gh api output line: ${JSON.stringify(line)}`);
+  return { exitCode, stdout, stderr };
+}
+
+export function buildOrgRepositoriesQuery(organization: string, cursor: string | null): string {
+  const after = cursor === null ? "" : `, after: ${JSON.stringify(cursor)}`;
+  return [
+    `query {`,
+    `  organization(login: ${JSON.stringify(organization)}) {`,
+    `    repositories(first: 100${after}) {`,
+    `      pageInfo { hasNextPage endCursor }`,
+    `      nodes { name isPrivate }`,
+    `    }`,
+    `  }`,
+    `}`,
+  ].join("\n");
+}
+
+interface GraphQLRepoListPage {
+  readonly nodes: readonly LiveRepository[];
+  readonly hasNextPage: boolean;
+  readonly endCursor: string | null;
+}
+
+/**
+ * Pure parse of one page's `data` payload — `null` distinguishes "the
+ * response did not carry the shape we asked for" (retry, then fall back)
+ * from "the organization has zero repositories on this page" (a real,
+ * structurally-present empty `nodes: []`), same 404-is-an-answer contract
+ * the rest of this fleet's gates use.
+ */
+export function parseOrgRepositoriesPage(data: unknown): GraphQLRepoListPage | null {
+  const repositories = (
+    data as {
+      readonly organization?: {
+        readonly repositories?: {
+          readonly pageInfo?: {
+            readonly hasNextPage?: boolean;
+            readonly endCursor?: string | null;
+          };
+          readonly nodes?: readonly ({
+            readonly name?: string;
+            readonly isPrivate?: boolean;
+          } | null)[];
+        } | null;
+      } | null;
+    }
+  )?.organization?.repositories;
+  if (repositories === undefined || repositories === null) return null;
+  const nodes = (repositories.nodes ?? []).filter(
+    (node): node is { name: string; isPrivate: boolean } =>
+      node !== null && typeof node.name === "string" && typeof node.isPrivate === "boolean",
+  );
+  return {
+    nodes,
+    hasNextPage: repositories.pageInfo?.hasNextPage ?? false,
+    endCursor: repositories.pageInfo?.endCursor ?? null,
+  };
+}
+
+const MAX_ORG_PAGES = 20; // safety cap: 2000 repositories, far beyond this fleet's real size
+
+async function fetchOrgRepositoriesPage(
+  organization: string,
+  cursor: string | null,
+): Promise<GraphQLRepoListPage | null> {
+  const query = buildOrgRepositoriesQuery(organization, cursor);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: unknown };
+      if (parsed.data !== undefined) {
+        const page = parseOrgRepositoriesPage(parsed.data);
+        if (page !== null) return page;
       }
-      return { name, isPrivate: isPrivate === "true" };
-    });
+    } catch {
+      // Not valid JSON (or an unexpected shape) — fall through to retry.
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(`GraphQL organization repository page fetch failed after retries: ${lastError}`);
+  return null;
+}
+
+/** `null` means the listing could not be answered at all — caller falls back to REST, never assumes an empty organization. */
+async function fetchLiveRepositoriesViaGraphQL(
+  organization: string,
+): Promise<LiveRepository[] | null> {
+  const collected: LiveRepository[] = [];
+  let cursor: string | null = null;
+  for (let page = 0; page < MAX_ORG_PAGES; page++) {
+    const result = await fetchOrgRepositoriesPage(organization, cursor);
+    if (result === null) return null;
+    collected.push(...result.nodes);
+    if (!result.hasNextPage || result.endCursor === null) return collected;
+    cursor = result.endCursor;
+  }
+  return collected;
+}
+
+async function fetchLiveRepositories(): Promise<LiveRepository[]> {
+  return (
+    (await fetchLiveRepositoriesViaGraphQL(ORGANIZATION)) ?? (await fetchLiveRepositoriesViaRest())
+  );
 }
 
 if (import.meta.main) {
