@@ -4,13 +4,13 @@
   invariant **I-18** (ADR-0009 §6). Consumes the control-plane input
   `constantin-jais/constantin-jais:ecosystem/specs/shared/loop-security-kernel.md`.
 - **Authority:** this document **specifies** the five loop-security controls at
-  the socle and is the **entry gate of wave 3**. Per EXECUTION-SEQUENCING, wave 3, the
-  kernel is "specified and ready to lock the orchestrator lock": the
-  specification is complete and faithful here, and two controls **complete at
-  the orchestrator lock**, not before it — see the status table and the
-  enforcement boundary. The orchestrator Specification Lock cannot open real
-  agent execution until this kernel is specified here **and** the owner
-  pronounces that lock.
+  the socle and was the **entry gate of wave 3**. The orchestrator Specification
+  Lock was pronounced by the owner on 2026-07-20 (ADR-0018 §Contexte, accepted
+  2026-07-25: "the five loop-security kernel controls are `in service` — K1
+  included"). All five controls reached `in service` that day (K1 by PR #150,
+  the last to close) — see the status table below, which is this document's
+  single normative status source. `POLARIS.md` and `THREAT-MODEL.md` point here
+  rather than restating a status (domain F/H, 2026-08-18).
 - **Nature:** these are guardrails (I-17 human-touch surface). Establishing and
   mutating them is an owner-touch act; this specification is pronounced by the
   owner at the wave-3 gate, not auto-merged.
@@ -27,13 +27,14 @@ its **enforcement**.
 - **reviewed** — implemented, independently reviewed clean; a bounded follow-up
   (a contract promotion) completes it, named explicitly.
 - **specified** — fully and faithfully specified here; its **integration** is an
-  explicit step of the orchestrator lock (not a gap in this specification).
+  explicit step of a subsequent owner-pronounced lock (not a gap in this
+  specification).
 
 A control being `reviewed` or `specified` rather than `in service` is **not** an
-omission: EXECUTION-SEQUENCING, wave 3, distinguishes "specified and ready to lock"
-(this document) from the orchestrator lock pronouncement (the porte-V3 owner
-act). The two controls that complete at the orchestrator lock are named in the
-status table.
+omission: it distinguishes "specified and ready to lock" from the orchestrator
+lock pronouncement (the porte-V3 owner act) that closes the gap. That gap is
+now closed for all five controls — see the status table — but the three-state
+vocabulary stays normative for any control this kernel adds later.
 
 ## K1 — Agent identity (the absent lock)
 
@@ -53,9 +54,21 @@ taxonomy expressed as locked Biscuit facts:
 
 **Socle realization.** The Biscuit issuance/attenuation/revocation machinery is
 locked (`WP-G2-Z01`, `crates/authz-biscuit`, `IDENTITY-AUTHORIZATION.md` Biscuit
-authority). This lock **extends** it with the three agent facts and per-agent
-revocation, to be added to the authority template
-`contracts/authz/authority-v1.datalog` at the orchestrator lock.
+authority). The three agent facts and per-agent revocation were added in the
+v2 authority template `contracts/authz/authority-v2.datalog` and its companion
+authorizer `contracts/authz/agent-runs-v2.datalog` (cross-fleet/mission `check
+if` clauses), both promoted `candidate → locked` 2026-07-20 (PR #150) once
+every precondition closed with real evidence: taxonomy in the template (#143),
+the authorizer (#145), a real-Biscuit runtime proof of cross-fleet denial in
+`ecosystem-engine` (#146), agent-token issuance carrying the three facts
+(`authz-biscuit` #147), and fail-closed per-agent revocation at issuance (#149)
+— dossier `docs/reviews/authority-v2/PROMOTION-DOSSIER.md`. Human and
+browser-session tokens are unaffected: they keep using authority-v1.
+Deferred, non-blocking per that dossier: immediate invalidation of tokens
+already issued to a since-revoked agent (bounded by the ≤900s TTL until a
+runtime consumer adds live-invalidation) and `capability_scope` enforcement at
+the tool/write-path boundary (a runtime-consumer responsibility, not yet
+built).
 
 **Enforcement.** Deny-by-default authorizer; cross-mission and out-of-scope
 operations refused; revocation fail-closed. No agent token grants CI/gate write
@@ -104,17 +117,29 @@ invariants register, the revocation list) require, in order: human review, a
 signature attesting the approving decision-log entry, and a bounded rollback
 point. **No auto-merge on these paths.**
 
-**Socle realization.** `.github/CODEOWNERS` on the sensitive lanes plus the
-`Doctrine governance` gate; the run's autonomous-merge authorization explicitly
-**excludes** these guardrail paths — they remain owner-touch (I-17). The
-independent-review protocol (`docs/reviews/AGENT-REVIEW-PROTOCOL.md`, K4:
-implementer ≠ reviewer) is the review mechanism, exercised on every couche-3
-brick (envelope, classification).
+**Socle realization.** No `.github/CODEOWNERS` file exists in this repository
+(`G0-CANONICAL-BOOTSTRAP.md` already records that CODEOWNERS enforcement stays
+disabled until reviewer teams exist) and the `Doctrine governance` gate checks
+ADR/invariants hygiene, not reviewer attestation — an earlier revision of this
+section claimed both as the realization, which did not match the running
+gates. The honest realization for a solo-maintainer forge (K4 redefinition,
+Domain A re-ratification, ADR-0023, 2026-08-18): a documented adversarial
+review pass — the independent-review protocol
+(`docs/reviews/AGENT-REVIEW-PROTOCOL.md`, K4: implementer ≠ reviewer), exercised
+on every couche-3 brick (envelope, classification, authority-v2/agent-runs-v2)
+— followed by an owner merge, itself the signature (`AGENTS.md`: "a doctrine
+merge is a signature"). The run's autonomous-merge authorization explicitly
+**excludes** these guardrail paths — they remain owner-touch (I-17).
 
-**Enforcement.** CODEOWNERS + doctrine gate block a guardrail change without the
-attested review; tool-state retrieval that feeds such a mutation uses DNS-pinned
-transport (control-plane E10) with a timestamped signature; a DNS/data mismatch
-aborts.
+**Enforcement.** `tools/quality/check-review-evidence.ts` (merged, PR #37) is
+the mechanical backstop on pull requests: it fails a PR touching `docs/adr/**`,
+`docs/decisions/INVARIANTS.md` or `docs/decisions/DECISION-REGISTER.md` unless
+the PR body or diff carries a `docs/reviews/` artefact reference or a dated
+`Owner-arbitration:` marker. Its gated-path list does not (yet) cover CI
+workflow files or the runtime revocation store this requirement also names —
+an honest gap, not claimed closed. Tool-state retrieval that feeds a guardrail
+mutation uses DNS-pinned transport (control-plane E10) with a timestamped
+signature; a DNS/data mismatch aborts.
 
 ## K5 — Immutable register in production
 
@@ -132,32 +157,32 @@ resolved citations, retired-brand deny-list).
 
 ## Enforcement boundary (wave-3 entry gate)
 
-K1–K5 are the entry gate of wave 3 (`docs/transformation/EXECUTION-SEQUENCING.md`):
-the orchestrator lock cannot open real agent execution until this kernel is
-specified here and the owner pronounces the orchestrator Specification Lock
-(ADR-0011 D3, a permanent nominative hard stop). Dogfooding-first applies: the
-forge itself is the first system these controls govern, and its evidence of
-doing so is published (I-20).
+K1–K5 were the entry gate of wave 3. The orchestrator Specification Lock was
+pronounced by the owner 2026-07-20 (ADR-0011 D3, a permanent nominative hard
+stop, exercised then and not repeatable as a routine gate) and ADR-0018
+(accepted 2026-07-25) records that wave 3's entry gate was satisfied that day:
+"the five loop-security kernel controls are `in service` — K1 included, whose
+agent identity facts are integrated into the Biscuit authority with fail-closed
+per-agent revocation." Dogfooding-first applies: the forge itself is the first
+system these controls govern, and its evidence of doing so is published (I-20).
 
-**One control completes at the orchestrator lock, by design, not as a gap here:**
-
-- **K1** — the agent identity **facts** (`agent_fleet`, `mission_agent`,
-  `capability_scope`) and per-agent revocation are specified above; their
-  **integration** into the Biscuit authority template
-  (`contracts/authz/authority-v1.datalog`) and authorizer `check if` clauses is
-  an explicit chapter of the orchestrator Specification Lock — that lock is what
-  opens real agent execution, so the facts land with it.
-
-K2, K3, K4 and K5 are `in service` today. The kernel is therefore **specified and
-ready to lock** (§8): the orchestrator-lock owner act consumes this document,
-integrates K1's facts, then opens wave 3.
+**All five controls are `in service`; none remain pending at a later lock.**
+K1's agent identity facts (`agent_fleet`, `mission_agent`, `capability_scope`)
+and per-agent revocation, once described above as integrating "at the
+orchestrator lock", are integrated: `contracts/authz/authority-v2.datalog` and
+`contracts/authz/agent-runs-v2.datalog`, both `locked` in
+`contracts/catalog.v1.json`, carry them (see K1 above). This document's own
+prose said otherwise in an earlier revision — the 2026-07-20 promotion (PR
+#150) updated only the status table below, not this section or the header;
+that gap between sections is the drift this revision (domain F/H, 2026-08-18)
+closes.
 
 ## Status of the five controls at this lock
 
-| Control                | Socle brick / mechanism                                      | State                                                                                                                                                                        |
-| ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation | **in service** — `authority-v2` + `agent-runs-v2` locked; fleet/mission enforced (real-biscuit proof), issuance carries the three facts, per-agent revocation is fail-closed |
-| K2 classification      | `@libre-ai/classification`                                   | **in service** — sealed authority gate, reviewed CLEAN                                                                                                                       |
-| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` locked)                  | **in service** — contract locked after first dogfooding consumer (fanout orchestrator wraps evidence); HMAC integrity enforced at every model-facing recall path             |
-| K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review              | **in service**                                                                                                                                                               |
-| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate            | **in service**                                                                                                                                                               |
+| Control                | Socle brick / mechanism                                                     | State                                                                                                                                                                        |
+| ---------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation                | **in service** — `authority-v2` + `agent-runs-v2` locked; fleet/mission enforced (real-biscuit proof), issuance carries the three facts, per-agent revocation is fail-closed |
+| K2 classification      | `@libre-ai/classification`                                                  | **in service** — sealed authority gate, reviewed CLEAN                                                                                                                       |
+| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` locked)                                 | **in service** — contract locked after first dogfooding consumer (fanout orchestrator wraps evidence); HMAC integrity enforced at every model-facing recall path             |
+| K4 guardrail mutations | independent review + owner merge, backstopped by `check-review-evidence.ts` | **in service** — ADR-0023 (2026-08-18) redefinition; no CODEOWNERS file exists in this repository, corrected here (see K4 above)                                             |
+| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate                           | **in service**                                                                                                                                                               |

@@ -1,5 +1,16 @@
 # Run γ charter — autonomous loop to finish the flottable
 
+> **SUPERSÉDÉ par ADR-0020 (2026-07-28).** Cette charte a été ratifiée avant
+> l'activation générale : la séquence de vagues qu'elle cite en C3
+> (« conformément à EXECUTION-SEQUENCING ») et l'écluse #2 (ouverture G4)
+> relèvent d'un séquencement désormais supersédé — ADR-0009 §8, ADR-0011 D1 et
+> le cadre de vagues d'ADR-0018 étant supersédés. Le jalon γ d'activation
+> générale et de démantèlement du hub qu'il anticipait s'est refermé le
+> 2026-07-30 (`distribution/evidence/gate-acceptance-log.md`, ligne phase
+> 3.8). Le présent document reste **l'histoire** du run autonome γ1→γ2→δ→ε→ζ
+> tel que ratifié en session : il n'ordonne plus rien et n'est pas une
+> autorité vivante.
+
 **Ratified in session, 2026-07-22.** This charter is the compaction-proof
 source of truth for the autonomous run: any session continuing this run reads
 it first and treats it as binding. Progress ledger:

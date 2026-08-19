@@ -1,0 +1,12 @@
+{
+  "subject": "retro-K4 governance PR #21 — scope: the change this commit introduces over its first parent (start with `git show HEAD`): fix(quality): wave 1 — the glob scanners report their evidence",
+  "commit": "c91257390105471c4d3b40a3f4649ccf88ecfc48",
+  "roles": ["architecture", "security"],
+  "mode": "specialized-role",
+  "evidence": ["docs/reviews/AGENT-REVIEW-PROTOCOL.md"],
+  "concurrency": 5,
+  "provider": "openai-codex",
+  "model": "gpt-5.6-terra",
+  "thinking": "xhigh",
+  "outputDir": "docs/reviews/retro-k4-gate-report/c912573"
+}

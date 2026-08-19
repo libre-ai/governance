@@ -112,6 +112,11 @@ intégral aurait retenu.
 - Le dépôt d'archive `libre-ai` reste porteur du pin vulnérable : il est en
   lecture seule sur la forge et ne peut pas être corrigé. Aucun contrôle ne
   doit le compter comme un rouge à traiter.
+- Le registre des invariants gagne I-26 (backfill 2026-08-18, Domain I —
+  Process & CI), sourcé par le présent ADR : D1/D2/D3 ci-dessus, sans
+  reformulation.
+
+Owner-arbitration: 2026-08-18
 
 ## Ce qui n'est pas décidé ici
 

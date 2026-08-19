@@ -5,6 +5,17 @@
 - **Authority:** K1–K5 (LOOP-SECURITY-KERNEL.md), ADR-0009, ADR-0011
 - **Date:** 2026-07-22
 
+> **K statuses frozen here at 2026-07-22, never amended since.** The "Controls
+> status" table below is a snapshot from this document's single commit. Three
+> of its rows (K1 agent facts, K4 CODEOWNERS, K4 independent-review protocol)
+> predate the 2026-07-20/22 promotions that moved K1, K3 and K4 to in-service,
+> and predate the 2026-08-18 K4 redefinition (ADR-0023: no `.github/CODEOWNERS`
+> file exists in this repository). The living source for every K-control
+> status is [`LOOP-SECURITY-KERNEL.md`](../specifications/LOOP-SECURITY-KERNEL.md)'s
+> "Status of the five controls at this lock" table — read that table, not this
+> one, for the current state. This threat model's risk analysis and residual
+> register are unaffected and are not rewritten here (domain F/H, 2026-08-18).
+
 ## Trust boundaries and surfaces
 
 Six surfaces span the constellation, each with distinct threat models.
@@ -242,6 +253,9 @@ Six surfaces span the constellation, each with distinct threat models.
 ---
 
 ## Controls status (specified vs. enforced)
+
+> Frozen 2026-07-22 snapshot — see the banner at the top of this document. The
+> living K-status table is in `LOOP-SECURITY-KERNEL.md`.
 
 | Control                                           | Status         | Gap                                         | Target                       |
 | ------------------------------------------------- | -------------- | ------------------------------------------- | ---------------------------- |

@@ -65,6 +65,16 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Libre AI contributors"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# Agent skills collection (ADR-0025): a portable adoption artefact, meant to
+# be copied into another harness where this repository's REUSE.toml no longer
+# resolves it — Apache-2.0 like tools/**, not EUPL. Placed after the editorial
+# docs/**, *.md bucket above so it wins for skills/**/*.md (last match wins).
+[[annotations]]
+path = ["skills/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Libre AI contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
 # The vendored DTCG schema and its upstream notice remain under the licence
 # selected by Design Tokens Community Group contributors for W3C reports.
 [[annotations]]

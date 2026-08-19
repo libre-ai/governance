@@ -2,8 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import {
   ARCHIVED_EXCLUSIONS,
+  buildWorkflowsTreeQuery,
   type CanonicalToolchain,
   extractDeclaredSources,
+  hasUsableGraphQLData,
+  parseWorkflowsTreeBatchResponse,
+  parseWorkflowsTreeNode,
   readCanonical,
   verifyCanonical,
   verifySources,
@@ -184,5 +188,78 @@ describe("ARCHIVED_EXCLUSIONS", () => {
 
   test("nothing else is excluded — every living repository is swept", () => {
     expect([...ARCHIVED_EXCLUSIONS.keys()]).toEqual(["libre-ai/libre-ai"]);
+  });
+});
+
+describe("buildWorkflowsTreeQuery", () => {
+  test("aliases by index and reads the .github/workflows tree only", () => {
+    const query = buildWorkflowsTreeQuery(["libre-ai/authz-biscuit"]);
+    expect(query).toContain('repo0: repository(owner: "libre-ai", name: "authz-biscuit")');
+    expect(query).toContain('object(expression: "main:.github/workflows")');
+    expect(query).toContain(
+      "... on Tree { entries { name type object { ... on Blob { text } } } }",
+    );
+  });
+});
+
+describe("parseWorkflowsTreeNode", () => {
+  test("reads yaml workflow files, filtering out non-yaml entries and subdirectories", () => {
+    const outcome = parseWorkflowsTreeNode({
+      workflowsTree: {
+        entries: [
+          { name: "ci.yml", type: "blob", object: { text: "on: push\n" } },
+          { name: "README.md", type: "blob", object: { text: "nope" } },
+          { name: "reusable", type: "tree", object: null },
+        ],
+      },
+    });
+    expect(outcome.kind).toBe("found");
+    expect(outcome.kind === "found" && outcome.files).toEqual([
+      { name: "ci.yml", text: "on: push\n" },
+    ]);
+  });
+
+  test("a structurally-present node with no tree is a real no-workflows-directory answer", () => {
+    expect(parseWorkflowsTreeNode({ workflowsTree: null })).toEqual({
+      kind: "no-workflows-directory",
+    });
+  });
+
+  test("an absent repository node is unable-to-verify, never silently skipped", () => {
+    const outcome = parseWorkflowsTreeNode(null);
+    expect(outcome.kind).toBe("unable-to-verify");
+  });
+});
+
+describe("parseWorkflowsTreeBatchResponse", () => {
+  test("maps each repository to its own outcome by alias index", () => {
+    const result = parseWorkflowsTreeBatchResponse(["libre-ai/governance", "libre-ai/gone"], {
+      repo0: {
+        workflowsTree: { entries: [{ name: "ci.yml", type: "blob", object: { text: "x" } }] },
+      },
+      repo1: null,
+    });
+    expect(result.get("libre-ai/governance")?.kind).toBe("found");
+    expect(result.get("libre-ai/gone")?.kind).toBe("unable-to-verify");
+  });
+});
+
+describe("hasUsableGraphQLData", () => {
+  test("rejects a top-level rate-limit rejection — data: null alongside errors[]", () => {
+    expect(hasUsableGraphQLData({ data: null, errors: [{ type: "RATE_LIMITED" }] })).toBe(false);
+  });
+
+  test("rejects a response with no data key at all", () => {
+    expect(hasUsableGraphQLData({ errors: [{ type: "SOME_ERROR" }] })).toBe(false);
+    expect(hasUsableGraphQLData({})).toBe(false);
+  });
+
+  test("rejects a non-object body", () => {
+    expect(hasUsableGraphQLData(null)).toBe(false);
+    expect(hasUsableGraphQLData(undefined)).toBe(false);
+  });
+
+  test("accepts a real data payload", () => {
+    expect(hasUsableGraphQLData({ data: { repo0: {} } })).toBe(true);
   });
 });

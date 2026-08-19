@@ -5,6 +5,11 @@
  * together: `bun tools/release/bump-version.ts patch|minor|major|<semver>`.
  * A drifted set (unequal versions) refuses the bump — fix the drift first.
  * Planning is pure (unit-tested); only the CLI writes manifests.
+ *
+ * Manual by design (owner decision 2026-08-18): run this the day of an npm
+ * publish, right before `publish-preflight.ts` and `bun publish` — a version
+ * bump is a deliberate release decision, never a scheduled or CI-triggered
+ * mutation of a manifest.
  */
 import { resolve } from "node:path";
 import { SATELLITE_DIRECTORIES } from "./publish-preflight";

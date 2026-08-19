@@ -1,8 +1,8 @@
 # ADR-0013 — Lieu des invariants de sérialisation des résultats Boussole
 
-- **Statut :** proposed — question ouverte ; aucune option n'est retenue par cet ADR
-- **Date :** 2026-07-25
-- **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas et n'autorise aucun amendement de contrat.
+- **Statut :** accepted (2026-08-18) — la ratification est le merge propriétaire de cette pull request. Requalifié `deferred` par ADR-0023 le 2026-08-18 ; arbitré au fond le même jour, phase produits de la remise à plat 2026-08.
+- **Date :** 2026-07-25 (question posée) ; 2026-08-18 (décision)
+- **Arbitrage :** propriétaire, 2026-08-18, par questions structurées (ADR-0022/I-24) — option C+D retenue. Voir « Décision retenue » ci-dessous. Owner-arbitration: 2026-08-18
 - **Portée :** contrats Boussole v2 — `contracts/schemas/local-comparison.v2.schema.json`, `contracts/schemas/boussole-method.v2.schema.json`, `contracts/wit/boussole-scoring-v2/SEMANTICS.md`
 - **Origine :** analyse d'écart du 2026-07-25 entre une spécification non versionnée retrouvée dans le dépôt `boussole-politique` (candidate jamais commitée) et les contrats Boussole verrouillés du monorepo.
 - **Lié à :** ADR-0014 (auto-consistance du résultat), ADR-0016 (protocole de revue humaine) — même axe : ce qu'un tiers peut vérifier sans exécuter le moteur.
@@ -77,6 +77,13 @@ Les options B, C et D ne s'excluent pas : D peut accompagner A, B ou C.
 | C      | majeure ×3 (dont le monde WIT) | oui                                   | oui                                   |
 | D      | à qualifier                    | non                                   | oui                                   |
 
-## Ce que cet ADR ne tranche pas
+## Décision retenue (2026-08-18)
 
-Aucune option n'est retenue. Aucun contrat n'est amendé, aucun statut de catalogue n'est modifié, aucune approbation existante n'est invalidée par le présent document. La qualification exacte de l'option D au regard de `COMPATIBILITY.md` — clarification ou majeure — est un point d'arbitrage à part entière et non un acquis.
+**Option C + D**, combinées comme le document ci-dessus l'anticipait (« D peut accompagner A, B ou C ») :
+
+- **C — micros entiers + chaîne contrainte.** `local-comparison.v3` porte `scoreMicros`/`contributionMicros` (entiers signés, `-1000000..1000000`) et `score`/`contribution` en chaîne à six décimales exactes (`^-?(0\.[0-9]{6}|1\.000000)$`), zéro négatif interdit par `not: {"const": "-0.000000"}`. Implémenté dans `libre-ai/contracts` pull request [#8](https://github.com/libre-ai/contracts/pull/8) (draft — voir plus bas), `contracts/schemas/local-comparison.v3.schema.json`.
+- **D — algorithme explicite, pas seulement nommé.** Le mode d'arrondi n'est plus un simple nom : `boussole-method.v3` porte `"rounding": {"const": "decimal-6-half-even-exact-rational"}` avec une description qui fixe l'algorithme entier exact (`q = floor((2A + d) / (2d))`, `A = 10⁶ × |numerator|`) sur `(weightedNumerator, scaledDenominator)` — la forme exacte que porte ADR-0014. Ce classement referme la question ouverte par cet ADR (« la qualification exacte de l'option D... est un point d'arbitrage à part entière ») : documenter l'algorithme dans le contrat ne modifie aucun comportement observable, c'est une clarification au sens du précédent ADR-0010, appliquée ici en même temps qu'une majeure déjà requise par l'option C — la question de savoir si D à lui seul aurait exigé une majeure reste sans objet.
+
+**Ce que la décision ne couvre pas encore :** l'écriture de l'algorithme en toutes lettres dans `contracts/wit/boussole-scoring-v2/SEMANTICS.md` (l'option D telle que décrite au §"Options" ci-dessus, qui visait ce fichier précisément) n'est pas faite — `SEMANTICS.md` reste au texte v2, non touché par la pull request contracts #8. De même, le monde WIT `boussole-scoring-v3` que le tableau « Conséquences selon l'option » compte pour l'option C (« majeure ×3, dont le monde WIT ») n'existe pas : la pull request #8 amende uniquement les trois schémas JSON Schema (`local-comparison`, `boussole-method`, `public-vote-dataset`), pas le monde WIT ni ses vecteurs golden/sécurité, qui continuent de nommer les majeures v2. Ce sont des majeures corrélées restant à ouvrir — non closes par le présent ADR.
+
+Les trois schémas v3 sont catalogués `candidate` (`pending-independent-agent-review`), pas `locked` : ce dépôt exige une revue à rôles séparés avant verrouillage (`COMPATIBILITY.md`), qu'une session solo ne peut pas fournir. Le dossier de revue (`docs/reviews/boussole-v3-numeric-polarity-omission-review.md` dans `contracts`) signale par ailleurs que `docs/reviews/AGENT-REVIEW-PROTOCOL.md`, vers lequel le mécanisme de catalogue et la documentation de `contracts` renvoient, n'existe nulle part dans ce dépôt — un écart trouvé en amendant ce candidat, non corrigé par lui.

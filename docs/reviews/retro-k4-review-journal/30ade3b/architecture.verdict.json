@@ -1,0 +1,68 @@
+{
+  "reviewPassId": "rp-30ade3b-1e73b0d3-5d78-4e3c-b662-75d20f63593e",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "30ade3bf62e9d7a7d4147da1ac7bed446f84241a",
+  "contractHashes": [
+    {
+      "path": "tools/review/fanout-core.test.ts",
+      "sha256": "895f9224d2bb6b1c4aca4a554fef31f3fd43873f3e7378b483fe9a32a573c785"
+    },
+    {
+      "path": "tools/review/fanout-core.ts",
+      "sha256": "5e375dc44fe2bfc091c18d8dfdeba20743bd9e4dfd58f97d749348ddc8219065"
+    },
+    {
+      "path": "tools/review/fanout.ts",
+      "sha256": "9a0b462bb2fb78429ce16f848674f236d2df37b4c7b71eb6bf817c7b332e59ff"
+    }
+  ],
+  "commands": [
+    "printenv | grep '^PI_' | sort || true",
+    "git rev-parse HEAD",
+    "git status --short",
+    "git show --no-ext-diff --format=fuller --stat HEAD",
+    "git diff-tree --no-commit-id --name-status -r HEAD",
+    "git diff --no-ext-diff --check HEAD^ HEAD",
+    "git diff --no-ext-diff --unified=80 HEAD^ HEAD -- tools/review/fanout-core.test.ts tools/review/fanout-core.ts tools/review/fanout.ts",
+    "git ls-tree -r --name-only HEAD | grep -E '(^|/)(AGENT-REVIEW-PROTOCOL\\.md|.*review.*\\.md|ADR.*\\.md)$' | sort",
+    "git show HEAD:package.json",
+    "shasum -a 256 tools/review/fanout-core.test.ts tools/review/fanout-core.ts tools/review/fanout.ts",
+    "git show HEAD^:tools/review/fanout.ts",
+    "git show HEAD^:tools/review/fanout-core.ts | tail -n 100",
+    "rg -n -C 5 'function journalWriter|async function runJob|emit\\(\"pass_start\"|emit\\(\"verdict_recorded\"|emit\\(\"pass_end\"|async function reportJournal|results\\.find|JSON\\.parse\\(line\\)' tools/review/fanout.ts",
+    "rg -n -C 5 'export interface PassReplay|export function replayPassStatuses|const status|pass_end|reviewPassId' tools/review/fanout-core.ts",
+    "git cat-file -e HEAD:docs/reviews/AGENT-REVIEW-PROTOCOL.md 2>&1 || true"
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [
+      {
+        "title": "Replay can certify a pass that the orchestrator marked failed",
+        "detail": "replayPassStatuses (fanout-core.ts:397-400) treats any verdict_recorded plus any pass_end as success. runJob records verdict_recorded before worktree cleanup, then catches cleanup/emission failures and emits pass_end with detail.ok=false (fanout.ts:163-175). Such a pass is observed as failed, but its retained journal replays as success; worktree_removed and pass_end.detail.ok are ignored."
+      },
+      {
+        "title": "Persistent journal reconciliation loses pass identity",
+        "detail": "Events are retained in one outputDir/events.jsonl, but PassReplay omits reviewPassId (fanout-core.ts:371-376). reportJournal builds an ID-keyed observed map then matches replay entries by role (fanout.ts:200-203). Retrying a previously failed role in the same output directory makes an old failed pass compare to the new result, yielding a false disagreement. Compare by reviewPassId and scope reconciliation to the invocation's generated IDs."
+      },
+      {
+        "title": "A malformed historical JSONL record aborts replay",
+        "detail": "reportJournal parses every non-empty line with uncaught JSON.parse (fanout.ts:193-196). A partial final append after the interruption this journal is intended to preserve prevents all subsequent runs using that output directory from replaying or reporting results. The parser needs explicit corruption handling, including a safe policy for a trailing incomplete record."
+      }
+    ],
+    "minor": [],
+    "nonBlocking": []
+  },
+  "residualRisks": [
+    "No test command was run, preserving the required read-only worktree; static inspection found no coverage for failed cleanup after verdict recording, same-role retries across journal history, or malformed JSONL recovery."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "tools/review/fanout.ts",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-terra",
+    "thinking": "xhigh",
+    "startedAt": "2026-08-04T15:12:17.915Z",
+    "durationMs": 173353
+  }
+}

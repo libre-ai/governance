@@ -1,5 +1,11 @@
 # ADR-0004 — Gouvernance des licences et de la marque
 
+> **Collision de numéro.** `docs/adr/0004-agent-orchestration-option-b-specification-lock.md`
+> porte aussi le numéro ADR-0004 (les deux datés du 2026-07-17, tous deux
+> `accepted`). Le contenu des deux ADR n'est pas remis en cause par cette
+> note ; la résolution — renumérotation ou non — relève de la remise à plat
+> de la numérotation en cours et n'est pas tranchée ici.
+
 - **Statut :** accepted
 - **Date :** 2026-07-17
 - **Portée :** monorepo canonique, futurs repositories produits et projections générées (documentation, SDK, packs)

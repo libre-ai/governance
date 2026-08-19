@@ -3,10 +3,12 @@
 ## Authority
 
 This repository is the **governance authority** of the Libre AI constellation
-(ADR-0020, general activation 2026-07-28): doctrine, invariants, ADRs, the
-LEXICON, the ecosystem index, the project-card schema and fleet aggregator,
-ecosystem tooling, evidence, and the fleet gates. The `contracts` repository
-is the other authority and owns the canonical contract authorities. Every
+(ADR-0020, general activation 2026-07-28) — the transverse layer's registry
+root: doctrine, invariants, ADRs, the LEXICON, the ecosystem index, the
+project-card schema and fleet aggregator, ecosystem tooling, evidence, and
+the fleet gates. The `contracts` repository is the other transverse authority
+(https://raw.githubusercontent.com/libre-ai/contracts/main/AGENTS.md) and
+owns the canonical contract authorities. Every
 product and satellite repository is responsible for its own perimeter; its
 state lives in the `project.v1.yaml` card of its repository, aggregated and
 verified from here — never declared manually, never duplicated.
@@ -66,4 +68,10 @@ licences, dead code, lint, typecheck, tests). Never hide a red test.
 - Doctrine changes (ADRs, invariants, LEXICON) require role-separated
   technical review; the human owner retains the explicit control milestone —
   a doctrine merge is a signature.
+- Owner-facing decision points follow ADR-0022 (I-24): restitute the
+  decision context inline (short excerpt or a 2–4-line decision summary plus
+  its `path:line` source — never a bare pointer), present genuine choices as
+  2–4 mutually exclusive options with consequences through the interactive
+  question mechanism, and decide trivial or inferable choices alone, flagged
+  in one line.
 - Security > quality > performance > completeness.

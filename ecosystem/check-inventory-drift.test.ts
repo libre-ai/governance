@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  buildOrgRepositoriesQuery,
   type DeclaredRepository,
   type LiveRepository,
+  parseOrgRepositoriesPage,
   reconcileInventory,
 } from "./check-inventory-drift";
 
@@ -74,5 +76,63 @@ describe("reconcileInventory", () => {
       "DRIFT: repository 'new-name' is observable on GitHub but absent from the inventory",
       "DRIFT: inventory declares 'old-name' public but it is not observable (deleted, renamed, or made private)",
     ]);
+  });
+});
+
+describe("buildOrgRepositoriesQuery", () => {
+  test("omits the after argument on the first page", () => {
+    const query = buildOrgRepositoriesQuery("libre-ai", null);
+    expect(query).toContain('organization(login: "libre-ai")');
+    expect(query).toContain("repositories(first: 100)");
+    expect(query).not.toContain("after:");
+  });
+
+  test("carries the cursor for a subsequent page", () => {
+    const query = buildOrgRepositoriesQuery("libre-ai", "cursor-abc");
+    expect(query).toContain('repositories(first: 100, after: "cursor-abc")');
+  });
+});
+
+describe("parseOrgRepositoriesPage", () => {
+  test("reads nodes and pagination info from a well-formed page", () => {
+    const page = parseOrgRepositoriesPage({
+      organization: {
+        repositories: {
+          pageInfo: { hasNextPage: true, endCursor: "next" },
+          nodes: [{ name: "governance", isPrivate: false }],
+        },
+      },
+    });
+    expect(page).toEqual({
+      nodes: [{ name: "governance", isPrivate: false }],
+      hasNextPage: true,
+      endCursor: "next",
+    });
+  });
+
+  test("returns null when the response lacks the expected shape, distinct from a real empty page", () => {
+    expect(parseOrgRepositoriesPage({ organization: null })).toBeNull();
+    expect(parseOrgRepositoriesPage({})).toBeNull();
+  });
+
+  test("reads a real empty last page as zero repositories, not null", () => {
+    const page = parseOrgRepositoriesPage({
+      organization: {
+        repositories: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] },
+      },
+    });
+    expect(page).toEqual({ nodes: [], hasNextPage: false, endCursor: null });
+  });
+
+  test("drops a malformed node instead of throwing", () => {
+    const page = parseOrgRepositoriesPage({
+      organization: {
+        repositories: {
+          pageInfo: { hasNextPage: false, endCursor: null },
+          nodes: [{ name: "ok", isPrivate: true }, null, { name: "bad" }],
+        },
+      },
+    });
+    expect(page?.nodes).toEqual([{ name: "ok", isPrivate: true }]);
   });
 });

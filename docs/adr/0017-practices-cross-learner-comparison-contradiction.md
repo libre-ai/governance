@@ -1,11 +1,11 @@
 # ADR-0017 — Contradiction sur la comparaison inter-apprenants (Practices)
 
-- **Statut :** proposed — question ouverte ; aucune option n'est retenue par cet ADR
+- **Statut :** accepted — Option A retenue, par constat de fait plutôt que par abrogation active (voir §Résolution)
 - **Date :** 2026-07-25
-- **Arbitrage :** en attente de décision propriétaire. Cet ADR formule la question et ses options avec leurs conséquences ; il ne tranche pas.
+- **Arbitrage :** propriétaire le 2026-08-18 — phase produits anticipée par ADR-0023 §2.5 (« fond arbitré en phase produits de la remise à plat 2026-08 »). Clôture sur l'option A sans réinstruire la thèse pédagogique de l'ADR-0009 de l'autre dépôt : l'artefact qui portait cette thèse a cessé d'exister sur toute branche par défaut avant même cet arbitrage (voir §Résolution). Owner-arbitration: 2026-08-18
 - **Portée :** spécification produit Practices — `docs/apps/practices.md`, `contracts/openapi/practices.v1.yaml`, garde-fou `tools/quality/check-no-transmission.ts`
 - **Origine :** revue du 2026-07-25 d'une branche locale jamais poussée du dépôt `ai-practices`, dont l'archivage a fait apparaître une contradiction entre deux artefacts ratifiés vivants.
-- **Frontière de contexte :** `libre-ai/ai-practices` est un dépôt **distinct et gelé**. Cet ADR vit dans le monorepo, qui est la vérité produit ; il **ne modifie rien** dans l'autre dépôt et n'établit aucune couture entre les deux.
+- **Frontière de contexte :** `libre-ai/ai-practices` est un dépôt **distinct**, actif depuis le dégel général (ADR-0023 §2.2 ; `ecosystem/repositories.v1.yaml`, `lifecycle: active` — il n'est plus « gelé » comme au moment où cet ADR a été ouvert). Cet ADR vit dans le monorepo, qui est la vérité produit ; il **ne modifie rien** dans l'autre dépôt et n'établit aucune couture entre les deux, y compris à sa clôture.
 
 ## Contexte
 
@@ -58,6 +58,26 @@ Laisser l'ADR de l'autre dépôt dormant, borné à ce dépôt gelé, et inscrir
 - **Ce qu'elle apporte :** aucune modification de spécification, aucun desserrage de garde-fou, et une décision prise au moment où l'état réel du produit l'informe. Practices est aujourd'hui arrêté à un incrément sans surface d'entrée ni réseau, et les éléments de preuve attendus par l'inventaire portent sur d'autres fonctions.
 - **Ce qu'elle coûte :** la contradiction demeure latente entre deux documents publics, et se représentera mécaniquement à l'activation.
 
-## Ce que cet ADR ne tranche pas
+## Résolution (2026-08-18)
 
-Aucune option n'est retenue. Aucun non-objectif n'est réécrit, aucun garde-fou n'est desserré, aucun statut d'ADR n'est modifié dans un autre dépôt par le présent document. La question de savoir si « v1 » qualifie une phase ou un principe durable est elle-même une part de l'arbitrage, et non un acquis de cet ADR.
+Option A est retenue — non par un nouvel acte d'abrogation, mais par constat : l'artefact qui contredisait le non-objectif du monorepo n'existe plus sur aucune branche par défaut, nulle part.
+
+Vérifié dans `libre-ai/ai-practices` :
+
+- `docs/adrs/0009-cohorte-per-item-k-anon.md` est absent de l'arbre courant (`git ls-tree -r origin/main --name-only | grep 0009` ne renvoie rien). Il a été retiré de l'arbre de travail par le commit `f172adc` (« chore: retire the frozen-home legacy tree from the working tree », 2026-07-30), dont le message précise que l'implémentation pré-refonte (crates Rust, pipeline de contenu, schémas, `apps/web`) reste accessible dans l'historique du dépôt, mais que l'arbre de travail ne porte désormais que le contenu greffé du hub.
+- Le fichier survit uniquement dans l'historique git et sous quatre tags d'archive : `archive/local-branch/feat/consolidate-prototype`, `archive/local-branch/feat/cos-rebuild-i9`, `archive/local-branch/fix/pr9-green`, `archive/local-branch/fix/pr9-spec-reality`. Il n'est plus sur une branche par défaut publique.
+- Au commit `85c2cb6` (« Merge the hub content graft — general activation (ADR-0020, γ 3.5) »), `docs/adrs/0009-cohorte-per-item-k-anon.md` et `docs/apps/practices.md` coexistaient dans le même arbre, dans le même dépôt (`git ls-tree -r 85c2cb6 --name-only` liste les deux chemins). `f172adc` est le commit immédiatement suivant (`git log --oneline 85c2cb6..f172adc` ne liste que lui). Les deux dépôts que cet ADR opposait ont donc été, le temps d'un commit, le même dépôt — et l'arbre lui-même a refermé la contradiction un commit plus tard, en faveur du non-objectif de `docs/apps/practices.md`, en retirant le fichier ADR-0009, et non l'inverse.
+
+Aucune action n'est requise ni prise dans `ai-practices` par cette clôture : il n'y a plus rien à y abroger, la séquence greffe-puis-nettoyage l'a déjà fait, à un commit d'écart. Le non-objectif de `docs/apps/practices.md` (« no cross-learner comparison », « v1 stores no learner aggregate on the server ») reste donc en vigueur sans qualification — l'option B (qualifier le non-objectif, ouvrir une exception motivée au garde-fou local-only) et l'option C (statu quo documenté jusqu'à la vague 4) ne sont pas retenues.
+
+**Note prospective, non décisionnelle.** À N > 1 apprenants, la thèse pédagogique que portait l'ADR-0009 de l'autre dépôt (montrer que le piège touche une majorité, pour déculpabiliser l'apprenant) resterait atteignable sans rouvrir le garde-fou local-only : par un agrégat **pré-calculé statiquement, hors ligne, approuvé éditorialement** — une métadonnée de contenu curée, livrée avec une version révisée et relue de l'activité, et non une requête serveur en direct sur les réponses des apprenants. `tools/quality/check-no-transmission.ts` reste fail-closed ; aucune route réseau de session ou de réponse n'est ajoutée par cette note. Ceci n'est pas une décision et n'approuve rien : c'est un pointeur pour quiconque rouvrirait la question si la population d'apprenants dépasse effectivement un — cela nécessiterait son propre ADR futur.
+
+## Ce que cet ADR ne tranchait pas (avant clôture)
+
+Pour mémoire du débat original : jusqu'à sa clôture ci-dessus, cet ADR n'avait lui-même réécrit aucun non-objectif, desserré aucun garde-fou, ni modifié aucun statut d'ADR dans un autre dépôt — la clôture de 2026-08-18 (§Résolution) reste de cette nature : un constat de fait, pas un acte de ce type. La question de savoir si « v1 » qualifiait une phase ou un principe durable n'est pas tranchée en tant que telle par cet ADR ; elle cesse seulement d'être bloquante ici, la contradiction qui la rendait urgente ayant disparu par ailleurs. La seule voie identifiée pour la rouvrir est la note prospective de la Résolution.
+
+## Invariant
+
+No invariant — this ADR records the factual dissolution of a contradiction
+(the conflicting artefact left the working tree on 2026-07-30); it creates no
+durable doctrine beyond that record.

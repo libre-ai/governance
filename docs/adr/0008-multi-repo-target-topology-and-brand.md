@@ -32,6 +32,12 @@ L'audit source-de-vérité du 2026-07-19 a établi que la doctrine de projection
 - les phases G0–G4 et la discipline work-packages sont inchangées ; G5 publie packages, documentation, packs et active les repositories produits sur décision propriétaire ;
 - le site vit en `apps/website` et se déploie sur la cible runtime ; il n'a pas de repository dédié.
 
+Backfill (2026-08-18, Domain I — Process & CI) : le présent ADR est déjà,
+dans `docs/decisions/INVARIANTS.md`, la source de I-01 (marque, point 6
+ci-dessus) et de I-04 (noms de repository, point 2, amendé 2026-07-23) —
+cette note rend cette citation lisible depuis l'ADR lui-même, elle n'ajoute
+aucun invariant nouveau.
+
 ## Annexe non normative — noms candidats
 
 - Plateforme/preuve : `ui`, `proof`, `artifacts`.

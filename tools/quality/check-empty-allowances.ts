@@ -27,6 +27,26 @@ export const DECLARED_ALLOWANCES: readonly Allowance[] = [
     because:
       "no apps/, crates/ or packages/ family lives in this repository since the ADR-0020 dispatch — the guard travels with the families it protects",
   },
+  {
+    file: "tools/quality/check-review-evidence.ts",
+    because:
+      "most pull requests do not touch docs/adr/**, docs/decisions/INVARIANTS.md or docs/decisions/DECISION-REGISTER.md — asserting nothing on those runs is the truth, not a silenced gate (it also allows-empty on non-pull_request runs, where no PR diff or description exists to inspect)",
+  },
+  {
+    file: "tools/quality/check-kernel-status-authority.ts",
+    because:
+      "defensive only: with three declared file allowances always present in this repository, the scan can never legitimately find zero markdown files to check — the branch exists so a future repository restructuring that empties the glob fails loudly instead of silently, not because it fires today",
+  },
+  {
+    file: "tools/skills/check-skills.ts",
+    because:
+      "the skills/ directory travels with the collection ADR-0025 admits — a repository state before the first skill is admitted, or after every skill is deprecated, legitimately holds zero <name>/SKILL.md to lint",
+  },
+  {
+    file: "tools/skills/check-skills-routing.ts",
+    because:
+      "same absence as check-skills.ts, plus a second legitimate empty state: pairwise description overlap needs at least 2 routable skills to compare, so a collection admitting its first skill correctly asserts nothing on that half of T2",
+  },
 ];
 
 const SCANNED_DIRECTORIES = ["tools", "ecosystem"];

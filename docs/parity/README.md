@@ -11,6 +11,15 @@ specs.**
 
 ## audits/ — benchmark parity audits (8 products)
 
+**Statut de calibrage (2026-08-18, ADR-0027) :** les huit audits mesurent
+tous une spec, jamais du code livré — requalifiés « spec-baseline, non
+opposable » jusqu'à ré-exécution. Aucun `promotion_criteria`/`kill_predicate`
+de fiche produit ne peut s'appuyer sur eux avant cette ré-exécution ni avant
+le jalon dogfooding du produit ; la cible v1 opposable est le MVP que chaque
+audit recommande lui-même (ex. Radar : 32/105, pas les 70/105 que sa fiche
+fixe aujourd'hui), l'étalon complet devenant l'horizon `proven`. Voir
+`docs/adr/0027-parity-gates-fire-only-after-dogfooding.md`.
+
 | File                               | Product → benchmark             | Parité              |
 | ---------------------------------- | ------------------------------- | ------------------- |
 | `PARITY-notebook-siyuan.md`        | Notebook → SiYuan               | 29/143              |
@@ -32,6 +41,11 @@ candidate CDC amendments (owner-signed).
   board; benchmark Multica + Linear).
 - `DRAFT-SPEC-memory.md` — Polaris memory service (benchmark Letta/Mem0/Zep;
   K1/K2/K3 invariants).
+- `DRAFT-SPEC-source-ingestion.md` — Sessions' `AttachSource` capability
+  (owner decision 2026-08-18 to reopen the design after the 2026-07-30
+  retirement of its Rust predecessor); topology, contract and K2/K3
+  neutralization boundary, plus a module-by-module reuse verdict on the
+  retired history.
 - `DRAFT-SPEC-ui.md`, `DRAFT-SPEC-auth-web.md` — layer-4 bricks elevated
   (Radix/shadcn ; Auth.js/Ory).
 - `DRAFT-SPEC-provenance-proof.md`, `DRAFT-SPEC-envelope.md` — layer-3 trust

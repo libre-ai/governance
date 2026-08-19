@@ -1,5 +1,11 @@
 # ADR-0004 — Specification Lock de l’orchestration agentique option B
 
+> **Collision de numéro.** `docs/adr/0004-licensing-governance.md` porte
+> aussi le numéro ADR-0004 (les deux datés du 2026-07-17, tous deux
+> `accepted`). Le contenu des deux ADR n'est pas remis en cause par cette
+> note ; la résolution — renumérotation ou non — relève de la remise à plat
+> de la numérotation en cours et n'est pas tranchée ici.
+
 - **Statut :** accepted — promotion-integration approuvée sur `88f9422`
 - **Date :** 2026-07-17
 - **Portée :** contrats Missions v2, Agent Orchestrator, Agent Harness et autorisation Biscuit
