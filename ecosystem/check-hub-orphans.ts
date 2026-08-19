@@ -76,73 +76,214 @@ function delay(ms: number): Promise<void> {
 }
 
 interface GhFetchResult {
-  readonly lines: string[] | null;
+  readonly text: string | null;
   readonly error: string | null;
 }
 
-/** Three fixed requests total (hub tree, migration index, FORGOTTEN.yaml) — a retried REST call is enough, no GraphQL batch needed. */
-async function linesOfWithRetry(spawn: readonly string[]): Promise<GhFetchResult> {
+/**
+ * REST fallback, retried, used only when the GraphQL paths below cannot be
+ * answered at all — the shared installation REST quota was observed
+ * exhausted even for a single fixed call (2026-08-19, same CI job,
+ * ecosystem/check-migration-drift.ts's hub-index read), so "three fixed
+ * requests" does not exempt this file from the same GraphQL escape as the
+ * fleet-wide sweeps beside it in the same CI job.
+ */
+async function ghWithRetry(args: readonly string[]): Promise<GhFetchResult> {
   let lastError = "";
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-    const result = Bun.spawnSync([...spawn], { stdout: "pipe", stderr: "pipe" });
+    const result = Bun.spawnSync(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
     if (result.exitCode === 0) {
-      return {
-        lines: new TextDecoder()
-          .decode(result.stdout)
-          .split("\n")
-          .filter((l) => l.length > 0),
-        error: null,
-      };
+      return { text: new TextDecoder().decode(result.stdout), error: null };
     }
     const stderr = new TextDecoder().decode(result.stderr).trim();
-    lastError = stderr || `${spawn.join(" ")} failed (exit ${result.exitCode})`;
+    if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
+    lastError = stderr || `gh ${args.join(" ")} failed (exit ${result.exitCode})`;
     const wait = RETRY_DELAYS_MS[attempt];
     if (wait !== undefined) await delay(wait);
   }
-  return { lines: null, error: lastError };
+  return { text: null, error: lastError };
 }
 
-if (import.meta.main) {
-  const hubPathsResult = await linesOfWithRetry([
-    "gh",
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+/** GraphQL primary for a single blob, REST+retry fallback — same shape as this file's neighbors. */
+async function fetchBlobWithFallback(path: string): Promise<GhFetchResult> {
+  const expression = JSON.stringify(`main:${path}`);
+  const query = `query { repository(owner: "libre-ai", name: "libre-ai") { object(expression: ${expression}) { ... on Blob { text } } } }`;
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as {
+        data?: { repository?: { object?: { text?: string | null } | null } | null };
+      };
+      const repository = parsed.data?.repository;
+      if (repository !== undefined && repository !== null) {
+        return { text: repository.object?.text ?? null, error: null };
+      }
+    } catch {
+      // fall through to retry/backoff
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(
+    `GraphQL blob fetch failed after retries for libre-ai/libre-ai:${path}, falling back to REST: ${lastError}`,
+  );
+  return ghWithRetry([
     "api",
-    "repos/libre-ai/libre-ai/git/trees/main?recursive=1",
+    `repos/libre-ai/libre-ai/contents/${path}?ref=main`,
+    "-H",
+    "Accept: application/vnd.github.raw+json",
+  ]);
+}
+
+// --- Recursive hub tree, via a breadth-first GraphQL walk — same pattern
+// as ecosystem/check-migration-drift.ts (no direct GraphQL equivalent of
+// REST's git/trees?recursive=1; one query per depth level, batching every
+// directory discovered at that depth).
+
+interface TreeWaveEntry {
+  readonly name: string;
+  readonly type: string;
+}
+
+function waveAlias(index: number): string {
+  return `dir${index}`;
+}
+
+export function buildTreeWaveQuery(ref: string, directories: readonly string[]): string {
+  const fields = directories.map((dir, index) => {
+    const expression = JSON.stringify(dir === "" ? `${ref}:` : `${ref}:${dir}`);
+    return `    ${waveAlias(index)}: object(expression: ${expression}) { ... on Tree { entries { name type } } }`;
+  });
+  return [
+    `query {`,
+    `  repository(owner: "libre-ai", name: "libre-ai") {`,
+    ...fields,
+    `  }`,
+    `}`,
+  ].join("\n");
+}
+
+export function parseTreeWaveResponse(
+  directories: readonly string[],
+  data: Readonly<Record<string, unknown>> | undefined,
+): Map<string, readonly TreeWaveEntry[]> | null {
+  const repository = data?.repository as Record<string, unknown> | null | undefined;
+  if (repository === undefined || repository === null) return null;
+  const result = new Map<string, readonly TreeWaveEntry[]>();
+  directories.forEach((dir, index) => {
+    const node = repository[waveAlias(index)] as
+      | { entries?: readonly TreeWaveEntry[] }
+      | null
+      | undefined;
+    result.set(dir, node?.entries ?? []);
+  });
+  return result;
+}
+
+async function fetchTreeWave(
+  ref: string,
+  directories: readonly string[],
+): Promise<Map<string, readonly TreeWaveEntry[]> | null> {
+  const query = buildTreeWaveQuery(ref, directories);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
+      if (parsed.data !== undefined) {
+        const wave = parseTreeWaveResponse(directories, parsed.data);
+        if (wave !== null) return wave;
+      }
+    } catch {
+      // fall through to retry/backoff
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(`GraphQL tree wave fetch failed after retries for libre-ai/libre-ai: ${lastError}`);
+  return null;
+}
+
+const MAX_TREE_WAVES = 30; // safety cap: 30 directory levels is far beyond any real repository
+
+async function hubTreePathsViaGraphQL(ref: string): Promise<string[] | null> {
+  const result: string[] = [];
+  let frontier: string[] = [""];
+  for (let wave = 0; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
+    const waveResult = await fetchTreeWave(ref, frontier);
+    if (waveResult === null) return null;
+    const nextFrontier: string[] = [];
+    for (const dir of frontier) {
+      for (const entry of waveResult.get(dir) ?? []) {
+        const fullPath = dir === "" ? entry.name : `${dir}/${entry.name}`;
+        if (entry.type === "blob") result.push(fullPath);
+        else if (entry.type === "tree") nextFrontier.push(fullPath);
+      }
+    }
+    frontier = nextFrontier;
+  }
+  return result;
+}
+
+async function hubTreePathsViaRest(ref: string): Promise<GhFetchResult> {
+  return ghWithRetry([
+    "api",
+    `repos/libre-ai/libre-ai/git/trees/${ref}?recursive=1`,
     "--jq",
     '.tree[] | select(.type == "blob") | .path',
   ]);
-  if (hubPathsResult.lines === null) {
-    console.error(`unable to verify the hub tree — ${hubPathsResult.error}`);
-    process.exit(1);
+}
+
+if (import.meta.main) {
+  const viaGraphQL = await hubTreePathsViaGraphQL("main");
+  let hubPaths: string[];
+  if (viaGraphQL !== null) {
+    hubPaths = viaGraphQL;
+  } else {
+    const rest = await hubTreePathsViaRest("main");
+    if (rest.text === null) {
+      console.error(`unable to verify the hub tree — ${rest.error ?? "not found at main"}`);
+      process.exit(1);
+    }
+    hubPaths = rest.text.split("\n").filter((l) => l.length > 0);
   }
-  const hubPaths = hubPathsResult.lines;
-  const indexResult = await linesOfWithRetry([
-    "gh",
-    "api",
-    "repos/libre-ai/libre-ai/contents/ecosystem/migration-index.v1.yaml?ref=main",
-    "-H",
-    "Accept: application/vnd.github.raw+json",
-  ]);
-  const forgottenResult = await linesOfWithRetry([
-    "gh",
-    "api",
-    "repos/libre-ai/libre-ai/contents/ecosystem/FORGOTTEN.yaml?ref=main",
-    "-H",
-    "Accept: application/vnd.github.raw+json",
-  ]);
-  if (indexResult.lines === null || forgottenResult.lines === null) {
+  const indexResult = await fetchBlobWithFallback("ecosystem/migration-index.v1.yaml");
+  const forgottenResult = await fetchBlobWithFallback("ecosystem/FORGOTTEN.yaml");
+  if (indexResult.text === null || forgottenResult.text === null) {
     console.error(
-      `unable to verify the hub registers — index: ${indexResult.error ?? "ok"}; forgotten: ${forgottenResult.error ?? "ok"}`,
+      `unable to verify the hub registers — index: ${indexResult.error ?? "not found at main"}; forgotten: ${forgottenResult.error ?? "not found at main"}`,
     );
     process.exit(1);
   }
-  const indexText = indexResult.lines;
-  const forgottenText = forgottenResult.lines;
+  const indexText = indexResult.text;
+  const forgottenText = forgottenResult.text;
   const yamlApi = (Bun as unknown as { YAML: { parse(t: string): unknown } }).YAML;
-  const index = yamlApi.parse(indexText.join("\n")) as {
+  const index = yamlApi.parse(indexText) as {
     entries: readonly { hub_path: string }[];
     replacements: readonly { hub_paths: readonly string[] }[];
   };
-  const forgotten = yamlApi.parse(forgottenText.join("\n")) as {
+  const forgotten = yamlApi.parse(forgottenText) as {
     entries?: readonly { evicted_paths?: readonly string[] }[];
   };
   const report = findOrphans(
