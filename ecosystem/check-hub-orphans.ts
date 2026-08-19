@@ -230,7 +230,8 @@ const MAX_TREE_WAVES = 30; // safety cap: 30 directory levels is far beyond any 
 async function hubTreePathsViaGraphQL(ref: string): Promise<string[] | null> {
   const result: string[] = [];
   let frontier: string[] = [""];
-  for (let wave = 0; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
+  let wave = 0;
+  for (; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
     const waveResult = await fetchTreeWave(ref, frontier);
     if (waveResult === null) return null;
     const nextFrontier: string[] = [];
@@ -242,6 +243,19 @@ async function hubTreePathsViaGraphQL(ref: string): Promise<string[] | null> {
       }
     }
     frontier = nextFrontier;
+  }
+  if (wave === MAX_TREE_WAVES && frontier.length > 0) {
+    // The walk exhausted its depth budget with directories still
+    // unprocessed: `result` is a real but TRUNCATED subset, indistinguishable
+    // from the complete hub tree to any caller that just reads the array —
+    // a silent-partial-result failure this gate exists to prevent (a
+    // truncated listing could hide a real orphan as covered, or the reverse).
+    // Never return it. `null` routes through the same path as any other
+    // GraphQL failure: the REST fallback below, which has no depth limit.
+    console.error(
+      `GraphQL tree walk for libre-ai/libre-ai@${ref} exceeded ${MAX_TREE_WAVES} directory levels — unable to verify via GraphQL (tree deeper than ${MAX_TREE_WAVES} levels), falling back to REST`,
+    );
+    return null;
   }
   return result;
 }

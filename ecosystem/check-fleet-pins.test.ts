@@ -3,6 +3,7 @@ import {
   auditRepository,
   buildFleetPinsQuery,
   collectSightings,
+  hasUsableGraphQLData,
   parseFleetPinsBatchResponse,
   parseFleetPinsRepoNode,
   type RepositorySources,
@@ -353,5 +354,25 @@ describe("parseFleetPinsBatchResponse", () => {
     expect("error" in (result.get("libre-ai/governance") as object)).toBe(false);
     const gone = result.get("libre-ai/gone");
     expect(gone && "error" in gone).toBe(true);
+  });
+});
+
+describe("hasUsableGraphQLData", () => {
+  test("rejects a top-level rate-limit rejection — data: null alongside errors[]", () => {
+    expect(hasUsableGraphQLData({ data: null, errors: [{ type: "RATE_LIMITED" }] })).toBe(false);
+  });
+
+  test("rejects a response with no data key at all", () => {
+    expect(hasUsableGraphQLData({ errors: [{ type: "SOME_ERROR" }] })).toBe(false);
+    expect(hasUsableGraphQLData({})).toBe(false);
+  });
+
+  test("rejects a non-object body", () => {
+    expect(hasUsableGraphQLData(null)).toBe(false);
+    expect(hasUsableGraphQLData(undefined)).toBe(false);
+  });
+
+  test("accepts a real data payload", () => {
+    expect(hasUsableGraphQLData({ data: { repo0: {} } })).toBe(true);
   });
 });

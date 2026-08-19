@@ -393,7 +393,8 @@ async function treeOfViaGraphQL(
   const { owner, name } = splitRepository(repository);
   const result = new Map<string, string>();
   let frontier: string[] = [""];
-  for (let wave = 0; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
+  let wave = 0;
+  for (; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
     const waveResult = await fetchTreeWave(owner, name, ref, frontier);
     if (waveResult === null) return null;
     const nextFrontier: string[] = [];
@@ -407,6 +408,20 @@ async function treeOfViaGraphQL(
       }
     }
     frontier = nextFrontier;
+  }
+  if (wave === MAX_TREE_WAVES && frontier.length > 0) {
+    // The walk exhausted its depth budget with directories still
+    // unprocessed: `result` is a real but TRUNCATED subset, indistinguishable
+    // from a complete tree to any caller that just reads the Map — exactly
+    // the silent-partial-result failure mode this file's own docstring
+    // describes avoiding for compareTrees. Never return it. `null` routes
+    // through the same path as any other GraphQL failure: treeOf's REST
+    // fallback, which has no depth limit and answers correctly; if REST
+    // also cannot answer, its own honest "unable to verify" propagates.
+    console.error(
+      `GraphQL tree walk for ${repository}@${ref} exceeded ${MAX_TREE_WAVES} directory levels — unable to verify via GraphQL (tree deeper than ${MAX_TREE_WAVES} levels), falling back to REST`,
+    );
+    return null;
   }
   return result;
 }

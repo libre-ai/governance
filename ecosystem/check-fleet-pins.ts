@@ -359,6 +359,23 @@ export function parseFleetPinsBatchResponse(
   return result;
 }
 
+/**
+ * Pure: does this parsed `gh api graphql` response body carry a usable
+ * `data` payload? False for a top-level rejection (`{"data": null,
+ * "errors": [...]}` — the documented shape of a rate-limited/quota-exhausted
+ * response), a response with no `data` key at all, or a non-object body.
+ * Accepting `data: null` as success would hand `null` to
+ * parseFleetPinsBatchResponse, which reads it as "every repository
+ * unresolved" in one pass with no retry and no REST fallback.
+ */
+export function hasUsableGraphQLData(
+  parsed: unknown,
+): parsed is { readonly data: Record<string, unknown> } {
+  if (typeof parsed !== "object" || parsed === null) return false;
+  const data = (parsed as { readonly data?: unknown }).data;
+  return typeof data === "object" && data !== null;
+}
+
 /** `null` means the whole batch could not be answered at all — caller falls back to REST, never assumes empty sources. */
 async function fetchFleetPinSourcesViaGraphQL(
   targets: readonly FleetPinTarget[],
@@ -368,10 +385,12 @@ async function fetchFleetPinSourcesViaGraphQL(
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
     try {
-      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
-      if (parsed.data !== undefined) return parseFleetPinsBatchResponse(targets, parsed.data);
+      const parsed: unknown = JSON.parse(stdout);
+      if (hasUsableGraphQLData(parsed)) {
+        return parseFleetPinsBatchResponse(targets, parsed.data);
+      }
     } catch {
-      // Not valid JSON (or no `data` key) — fall through to retry/backoff.
+      // Not valid JSON — fall through to retry/backoff.
     }
     lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
     const wait = RETRY_DELAYS_MS[attempt];
