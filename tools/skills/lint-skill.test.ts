@@ -59,6 +59,25 @@ describe("parseFrontmatter", () => {
     if ("error" in parsed) return;
     expect(parsed.frontmatter.description).toBe("Use when: this happens.");
   });
+
+  test("rejects a folded (multi-line) scalar instead of silently minting a bogus key", () => {
+    // Reproduces the adversarial-review finding: a description wrapped onto
+    // a second, indented line whose continuation happens to contain a colon
+    // used to parse as its own top-level key ("Use when: ..."), silently
+    // truncating the real description to its first line. It must now fail
+    // loud instead.
+    const parsed = parseFrontmatter(
+      "---\nname: foo\ndescription: Point to the thing.\n  Use when: this happens.\n---\nBody\n",
+    );
+    expect("error" in parsed).toBe(true);
+    if (!("error" in parsed)) return;
+    expect(parsed.error).toContain("multi-line scalars are not supported");
+  });
+
+  test("rejects a tab-indented continuation line the same way", () => {
+    const parsed = parseFrontmatter("---\nname: foo\n\tdescription: bar\n---\nBody\n");
+    expect("error" in parsed).toBe(true);
+  });
 });
 
 describe("bodyLineCount", () => {

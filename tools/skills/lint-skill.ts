@@ -41,6 +41,19 @@ export function parseFrontmatter(source: string): ParsedSkillFile | FrontmatterE
   const frontmatter: Record<string, string> = {};
   for (const line of lines.slice(1, closingIndex)) {
     if (line.trim() === "") continue;
+    // A real top-level key always starts at column 0 in this flat-scalar
+    // format (see the parser's doc comment). A line that starts with
+    // whitespace is a YAML folded/continuation line for the previous key —
+    // unsupported here. Silently indexOf(":")-parsing it as its own key
+    // would, for a continuation that happens to contain a colon (e.g. "Use
+    // when: X" wrapped onto its own line), plant a bogus key while quietly
+    // truncating the real field's value to its first line. Fail loud
+    // instead of folding it wrong.
+    if (/^\s/.test(line)) {
+      return {
+        error: `multi-line scalars are not supported in skill frontmatter — put the whole value on one line: "${line}"`,
+      };
+    }
     const separatorIndex = line.indexOf(":");
     if (separatorIndex === -1) {
       return { error: `malformed frontmatter line (no ":"): "${line}"` };

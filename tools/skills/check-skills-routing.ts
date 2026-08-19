@@ -119,6 +119,18 @@ const SUFFIXES: readonly string[] = [
   "s",
 ];
 
+// Known false stem, left uncorrected on purpose (adversarial review,
+// 2026-08-19): "apply" ends in the letters "ly" by coincidence, not as an
+// adverb suffix, so it strips to "app" instead of staying "apply" (or
+// stemming to "appl" alongside "applies"/"applying"). Fixing the general
+// case (distinguishing a real "-ly" adverb from a verb that merely ends in
+// those two letters) needs part-of-speech context this suffix-stripper does
+// not have — the fix would be a smaller, still-heuristic special case, not a
+// real correction. Left as documented debt because it has no effect on this
+// gate's real corpus (no admitted skill description or eval trigger turns on
+// "apply" ranking correctly against another term), and per Match the Form to
+// the Failure (docs/method/SKILLS-ANATOMY.md's source corpus): don't harden
+// a rule against a failure nothing in the real corpus exercises.
 /** Lightweight suffix-stripping stemmer — see module doc for what it is not. */
 export function stem(token: string): string {
   const lower = token.toLowerCase();
@@ -132,6 +144,12 @@ export function stem(token: string): string {
   return lower;
 }
 
+// Tokenization assumes ASCII words (`[a-z0-9]` after lowercasing, plus
+// internal hyphen/apostrophe) because every skill's frontmatter `description`
+// is required to be English (ADR-0025 D6) — there is no accented or non-Latin
+// text in this gate's real input to normalize. A body written in French
+// (most of this collection's SKILL.md bodies) never reaches this function:
+// only the frontmatter description is tokenized for routing, never the body.
 export function tokenize(text: string): string[] {
   const words = text.toLowerCase().match(/[a-z0-9]+(?:[-'][a-z0-9]+)*/g) ?? [];
   return words.filter((word) => word.length > 1 && !STOPWORDS.has(word)).map(stem);
@@ -255,6 +273,11 @@ export interface Rank1Check {
   readonly ok: boolean;
   readonly winner: RankedSkill | undefined;
   readonly targetScore: number;
+  /** True when a second skill scores exactly the winner's score — the rank-1
+   *  call then rests on array/alphabetical order (`rankForQuery`'s stable
+   *  sort), not on a real signal, and the report note should say so rather
+   *  than imply the winner earned first place outright. */
+  readonly tied: boolean;
 }
 
 /** Positive trigger: the target skill must rank first, above the floor. */
@@ -266,7 +289,9 @@ export function checkPositiveTrigger(
   const winner = ranking[0];
   const targetScore = ranking.find((entry) => entry.name === target)?.score ?? 0;
   const ok = winner?.name === target && targetScore >= floor;
-  return { ok, winner, targetScore };
+  const tied =
+    winner !== undefined && ranking.filter((entry) => entry.score === winner.score).length > 1;
+  return { ok, winner, targetScore, tied };
 }
 
 function readRank1Floor(): number {
@@ -334,7 +359,18 @@ async function main(): Promise<void> {
 
     const evalPath = `${skillsRoot}/${dir}/eval.json`;
     if (existsSync(evalPath)) {
-      const raw = (await Bun.file(evalPath).json()) as { positive?: unknown };
+      let raw: { positive?: unknown };
+      try {
+        raw = (await Bun.file(evalPath).json()) as { positive?: unknown };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        report.check(
+          evalPath,
+          false,
+          `invalid JSON (${message}) — rank-1 routing cannot be checked (see T1)`,
+        );
+        continue;
+      }
       const positive = Array.isArray(raw.positive)
         ? raw.positive.filter((v): v is string => typeof v === "string")
         : [];
@@ -358,7 +394,7 @@ async function main(): Promise<void> {
       } else if (pair.similarity >= PAIRWISE_WARNING_THRESHOLD) {
         const note = `${percent}% cosine overlap >= ${PAIRWISE_WARNING_THRESHOLD * 100}% warning band — descriptions are close, consider rewriting`;
         report.check(`overlap ${pair.a} <-> ${pair.b}`, true, note);
-        console.warn(`Skills routing (T2) warning: ${pair.a} <-> ${pair.b}: ${note}`);
+        console.warn(`::warning::Skills routing (T2): ${pair.a} <-> ${pair.b}: ${note}`);
       } else {
         report.check(`overlap ${pair.a} <-> ${pair.b}`, true, `${percent}% cosine overlap`);
       }
@@ -381,12 +417,13 @@ async function main(): Promise<void> {
       triggers.forEach((trigger, index) => {
         const ranking = rankForQuery(trigger, corpus);
         const result = checkPositiveTrigger(skill.name, ranking, floor);
+        const tiedSuffix = result.tied ? " (tied)" : "";
         report.check(
           `${skill.name} — positive trigger ${index + 1}`,
           result.ok,
           result.ok
-            ? `rank-1 "${skill.name}" at ${result.targetScore.toFixed(3)} (floor ${floor}): "${truncateTrigger(trigger)}"`
-            : `expected rank-1 "${skill.name}" (>= floor ${floor}), got "${result.winner?.name ?? "none"}" at ${(result.winner?.score ?? 0).toFixed(3)}, "${skill.name}" scored ${result.targetScore.toFixed(3)}: "${truncateTrigger(trigger)}"`,
+            ? `rank-1 "${skill.name}" at ${result.targetScore.toFixed(3)}${tiedSuffix} (floor ${floor}): "${truncateTrigger(trigger)}"`
+            : `expected rank-1 "${skill.name}" (>= floor ${floor}), got "${result.winner?.name ?? "none"}" at ${(result.winner?.score ?? 0).toFixed(3)}${tiedSuffix}, "${skill.name}" scored ${result.targetScore.toFixed(3)}: "${truncateTrigger(trigger)}"`,
         );
       });
     }
