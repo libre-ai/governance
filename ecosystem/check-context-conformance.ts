@@ -556,6 +556,25 @@ async function ghGraphQLRaw(
  * genuine transport/rate-limit/auth failure — is retried, twice, before
  * this returns `null` and the caller falls back to `fetchFleetViaRest`.
  */
+/**
+ * Pure: does this parsed `gh api graphql` response body carry a usable
+ * `data` payload? False for a top-level rejection (`{"data": null,
+ * "errors": [...]}` — the documented shape of a rate-limited/quota-exhausted
+ * response: `data` is present, just explicitly `null`), a response with no
+ * `data` key at all, or a non-object body. Treating `data: null` as success
+ * would hand `null` to parseBatchResponse, which reads it as "every
+ * repository unresolved" in one pass with no retry and no REST fallback —
+ * the exact class of incident this file's retry logic exists to prevent,
+ * moved from the REST 403 to the GraphQL top-level error.
+ */
+export function hasUsableGraphQLData(
+  parsed: unknown,
+): parsed is { readonly data: Record<string, unknown> } {
+  if (typeof parsed !== "object" || parsed === null) return false;
+  const data = (parsed as { readonly data?: unknown }).data;
+  return typeof data === "object" && data !== null;
+}
+
 async function fetchFleetViaGraphQL(
   repositories: readonly string[],
 ): Promise<Map<string, FleetRepoResult> | null> {
@@ -564,10 +583,12 @@ async function fetchFleetViaGraphQL(
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
     try {
-      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
-      if (parsed.data !== undefined) return parseBatchResponse(repositories, parsed.data);
+      const parsed: unknown = JSON.parse(stdout);
+      if (hasUsableGraphQLData(parsed)) {
+        return parseBatchResponse(repositories, parsed.data);
+      }
     } catch {
-      // Not valid JSON (or no `data` key) — fall through to retry/backoff.
+      // Not valid JSON — fall through to retry/backoff.
     }
     lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
     const wait = RETRY_DELAYS_MS[attempt];

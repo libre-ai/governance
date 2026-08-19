@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   buildFleetPresentationQuery,
   type FetchOutcome,
+  hasUsableGraphQLData,
   parseFleet,
   parseFleetPresentationBatchResponse,
   reviewRepository,
@@ -196,5 +197,25 @@ describe("parseFleetPresentationBatchResponse", () => {
       { repo0: { card: null, readme: { text: "# Demo\n" } } },
     );
     expect(result.get("libre-ai/demo")?.card).toEqual({ text: null, error: null });
+  });
+});
+
+describe("hasUsableGraphQLData", () => {
+  test("rejects a top-level rate-limit rejection — data: null alongside errors[]", () => {
+    expect(hasUsableGraphQLData({ data: null, errors: [{ type: "RATE_LIMITED" }] })).toBe(false);
+  });
+
+  test("rejects a response with no data key at all", () => {
+    expect(hasUsableGraphQLData({ errors: [{ type: "SOME_ERROR" }] })).toBe(false);
+    expect(hasUsableGraphQLData({})).toBe(false);
+  });
+
+  test("rejects a non-object body", () => {
+    expect(hasUsableGraphQLData(null)).toBe(false);
+    expect(hasUsableGraphQLData(undefined)).toBe(false);
+  });
+
+  test("accepts a real data payload", () => {
+    expect(hasUsableGraphQLData({ data: { repo0: {} } })).toBe(true);
   });
 });
