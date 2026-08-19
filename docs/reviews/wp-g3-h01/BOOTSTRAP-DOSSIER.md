@@ -15,6 +15,15 @@
 - **Date :** 2026-08-05. **Implémenteur :** session agent (Claude), plan validé
   propriétaire avant premier Edit.
 
+> **Amendement — 2026-08-19.** Le prononcé décrit ci-dessus n'aura jamais lieu
+> sur `orchestrator#13` : arbitrage propriétaire du 2026-08-19, la pull
+> request est fermée sans merge, la branche `feat/wp-g3-h01-confined-execution`
+> conservée comme base de travail. Le hard-stop ADR-0011 D4 (I-17) est résolu
+> **par migration**, pas par levée — destination `libre-ai/harness`
+> (ADR-0026 §2.2/§2.4). Traçabilité complète : § « Résolution du hard-stop
+> ADR-0011 D4 — 2026-08-19 » et § « Exigences de la re-livraison dans
+> `libre-ai/harness` », en fin de dossier.
+
 ## Ce qui est livré
 
 `crates/agent-harness` dans le repo `orchestrator` (workspace à deux membres),
@@ -32,7 +41,7 @@ cœur pur d'abord, hôte ensuite, TDD strict (rouge observé avant chaque vert) 
 | `host/process.rs`                | spawn confiné : paire Unix anonyme, env vidé, cap d'octets dur, kill au timeout ; plan privilégié (uid dédié + setpriv)                                                | —                                                                                                         |
 | `host/run.rs`                    | le chemin D2 bout-en-bout : résoudre → refuser l'inapplicable → confiner → borner → attester ; `WorkerFault` distinct de la matrice                                    | —                                                                                                         |
 | `verification/agent-harness/`    | garde mécanique : réseau + `std::env` bannis partout, `std::fs`/`std::process` sous `src/host/` seul, allowlist+requiredlist de dépendances, dans `check:capabilities` | —                                                                                                         |
-| `profiles/local-process.v1.json` | profil canonique content-addressed (`de9b3af5…` depuis `f27b3c9`), plateformes Linux seules ; `engine-manifest.v1.json` (`db11edba…`)                                                   | —                                                                                                         |
+| `profiles/local-process.v1.json` | profil canonique content-addressed (`de9b3af5…` depuis `f27b3c9`), plateformes Linux seules ; `engine-manifest.v1.json` (`db11edba…`)                                  | —                                                                                                         |
 
 ## Preuves
 
@@ -147,6 +156,14 @@ lus comme une couverture équivalente à un challenge inter-modèles.
 
 ## Décision demandée au propriétaire
 
+> **Supersédé — 2026-08-19.** Aucune des trois options ci-dessous n'a été
+> retenue. L'arbitrage propriétaire a choisi une quatrième voie, hors du
+> périmètre que ce fork envisageait : migration vers `libre-ai/harness`
+> (ADR-0026), `orchestrator#13` fermée sans merge. Ce qui suit reste comme
+> trace du fork tel qu'il se présentait le 2026-08-05 ; il ne dirige plus la
+> re-livraison — voir § « Exigences de la re-livraison dans
+> `libre-ai/harness` » en fin de dossier.
+
 **Aucun `accept` n'est demandé sur `5bee6a3`** : deux rejets indépendants
 tiennent le prononcé fermé, et l'arrêt dur d'amorçage a donc fait exactement
 son travail — le premier pattern de la couche a été arrêté avant merge par sa
@@ -187,15 +204,15 @@ sept écartés (redites des deux rounds, ou chemin d'échec non établi).
 **Ce que la passe a trouvé, et que les deux rounds adversariaux avaient
 qualifié de « couches pures solides et bien testées » :**
 
-| Défaut | Preuve |
-| --- | --- |
-| le matcher de globs découpait un segment à des offsets d'octets : `café.txt` jugé contre `*.txt` **paniquait** au lieu de refuser | `start byte index 4 is not a char boundary; it is inside 'é'` |
-| le même matcher explorait tous les points de coupe par étoile | `a*a*a*a*a*a*a*b` contre 64 caractères : **34,8 s** dans une décision sans timeout propre |
-| `Err(_) => break` avalait toute erreur de lecture non-timeout | capture courte, `truncated=false`, attestation signée par-dessus |
-| `sign_attestation` signait n'importe quels identifiants de contrôle | une attestation revendiquant `filesystem_confinement` était signée et vérifiée |
-| une clé de vérification malformée était rapportée `attestation_unsigned` | l'opérateur conclut au faux plutôt qu'à sa propre erreur d'encodage |
-| la garde exemptait toute ligne contenant `forbid(unsafe_code)` | `unsafe { … } // forbid(unsafe_code)` passait ; une prose sur l'unsafety échouait |
-| les en-têtes TOML `[[bench]]` étaient invisibles au parseur de sections | les clés du bloc devenaient des noms de dépendances |
+| Défaut                                                                                                                            | Preuve                                                                                    |
+| --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| le matcher de globs découpait un segment à des offsets d'octets : `café.txt` jugé contre `*.txt` **paniquait** au lieu de refuser | `start byte index 4 is not a char boundary; it is inside 'é'`                             |
+| le même matcher explorait tous les points de coupe par étoile                                                                     | `a*a*a*a*a*a*a*b` contre 64 caractères : **34,8 s** dans une décision sans timeout propre |
+| `Err(_) => break` avalait toute erreur de lecture non-timeout                                                                     | capture courte, `truncated=false`, attestation signée par-dessus                          |
+| `sign_attestation` signait n'importe quels identifiants de contrôle                                                               | une attestation revendiquant `filesystem_confinement` était signée et vérifiée            |
+| une clé de vérification malformée était rapportée `attestation_unsigned`                                                          | l'opérateur conclut au faux plutôt qu'à sa propre erreur d'encodage                       |
+| la garde exemptait toute ligne contenant `forbid(unsafe_code)`                                                                    | `unsafe { … } // forbid(unsafe_code)` passait ; une prose sur l'unsafety échouait         |
+| les en-têtes TOML `[[bench]]` étaient invisibles au parseur de sections                                                           | les clés du bloc devenaient des noms de dépendances                                       |
 
 **Traitement (`db05339`, CI verte).** Sept corrigés, chacun avec le test qui
 reproduit le défaut : matcher caractère-à-caractère à point de retour unique
@@ -221,16 +238,16 @@ comptant cinq constats là où les deux rounds en portaient six, et en omettant
 les deux bloquants de sécurité du round 2. Version exacte, vérifiée par le
 round 3 (`0ab2a20/security.verdict.json`) :
 
-| Constat bloquant | Round | État réel |
-| --- | --- | --- |
-| le bloc `process` prescrit était parsé puis jeté | 2 (archi) | **clos** — `2a157c8` |
-| `filesystem_confinement` attesté sans mécanisme | 1 (les deux rôles) | **clos** — `f27b3c9` |
-| une capture courte silencieuse était signée | xhigh | **clos** — `db05339` |
-| `effectiveProfileDigest` ré-échoait le demandé | 2 (archi) | **partiel** — l'écho a disparu (`f5e3bcd`), mais la projection admet quatre prescriptions non appliquées et en omet d'appliquées |
-| `workerTransport` inerte (`runBoundToken`) | 2 (archi) | **clos** — `0ab2a20`, jeton réellement exigé |
-| `workerTransport` inerte (`verifyOsPeer`) | 2 (archi) | **ouvert, et aggravé** — l'argument « par construction » est réfuté : le pair est l'enfant *et tout descendant* par héritage de fd ; la capacité est désormais signée alors qu'elle ne l'était pas |
-| `killProcessGroup` jamais reapé sur un chemin qui attesté | 2 (sécu) | **ouvert** — jamais traité, absent du tableau précédent |
-| `maxDurationSeconds` ne borne pas le run (`write_all` avant l'horloge) | 2 (sécu) | **ouvert** — jamais traité, absent du tableau précédent |
+| Constat bloquant                                                       | Round              | État réel                                                                                                                                                                                          |
+| ---------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| le bloc `process` prescrit était parsé puis jeté                       | 2 (archi)          | **clos** — `2a157c8`                                                                                                                                                                               |
+| `filesystem_confinement` attesté sans mécanisme                        | 1 (les deux rôles) | **clos** — `f27b3c9`                                                                                                                                                                               |
+| une capture courte silencieuse était signée                            | xhigh              | **clos** — `db05339`                                                                                                                                                                               |
+| `effectiveProfileDigest` ré-échoait le demandé                         | 2 (archi)          | **partiel** — l'écho a disparu (`f5e3bcd`), mais la projection admet quatre prescriptions non appliquées et en omet d'appliquées                                                                   |
+| `workerTransport` inerte (`runBoundToken`)                             | 2 (archi)          | **clos** — `0ab2a20`, jeton réellement exigé                                                                                                                                                       |
+| `workerTransport` inerte (`verifyOsPeer`)                              | 2 (archi)          | **ouvert, et aggravé** — l'argument « par construction » est réfuté : le pair est l'enfant _et tout descendant_ par héritage de fd ; la capacité est désormais signée alors qu'elle ne l'était pas |
+| `killProcessGroup` jamais reapé sur un chemin qui attesté              | 2 (sécu)           | **ouvert** — jamais traité, absent du tableau précédent                                                                                                                                            |
+| `maxDurationSeconds` ne borne pas le run (`write_all` avant l'horloge) | 2 (sécu)           | **ouvert** — jamais traité, absent du tableau précédent                                                                                                                                            |
 
 S'y ajoutent deux défauts **introduits par les remédiations** et trouvés par le
 round 3 : la réécriture du matcher de globs change le langage reconnu (un `*`
@@ -288,7 +305,7 @@ niveau crate.
 
 **Le mécanisme ne peut pas répondre à la question sur ce transport.**
 `SO_PEERCRED` sur une `socketpair()` renvoie les crédentiels du processus
-*créateur*, **aux deux bouts** — donc le harness. Il n'existe pas de
+_créateur_, **aux deux bouts** — donc le harness. Il n'existe pas de
 `connect()` pour capturer l'identité d'un pair : le syscall répond « qui a créé
 ce socket », jamais « qui est à l'autre bout ». La comparaison avec le pid de
 l'enfant ne pouvait que diverger, et c'est la **CI Linux qui l'a démontré** —
@@ -321,3 +338,75 @@ Deux défauts de plateforme ont par ailleurs été attrapés par la CI Linux et
 corrigés en vol : un lockfile absent du commit, et un reap sur le chemin EOF
 qui tuait le worker venant de terminer normalement — macOS masquait le second,
 le kill y arrivant après la sortie du processus.
+
+## Résolution du hard-stop ADR-0011 D4 — 2026-08-19 : migration vers `libre-ai/harness`
+
+Arbitrage propriétaire, posté en commentaire de clôture sur `orchestrator#13` :
+
+> Owner arbitration (2026-08-19): the confinement implementation migrates to
+> libre-ai/harness, its home per ADR-0026 — this PR is closed without merge,
+> and the branch is kept so the code (crates/agent-harness, Ed25519
+> attestation, 54 tests) serves as the working base for the re-delivery
+> there. The re-delivery must close the dossiers identified by the
+> WP-G3-H01 bootstrap review (digest-recidivism coverage beyond the K4
+> rounds, among others) as first-class requirements, not follow-ups.
+> ADR-0011 D4 hard-stop: resolved by migration, not by lifting.
+
+**État consommé.** `orchestrator#13` (`feat/wp-g3-h01-confined-execution`)
+fermée sans merge le 2026-08-19T07:28:21Z ; branche conservée, non
+supprimée — elle sert de base de travail à la re-livraison, pas d'historique
+mort. Aucun des trois forks proposés au § « Décision demandée au
+propriétaire » (A — enforcer, B — rétrécir la prescription, A+B recommandé)
+n'a été retenu : les trois supposaient une remédiation interne à
+`orchestrator`. L'arbitrage choisit une quatrième voie, hors du périmètre que
+ce fork envisageait.
+
+**Ce que « résolu par migration, pas par levée » signifie pour ce dossier.**
+Le hard-stop ADR-0011 D4 (I-17 — surface à touche humaine fermée, extensible
+uniquement par ADR) reste intégralement en vigueur pour la couche 2. Il ne
+s'applique simplement plus à `orchestrator` : le premier merge
+sécurité-critique de la couche 2 se prononcera sur `libre-ai/harness`, sur la
+même branche de travail, avec la même exigence de dossier K4 indépendant
+avant tout prononcé. Rien dans cet arbitrage ne lève le hard-stop ; il en
+déplace le repository cible.
+
+**Correction de cadre (ADR-0026).** Les passages ci-dessus (métadonnées,
+§ « Ce qui est livré ») décrivent `crates/agent-harness` comme vivant « dans
+le repo `orchestrator` » : exact au moment de leur rédaction (2026-08-05),
+plus la destination depuis le 2026-08-18. `libre-ai/harness` est le
+repository satellite couche 2 qui porte cette frontière d'exécution confinée
+et sa spécification (ADR-0026 §2.2, création du repository ;
+`docs/apps/harness.md` migré contenu inchangé depuis
+`orchestrator/docs/apps/harness.md`). ADR-0026 §2.4 avait explicitement
+laissé ouverte « la réconciliation entre le contenu de [`orchestrator#13`] et
+ce repository — migration, statu quo, ou autre » comme un acte propriétaire
+distinct, non tranché par cet ADR. C'est cet acte que le présent arbitrage
+referme, dans le sens migration.
+
+## Exigences de la re-livraison dans `libre-ai/harness`
+
+Nommées explicitement par l'arbitrage comme conditions d'entrée de la
+re-livraison, pas comme follow-ups. Chaque ligne trace vers le constat
+d'origine dans ce dossier et vers l'état réellement hérité de la branche
+`feat/wp-g3-h01-confined-execution` — en particulier, les corrections narrées
+dans les deux dernières sections chronologiques de ce dossier (`81e8208`,
+`1004b04`) n'ont **jamais** été soumises à une passe K4 indépendante : la
+dernière vérification indépendante de ce dossier est le round 3
+(`0ab2a20/security.verdict.json`, 2026-08-05).
+
+| #   | Exigence d'entrée                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Constat d'origine (traçabilité)                                                                                                                                                                               | État hérité de la branche source                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | **Récidive du digest effectif — clore par une passe K4 indépendante, pas par narration.** `effectiveProfileDigest` ré-échoait le demandé (round 2) ; le round 3 requalifie « partiel » — l'écho a disparu mais la projection bloc-granulaire admet des prescriptions non appliquées et en omet d'appliquées. Le commit `1004b04` affirme une projection au grain du champ qui clôt le défaut. **Nommé explicitement par l'arbitrage** (« digest-recidivism coverage beyond the K4 rounds ») : la re-livraison ouvre avec une vérification K4 indépendante de l'état réel du digest projeté sur `1004b04`, pas avec l'affirmation de l'implémenteur. | Table « État des constats bloquants — corrigé après le round 3 » (ligne `effectiveProfileDigest`) ; § « L'arbitrage verifyOsPeer… » (« Survivent de l'arbitrage, verts […] la projection au grain du champ ») | Non revérifié indépendamment depuis le round 3 (2026-08-05)              |
+| 2   | **`verifyOsPeer` — construire le transport ou amender ADR-0018 D2, jamais réattester par construction.** `SO_PEERCRED` sur `socketpair()` répond « qui a créé ce socket », aux deux bouts — jamais « qui est en face » ; le contrôle a été retiré du profil et du périmètre attesté plutôt que laissé attester ce qu'il ne prouve pas. Deux issues seules rouvrent la capacité : (a) transport à socket nommé (`connect`/`accept`) + garde durcie + protocole worker sans héritage de stdio, ou (b) amendement d'ADR-0018 D2 déclarant ce que la couche peut réellement tenir. Aucune des deux n'est tranchée.                                      | § « L'arbitrage verifyOsPeer, exécuté et invalidé par son exécution » (intégral)                                                                                                                              | Ouvert — capacité hors profil et hors périmètre attesté depuis `1004b04` |
+| 3   | **Médiation fs réelle et durcissement process-group sur _tous_ les chemins de sortie — revérifier indépendamment.** Round 1/2 : `filesystem_confinement` lié sans médiation réelle, `killProcessGroup`/`maxProcesses`/`dedicatedIdentity`/`dropAmbientCapabilities` parsés-puis-jetés. Round 3 : deux bloquants sécurité encore ouverts (groupe jamais reapé sur le chemin attesté ; borne de durée ne couvrant pas l'écriture). Le commit `81e8208` affirme les deux traités.                                                                                                                                                                      | Table « État des constats bloquants » (`killProcessGroup`, `maxDurationSeconds`) ; § « Après le round 3 — `81e8208` »                                                                                         | Traité par narration implémenteur seule — non re-audité en K4            |
+| 4   | **Vérification du manifeste du moteur sandbox par le harness lui-même, pas par assertion de l'appelant — revérifier indépendamment.** Round 1/2 : manifeste asserté par l'appelant plutôt que vérifié. `1004b04` affirme une vérification (digest du manifeste confronté à l'épinglage du profil).                                                                                                                                                                                                                                                                                                                                                  | § « Ouvert, et sans chemin dans le code » (point 2) ; § « L'arbitrage verifyOsPeer… » (« Survivent de l'arbitrage, verts : la vérification du pin de moteur »)                                                | Traité par narration implémenteur seule — non re-audité en K4            |
+| 5   | **Bornage de sortie au grain content-adressé exact — revérifier indépendamment.** Round 3 : la borne s'appliquait au flux cadré, 44 octets plus large que ce que l'attestation content-adresse. `81e8208` affirme la correction.                                                                                                                                                                                                                                                                                                                                                                                                                    | § « Après le round 3 — `81e8208` » (deux régressions corrigées)                                                                                                                                               | Traité par narration implémenteur seule — non re-audité en K4            |
+| 6   | **Matcher de globs — absence de régression fail-open et de complexité non bornée, sous re-fan-out K4.** La passe xhigh a trouvé un panic (`café.txt` hors limite de caractère) et un hang (34,8 s sans timeout) que quatre passes adversariales avaient qualifiés absents ; la remédiation a elle-même introduit une régression fail-open (`*` littéral échappant au motif dans l'ensemble `denied`), trouvée par le round 3. `81e8208` affirme les deux corrigés.                                                                                                                                                                                  | § « Troisième passe — revue workflow xhigh… » ; § « Après le round 3 — `81e8208` »                                                                                                                            | Traité par narration implémenteur seule — non re-audité en K4            |
+
+Aucune de ces six lignes n'est un follow-up de la re-livraison : ce sont ses
+conditions d'entrée, au même titre que le confinement fs et l'attestation
+liée l'étaient pour le prononcé initial. La confiance graduée d'ADR-0011 D4
+reste inchangée pour la couche 2 : ce premier merge sécurité-critique reste
+un arrêt dur, porté désormais par `libre-ai/harness` plutôt que par
+`orchestrator`, avec la même exigence — dossier de revue K4 indépendante,
+propriétaire nominatif, avant tout prononcé.
