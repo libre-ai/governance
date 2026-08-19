@@ -80,18 +80,15 @@ describe("resolveLayerSpec", () => {
     });
   });
 
-  test("moyeu archived gets the base template under a 45-line cap", () => {
-    expect(resolveLayerSpec({ layer: "moyeu", role: "hub", lifecycle: "archived" })).toEqual({
-      requiredSections: ["Authority", "Boundaries", "Quality gates", "Agents"],
-      maxLines: 45,
-    });
-  });
-
   test("an unmapped combination is reported, never guessed", () => {
     expect(
       resolveLayerSpec({ layer: "couche-1", role: "reserved-product-home", lifecycle: "archived" }),
     ).toBeNull();
     expect(resolveLayerSpec({ layer: "moyeu", role: "hub", lifecycle: "active" })).toBeNull();
+  });
+
+  test("moyeu has no named template — its one member is archived, fully exempted upstream", () => {
+    expect(resolveLayerSpec({ layer: "moyeu", role: "hub", lifecycle: "archived" })).toBeNull();
   });
 });
 
@@ -269,15 +266,44 @@ describe("reviewContext", () => {
     expect(outcome.notes.length).toBeGreaterThan(0);
   });
 
-  test("asserts non-active absence as a pass, not a skip", () => {
+  test("asserts a non-active, non-archived absence as a pass, not a skip", () => {
+    // No such lifecycle value exists in the registry today (only active and
+    // archived) — this exercises the defensive branch for a future value the
+    // template has not yet named, distinct from the archived exemption below.
     const outcome = reviewContext(
-      { ...entry, lifecycle: "archived" },
+      { ...entry, lifecycle: "draft" },
       { agents: null, claude: null },
       freshness,
     );
     expect(outcome.exempt).toBe(false);
     expect(outcome.failures).toEqual([]);
-    expect(outcome.notes.join(" ")).toContain("lifecycle=archived");
+    expect(outcome.notes.join(" ")).toContain("lifecycle=draft");
+  });
+
+  test("exempts an archived entry entirely, even with no AGENTS.md", () => {
+    const outcome = reviewContext(
+      { ...entry, lifecycle: "archived" },
+      { agents: null, claude: null },
+      freshness,
+    );
+    expect(outcome.exempt).toBe(true);
+    expect(outcome.failures).toEqual([]);
+    expect(outcome.notes.join(" ")).toContain("archived");
+  });
+
+  test("exempts an archived entry entirely, even when its AGENTS.md is non-conformant", () => {
+    // The real case this guards: libre-ai/libre-ai carries an AGENTS.md that
+    // predates the template (no required sections, no fetchable pointer, no
+    // layer marker) and is read-only by construction — a cap or a required
+    // section cannot bind content that can no longer be edited.
+    const agents = "# Hub archive\n\nSome prose with no sections and no pointer.\n";
+    const outcome = reviewContext(
+      { ...entry, layer: "moyeu", lifecycle: "archived" },
+      { agents, claude: null },
+      freshness,
+    );
+    expect(outcome.exempt).toBe(true);
+    expect(outcome.failures).toEqual([]);
   });
 
   test("fails when an active entry has no AGENTS.md", () => {
@@ -319,13 +345,16 @@ describe("reviewContext", () => {
   });
 
   test("reports an unmapped layer/role/lifecycle combination as a failure", () => {
-    const agents = agentsFixture({ sections: [], layerMention: "couche 1" });
+    // moyeu + active is unmapped (the template's one moyeu row was archived,
+    // now fully exempted upstream — see resolveLayerSpec's own tests); this
+    // combination reaches resolveLayerSpec because it is not archived.
+    const agents = agentsFixture({ sections: [], layerMention: "moyeu" });
     const outcome = reviewContext(
       {
         repository: "libre-ai/x",
-        role: "reserved-product-home",
-        layer: "couche-1",
-        lifecycle: "archived",
+        role: "hub",
+        layer: "moyeu",
+        lifecycle: "active",
       },
       { agents, claude: "@AGENTS.md\n" },
       freshness,
