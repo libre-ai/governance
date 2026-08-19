@@ -14,12 +14,16 @@
  *   ~/.netrc, ~/.gitconfig (credential helpers), ~/.npmrc, ~/.bun caches.
  *
  * Kept, and why:
- * - PATH: it locates the PUBLIC toolchain binaries (git, bun, cargo) an
- *   adopter is documented — or should be documented — to install;
+ * - PATH: it locates the PUBLIC toolchain binaries (git, bun) an adopter is
+ *   documented — or should be documented — to install;
  * - explicit toolchain homes (CARGO_HOME, RUSTUP_HOME,
- *   PLAYWRIGHT_BROWSERS_PATH): pre-installed public toolchains are
- *   prerequisites, not private assistance; resolving them from the real
- *   machine keeps the loop cheap without weakening the credential boundary.
+ *   PLAYWRIGHT_BROWSERS_PATH): opportunistic passthrough kept for a future
+ *   chain step that needs them — governance's current FOUNDATION_CHAIN
+ *   (verification/harness/reference-chain.ts) spawns neither `cargo` nor a
+ *   browser engine, so these currently resolve to nothing on a bare runner;
+ *   pre-installed public toolchains are prerequisites, not private
+ *   assistance, so passthrough (when present) does not weaken the
+ *   credential boundary.
  */
 
 import type { FrictionEntry } from "./attestation";
@@ -93,24 +97,20 @@ interface PrerequisiteProbe {
 // Each probe encodes one prerequisite the loop KNOWS it needed; if neither
 // README nor CONTRIBUTING mentions it, an unassisted adopter has to guess —
 // that is exactly the friction the attestation exists to surface.
+//
+// Two probes (Playwright browsers, Rust toolchain) were retired 2026-08-19
+// along with the FOUNDATION_CHAIN steps they described (verification/harness/
+// reference-chain.ts's module doc has the migration citations): governance's
+// post-γ reference chain never spawns `cargo` or a browser engine, so
+// asserting either as an "implicit prerequisite" would itself be a false
+// friction entry — worse than no entry, since the attestation's friction log
+// is read as the objective backlog.
 const PREREQUISITE_PROBES: readonly PrerequisiteProbe[] = [
   {
     step: "install",
     documentedWhen: /bun install/i,
     description:
       "Dependency installation is undocumented: neither README.md nor CONTRIBUTING.md states that `bun install` must run before the gates.",
-  },
-  {
-    step: "reference-chain",
-    documentedWhen: /playwright install/i,
-    description:
-      "Playwright browsers are an implicit prerequisite: the reference chain runs three browser engines but no public document states how to install them (`bunx playwright install`).",
-  },
-  {
-    step: "reference-chain",
-    documentedWhen: /rustup|rust toolchain/i,
-    description:
-      "The Rust toolchain is an implicit prerequisite: the reference chain runs `cargo test` but no public document states that Rust (rustup) must be installed.",
   },
 ];
 

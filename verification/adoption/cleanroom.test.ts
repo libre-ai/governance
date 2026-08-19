@@ -101,11 +101,7 @@ describe("extractExpectedDigest", () => {
 });
 
 describe("detectDocumentationFrictions", () => {
-  const documentedEverything = [
-    "Run `bun install` first.",
-    "Install browsers with `bunx playwright install`.",
-    "Install the Rust toolchain with rustup.",
-  ].join("\n");
+  const documentedEverything = "Run `bun install` first.";
 
   test("finds no documentation friction when every prerequisite is documented", () => {
     expect(
@@ -113,7 +109,7 @@ describe("detectDocumentationFrictions", () => {
     ).toEqual([]);
   });
 
-  test("reports bun install, Playwright browsers and the Rust toolchain as implicit prerequisites when undocumented", () => {
+  test("reports bun install as an implicit prerequisite when undocumented", () => {
     const frictions = detectDocumentationFrictions({
       readme: "# Repo\nrun bun run check",
       contributing: "run the gates",
@@ -121,14 +117,12 @@ describe("detectDocumentationFrictions", () => {
     const descriptions = frictions.map((f) => f.description).join(" | ");
     expect(frictions.every((f) => f.kind === "implicit-prerequisite")).toBe(true);
     expect(descriptions).toMatch(/bun install/i);
-    expect(descriptions).toMatch(/playwright/i);
-    expect(descriptions).toMatch(/rust/i);
   });
 
   test("searches both README and CONTRIBUTING before declaring a gap", () => {
     const frictions = detectDocumentationFrictions({
       readme: "run `bun install`",
-      contributing: "then `bunx playwright install` and rustup",
+      contributing: "",
     });
     expect(frictions).toEqual([]);
   });

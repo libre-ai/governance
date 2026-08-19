@@ -15,8 +15,37 @@
  *     -> the existing reference chain, exactly as its evidence documents it
  *        (`bun verification/harness/reference-chain.ts`, digest compared to
  *        the one published in wp-g2-q01-reference-chain-evidence.md)
- *     -> one contract validated with the repository's own conformance
- *        tooling (`tools/quality/check-policy-core-vectors.ts`)
+ *
+ * REPOSITORY_URL was `libre-ai/libre-ai` (the hub) until 2026-08-19. Migration
+ * γ (ADR-0020, docs/adr/0020-general-activation-and-hub-dismantling.md) froze
+ * that hub read-only and moved `verification/harness/` and `verification/
+ * adoption/` themselves to this repository (ecosystem/migration-index.v1.yaml,
+ * maintained in the hub during dismantling: both hub_paths -> destination
+ * libre-ai/governance, hub_removal_commit ba3761b45901bb2c7f850aaac8c6539e2c
+ * 407533; the removal-wave note for this very workflow file reads "governance
+ * carries verification/ (adoption, sovereignty) — the recurring proofs
+ * re-arm there when scheduled"). Three consecutive weekly runs (2026-08-05,
+ * -12, -19) failed with "Module not found" for both
+ * verification/harness/reference-chain.ts and
+ * tools/quality/check-policy-core-vectors.ts: the loop was still cloning the
+ * frozen hub, which no longer carries either path. REPOSITORY_URL now points
+ * at the repository that actually carries the reference chain.
+ *
+ * The pre-γ loop also ran a second step — "one contract validated with the
+ * repository's own conformance tooling" (`tools/quality/
+ * check-policy-core-vectors.ts`). That module was deliberately deleted from
+ * this repository at its 2026-07-29 workspace bootstrap (commit
+ * 1f9103618e046374c8179f38f4ff5432743be259: "Contract-vector verifiers
+ * removed: they belong to the contracts authority"), consistent with
+ * AGENTS.md: "Contract authorities are canonical in the contracts repository
+ * — never here." Its functional successor, `tools/quality/check-contracts.ts`
+ * (validates policy-core-v1 golden vectors against `contracts/schemas/*`,
+ * generalized to every contract kind), lives in and is gated by the
+ * `libre-ai/contracts` repository's own CI — it verifies itself, in its own
+ * blank-room terms, and does not need re-proving from here. The step is
+ * retired from this loop rather than re-pointed at another repository: this
+ * loop reproduces ONE public repository per run (REPOSITORY_URL), and
+ * contracts' own adoption proof is that repository's own concern.
  *
  * The clone is shallow (`--depth 1`): the loop proves the published HEAD is
  * appropriable; no chain step needs history, and the cloned sha is recorded
@@ -46,7 +75,7 @@ import {
   type ToolchainPassthrough,
 } from "./cleanroom";
 
-const REPOSITORY_URL = "https://github.com/libre-ai/libre-ai";
+const REPOSITORY_URL = "https://github.com/libre-ai/governance";
 const CHAIN_EVIDENCE_PATH = "verification/harness/wp-g2-q01-reference-chain-evidence.md";
 
 async function pathExists(path: string): Promise<boolean> {
@@ -248,21 +277,15 @@ async function main(): Promise<void> {
         steps.push(
           stepOutcome("reference-chain", "Foundation reference chain (WP-G2-Q01)", chain, chainOk),
         );
-
-        console.error("=== adoption: contract-conformance — policy-core golden vectors ===");
-        const conformance = await runCommand(
-          ["bun", "tools/quality/check-policy-core-vectors.ts"],
-          cloneDir,
-          env,
-        );
-        steps.push(
-          stepOutcome(
-            "contract-conformance",
-            "Contract validation via existing conformance tooling (policy-core v1 golden vectors)",
-            conformance,
-            true,
-          ),
-        );
+        // No separate "contract-conformance" step here: tools/quality/
+        // check-policy-core-vectors.ts was deliberately removed from this
+        // repository (2026-07-29, commit 1f9103618e046374c8179f38f4ff5432743
+        // be259 — "Contract-vector verifiers removed: they belong to the
+        // contracts authority"). Its successor, tools/quality/
+        // check-contracts.ts, lives in and is gated by libre-ai/contracts'
+        // own CI (see the module doc above). This loop reproduces ONE public
+        // repository per run; that repository's own adoption proof is its
+        // own concern.
       }
     }
 
