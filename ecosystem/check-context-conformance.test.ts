@@ -312,6 +312,38 @@ describe("reviewContext", () => {
     expect(outcome.failures[0]).toContain("missing");
   });
 
+  test("reports an AGENTS.md fetch error as unable-to-verify, never as missing", () => {
+    // The exact regression this type exists to prevent: a rate-limited or
+    // otherwise unreachable gh api call must never be reported the same way
+    // as a confirmed absence — the required check would then fail every
+    // pull request on a transient condition unrelated to any repository's
+    // real AGENTS.md.
+    const outcome = reviewContext(
+      entry,
+      { agents: null, claude: null, agentsFetchError: "API rate limit exceeded (HTTP 403)" },
+      freshness,
+    );
+    expect(outcome.failures.length).toBe(1);
+    expect(outcome.failures[0]).toContain("unable to verify");
+    expect(outcome.failures[0]).toContain("rate limit");
+    expect(outcome.failures.some((f) => f.includes("missing"))).toBe(false);
+  });
+
+  test("reports a CLAUDE.md fetch error as unable-to-verify, distinct from a missing adapter", () => {
+    const agents = agentsFixture({
+      sections: ["Authority", "Boundaries", "Quality gates", "Agents"],
+      layerMention: "couche 4",
+    });
+    const outcome = reviewContext(
+      entry,
+      { agents, claude: null, claudeFetchError: "gh api ... failed (HTTP 500)" },
+      freshness,
+    );
+    expect(outcome.failures.some((f) => f.includes("unable to verify CLAUDE.md"))).toBe(true);
+    expect(outcome.failures.some((f) => f.includes("is not the byte-exact"))).toBe(false);
+    expect(outcome.failures.some((f) => f.includes("is missing while"))).toBe(false);
+  });
+
   test("passes a fully conformant couche-4 AGENTS.md", () => {
     const agents = agentsFixture({
       sections: ["Authority", "Boundaries", "Quality gates", "Agents"],

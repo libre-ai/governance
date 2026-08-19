@@ -209,6 +209,17 @@ export function parseRegistry(yamlText: string): RegistryEntry[] {
 export interface RepoDocuments {
   readonly agents: string | null;
   readonly claude: string | null;
+  /**
+   * Set exactly when the AGENTS.md fetch failed without a confirmed answer
+   * (rate limit, other 4xx/5xx, network) — never set for a confirmed
+   * absence. Optional so existing "confirmed absent" call sites (tests and
+   * the archived/org-profile exemptions, which never depend on it) stay as
+   * they are; a caller that has an error MUST set it, never leave it
+   * implicit as `agents: null`.
+   */
+  readonly agentsFetchError?: string | null;
+  /** Same contract as `agentsFetchError`, for the CLAUDE.md fetch. */
+  readonly claudeFetchError?: string | null;
 }
 
 export interface FreshnessInputs {
@@ -246,6 +257,18 @@ export function reviewContext(
   }
 
   if (docs.agents === null) {
+    if (docs.agentsFetchError) {
+      // Distinct from a confirmed absence: the gate could not verify this
+      // repository at all (rate limit, other 4xx/5xx, network) — reporting
+      // "missing" here would be a false positive that fails every future
+      // pull request on a transient condition that has nothing to do with
+      // this repository's actual AGENTS.md.
+      return {
+        failures: [`unable to verify AGENTS.md at main: ${docs.agentsFetchError}`],
+        notes: [],
+        exempt: false,
+      };
+    }
     if (entry.lifecycle === "active") {
       return {
         failures: ["AGENTS.md is missing at main (lifecycle=active)"],
@@ -290,8 +313,12 @@ export function reviewContext(
     );
   }
 
-  const claudeIssue = claudeAdapterIssue(true, docs.claude);
-  if (claudeIssue !== null) failures.push(claudeIssue);
+  if (docs.claudeFetchError) {
+    failures.push(`unable to verify CLAUDE.md at main: ${docs.claudeFetchError}`);
+  } else {
+    const claudeIssue = claudeAdapterIssue(true, docs.claude);
+    if (claudeIssue !== null) failures.push(claudeIssue);
+  }
 
   if (!layerMarkerOk(entry.layer, agents)) {
     failures.push(`text carries no layer marker matching layer=${entry.layer}`);
@@ -307,14 +334,63 @@ export function reviewContext(
 // --- Effectful shell: gh api + local git plumbing, kept apart from the pure
 // core above so every rule is unit-tested without a subprocess. ---
 
-function gh(args: string[]): string | null {
-  const result = Bun.spawnSync(["gh", ...args]);
-  if (result.exitCode !== 0) return null;
-  return new TextDecoder().decode(result.stdout);
+export interface GhFetchResult {
+  /** Non-null exactly when the call succeeded. */
+  readonly text: string | null;
+  /**
+   * Non-null exactly when the call could not be answered at all (rate
+   * limit, other 4xx/5xx, network) — distinct from a confirmed 404,
+   * which is a real "not found" answer, not an error. A caller that
+   * collapses this back to `text === null` reproduces the exact bug this
+   * type exists to prevent: reporting "AGENTS.md is missing" for a
+   * repository the gate never actually managed to ask.
+   */
+  readonly error: string | null;
 }
 
-function fetchFile(repository: string, path: string): string | null {
-  return gh([
+const NOT_FOUND_PATTERN = /\(HTTP 404\)/;
+/** Two retries beyond the first attempt — 1s then 3s — before giving up and reporting unable-to-verify. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function ghRaw(
+  args: string[],
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+/**
+ * Retries a `gh api` call across transient failures (rate limit, other
+ * 4xx/5xx, network) so a fleet-wide scan never misreports "missing" for a
+ * repository it simply could not reach — same 404-is-an-answer contract as
+ * `tools/security/check-branch-protection.ts`'s `ghApi`. A confirmed 404 is
+ * never retried; anything else is retried up to `RETRY_DELAYS_MS.length`
+ * times before surfacing as `error`.
+ */
+async function ghWithRetry(args: string[]): Promise<GhFetchResult> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const result = await ghRaw(args);
+    if (result.exitCode === 0) return { text: result.stdout, error: null };
+    if (NOT_FOUND_PATTERN.test(result.stderr)) return { text: null, error: null };
+    lastError = result.stderr.trim() || `gh ${args.join(" ")} failed (exit ${result.exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { text: null, error: lastError };
+}
+
+function fetchFile(repository: string, path: string): Promise<GhFetchResult> {
+  return ghWithRetry([
     "api",
     `repos/${repository}/contents/${path}?ref=main`,
     "-H",
@@ -322,11 +398,20 @@ function fetchFile(repository: string, path: string): string | null {
   ]);
 }
 
-function fetchLastCommitDate(repository: string, path: string): string | null {
-  const raw = gh(["api", `repos/${repository}/commits?path=${path}&per_page=1`]);
-  if (raw === null) return null;
+/**
+ * Freshness is informative-only (`checkFreshness` never blocks on a `null`
+ * date), so a persistent fetch error degrades to "date unavailable" rather
+ * than carrying its own error channel — retried the same as `fetchFile` so
+ * the common case (transient rate limit) still recovers.
+ */
+async function fetchLastCommitDate(repository: string, path: string): Promise<string | null> {
+  const { text } = await ghWithRetry([
+    "api",
+    `repos/${repository}/commits?path=${path}&per_page=1`,
+  ]);
+  if (text === null) return null;
   try {
-    const commits = JSON.parse(raw) as ReadonlyArray<{
+    const commits = JSON.parse(text) as ReadonlyArray<{
       readonly commit?: { readonly committer?: { readonly date?: string } };
     }>;
     const date = commits[0]?.commit?.committer?.date;
@@ -396,15 +481,23 @@ if (import.meta.main) {
 
   const report = new GateReport();
   for (const entry of registry) {
-    const agents = fetchFile(entry.repository, "AGENTS.md");
-    const claude = agents !== null ? fetchFile(entry.repository, "CLAUDE.md") : null;
+    const agentsFetch = await fetchFile(entry.repository, "AGENTS.md");
+    const claudeFetch =
+      agentsFetch.text !== null
+        ? await fetchFile(entry.repository, "CLAUDE.md")
+        : { text: null, error: null };
     const agentsLastModifiedOn =
-      agents !== null ? fetchLastCommitDate(entry.repository, "AGENTS.md") : null;
+      agentsFetch.text !== null ? await fetchLastCommitDate(entry.repository, "AGENTS.md") : null;
     const transitionedOn = lastLifecycleTransition(lifecycleHistory.get(entry.repository) ?? []);
 
     const outcome = reviewContext(
       entry,
-      { agents, claude },
+      {
+        agents: agentsFetch.text,
+        agentsFetchError: agentsFetch.error,
+        claude: claudeFetch.text,
+        claudeFetchError: claudeFetch.error,
+      },
       { transitionedOn, agentsLastModifiedOn },
     );
     const ok = outcome.failures.length === 0;
