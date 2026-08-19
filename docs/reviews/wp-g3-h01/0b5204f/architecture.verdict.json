@@ -1,0 +1,96 @@
+{
+  "reviewPassId": "rp-0b5204f-F790E6A4-2983-4DFE-A450-4A7FA332E1E8",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "0b5204f43b4e8fb9a95c88843c0e8d44c7e38a20",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "d7ac7ee6c37d6fea4a7d355b5ba762e85b5366de4f48ad8632a8bf6806e24dd9"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "e9f19edd36ce5a2c2f8905ecbad136bd754863afe06807d7ef4cfcda40e238c6"
+    }
+  ],
+  "commands": [
+    "git status --porcelain (start and end: empty); git log -1 --format=%H",
+    "read prior verdicts 5bee6a3/, f27b3c9/, 0ab2a20/ plus BOOTSTRAP-DOSSIER.md in full",
+    "read in full at 0b5204f: src/profile.rs, src/host/run.rs, src/controls.rs, src/attestation.rs, src/confinement.rs, both profile fixtures",
+    "shasum -a 256 on both fixtures; jq extraction of sandboxEngine.manifest.digest, profileDigest, requiredCapabilities, workerTransport, engine capabilities",
+    "cross-checked APPLIED_PROFILE_SURFACE (21 pointers) member by member against the wire structs and every consuming code path",
+    "no cargo, no bun executed in this pass (the security-role pass of the same round runs the suite; the JCS recomputation of profileDigest is delegated to tests/engine_pin.rs test 2 executed there)"
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [],
+    "minor": [
+      {
+        "title": "Six of the 21 surface pointers do not satisfy the list's own written criterion — they are held by const-validation plus unconditional behaviour, never read",
+        "detail": "profile.rs:214-215 states 'A pointer enters this list only when a code path reads the field AND acts on it.' /schemaVersion, /workerTransport/runBoundToken and the four /attestation/* pointers are never deserialized (ProfileWire at profile.rs:34-44 carries no schemaVersion; WorkerTransportWire at profile.rs:74-76 reads only kind; no attestation block is read anywhere). Each IS genuinely honoured — the locked schema consts them and the mechanism (token required back, signature always emitted, bindings always populated) is unconditional — so the projection does not overclaim. But the criterion the doc comment announces is not the criterion the list applies. Same family for /sandboxEngine/denyOnMissing: profile.deny_on_missing() has no consumer; the refusal at controls.rs:112-113 is unconditional. State the real criterion ('the prescription is held by this build: either a code path reads and acts on it, or the contract consts it and the mechanism is unconditional') or make the code read the fields."
+      },
+      {
+        "title": "controls.rs comment still names worker_transport_isolation, a capability the engine no longer offers",
+        "detail": "controls.rs:82-83: 'output_bounds and worker_transport_isolation are enforced by the harness itself, host privileges regardless.' The capability was withdrawn by 1004b04/b0c44f7 and is absent from ENGINE_CAPABILITIES (controls.rs:23), so any profile requiring it is refused at controls.rs:112 before capability_enforceable is consulted — the code is correct, the comment stale. This is the exact defect class b0c44f7 fixed in the manifest ('says more than it does', relocated into a comment). One-line fix in the re-delivery."
+      },
+      {
+        "title": "VerificationError::code() still mints harness.verifying_key_malformed, an identifier inside the closed matrix namespace but outside the matrix — unchanged since round 3",
+        "detail": "attestation.rs:198-203. The doc comment at attestation.rs:195-196 now claims 'A malformed key is not a verdict about the attestation and carries no matrix code', yet code() returns the string 'harness.verifying_key_malformed', shaped exactly like the thirteen contract codes. A consumer validating codes against the closed matrix will reject or mis-route it (round 3 minor, untouched). Either return no code for MalformedVerifyingKey (Option<&str>) or move it out of the harness.* namespace."
+      },
+      {
+        "title": "verify_attestation never confronts effectiveControls with the bound engine manifest — a verified attestation can claim any control the schema admits (round 3 residual, unchanged)",
+        "detail": "attestation.rs:215-256 checks schema, digest and signature only. Structurally the verifier cannot hard-code the current build's capability list (an attestation may come from another engine build), and the engine identity IS bound by digest — but nothing helps an operator confront effectiveControls with the manifest that digest names, and the limitation is documented nowhere in the public API. Document the verification protocol (resolve the bound manifest by digest, check effectiveControls against its capabilities) or provide the helper."
+      },
+      {
+        "title": "Binding check precedes exit check: a worker that hangs to the duration bound is reported RunBindingUnproved instead of WorkerFault — round 3 minor, unchanged",
+        "detail": "run.rs:205-213. timed_out is folded into exit_ok but run_binding_proved is evaluated first; a stalled worker yields an empty capture, so the diagnosis reads as an unbound response rather than a timeout."
+      },
+      {
+        "title": "/sandboxEngine/manifest enters the surface as a whole object while only its digest is a fact the harness holds",
+        "detail": "The pointer copies {id, digest, mediaType} into the projection (profile.rs:235) and run.rs:177-182 verifies digest alone; id and mediaType flow from the (content-addressed, schema-valid) profile into the attestation unconfronted — the embedded engine-manifest.v1.json carries name/version/capabilities/notes, no URN, so they are unverifiable against the binary today. In a surface that advertises field granularity, the honest pointer is /sandboxEngine/manifest/digest, or the manifest grows an embedded id the binary can be held to."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Requirement 1 (effective-digest recidivism) is genuinely closed: the projection is field-granular, its membership matches what the build holds, and the digest cascade is gated",
+        "detail": "APPLIED_PROFILE_SURFACE (profile.rs:220-253) lists 21 pointers. The four round-3 overclaims (enforcement, outputs.privateByDefault, workerTransport.hostLoopbackAllowed, and the then-unverified sandboxEngine.manifest pin) are out or now held (pin verified at run.rs:176-181); the round-3 underclaim (the attestation block: signed, bindRequestedProfile, bindEffectiveControls, bindWorkerManifests — all unconditionally done by assemble/sign_attestation) is in. /workerTransport/verifyOsPeer and /hostLoopbackAllowed are explicitly out with the measured reason (profile.rs:241-245). effective_profile_digest (profile.rs:264-288) is a pure function of the requested document and the published list — operator-reproducible. The cascade manifest→pin→profileDigest recomputes: sha256(engine-manifest.v1.json) = e9f19edd… = sandboxEngine.manifest.digest, and tests/engine_pin.rs (3 tests, written red per the 0b5204f message) now gates the hand-maintained chain that drifted twice."
+      },
+      {
+        "title": "Requirement 4 (engine manifest verified by the harness itself) is genuinely closed",
+        "detail": "ENGINE_MANIFEST is include_str! embedded (run.rs:57-60), its digest recomputed at run time (run.rs:51-53, 178) and held to the profile's pin with refusal on mismatch (run.rs:179-181); the ArtifactRef bound into the attestation carries the recomputed digest (run.rs:182). gather_host_facts (run.rs:76-84) observes platform from the build target and euid/setpriv through probe processes — 'a fact the caller supplies is not a host fact'. Nothing of the engine identity is asserted by the caller any more."
+      },
+      {
+        "title": "The const-locked process block is applied in full or refused — including --regid and root refusal, the round 1/2 gaps",
+        "detail": "confinement.rs:115-173: kill_process_group requires setsid or refuses; max_processes>0 requires prlimit --nproc; the identity trio requires setpriv with --no-new-privs, --reuid/--regid/--clear-groups, --inh-caps/--ambient-caps/--bounding-set=-all; uid or gid 0 is refused twice (is_privileged at confinement.rs:80-83 and plan_wrapper_chain at confinement.rs:153-155). Wrapper order is justified and correct (setsid → prlimit → setpriv last)."
+      },
+      {
+        "title": "verifyOsPeer is out everywhere it must be out, with the measured reason recorded at the decision site",
+        "detail": "Absent from ENGINE_CAPABILITIES (controls.rs:23) with the SO_PEERCRED-on-socketpair explanation in the comment block (controls.rs:8-15); absent from the canonical profile's requiredCapabilities (verified by jq: output_bounds, process_isolation, resource_limits); absent from APPLIED_PROFILE_SURFACE; absent from the manifest capabilities (engine_pin.rs test 3 gates the triple consistency). The workerTransport block still prescribes verifyOsPeer:true because the locked contract consts it — the contradiction is owner-arbitrated (2026-08-19: amend ADR-0018 D2 + harness-profile.v2) and out of this pass's scope."
+      },
+      {
+        "title": "Worktree unmodified",
+        "detail": "git status --porcelain empty at start and end; every command was read-only."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The locked harness-profile.v1 contract consts verifyOsPeer:true while the engine cannot hold it over an anonymous pair: every conforming profile must prescribe a control this engine will never apply. Honest today only because the field sits outside the attested surface. Resolution is owner-arbitrated (2026-08-19): ADR-0018 D2 amendment plus harness-profile.v2 — the re-delivery must land it, not narrate it.",
+    "RLIMIT_NPROC set by prlimit --nproc is per-uid, not per-run: concurrent runs under the same dedicated identity share the budget. With the current one-run-at-a-time host this is equivalent; it becomes observable the day two runs share the worker uid. The attestation does not overclaim (the limit is genuinely set), but the semantics deserve a sentence in the spec.",
+    "generatedAt and the signing seed are caller parameters by design (deferred owner key ceremony). The attestation's timestamp is therefore a caller fact — unlike platform and euid, which are observed.",
+    "This pass runs on the same model family as the original implementer sessions (claude-fable-5). Model diversity for round 4 is provided by the security-role pass, which runs on claude-sonnet-4-8 — the first round of this package where the two roles run on distinct models."
+  ],
+  "verdict": "accept",
+  "runner": {
+    "orchestrator": "review-only orchestrator pass (role-separated from the implementer lineage and from the round-4 security pass — AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5",
+    "round": 4,
+    "scope": "entry pass of the re-delivery — real state at 0b5204f vs remediation narration (81e8208..0b5204f); architecture role: requirement 1 (effective-digest projection), requirement 4 (engine-pin verification), verifyOsPeer state, const-locked process block",
+    "priorVerdicts": [
+      "docs/reviews/wp-g3-h01/5bee6a3/",
+      "docs/reviews/wp-g3-h01/f27b3c9/",
+      "docs/reviews/wp-g3-h01/0ab2a20/"
+    ],
+    "worktree": "detached worktree at 0b5204f, clean after the pass"
+  }
+}

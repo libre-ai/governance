@@ -410,3 +410,59 @@ reste inchangée pour la couche 2 : ce premier merge sécurité-critique reste
 un arrêt dur, porté désormais par `libre-ai/harness` plutôt que par
 `orchestrator`, avec la même exigence — dossier de revue K4 indépendante,
 propriétaire nominatif, avant tout prononcé.
+
+## Round 4 — passe d'entrée de la re-livraison (2026-08-19)
+
+La re-livraison ouvre comme l'arbitrage l'exigeait : par une vérification
+indépendante de l'état réel au head `0b5204f` — le head de la branche
+conservée `feat/wp-g3-h01-confined-execution` d'`orchestrator`, donc la
+substance sur son layout d'origine (`crates/agent-harness/**`), PAS le code
+déjà transposé sur la structure racine de `libre-ai/harness` que l'ADR-0030
+D3 décrit — pas par l'affirmation de l'implémenteur. Deux passes
+role-séparées, review-only, worktree détaché vérifié propre avant et après —
+verdicts immuables sous
+`docs/reviews/wp-g3-h01/0b5204f/{architecture,security}.verdict.json`.
+
+**Première du package sur deux plans.** (1) Les deux rôles rendent `accept` —
+après trois rounds à trois rejets, les défauts centraux sont vérifiés clos
+dans le code, pas dans la narration. (2) La **diversité de modèle est
+atteinte** pour la première fois : la passe architecture tourne sur le modèle
+de la lignée implémenteuse (`claude-fable-5`), la passe security sur un modèle
+distinct (`claude-sonnet-4-8`) — la limite déclarée aux rounds 1-3 est levée,
+et chaque verdict la consigne.
+
+**État des six exigences après le round 4 :**
+
+| #   | Exigence                              | État round 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Récidive du digest effectif           | **Close, vérifiée par les deux rôles.** Projection champ-granulaire (21 pointers), les quatre sur-déclarations du round 3 sorties ou tenues (pin moteur vérifié), le bloc attestation entré, reproductible par l'opérateur, cascade gatée par `tests/engine_pin.rs` écrit rouge. Raffinement résiduel : deux pointers (`runBoundToken`, `denyOnMissing`) tenus par `const` contractuel + mécanisme inconditionnel, jamais lus — même famille à échelle réduite, sans divergence atteignable tant que le contrat les verrouille (major 3 du verdict security ; obligation de la re-livraison). |
+| 2   | `verifyOsPeer`                        | **Arbitrée propriétaire (2026-08-19, question structurée) : amender, pas construire.** ADR-0030 — `harness-profile.v2` (successeur majeur, COMPATIBILITY.md), `verifyOsPeer` optionnel refusé quand intenable ; le transport nommé reste une capacité future avec son propre package. L'état du code au head est vérifié cohérent (capacité hors moteur, hors profil requis, hors surface, raison mesurée au site de décision).                                                                                                                                                               |
+| 3   | Médiation process-group + borne durée | **Close, vérifiée** : les deux bloquants du round 2 sont réellement traités — reap du groupe sur chaque chemin terminal (EOF, write-timeout, read-timeout, truncation, capture_failed, tracés un à un), horloge démarrée avant toute écriture, tranche `SO_SNDTIMEO` de 50 ms re-testée à chaque itération. Défaut adjacent NOUVEAU (major 1, security) : sur le chemin EOF, `reap_group` tire sur un pgid brut après le `wait` qui a pu le libérer — fenêtre de recyclage en millisecondes, kill root. Obligation de la re-livraison.                                                        |
+| 4   | Pin du moteur vérifié par le harness  | **Close, vérifiée** : manifeste embarqué (`include_str!`), digest recalculé au run, tenu au pin du profil, refus sinon ; plateforme et euid observés, jamais assertés. Grain résiduel : `id`/`mediaType` du moteur proviennent du profil vérifié, seul le digest ancre le binaire (minor architecture).                                                                                                                                                                                                                                                                                       |
+| 5   | Bornage au grain content-adressé      | **Close, vérifiée** : le cap de lecture vaut `max_output_bytes + frame_len`, le cadre est retiré avant le ledger — la borne s'applique au contenu exact que l'attestation adresse. Aucun défaut relevé au round 4.                                                                                                                                                                                                                                                                                                                                                                            |
+| 6   | Matcher de globs sous re-fan-out      | **Close au niveau caractère, rouverte au niveau segment.** Les trois défauts historiques (panic non-ASCII, hang 34,8 s intra-segment, fail-open `*` littéral) sont vérifiés clos, tests de régression à l'appui. Le re-fan-out trouve un défaut NOUVEAU de la même classe un niveau au-dessus : `segments_match` (`**` inter-segments) est exponentiel — prouvé par extraction (4,9 s à 11 `**` consécutifs, > 5 s à 12), aucun test ne l'atteint (major 2, security). Injoignable aujourd'hui (journey 2 sans caller), obligation de la re-livraison.                                        |
+
+**Obligations d'entrée de la pull request de re-livraison** (chacune écrite
+rouge avant correction, par-dessus la transposition) : les trois majors du
+verdict security (fenêtre pgid du chemin EOF ; complexité `**` bornée avec
+test ; `runBoundToken`/`denyOnMissing` lus ou critère de surface reformulé —
+le verdict architecture élargit ce dernier point à SIX pointers tenus par
+`const` + mécanisme inconditionnel sans lecture : `schemaVersion`,
+`runBoundToken`, les quatre `/attestation/*`, plus `denyOnMissing` ; le compte
+exact de la surface est 21 pointers, celui du verdict architecture) et
+les minors persistants nommés par les deux verdicts (vestige
+`worker_transport_isolation` en commentaire de `controls.rs` ; code
+`harness.verifying_key_malformed` hors matrice fermée ; protocole de
+vérification opérateur documenté face aux capacités du manifeste lié ;
+`unframe` et frame non terminé ; ordre binding/exit ; `Debug` sur le secret de
+run ; scan `unsafe` contournable par `//` en littéral de chaîne ; le bloc
+`filesystem` hors surface alors que `canonical_workspace` applique
+partiellement `canonicalizePaths` — sous-déclaration fail-safe héritée du
+round 3, assumée ou résorbée mais nommée).
+
+L'enseignement de méthode du round xhigh se répète : quatre passes avaient
+déclaré le matcher clos, l'angle « correction » du round 4 l'a rouvert un
+niveau au-dessus. Et la leçon du round 3 aussi : deux des remédiations
+vérifiées ici avaient été affirmées par des commentaires de code qui
+sur-déclaraient leur propre effet (la capture précoce du pgid ne change pas la
+valeur obtenue).
