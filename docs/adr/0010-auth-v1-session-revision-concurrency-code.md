@@ -33,3 +33,8 @@ Remapper le 412 sur un code de la table (`400`/`403`) dégraderait la sémantiqu
 - Note de portée dans `IDENTITY-AUTHORIZATION.md` (table de refus = refus d'auth ; concurrence de révision = 412).
 - Réserve bloquante de la gate `identity-threat-model-review` levée.
 - Dette non bloquante enregistrée (verdict de gate) : `rotateSession()` est définie mais non appelée en production (conformité de fait par cookie neuf à chaque login) ; la course multi-onglets n'est prouvée qu'au niveau unitaire.
+
+No invariant (backfill 2026-08-18, Domain I — Process & CI) : cet ADR le dit
+déjà lui-même dans sa Décision — « aucun principe verrouillé n'est amendé »
+— une clarification de code de réponse HTTP pour une exigence déjà
+normative, sans ajout au registre.

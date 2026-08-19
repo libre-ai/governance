@@ -65,6 +65,32 @@ jobs:
           done
           exit $fail
 
+      # Domain I (Process & CI), chantier 5b: an accepted ADR is doctrine
+      # (AGENTS.md, "doctrine absent from it does not exist"), and doctrine
+      # belongs in the invariants register (ADR-0008 point 7) — so an
+      # accepted ADR either fed the register or explicitly did not, on the
+      # record, rather than leaving the question to a reader's inference.
+      # Permanent backfill, not a dated grandfathering window: the three
+      # pre-existing accepted ADRs with neither citation (0008, 0010, 0011)
+      # were each given the honest one of the two — 0008 a real I-01/I-04
+      # citation (it already sources both in INVARIANTS.md), 0010 and 0011
+      # a literal "No invariant" line quoting what each already said about
+      # its own scope — so the rule holds without exception from here on.
+      - name: Accepted ADRs from 0008 onward cite an invariant or state they carry none
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in docs/adr/*.md; do
+            num=$(basename "$f" | cut -c1-4)
+            if [ "$((10#$num))" -lt 8 ]; then continue; fi
+            if ! grep -qiE 'Statut.*accepted' "$f"; then continue; fi
+            if grep -qE 'I-[0-9]{2}' "$f"; then continue; fi
+            if grep -qF 'No invariant' "$f"; then continue; fi
+            echo "$f: accepted, cites no I-## invariant, and carries no 'No invariant' line"
+            fail=1
+          done
+          exit $fail
+
       - name: Invariants register citations resolve
         run: |
           set -euo pipefail
