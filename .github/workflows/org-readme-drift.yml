@@ -1,0 +1,47 @@
+name: Org README drift
+
+# Domain I (Process & CI), chantier 3. tools/presentation/render-org-readme.ts
+# computes libre-ai/.github's status section from a fresh fleet-status
+# projection, but the two live in different repositories: nothing verified
+# that a change to ecosystem/repositories.v1.yaml here ever reached the
+# published README there. A cross-repo push was judged too invasive (a
+# second credential, a cross-repo write path, a second branch protection to
+# reason about) for what a manual render-and-paste already fixes in one
+# command — this workflow takes the simpler path that still makes the drift
+# impossible to miss in silence: read the live README back and fail named
+# when it diverges from a fresh render. The fix stays manual; the gap does
+# not stay invisible.
+on:
+  schedule:
+    - cron: "51 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  org-readme-drift:
+    name: libre-ai/.github README matches a fresh render
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/governance/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify exact CI Bun revision
+        run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
+      # Reads every declared card, the hub's migration index and the live
+      # .github README over `gh api` — no `bun install` needed.
+      - name: Compare a fresh render against the published org README
+        run: bun tools/presentation/check-org-readme-drift.ts
+      # Repeat-failure alerting (chantier 2, tools/security/repeat-failure-alert.ts)
+      # lands on this workflow in a follow-up once that PR merges — kept out
+      # here so this gate does not depend on an unmerged sibling branch.
