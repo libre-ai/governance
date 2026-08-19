@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { auditRepository, collectSightings, type RepositorySources } from "./check-fleet-pins";
+import {
+  auditRepository,
+  buildFleetPinsQuery,
+  collectSightings,
+  parseFleetPinsBatchResponse,
+  parseFleetPinsRepoNode,
+  type RepositorySources,
+} from "./check-fleet-pins";
 
 // The gate's promise is that no governance revision reaches a consumer's
 // required checks without passing through a declared generation. Its previous
@@ -273,5 +280,78 @@ describe("collectSightings", () => {
       ),
     );
     expect(sightings).toEqual([]);
+  });
+});
+
+describe("buildFleetPinsQuery", () => {
+  test("aliases by index (a repository name may carry a hyphen, invalid in a GraphQL alias)", () => {
+    const query = buildFleetPinsQuery([
+      { repository: "libre-ai/authz-biscuit", card: "project.v1.yaml" },
+      { repository: "libre-ai/governance", card: "project.v1.yaml" },
+    ]);
+    expect(query).toContain('repo0: repository(owner: "libre-ai", name: "authz-biscuit")');
+    expect(query).toContain('repo1: repository(owner: "libre-ai", name: "governance")');
+  });
+
+  test("reads the tree for .github/workflows and blobs for package.json and the repository's own card path", () => {
+    const query = buildFleetPinsQuery([{ repository: "libre-ai/demo", card: "cards/demo.yaml" }]);
+    expect(query).toContain('object(expression: "main:.github/workflows")');
+    expect(query).toContain(
+      "... on Tree { entries { name type object { ... on Blob { text } } } }",
+    );
+    expect(query).toContain('object(expression: "main:package.json")');
+    expect(query).toContain('object(expression: "main:cards/demo.yaml")');
+  });
+});
+
+describe("parseFleetPinsRepoNode", () => {
+  test("reads workflow tree entries, filtering to yaml files only", () => {
+    const sources = parseFleetPinsRepoNode({
+      workflowsTree: {
+        entries: [
+          { name: "ci.yml", type: "blob", object: { text: "on: push\n" } },
+          { name: "README.md", type: "blob", object: { text: "not a workflow" } },
+          { name: "sub", type: "tree", object: null },
+        ],
+      },
+      manifest: { text: '{"name":"demo"}' },
+      card: { text: "pinned: x" },
+    });
+    expect(sources?.workflows.get("ci.yml")).toBe("on: push\n");
+    expect(sources?.workflows.has("README.md")).toBe(false);
+    expect(sources?.workflows.has("sub")).toBe(false);
+    expect(sources?.manifest).toBe('{"name":"demo"}');
+    expect(sources?.projectCard).toBe("pinned: x");
+  });
+
+  test("reads a repository with no workflows directory, no manifest and no card as legitimately empty, not an error", () => {
+    const sources = parseFleetPinsRepoNode({
+      workflowsTree: null,
+      manifest: null,
+      card: null,
+    });
+    expect(sources).toEqual({ workflows: new Map(), manifest: null, projectCard: null });
+  });
+
+  test("returns null only when the repository node itself is absent", () => {
+    expect(parseFleetPinsRepoNode(null)).toBeNull();
+    expect(parseFleetPinsRepoNode(undefined)).toBeNull();
+  });
+});
+
+describe("parseFleetPinsBatchResponse", () => {
+  const targets = [
+    { repository: "libre-ai/governance", card: "project.v1.yaml" },
+    { repository: "libre-ai/gone", card: "project.v1.yaml" },
+  ];
+
+  test("resolves a found repository and flags an unresolved one as unable-to-verify, never a fabricated finding", () => {
+    const result = parseFleetPinsBatchResponse(targets, {
+      repo0: { workflowsTree: null, manifest: null, card: null },
+      repo1: null,
+    });
+    expect("error" in (result.get("libre-ai/governance") as object)).toBe(false);
+    const gone = result.get("libre-ai/gone");
+    expect(gone && "error" in gone).toBe(true);
   });
 });

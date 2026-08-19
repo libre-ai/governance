@@ -171,23 +171,210 @@ export async function readCanonical(): Promise<CanonicalPolicy> {
   return (await Bun.file("toolchains/bun.json").json()) as CanonicalPolicy;
 }
 
-function gh(args: readonly string[]): string | null {
-  const result = Bun.spawnSync(["gh", ...args]);
-  return result.exitCode === 0 ? new TextDecoder().decode(result.stdout) : null;
+export interface WorkflowFile {
+  readonly name: string;
+  readonly text: string;
 }
 
-function listWorkflows(repository: string): string[] | null {
-  const listing = gh([
+/**
+ * Three-way outcome, not the previous `string[] | null` — collapsing "no
+ * .github/workflows directory" (a real, common answer: a private repository
+ * or a reserved product home with no CI yet, always treated as skip-by-
+ * construction) and "could not verify" (rate limit, other 4xx/5xx, network)
+ * into the same `null` meant a rate-limited sweep silently under-inspected
+ * the fleet and reported success anyway, unless it happened to fail on
+ * every repository (the only case `verifySources`'s empty-set guard could
+ * catch). Same 404-is-an-answer contract as every other gate in this file's
+ * neighborhood.
+ */
+export type WorkflowsFetchOutcome =
+  | { readonly kind: "found"; readonly files: readonly WorkflowFile[] }
+  | { readonly kind: "no-workflows-directory" }
+  | { readonly kind: "unable-to-verify"; readonly detail: string };
+
+/** Two retries beyond the first attempt — 1s then 3s — same budget as this file's neighbors. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface GhFetchResult {
+  readonly text: string | null;
+  readonly error: string | null;
+}
+
+async function ghWithRetry(args: readonly string[]): Promise<GhFetchResult> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const proc = Bun.spawn(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    if (exitCode === 0) return { text: stdout, error: null };
+    if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
+    lastError = stderr.trim() || `gh ${args.join(" ")} failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { text: null, error: lastError };
+}
+
+async function fetchWorkflowsViaRest(repository: string): Promise<WorkflowsFetchOutcome> {
+  const listing = await ghWithRetry([
     "api",
     `repos/${repository}/contents/.github/workflows`,
     "--jq",
     '.[] | select(.type == "file") | .name',
   ]);
-  if (listing === null) return null;
-  return listing
+  if (listing.error !== null) return { kind: "unable-to-verify", detail: listing.error };
+  if (listing.text === null) return { kind: "no-workflows-directory" };
+  const names = listing.text
     .split("\n")
-    .filter((name) => name.endsWith(".yml") || name.endsWith(".yaml"))
-    .map((name) => `.github/workflows/${name}`);
+    .map((name) => name.trim())
+    .filter((name) => name.endsWith(".yml") || name.endsWith(".yaml"));
+  const files: WorkflowFile[] = [];
+  for (const name of names) {
+    const file = await ghWithRetry([
+      "api",
+      `repos/${repository}/contents/.github/workflows/${name}`,
+      "-H",
+      "Accept: application/vnd.github.raw+json",
+    ]);
+    if (file.error !== null) return { kind: "unable-to-verify", detail: file.error };
+    if (file.text !== null) files.push({ name, text: file.text });
+  }
+  return { kind: "found", files };
+}
+
+// --- GraphQL primary path: same escape from the shared REST quota as
+// ecosystem/check-fleet-pins.ts — one Tree read per aliased repository
+// instead of a directory listing plus one REST call per workflow file.
+
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+export function buildWorkflowsTreeQuery(repositories: readonly string[]): string {
+  const blocks = repositories.map((repository, index) => {
+    const separator = repository.indexOf("/");
+    if (separator < 0) {
+      throw new Error(`malformed repository entry, expected "owner/name": ${repository}`);
+    }
+    const owner = JSON.stringify(repository.slice(0, separator));
+    const name = JSON.stringify(repository.slice(separator + 1));
+    return [
+      `  repo${index}: repository(owner: ${owner}, name: ${name}) {`,
+      `    workflowsTree: object(expression: "main:.github/workflows") {`,
+      `      ... on Tree { entries { name type object { ... on Blob { text } } } }`,
+      `    }`,
+      `  }`,
+    ].join("\n");
+  });
+  return `query {\n${blocks.join("\n")}\n}`;
+}
+
+interface GraphQLTreeEntry {
+  readonly name?: string;
+  readonly type?: string;
+  readonly object?: { readonly text?: string | null } | null;
+}
+interface GraphQLWorkflowsRepoNode {
+  readonly workflowsTree?: { readonly entries?: readonly (GraphQLTreeEntry | null)[] } | null;
+}
+
+/**
+ * `undefined`/`null` node (the alias's `repository(...)` field itself came
+ * back null) is unable-to-verify — a real NOT_FOUND, a permissions issue or
+ * a rename, structurally indistinguishable here. A structurally-present
+ * node with `workflowsTree: null` is the real, common "no .github/workflows
+ * directory" answer.
+ */
+export function parseWorkflowsTreeNode(node: unknown): WorkflowsFetchOutcome {
+  const typed = node as GraphQLWorkflowsRepoNode | null | undefined;
+  if (typed === null || typed === undefined) {
+    return {
+      kind: "unable-to-verify",
+      detail:
+        "repository not resolvable via GraphQL (see check-inventory-drift for real deletions/renames)",
+    };
+  }
+  if (typed.workflowsTree === null || typed.workflowsTree === undefined) {
+    return { kind: "no-workflows-directory" };
+  }
+  const files: WorkflowFile[] = [];
+  for (const entry of typed.workflowsTree.entries ?? []) {
+    if (entry === null || entry === undefined) continue;
+    const entryName = entry.name;
+    if (typeof entryName !== "string" || !/\.ya?ml$/.test(entryName)) continue;
+    if (entry.type !== undefined && entry.type !== "blob") continue;
+    const text = entry.object?.text;
+    if (typeof text === "string") files.push({ name: entryName, text });
+  }
+  return { kind: "found", files };
+}
+
+export function parseWorkflowsTreeBatchResponse(
+  repositories: readonly string[],
+  data: Readonly<Record<string, unknown>> | undefined,
+): Map<string, WorkflowsFetchOutcome> {
+  const result = new Map<string, WorkflowsFetchOutcome>();
+  repositories.forEach((repository, index) => {
+    result.set(repository, parseWorkflowsTreeNode(data?.[`repo${index}`] ?? null));
+  });
+  return result;
+}
+
+async function fetchWorkflowsViaGraphQL(
+  repositories: readonly string[],
+): Promise<Map<string, WorkflowsFetchOutcome> | null> {
+  const query = buildWorkflowsTreeQuery(repositories);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
+      if (parsed.data !== undefined)
+        return parseWorkflowsTreeBatchResponse(repositories, parsed.data);
+    } catch {
+      // Not valid JSON (or no `data` key) — fall through to retry/backoff.
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(
+    `GraphQL toolchain-source batch fetch failed after ${RETRY_DELAYS_MS.length + 1} attempt(s), falling back to per-repository REST: ${lastError}`,
+  );
+  return null;
+}
+
+async function fetchWorkflowsForFleet(
+  repositories: readonly string[],
+): Promise<Map<string, WorkflowsFetchOutcome>> {
+  const viaGraphQL = await fetchWorkflowsViaGraphQL(repositories);
+  if (viaGraphQL !== null) return viaGraphQL;
+  const result = new Map<string, WorkflowsFetchOutcome>();
+  for (const repository of repositories) {
+    result.set(repository, await fetchWorkflowsViaRest(repository));
+  }
+  return result;
 }
 
 if (import.meta.main) {
@@ -207,40 +394,55 @@ if (import.meta.main) {
     readonly repositories: readonly { readonly repository: string }[];
   };
 
+  const targets = inventory.repositories
+    .map((entry) => entry.repository)
+    .filter((repository) => !ARCHIVED_EXCLUSIONS.has(repository));
+  const fetched = await fetchWorkflowsForFleet(targets);
+
   const sources: DeclaredSource[] = [];
+  const unableToVerify: string[] = [];
   let inspected = 0;
   let unreadable = 0;
-  for (const { repository } of inventory.repositories) {
-    if (ARCHIVED_EXCLUSIONS.has(repository)) continue;
-    const workflows = listWorkflows(repository);
+  for (const repository of targets) {
+    const outcome = fetched.get(repository) ?? {
+      kind: "unable-to-verify" as const,
+      detail: "no fetch outcome recorded for this repository",
+    };
+    if (outcome.kind === "unable-to-verify") {
+      unableToVerify.push(`${repository}: unable to verify .github/workflows — ${outcome.detail}`);
+      continue;
+    }
     // No workflow directory readable: private repository or a reserved
     // product home with no CI yet. Skipped by construction, like the fleet-pin
     // gate — the sweep covers what declares a toolchain source.
-    if (workflows === null) {
+    if (outcome.kind === "no-workflows-directory") {
       unreadable += 1;
       continue;
     }
     inspected += 1;
-    for (const file of workflows) {
-      const text = gh([
-        "api",
-        `repos/${repository}/contents/${file}`,
-        "-H",
-        "Accept: application/vnd.github.raw+json",
-      ]);
-      if (text === null) continue;
-      sources.push(...extractDeclaredSources(repository, file, text));
+    for (const file of outcome.files) {
+      sources.push(
+        ...extractDeclaredSources(repository, `.github/workflows/${file.name}`, file.text),
+      );
     }
   }
 
-  const verdict = verifySources(sources, canonical);
+  // Same guard as ecosystem/check-fleet-pins.ts: an empty `sources` set
+  // caused by real unable-to-verify failures already has an honest
+  // explanation above — restating it as "the gate compared nothing" would
+  // launder a rate limit into a doctrine-shaped finding.
+  const verdict =
+    sources.length === 0 && unableToVerify.length > 0
+      ? { asserted: 0, failures: [] as string[] }
+      : verifySources(sources, canonical);
   const excluded = [...ARCHIVED_EXCLUSIONS]
     .map(([repository, reason]) => `${repository} (${reason})`)
     .join(", ");
-  if (verdict.failures.length > 0) {
+  if (verdict.failures.length > 0 || unableToVerify.length > 0) {
     for (const failure of verdict.failures) console.error(`DRIFT: ${failure}`);
+    for (const failure of unableToVerify) console.error(`UNABLE TO VERIFY: ${failure}`);
     console.error(
-      `The fleet installs its Bun toolchain from a source the canonical policy does not declare (${inspected} repositories inspected, ${verdict.asserted} declarations found).`,
+      `The fleet installs its Bun toolchain from a source the canonical policy does not declare (${inspected} repositories inspected, ${verdict.asserted} declarations found, ${unableToVerify.length} unable to verify).`,
     );
     process.exit(1);
   }

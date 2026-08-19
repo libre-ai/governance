@@ -197,17 +197,54 @@ export function compareTrees(
   return { asserted, excludedAdapted, excludedBootstrap, failures };
 }
 
-function treeOf(repo: string, ref: string): Map<string, string> | null {
-  const result = Bun.spawnSync([
-    "gh",
+/** Two retries beyond the first attempt — 1s then 3s — same budget as this file's neighbors (ecosystem/check-fleet-pins.ts et al). */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface GhFetchResult {
+  readonly text: string | null;
+  readonly error: string | null;
+}
+
+/**
+ * Both call sites below make one fixed request each (the hub migration
+ * index, and one tree per distinct destination repository the index
+ * names — a handful, not the whole fleet), so a retried REST call is
+ * enough here; no GraphQL batch, unlike the fleet-wide sweeps beside this
+ * gate in the same CI job.
+ */
+async function ghWithRetry(args: readonly string[]): Promise<GhFetchResult> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const result = Bun.spawnSync(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+    if (result.exitCode === 0) {
+      return { text: new TextDecoder().decode(result.stdout), error: null };
+    }
+    const stderr = new TextDecoder().decode(result.stderr).trim();
+    if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
+    lastError = stderr || `gh ${args.join(" ")} failed (exit ${result.exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { text: null, error: lastError };
+}
+
+async function treeOf(
+  repo: string,
+  ref: string,
+): Promise<Map<string, string> | { readonly error: string }> {
+  const result = await ghWithRetry([
     "api",
     `repos/${repo}/git/trees/${ref}?recursive=1`,
     "--jq",
     '.tree[] | select(.type == "blob") | .path + " " + .sha',
   ]);
-  if (result.exitCode !== 0) return null;
+  if (result.error !== null) return { error: result.error };
   const map = new Map<string, string>();
-  for (const line of new TextDecoder().decode(result.stdout).split("\n")) {
+  for (const line of (result.text ?? "").split("\n")) {
     if (!line) continue;
     const space = line.lastIndexOf(" ");
     map.set(line.slice(0, space), line.slice(space + 1));
@@ -222,28 +259,30 @@ if (import.meta.main) {
   // Reading it here is what made every entry look in-flight and every path
   // skippable. The orphan gate already reads the authority live; so does this
   // one now.
-  const indexRead = Bun.spawnSync([
-    "gh",
+  const indexRead = await ghWithRetry([
     "api",
     "repos/libre-ai/libre-ai/contents/ecosystem/migration-index.v1.yaml",
     "-H",
     "Accept: application/vnd.github.raw+json",
   ]);
-  if (indexRead.exitCode !== 0) {
-    console.error("cannot read the hub migration index — network gate needs the API");
+  if (indexRead.text === null) {
+    console.error(
+      `unable to verify the hub migration index — ${indexRead.error ?? "not found at main"}`,
+    );
     process.exit(1);
   }
-  const index = Bun.YAML.parse(new TextDecoder().decode(indexRead.stdout)) as {
+  const index = Bun.YAML.parse(indexRead.text) as {
     readonly hub_state?: string;
     readonly entries: readonly Entry[];
   };
   const windowClosed = index.hub_state === "archived";
-  const hubTree = treeOf("libre-ai/libre-ai", "main");
-  if (hubTree === null) {
-    console.error("cannot read the hub tree — network gate needs the API");
+  const hubTreeResult = await treeOf("libre-ai/libre-ai", "main");
+  if ("error" in hubTreeResult) {
+    console.error(`unable to verify the hub tree — ${hubTreeResult.error}`);
     process.exit(1);
   }
-  const destTrees = new Map<string, Map<string, string> | null>();
+  const hubTree = hubTreeResult;
+  const destTrees = new Map<string, Map<string, string> | { readonly error: string }>();
   const failures: string[] = [];
   let asserted = 0;
   let bootstrap = 0;
@@ -260,11 +299,14 @@ if (import.meta.main) {
         continue;
       if (entry.notes?.includes("history-only")) continue;
     }
-    if (!destTrees.has(entry.destination))
-      destTrees.set(entry.destination, treeOf(entry.destination, "main"));
-    const destTree = destTrees.get(entry.destination);
-    if (!destTree) {
-      failures.push(`${entry.destination}: tree unreadable`);
+    if (!destTrees.has(entry.destination)) {
+      destTrees.set(entry.destination, await treeOf(entry.destination, "main"));
+    }
+    const destTree = destTrees.get(entry.destination) as
+      | Map<string, string>
+      | { readonly error: string };
+    if ("error" in destTree) {
+      failures.push(`unable to verify ${entry.destination} tree — ${destTree.error}`);
       continue;
     }
     const result = compareTrees(entry, hubTree, destTree);
@@ -292,8 +334,13 @@ if (import.meta.main) {
       const colon = key.indexOf(":");
       const repo = key.slice(0, colon);
       const destPath = key.slice(colon + 1);
-      if (!destTrees.has(repo)) destTrees.set(repo, treeOf(repo, "main"));
-      if (destTrees.get(repo)?.has(destPath)) continue;
+      if (!destTrees.has(repo)) destTrees.set(repo, await treeOf(repo, "main"));
+      const destTree = destTrees.get(repo);
+      if (destTree !== undefined && "error" in destTree) {
+        failures.push(`unable to verify ${repo} tree — ${destTree.error}`);
+        continue;
+      }
+      if (destTree?.has(destPath)) continue;
       failures.push(
         `adaptation ${key} matches no hub path and is absent at destination — remove the phantom entry`,
       );

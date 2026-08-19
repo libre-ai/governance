@@ -177,29 +177,43 @@ interface FetchOutcome {
   readonly error: string | null;
 }
 
-function ghApi(path: string, raw: boolean): FetchOutcome {
-  const result = Bun.spawnSync([
-    "gh",
-    "api",
-    path,
-    ...(raw ? ["-H", "Accept: application/vnd.github.raw+json"] : []),
-  ]);
-  if (result.exitCode === 0) {
-    return { text: new TextDecoder().decode(result.stdout), error: null };
-  }
-  const stderr = new TextDecoder().decode(result.stderr).trim();
-  // A 404 is an answer — the path does not exist. Anything else (rate limit,
-  // 5xx, network) leaves the repository unread, and reading that as "no pin"
-  // would turn an outage into a green gate.
-  if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
-  return { text: null, error: stderr === "" ? `gh api ${path} failed` : stderr };
+/** Two retries beyond the first attempt — 1s then 3s — same budget as ecosystem/check-context-conformance.ts's ghWithRetry. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function readSources(
+/** REST fallback, retried, used only when the GraphQL batch below cannot be answered at all. */
+async function ghApi(path: string, raw: boolean): Promise<FetchOutcome> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const result = Bun.spawnSync([
+      "gh",
+      "api",
+      path,
+      ...(raw ? ["-H", "Accept: application/vnd.github.raw+json"] : []),
+    ]);
+    if (result.exitCode === 0) {
+      return { text: new TextDecoder().decode(result.stdout), error: null };
+    }
+    const stderr = new TextDecoder().decode(result.stderr).trim();
+    // A 404 is an answer — the path does not exist. Anything else (rate
+    // limit, 5xx, network) leaves the repository unread, and reading that as
+    // "no pin" would turn an outage into a green gate.
+    if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
+    lastError = stderr === "" ? `gh api ${path} failed` : stderr;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { text: null, error: lastError };
+}
+
+async function readSourcesViaRest(
   repository: string,
   cardPath: string,
-): RepositorySources | { readonly error: string } {
-  const listing = ghApi(`repos/${repository}/contents/.github/workflows?ref=main`, false);
+): Promise<RepositorySources | { readonly error: string }> {
+  const listing = await ghApi(`repos/${repository}/contents/.github/workflows?ref=main`, false);
   if (listing.error !== null) {
     return { error: `${repository}: cannot list .github/workflows — ${listing.error}` };
   }
@@ -211,7 +225,7 @@ function readSources(
         );
   const workflows = new Map<string, string>();
   for (const entry of entries) {
-    const file = ghApi(
+    const file = await ghApi(
       `repos/${repository}/contents/.github/workflows/${entry.name}?ref=main`,
       true,
     );
@@ -220,15 +234,171 @@ function readSources(
     }
     if (file.text !== null) workflows.set(entry.name, file.text);
   }
-  const manifest = ghApi(`repos/${repository}/contents/package.json?ref=main`, true);
+  const manifest = await ghApi(`repos/${repository}/contents/package.json?ref=main`, true);
   if (manifest.error !== null) {
     return { error: `${repository}: cannot read package.json — ${manifest.error}` };
   }
-  const card = ghApi(`repos/${repository}/contents/${cardPath}?ref=main`, true);
+  const card = await ghApi(`repos/${repository}/contents/${cardPath}?ref=main`, true);
   if (card.error !== null) {
     return { error: `${repository}: cannot read ${cardPath} — ${card.error}` };
   }
   return { workflows, manifest: manifest.text, projectCard: card.text };
+}
+
+// --- GraphQL primary path: same escape from the shared REST quota as
+// ecosystem/check-context-conformance.ts's fetchFleetViaGraphQL — one batch
+// request (one Tree + two Blob reads per aliased repository) instead of
+// gh api --paginate-style per-file REST calls (a directory listing plus one
+// call per workflow file plus two more, times every non-archived repo).
+
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+export interface FleetPinTarget {
+  readonly repository: string;
+  readonly card: string;
+}
+
+/**
+ * One aliased block per target, index-aliased (several repository names
+ * contain hyphens, invalid in a GraphQL alias). `.github/workflows` is read
+ * as a `Tree` (one request lists and fetches every entry, replacing the
+ * REST listing call plus one read per file); `package.json` and the card
+ * path are single `Blob` reads, matching every other GraphQL-batched gate
+ * in this repository.
+ */
+export function buildFleetPinsQuery(targets: readonly FleetPinTarget[]): string {
+  const blocks = targets.map((target, index) => {
+    const separator = target.repository.indexOf("/");
+    if (separator < 0) {
+      throw new Error(`malformed repository entry, expected "owner/name": ${target.repository}`);
+    }
+    const owner = JSON.stringify(target.repository.slice(0, separator));
+    const name = JSON.stringify(target.repository.slice(separator + 1));
+    const cardExpression = JSON.stringify(`main:${target.card}`);
+    return [
+      `  repo${index}: repository(owner: ${owner}, name: ${name}) {`,
+      `    workflowsTree: object(expression: "main:.github/workflows") {`,
+      `      ... on Tree { entries { name type object { ... on Blob { text } } } }`,
+      `    }`,
+      `    manifest: object(expression: "main:package.json") { ... on Blob { text } }`,
+      `    card: object(expression: ${cardExpression}) { ... on Blob { text } }`,
+      `  }`,
+    ].join("\n");
+  });
+  return `query {\n${blocks.join("\n")}\n}`;
+}
+
+interface GraphQLTreeEntry {
+  readonly name?: string;
+  readonly type?: string;
+  readonly object?: { readonly text?: string | null } | null;
+}
+interface GraphQLFleetPinsRepoNode {
+  readonly workflowsTree?: { readonly entries?: readonly (GraphQLTreeEntry | null)[] } | null;
+  readonly manifest?: { readonly text?: string | null } | null;
+  readonly card?: { readonly text?: string | null } | null;
+}
+
+/**
+ * `null` distinguishes "this alias's `repository(...)` field itself came
+ * back null" (unresolvable — retried, then unable-to-verify) from a
+ * structurally-present node with empty/absent sub-objects (a real answer:
+ * no workflows directory, no package.json, no card at that path — all
+ * legitimate on some repository, exactly as the REST path already treated
+ * a 404 as "no pin here", never as an error).
+ */
+export function parseFleetPinsRepoNode(node: unknown): RepositorySources | null {
+  const typed = node as GraphQLFleetPinsRepoNode | null | undefined;
+  if (typed === null || typed === undefined) return null;
+  const workflows = new Map<string, string>();
+  for (const entry of typed.workflowsTree?.entries ?? []) {
+    if (entry === null || entry === undefined) continue;
+    const entryName = entry.name;
+    if (typeof entryName !== "string" || !/\.ya?ml$/.test(entryName)) continue;
+    if (entry.type !== undefined && entry.type !== "blob") continue;
+    const text = entry.object?.text;
+    if (typeof text === "string") workflows.set(entryName, text);
+  }
+  const manifest = typeof typed.manifest?.text === "string" ? typed.manifest.text : null;
+  const projectCard = typeof typed.card?.text === "string" ? typed.card.text : null;
+  return { workflows, manifest, projectCard };
+}
+
+const GRAPHQL_UNRESOLVED_REPO =
+  "repository not resolvable via GraphQL (see check-inventory-drift for real deletions/renames)";
+
+export function parseFleetPinsBatchResponse(
+  targets: readonly FleetPinTarget[],
+  data: Readonly<Record<string, unknown>> | undefined,
+): Map<string, RepositorySources | { readonly error: string }> {
+  const result = new Map<string, RepositorySources | { readonly error: string }>();
+  targets.forEach((target, index) => {
+    const node = data?.[`repo${index}`] ?? null;
+    const parsed = parseFleetPinsRepoNode(node);
+    result.set(
+      target.repository,
+      parsed ?? { error: `${target.repository}: ${GRAPHQL_UNRESOLVED_REPO}` },
+    );
+  });
+  return result;
+}
+
+/** `null` means the whole batch could not be answered at all — caller falls back to REST, never assumes empty sources. */
+async function fetchFleetPinSourcesViaGraphQL(
+  targets: readonly FleetPinTarget[],
+): Promise<Map<string, RepositorySources | { readonly error: string }> | null> {
+  const query = buildFleetPinsQuery(targets);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
+      if (parsed.data !== undefined) return parseFleetPinsBatchResponse(targets, parsed.data);
+    } catch {
+      // Not valid JSON (or no `data` key) — fall through to retry/backoff.
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(
+    `GraphQL fleet-pins batch fetch failed after ${RETRY_DELAYS_MS.length + 1} attempt(s), falling back to per-repository REST: ${lastError}`,
+  );
+  return null;
+}
+
+async function fetchFleetPinSourcesViaRest(
+  targets: readonly FleetPinTarget[],
+): Promise<Map<string, RepositorySources | { readonly error: string }>> {
+  const result = new Map<string, RepositorySources | { readonly error: string }>();
+  for (const target of targets) {
+    result.set(target.repository, await readSourcesViaRest(target.repository, target.card));
+  }
+  return result;
+}
+
+async function fetchFleetPinSources(
+  targets: readonly FleetPinTarget[],
+): Promise<Map<string, RepositorySources | { readonly error: string }>> {
+  return (
+    (await fetchFleetPinSourcesViaGraphQL(targets)) ?? (await fetchFleetPinSourcesViaRest(targets))
+  );
 }
 
 if (import.meta.main) {
@@ -257,28 +427,50 @@ if (import.meta.main) {
     .filter((repo) => repo.lifecycle !== "archived")
     .map((repo) => ({ repository: repo.repository, card: repo.card ?? "project.v1.yaml" }));
 
-  const failures: string[] = [];
+  interface Failure {
+    readonly repository: string;
+    /** "unable-to-verify" must never render as "DRIFT:" — a rate limit is not a finding. */
+    readonly kind: "drift" | "unable-to-verify";
+    readonly detail: string;
+  }
+
+  const fetched = await fetchFleetPinSources(targets);
+  const failures: Failure[] = [];
   let covered = 0;
   let inspected = 0;
   for (const target of targets) {
-    const sources = readSources(target.repository, target.card);
+    const sources = fetched.get(target.repository) ?? {
+      error: `${target.repository}: no fetch outcome recorded for this repository`,
+    };
     if ("error" in sources) {
-      failures.push(sources.error);
+      failures.push({
+        repository: target.repository,
+        kind: "unable-to-verify",
+        detail: sources.error,
+      });
       continue;
     }
     const sightings = collectSightings(sources);
     if (sightings.length === 0) continue;
     covered += 1;
     inspected += sightings.length;
-    failures.push(...auditRepository(target.repository, sources, generationShas));
+    for (const detail of auditRepository(target.repository, sources, generationShas)) {
+      failures.push({ repository: target.repository, kind: "drift", detail });
+    }
   }
 
   // A gate that examined nothing proves nothing: an inventory that stopped
   // naming consumers, or a token that reads no repository, must be red.
-  if (covered === 0) {
-    failures.push(
-      `no pinned repository observed across ${targets.length} targets — the gate lost its inputs`,
-    );
+  // Only a real answer (zero sightings on every reachable repository) earns
+  // this "drift" framing — if nothing was reachable at all, every target
+  // already carries its own unable-to-verify entry above, and this would
+  // just restate that as a fake finding.
+  if (covered === 0 && failures.every((failure) => failure.kind !== "unable-to-verify")) {
+    failures.push({
+      repository: "fleet pins",
+      kind: "drift",
+      detail: `no pinned repository observed across ${targets.length} targets — the gate lost its inputs`,
+    });
   }
 
   // Merge adaptation: main migrated this gate's verdict to gate-report
@@ -289,11 +481,10 @@ if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const report = new GateReport();
   for (const failure of failures) {
-    const colon = failure.indexOf(":");
     report.check(
-      colon > 0 ? failure.slice(0, colon) : "fleet pins",
+      failure.repository,
       false,
-      `DRIFT: ${colon > 0 ? failure.slice(colon + 2) : failure}`,
+      failure.kind === "drift" ? `DRIFT: ${failure.detail}` : `unable to verify: ${failure.detail}`,
     );
   }
   if (failures.length === 0) {

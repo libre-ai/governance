@@ -68,45 +68,75 @@ export function findOrphans(
   return { covered, orphans };
 }
 
-function linesOf(spawn: readonly string[]): string[] | null {
-  const result = Bun.spawnSync([...spawn]);
-  if (result.exitCode !== 0) return null;
-  return new TextDecoder()
-    .decode(result.stdout)
-    .split("\n")
-    .filter((l) => l.length > 0);
+/** Two retries beyond the first attempt — 1s then 3s — same budget as this file's neighbors. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface GhFetchResult {
+  readonly lines: string[] | null;
+  readonly error: string | null;
+}
+
+/** Three fixed requests total (hub tree, migration index, FORGOTTEN.yaml) — a retried REST call is enough, no GraphQL batch needed. */
+async function linesOfWithRetry(spawn: readonly string[]): Promise<GhFetchResult> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const result = Bun.spawnSync([...spawn], { stdout: "pipe", stderr: "pipe" });
+    if (result.exitCode === 0) {
+      return {
+        lines: new TextDecoder()
+          .decode(result.stdout)
+          .split("\n")
+          .filter((l) => l.length > 0),
+        error: null,
+      };
+    }
+    const stderr = new TextDecoder().decode(result.stderr).trim();
+    lastError = stderr || `${spawn.join(" ")} failed (exit ${result.exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { lines: null, error: lastError };
 }
 
 if (import.meta.main) {
-  const hubPaths = linesOf([
+  const hubPathsResult = await linesOfWithRetry([
     "gh",
     "api",
     "repos/libre-ai/libre-ai/git/trees/main?recursive=1",
     "--jq",
     '.tree[] | select(.type == "blob") | .path',
   ]);
-  if (hubPaths === null) {
-    console.error("cannot read the hub tree");
+  if (hubPathsResult.lines === null) {
+    console.error(`unable to verify the hub tree — ${hubPathsResult.error}`);
     process.exit(1);
   }
-  const indexText = linesOf([
+  const hubPaths = hubPathsResult.lines;
+  const indexResult = await linesOfWithRetry([
     "gh",
     "api",
     "repos/libre-ai/libre-ai/contents/ecosystem/migration-index.v1.yaml?ref=main",
     "-H",
     "Accept: application/vnd.github.raw+json",
   ]);
-  const forgottenText = linesOf([
+  const forgottenResult = await linesOfWithRetry([
     "gh",
     "api",
     "repos/libre-ai/libre-ai/contents/ecosystem/FORGOTTEN.yaml?ref=main",
     "-H",
     "Accept: application/vnd.github.raw+json",
   ]);
-  if (indexText === null || forgottenText === null) {
-    console.error("cannot read the hub registers");
+  if (indexResult.lines === null || forgottenResult.lines === null) {
+    console.error(
+      `unable to verify the hub registers — index: ${indexResult.error ?? "ok"}; forgotten: ${forgottenResult.error ?? "ok"}`,
+    );
     process.exit(1);
   }
+  const indexText = indexResult.lines;
+  const forgottenText = forgottenResult.lines;
   const yamlApi = (Bun as unknown as { YAML: { parse(t: string): unknown } }).YAML;
   const index = yamlApi.parse(indexText.join("\n")) as {
     entries: readonly { hub_path: string }[];
