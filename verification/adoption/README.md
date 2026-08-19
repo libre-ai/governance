@@ -17,16 +17,27 @@ independent components feed `distribution/evidence/adoption/`.
    `PLAYWRIGHT_BROWSERS_PATH`); every token, key and ambient identity is
    removed, and `GIT_TERMINAL_PROMPT=0` turns any authentication attempt into
    a loud failure;
-2. anonymous `git clone --depth 1 https://github.com/libre-ai/libre-ai`
+2. anonymous `git clone --depth 1 https://github.com/libre-ai/governance`
    (shallow: the loop proves the published HEAD, no chain step needs history,
    and the cloned sha is recorded);
 3. `bun install --frozen-lockfile` — the committed lockfile must suffice;
 4. the existing reference chain, exactly as its evidence documents it
    (`bun verification/harness/reference-chain.ts`), with the obtained digest
    compared to the one published in
-   `verification/harness/wp-g2-q01-reference-chain-evidence.md`;
-5. one locked contract validated with the repository's own conformance
-   tooling (`bun tools/quality/check-policy-core-vectors.ts`).
+   `verification/harness/wp-g2-q01-reference-chain-evidence.md`.
+
+Until 2026-08-19 this cloned `libre-ai/libre-ai` (the pre-γ hub) and ran a
+fifth step, `bun tools/quality/check-policy-core-vectors.ts`. Migration γ
+(ADR-0020) froze that hub read-only and moved `verification/harness/` and
+`verification/adoption/` to this repository — the loop was still cloning the
+frozen hub, so both paths came back "Module not found" for three consecutive
+weekly runs (2026-08-05, -12, -19). REPOSITORY_URL now points at
+`libre-ai/governance`, the repository that actually carries the chain; the
+fifth step is retired, not re-pointed — `check-policy-core-vectors.ts` was
+deliberately removed from this repository at its 2026-07-29 bootstrap ("belongs
+to the contracts authority"), and its successor `tools/quality/
+check-contracts.ts` is gated by `libre-ai/contracts`' own CI. Detail and
+citations: the module doc in `reproduce.ts`.
 
 Output: `distribution/evidence/adoption/YYYY-MM-DD-<short-sha>.json` (strict
 schema in `attestation.ts`), the same rendered as Markdown, and a regenerated
@@ -40,8 +51,11 @@ Run it locally from the repository root:
 bun verification/adoption/reproduce.ts
 ```
 
-Prerequisites (public toolchains, by design): git, Bun >= 1.4, a Rust
-toolchain via rustup, and Playwright browsers (`bunx playwright install`).
+Prerequisites (public toolchains, by design): git and Bun >= 1.4. The loop
+also passes through `CARGO_HOME`/`RUSTUP_HOME`/`PLAYWRIGHT_BROWSERS_PATH` when
+present (`cleanroom.ts`), opportunistically, for a future chain step that
+needs them — governance's current reference chain spawns neither `cargo` nor
+a browser engine.
 
 ## Component 2 — heterogeneous cold reader
 
