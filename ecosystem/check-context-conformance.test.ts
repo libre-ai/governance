@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  buildBatchQuery,
   checkFreshness,
   claudeAdapterIssue,
   countLines,
@@ -9,6 +10,7 @@ import {
   lastLifecycleTransition,
   layerMarkerOk,
   missingSections,
+  parseBatchResponse,
   parseRegistry,
   resolveLayerSpec,
   reviewContext,
@@ -312,6 +314,38 @@ describe("reviewContext", () => {
     expect(outcome.failures[0]).toContain("missing");
   });
 
+  test("reports an AGENTS.md fetch error as unable-to-verify, never as missing", () => {
+    // The exact regression this type exists to prevent: a rate-limited or
+    // otherwise unreachable gh api call must never be reported the same way
+    // as a confirmed absence — the required check would then fail every
+    // pull request on a transient condition unrelated to any repository's
+    // real AGENTS.md.
+    const outcome = reviewContext(
+      entry,
+      { agents: null, claude: null, agentsFetchError: "API rate limit exceeded (HTTP 403)" },
+      freshness,
+    );
+    expect(outcome.failures.length).toBe(1);
+    expect(outcome.failures[0]).toContain("unable to verify");
+    expect(outcome.failures[0]).toContain("rate limit");
+    expect(outcome.failures.some((f) => f.includes("missing"))).toBe(false);
+  });
+
+  test("reports a CLAUDE.md fetch error as unable-to-verify, distinct from a missing adapter", () => {
+    const agents = agentsFixture({
+      sections: ["Authority", "Boundaries", "Quality gates", "Agents"],
+      layerMention: "couche 4",
+    });
+    const outcome = reviewContext(
+      entry,
+      { agents, claude: null, claudeFetchError: "gh api ... failed (HTTP 500)" },
+      freshness,
+    );
+    expect(outcome.failures.some((f) => f.includes("unable to verify CLAUDE.md"))).toBe(true);
+    expect(outcome.failures.some((f) => f.includes("is not the byte-exact"))).toBe(false);
+    expect(outcome.failures.some((f) => f.includes("is missing while"))).toBe(false);
+  });
+
   test("passes a fully conformant couche-4 AGENTS.md", () => {
     const agents = agentsFixture({
       sections: ["Authority", "Boundaries", "Quality gates", "Agents"],
@@ -387,5 +421,70 @@ describe("reviewContext", () => {
     );
     expect(outcome.failures).toEqual([]);
     expect(outcome.notes.length).toBeGreaterThan(0);
+  });
+});
+
+describe("buildBatchQuery", () => {
+  test("aliases by index, never by repository name (hyphens are not valid GraphQL alias characters)", () => {
+    const query = buildBatchQuery(["libre-ai/governance", "libre-ai/authz-biscuit"]);
+    expect(query).toContain('repo0: repository(owner: "libre-ai", name: "governance")');
+    expect(query).toContain('repo1: repository(owner: "libre-ai", name: "authz-biscuit")');
+    expect(query).not.toContain("repo-authz-biscuit:");
+  });
+
+  test("requests AGENTS.md, CLAUDE.md and the AGENTS.md commit history in one block", () => {
+    const query = buildBatchQuery(["libre-ai/demo"]);
+    expect(query).toContain('object(expression: "main:AGENTS.md")');
+    expect(query).toContain('object(expression: "main:CLAUDE.md")');
+    expect(query).toContain('history(first: 1, path: "AGENTS.md")');
+  });
+
+  test("rejects a malformed registry entry instead of guessing an owner", () => {
+    expect(() => buildBatchQuery(["not-a-repo-slug"])).toThrow(/owner\/name/);
+  });
+});
+
+describe("parseBatchResponse", () => {
+  const repositories = ["libre-ai/governance", "libre-ai/gone"];
+
+  test("reads a found repository's blobs and last-commit date", () => {
+    const result = parseBatchResponse(repositories, {
+      repo0: {
+        agents: { text: "# demo\n" },
+        claude: { text: "@AGENTS.md\n" },
+        defaultBranchRef: {
+          target: { history: { nodes: [{ committedDate: "2026-08-18T12:00:00Z" }] } },
+        },
+      },
+      repo1: null,
+    });
+    const governance = result.get("libre-ai/governance");
+    expect(governance?.agents).toEqual({ text: "# demo\n", error: null });
+    expect(governance?.claude).toEqual({ text: "@AGENTS.md\n", error: null });
+    expect(governance?.agentsLastModifiedOn).toBe("2026-08-18");
+  });
+
+  test("reports a null repository node as unable-to-verify, never as a missing file", () => {
+    const result = parseBatchResponse(repositories, {
+      repo0: { agents: { text: "# demo\n" }, claude: null, defaultBranchRef: null },
+      repo1: null,
+    });
+    const gone = result.get("libre-ai/gone");
+    expect(gone?.agents.text).toBeNull();
+    expect(gone?.agents.error).not.toBeNull();
+    expect(gone?.agents.error).toContain("not resolvable");
+  });
+
+  test("reads a genuinely absent AGENTS.md object as a confirmed absence, not an error", () => {
+    const result = parseBatchResponse(["libre-ai/demo"], {
+      repo0: { agents: null, claude: null, defaultBranchRef: null },
+    });
+    const demo = result.get("libre-ai/demo");
+    expect(demo?.agents).toEqual({ text: null, error: null });
+  });
+
+  test("degrades to no fetch outcome only when the alias itself is entirely absent from data", () => {
+    const result = parseBatchResponse(["libre-ai/demo"], {});
+    expect(result.get("libre-ai/demo")?.agents.error).not.toBeNull();
   });
 });

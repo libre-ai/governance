@@ -70,3 +70,8 @@ Ces valeurs sont des décisions de phase, tunables par ADR ultérieur ; elles bo
 - `STATUS.md` reflète les décisions et l'état courant.
 - `ecosystem/repositories.v1.yaml` nomme la couche 2 « Polaris ».
 - Ces décisions sont des décisions de phase : elles peuvent évoluer par ADR ultérieur sans toucher le registre des invariants.
+
+No invariant (backfill 2026-08-18, Domain I — Process & CI) : conforme au
+Contexte de cet ADR, qui le dit déjà — « ce ne sont pas des invariants
+durables (elles portent sur une phase d'exécution), d'où leur enregistrement
+en ADR d'exécution plutôt qu'au registre des invariants ».

@@ -197,22 +197,247 @@ export function compareTrees(
   return { asserted, excludedAdapted, excludedBootstrap, failures };
 }
 
-function treeOf(repo: string, ref: string): Map<string, string> | null {
-  const result = Bun.spawnSync([
-    "gh",
+/** Two retries beyond the first attempt — 1s then 3s — same budget as this file's neighbors (ecosystem/check-fleet-pins.ts et al). */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface GhFetchResult {
+  readonly text: string | null;
+  readonly error: string | null;
+}
+
+/**
+ * REST fallback, retried, used only when the GraphQL paths below cannot be
+ * answered at all — the shared installation REST quota was observed
+ * exhausted even for a single fixed call (2026-08-19, run 32215188728: the
+ * hub migration index failed all 3 retries in ~5s in a window with no other
+ * governance workflow in flight), so "low volume" does not exempt a call
+ * from needing the same GraphQL escape as the fleet-wide sweeps beside this
+ * gate in the same CI job.
+ */
+async function ghWithRetry(args: readonly string[]): Promise<GhFetchResult> {
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const result = Bun.spawnSync(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+    if (result.exitCode === 0) {
+      return { text: new TextDecoder().decode(result.stdout), error: null };
+    }
+    const stderr = new TextDecoder().decode(result.stderr).trim();
+    if (stderr.includes("(HTTP 404)")) return { text: null, error: null };
+    lastError = stderr || `gh ${args.join(" ")} failed (exit ${result.exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  return { text: null, error: lastError };
+}
+
+async function ghGraphQLRaw(
+  query: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  proc.stdin.write(query);
+  proc.stdin.end();
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
+
+function splitRepository(repository: string): { readonly owner: string; readonly name: string } {
+  const separator = repository.indexOf("/");
+  if (separator < 0) {
+    throw new Error(`malformed repository entry, expected "owner/name": ${repository}`);
+  }
+  return { owner: repository.slice(0, separator), name: repository.slice(separator + 1) };
+}
+
+/** GraphQL primary for a single blob, REST+retry fallback — same shape as this file's neighbors. */
+async function fetchBlobWithFallback(
+  repository: string,
+  path: string,
+  ref: string,
+): Promise<GhFetchResult> {
+  const { owner, name } = splitRepository(repository);
+  const expression = JSON.stringify(`${ref}:${path}`);
+  const query = `query { repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(name)}) { object(expression: ${expression}) { ... on Blob { text } } } }`;
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as {
+        data?: { repository?: { object?: { text?: string | null } | null } | null };
+      };
+      const repository_ = parsed.data?.repository;
+      if (repository_ !== undefined && repository_ !== null) {
+        return { text: repository_.object?.text ?? null, error: null };
+      }
+    } catch {
+      // fall through to retry/backoff
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(
+    `GraphQL blob fetch failed after retries for ${repository}:${path}, falling back to REST: ${lastError}`,
+  );
+  return ghWithRetry([
+    "api",
+    `repos/${repository}/contents/${path}?ref=${ref}`,
+    "-H",
+    "Accept: application/vnd.github.raw+json",
+  ]);
+}
+
+// --- Recursive tree, via a breadth-first GraphQL walk ---
+//
+// GitHub's GraphQL API has no direct equivalent of REST's
+// `git/trees/{ref}?recursive=1` (no "recursive" flag on `Tree.entries`), so
+// a single-query replacement would either be wrong (a fixed nesting depth
+// silently truncates a deeper subtree — producing a false "missing at
+// destination" drift finding, worse than an honest failure) or require
+// walking one level per query. This walks one BREADTH-FIRST WAVE per tree
+// depth (typically 3-6 for this repository), batching every directory
+// discovered at that depth into ONE GraphQL request (aliased `object(...)`
+// reads under a single `repository(...)` selection) — round-trips scale
+// with tree depth, not file or directory count.
+
+interface TreeWaveEntry {
+  readonly name: string;
+  readonly type: string;
+  readonly oid: string;
+}
+
+function waveAlias(index: number): string {
+  return `dir${index}`;
+}
+
+export function buildTreeWaveQuery(
+  owner: string,
+  name: string,
+  ref: string,
+  directories: readonly string[],
+): string {
+  const fields = directories.map((dir, index) => {
+    const expression = JSON.stringify(dir === "" ? `${ref}:` : `${ref}:${dir}`);
+    return `    ${waveAlias(index)}: object(expression: ${expression}) { ... on Tree { entries { name type oid } } }`;
+  });
+  return [
+    `query {`,
+    `  repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(name)}) {`,
+    ...fields,
+    `  }`,
+    `}`,
+  ].join("\n");
+}
+
+export function parseTreeWaveResponse(
+  directories: readonly string[],
+  data: Readonly<Record<string, unknown>> | undefined,
+): Map<string, readonly TreeWaveEntry[]> | null {
+  const repository = data?.repository as Record<string, unknown> | null | undefined;
+  if (repository === undefined || repository === null) return null;
+  const result = new Map<string, readonly TreeWaveEntry[]>();
+  directories.forEach((dir, index) => {
+    const node = repository[waveAlias(index)] as
+      | { entries?: readonly TreeWaveEntry[] }
+      | null
+      | undefined;
+    result.set(dir, node?.entries ?? []);
+  });
+  return result;
+}
+
+async function fetchTreeWave(
+  owner: string,
+  name: string,
+  ref: string,
+  directories: readonly string[],
+): Promise<Map<string, readonly TreeWaveEntry[]> | null> {
+  const query = buildTreeWaveQuery(owner, name, ref, directories);
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const { stdout, stderr, exitCode } = await ghGraphQLRaw(query);
+    try {
+      const parsed = JSON.parse(stdout) as { data?: Record<string, unknown> };
+      if (parsed.data !== undefined) {
+        const wave = parseTreeWaveResponse(directories, parsed.data);
+        if (wave !== null) return wave;
+      }
+    } catch {
+      // fall through to retry/backoff
+    }
+    lastError = stderr.trim() || `gh api graphql failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
+  }
+  console.error(`GraphQL tree wave fetch failed after retries for ${owner}/${name}: ${lastError}`);
+  return null;
+}
+
+const MAX_TREE_WAVES = 30; // safety cap: 30 directory levels is far beyond any real repository
+
+async function treeOfViaGraphQL(
+  repository: string,
+  ref: string,
+): Promise<Map<string, string> | null> {
+  const { owner, name } = splitRepository(repository);
+  const result = new Map<string, string>();
+  let frontier: string[] = [""];
+  for (let wave = 0; wave < MAX_TREE_WAVES && frontier.length > 0; wave++) {
+    const waveResult = await fetchTreeWave(owner, name, ref, frontier);
+    if (waveResult === null) return null;
+    const nextFrontier: string[] = [];
+    for (const dir of frontier) {
+      for (const entry of waveResult.get(dir) ?? []) {
+        const fullPath = dir === "" ? entry.name : `${dir}/${entry.name}`;
+        if (entry.type === "blob") result.set(fullPath, entry.oid);
+        else if (entry.type === "tree") nextFrontier.push(fullPath);
+        // "commit" entries are submodules — REST's --jq filter already
+        // excluded everything but type "blob"; matched here by omission.
+      }
+    }
+    frontier = nextFrontier;
+  }
+  return result;
+}
+
+async function treeOfViaRest(
+  repo: string,
+  ref: string,
+): Promise<Map<string, string> | { readonly error: string }> {
+  const result = await ghWithRetry([
     "api",
     `repos/${repo}/git/trees/${ref}?recursive=1`,
     "--jq",
     '.tree[] | select(.type == "blob") | .path + " " + .sha',
   ]);
-  if (result.exitCode !== 0) return null;
+  if (result.error !== null) return { error: result.error };
   const map = new Map<string, string>();
-  for (const line of new TextDecoder().decode(result.stdout).split("\n")) {
+  for (const line of (result.text ?? "").split("\n")) {
     if (!line) continue;
     const space = line.lastIndexOf(" ");
     map.set(line.slice(0, space), line.slice(space + 1));
   }
   return map;
+}
+
+async function treeOf(
+  repo: string,
+  ref: string,
+): Promise<Map<string, string> | { readonly error: string }> {
+  const viaGraphQL = await treeOfViaGraphQL(repo, ref);
+  if (viaGraphQL !== null) return viaGraphQL;
+  return treeOfViaRest(repo, ref);
 }
 
 if (import.meta.main) {
@@ -222,28 +447,29 @@ if (import.meta.main) {
   // Reading it here is what made every entry look in-flight and every path
   // skippable. The orphan gate already reads the authority live; so does this
   // one now.
-  const indexRead = Bun.spawnSync([
-    "gh",
-    "api",
-    "repos/libre-ai/libre-ai/contents/ecosystem/migration-index.v1.yaml",
-    "-H",
-    "Accept: application/vnd.github.raw+json",
-  ]);
-  if (indexRead.exitCode !== 0) {
-    console.error("cannot read the hub migration index — network gate needs the API");
+  const indexRead = await fetchBlobWithFallback(
+    "libre-ai/libre-ai",
+    "ecosystem/migration-index.v1.yaml",
+    "main",
+  );
+  if (indexRead.text === null) {
+    console.error(
+      `unable to verify the hub migration index — ${indexRead.error ?? "not found at main"}`,
+    );
     process.exit(1);
   }
-  const index = Bun.YAML.parse(new TextDecoder().decode(indexRead.stdout)) as {
+  const index = Bun.YAML.parse(indexRead.text) as {
     readonly hub_state?: string;
     readonly entries: readonly Entry[];
   };
   const windowClosed = index.hub_state === "archived";
-  const hubTree = treeOf("libre-ai/libre-ai", "main");
-  if (hubTree === null) {
-    console.error("cannot read the hub tree — network gate needs the API");
+  const hubTreeResult = await treeOf("libre-ai/libre-ai", "main");
+  if ("error" in hubTreeResult) {
+    console.error(`unable to verify the hub tree — ${hubTreeResult.error}`);
     process.exit(1);
   }
-  const destTrees = new Map<string, Map<string, string> | null>();
+  const hubTree = hubTreeResult;
+  const destTrees = new Map<string, Map<string, string> | { readonly error: string }>();
   const failures: string[] = [];
   let asserted = 0;
   let bootstrap = 0;
@@ -260,11 +486,14 @@ if (import.meta.main) {
         continue;
       if (entry.notes?.includes("history-only")) continue;
     }
-    if (!destTrees.has(entry.destination))
-      destTrees.set(entry.destination, treeOf(entry.destination, "main"));
-    const destTree = destTrees.get(entry.destination);
-    if (!destTree) {
-      failures.push(`${entry.destination}: tree unreadable`);
+    if (!destTrees.has(entry.destination)) {
+      destTrees.set(entry.destination, await treeOf(entry.destination, "main"));
+    }
+    const destTree = destTrees.get(entry.destination) as
+      | Map<string, string>
+      | { readonly error: string };
+    if ("error" in destTree) {
+      failures.push(`unable to verify ${entry.destination} tree — ${destTree.error}`);
       continue;
     }
     const result = compareTrees(entry, hubTree, destTree);
@@ -292,8 +521,13 @@ if (import.meta.main) {
       const colon = key.indexOf(":");
       const repo = key.slice(0, colon);
       const destPath = key.slice(colon + 1);
-      if (!destTrees.has(repo)) destTrees.set(repo, treeOf(repo, "main"));
-      if (destTrees.get(repo)?.has(destPath)) continue;
+      if (!destTrees.has(repo)) destTrees.set(repo, await treeOf(repo, "main"));
+      const destTree = destTrees.get(repo);
+      if (destTree !== undefined && "error" in destTree) {
+        failures.push(`unable to verify ${repo} tree — ${destTree.error}`);
+        continue;
+      }
+      if (destTree?.has(destPath)) continue;
       failures.push(
         `adaptation ${key} matches no hub path and is absent at destination — remove the phantom entry`,
       );

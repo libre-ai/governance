@@ -75,3 +75,9 @@ Aucune action n'est requise ni prise dans `ai-practices` par cette clôture : il
 ## Ce que cet ADR ne tranchait pas (avant clôture)
 
 Pour mémoire du débat original : jusqu'à sa clôture ci-dessus, cet ADR n'avait lui-même réécrit aucun non-objectif, desserré aucun garde-fou, ni modifié aucun statut d'ADR dans un autre dépôt — la clôture de 2026-08-18 (§Résolution) reste de cette nature : un constat de fait, pas un acte de ce type. La question de savoir si « v1 » qualifiait une phase ou un principe durable n'est pas tranchée en tant que telle par cet ADR ; elle cesse seulement d'être bloquante ici, la contradiction qui la rendait urgente ayant disparu par ailleurs. La seule voie identifiée pour la rouvrir est la note prospective de la Résolution.
+
+## Invariant
+
+No invariant — this ADR records the factual dissolution of a contradiction
+(the conflicting artefact left the working tree on 2026-07-30); it creates no
+durable doctrine beyond that record.
