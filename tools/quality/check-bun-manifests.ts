@@ -42,6 +42,16 @@ const runtimeForms = TOOLING.map((base) => `bun ${base}/check-bun-minimum.ts`);
 const manifestForms = TOOLING.map(
   (base) => `bun run check:bun:runtime && bun ${base}/check-bun-manifests.ts`,
 );
+// An apps/*/ or packages/*/ manifest sits one directory below the root, so
+// the same two tooling bases resolve from there through "../..": a
+// repository that still carries its own top-level tools/quality/ (the hub
+// during dismantling, or a repository that never split it out) keeps the
+// pre-dispatch form; a repository whose only tools/quality/ is the pinned
+// governance git-dep (every product repository after its ADR-0020 general
+// activation) uses the node_modules form. Accepting both is additive
+// tolerance, not a weakened check: a manifest still fails if it names
+// neither.
+const NESTED_TOOLING_BASES = TOOLING.map((base) => `../../${base}`);
 
 if (!isBunVersionAtLeast(policy.version, policy.minimumVersion)) {
   failures.push("toolchains/bun.json: selected version is below the minimum");
@@ -99,9 +109,8 @@ for (const pattern of [
 for (const path of [...manifestPaths].sort()) {
   const manifest = (await Bun.file(path).json()) as PackageManifest;
   const template = path.startsWith("distribution/templates/");
-  const expectedCheck = template
-    ? "bun scripts/check-bun-version.ts"
-    : "bun ../../tools/quality/check-bun-minimum.ts";
+  const nestedCheckForms = NESTED_TOOLING_BASES.map((base) => `bun ${base}/check-bun-minimum.ts`);
+  const expectedCheckForms = template ? ["bun scripts/check-bun-version.ts"] : nestedCheckForms;
 
   if (manifest.engines?.bun !== expectedEngine) {
     failures.push(`${path}: engines.bun must be ${expectedEngine}`);
@@ -109,8 +118,8 @@ for (const path of [...manifestPaths].sort()) {
   if (template && manifest.packageManager !== selectedPackageManager) {
     failures.push(`${path}: packageManager must be ${selectedPackageManager}`);
   }
-  if (manifest.scripts?.["check:bun"] !== expectedCheck) {
-    failures.push(`${path}: check:bun must be ${expectedCheck}`);
+  if (!expectedCheckForms.includes(manifest.scripts?.["check:bun"] ?? "")) {
+    failures.push(`${path}: check:bun must be one of ${expectedCheckForms.join(" or ")}`);
   }
   if (template) {
     const guardSource = await Bun.file(

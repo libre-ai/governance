@@ -1,19 +1,37 @@
 /**
  * Fleet pin gate (K4 WAVE-A-02 / FINAL-01): enumerate every governance
  * revision a repository lets into its required checks, and fail when one is
- * not a 40-character commit sha, when they do not all agree, or when the sha
- * is absent from ecosystem/fleet-pins.v1.yaml. Network gate by nature (like
- * inventory-drift); repositories that consume no template are skipped by
- * construction — the gate covers what declares a pin.
+ * not a 40-character commit sha, when they do not all agree, when the sha is
+ * absent from ecosystem/fleet-pins.v1.yaml, or when it is declared but stale
+ * — more than two generations behind the most recent one. Network gate by
+ * nature (like inventory-drift); repositories that consume no template are
+ * skipped by construction — the gate covers what declares a pin. Every
+ * non-archived repository in the inventory is audited, not only
+ * satellite/authority: a `reserved-product-home` or `active-application` repo
+ * that wires the templates is exactly as exposed to an unpinned tooling
+ * checkout as a satellite is, and restricting the scan by role is how eight
+ * repositories carrying two different undeclared governance commits went
+ * unnoticed through the 2026-08-04 generation (K4 WAVE-A/domain-C fleet
+ * convergence, 2026-08-18).
  *
- * Three surfaces let a governance revision in, and all three are read:
+ * Four surfaces let a governance revision in, and all four are read:
  *   - `uses: libre-ai/governance/...@<ref>` in ANY workflow file, not only
  *     `ci.yml` — every consumer also pins `reusable-context-hygiene.yml` from
  *     `context-hygiene.yml`;
  *   - `tooling_ref:`, which reusable-licensing.yml checks governance out at to
  *     run its tooling: a mutable value there executes unpinned tooling inside
  *     a required check;
- *   - `github:libre-ai/governance#<ref>` in package.json.
+ *   - `github:libre-ai/governance#<ref>` in package.json;
+ *   - `pinned: "github:libre-ai/governance#<ref>"` in the repository's own
+ *     project card (`project.v1.yaml` at the repository root for every
+ *     non-hub repository, per its `card:` entry in repositories.v1.yaml) —
+ *     found only during the 2026-08-18 convergence pass, on a repository
+ *     (`orchestrator`) whose card had drifted to a generation none of its CI
+ *     surfaces ever carried, and another (`harness`) whose card lagged one
+ *     generation behind CI surfaces that were otherwise current. The card is
+ *     documentation a human reads to learn what a repository depends on;
+ *     a sha there that the CI wiring has moved past is exactly the kind of
+ *     drift this gate exists to catch, same as any other surface.
  *
  * Reading one occurrence of one of them (the previous implementation matched a
  * single `uses:` in `ci.yml`) let one correct pin answer for a whole
@@ -25,6 +43,8 @@ export interface RepositorySources {
   readonly workflows: ReadonlyMap<string, string>;
   /** package.json text, or null when the repository has none. */
   readonly manifest: string | null;
+  /** The repository's project card text (its `card:` path), or null when unreadable/absent. */
+  readonly projectCard: string | null;
 }
 
 export interface PinSighting {
@@ -72,17 +92,30 @@ export function collectSightings(sources: RepositorySources): PinSighting[] {
       });
     }
   }
+  if (sources.projectCard !== null) {
+    for (const match of sources.projectCard.matchAll(GIT_DEP)) {
+      sightings.push({
+        source: "project.v1.yaml",
+        subject: "project card pin",
+        ref: match[1] as string,
+      });
+    }
+  }
   return sightings;
 }
 
 export function auditRepository(
   repository: string,
   sources: RepositorySources,
-  declared: ReadonlySet<string>,
+  // Declared generations, oldest first — the order they were added to
+  // fleet-pins.v1.yaml. Age is measured against this order, so callers must
+  // pass it as declared, not resorted.
+  generations: readonly string[],
 ): string[] {
   const sightings = collectSightings(sources);
   if (sightings.length === 0) return [];
 
+  const declared = new Set(generations);
   const failures: string[] = [];
   const pinned: PinSighting[] = [];
   for (const sighting of sightings) {
@@ -110,6 +143,28 @@ export function auditRepository(
       failures.push(
         `${repository}: pin ${ref.slice(0, 8)} is not a declared generation (fleet-pins.v1.yaml)`,
       );
+    }
+  }
+
+  // Age: a pin can be declared and still be stale — every surface agreeing on
+  // a real generation is not the same claim as being current. Computed only
+  // when the repository carries a single, declared ref: disagreement and
+  // undeclared refs are already named above, and stacking an age claim on a
+  // repository already failing for a sharper reason would blur which failure
+  // is the one to fix. Two generations of grace matches the fleet's own
+  // adoption cadence (one PR per consumer, run sequentially, not all at
+  // once) — a repository not yet reached by an in-flight convergence wave is
+  // not the same failure as one nobody is converging.
+  if (distinct.size === 1) {
+    const ref = [...distinct][0] as string;
+    const index = generations.indexOf(ref);
+    if (index !== -1) {
+      const age = generations.length - 1 - index;
+      if (age > 2) {
+        failures.push(
+          `${repository}: pin ${ref.slice(0, 8)} is ${age} generations behind the latest declared (fleet-pins.v1.yaml) — stale beyond the two-generation grace window`,
+        );
+      }
     }
   }
   return failures;
@@ -140,7 +195,10 @@ function ghApi(path: string, raw: boolean): FetchOutcome {
   return { text: null, error: stderr === "" ? `gh api ${path} failed` : stderr };
 }
 
-function readSources(repository: string): RepositorySources | { readonly error: string } {
+function readSources(
+  repository: string,
+  cardPath: string,
+): RepositorySources | { readonly error: string } {
   const listing = ghApi(`repos/${repository}/contents/.github/workflows?ref=main`, false);
   if (listing.error !== null) {
     return { error: `${repository}: cannot list .github/workflows — ${listing.error}` };
@@ -166,27 +224,44 @@ function readSources(repository: string): RepositorySources | { readonly error: 
   if (manifest.error !== null) {
     return { error: `${repository}: cannot read package.json — ${manifest.error}` };
   }
-  return { workflows, manifest: manifest.text };
+  const card = ghApi(`repos/${repository}/contents/${cardPath}?ref=main`, true);
+  if (card.error !== null) {
+    return { error: `${repository}: cannot read ${cardPath} — ${card.error}` };
+  }
+  return { workflows, manifest: manifest.text, projectCard: card.text };
 }
 
 if (import.meta.main) {
   const register = Bun.YAML.parse(
     await Bun.file(new URL("fleet-pins.v1.yaml", import.meta.url)).text(),
   ) as { readonly generations: ReadonlyArray<{ readonly sha: string }> };
-  const declared = new Set(register.generations.map((generation) => generation.sha));
+  // Oldest first, as declared — auditRepository measures age against this order.
+  const generationShas = register.generations.map((generation) => generation.sha);
 
   const inventory = Bun.YAML.parse(
     await Bun.file(new URL("repositories.v1.yaml", import.meta.url)).text(),
-  ) as { readonly repositories: readonly { repository: string; role: string }[] };
+  ) as {
+    readonly repositories: readonly {
+      repository: string;
+      lifecycle: string;
+      card?: string;
+    }[];
+  };
+  // Every non-archived repository is a target, not only satellite/authority:
+  // a reserved-product-home or active-application repo that wires the
+  // templates is exactly as exposed to an unpinned tooling checkout as a
+  // satellite is. Repositories that declare no pin surface are skipped below
+  // by construction (sightings.length === 0), so widening this filter costs
+  // nothing on a repository that consumes no template.
   const targets = inventory.repositories
-    .filter((repo) => repo.role === "satellite" || repo.role === "authority")
-    .map((repo) => repo.repository);
+    .filter((repo) => repo.lifecycle !== "archived")
+    .map((repo) => ({ repository: repo.repository, card: repo.card ?? "project.v1.yaml" }));
 
   const failures: string[] = [];
   let covered = 0;
   let inspected = 0;
-  for (const repository of targets) {
-    const sources = readSources(repository);
+  for (const target of targets) {
+    const sources = readSources(target.repository, target.card);
     if ("error" in sources) {
       failures.push(sources.error);
       continue;
@@ -195,7 +270,7 @@ if (import.meta.main) {
     if (sightings.length === 0) continue;
     covered += 1;
     inspected += sightings.length;
-    failures.push(...auditRepository(repository, sources, declared));
+    failures.push(...auditRepository(target.repository, sources, generationShas));
   }
 
   // A gate that examined nothing proves nothing: an inventory that stopped
@@ -225,7 +300,7 @@ if (import.meta.main) {
     report.check(
       "fleet template pins",
       true,
-      `${inspected} pins across ${covered} repositories match the ${declared.size} declared generations`,
+      `${inspected} pins across ${covered} repositories match the ${generationShas.length} declared generations`,
     );
   }
   concludeGate("Fleet pins", report);

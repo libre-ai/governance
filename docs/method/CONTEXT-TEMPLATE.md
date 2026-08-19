@@ -31,7 +31,6 @@ requises et le pointeur d'autorité est conforme.
 | `couche-3`, `couche-2`, `transverse` non-autorité | idem (+ mention verified-projection/pin si applicable)                                |      45 |
 | `couche-1` actif (produit réservé activé)         | Purpose, Domain doctrine, Commands, Working here                                      |      60 |
 | `transverse` autorité (`governance`, `contracts`) | Authority, Boundaries, Quality gates, Agents (+ Stack, Naming, Security si possédées) |      80 |
-| `moyeu` archivé                                   | Authority, Boundaries, Quality gates, Agents                                          |      45 |
 
 - « `transverse` non-autorité » = tout repo `layer: transverse` dont le
   `role` n'est pas `authority` (aujourd'hui : `.github`, `ecosystem-engine`,
@@ -47,6 +46,15 @@ requises et le pointeur d'autorité est conforme.
 - Exemption : `libre-ai/.github` ne porte pas d'`AGENTS.md` (profil
   d'organisation, aucun agent n'y travaille) — `check-context-conformance`
   l'assert explicitement plutôt que de le sauter en silence.
+- Exemption : tout repo `lifecycle: archived` est intégralement exempté, quel
+  que soit son `layer` — `moyeu` n'a donc plus de ligne dans la table
+  ci-dessus, son seul membre (`libre-ai/libre-ai`) étant archivé. Un contenu
+  figé en lecture seule ne peut pas être mis en conformité : aucune section,
+  aucun plafond, aucun pointeur, aucun marqueur de couche ne s'y applique.
+  Conséquence mécanique de l'arbitrage propriétaire du 2026-08-18 : une
+  exigence ne porte que sur ce qui peut encore être modifié.
+  `check-context-conformance` l'assert nommément (« archived — content
+  frozen read-only, conformance not applicable »), jamais en silence.
 
 ## Règles transverses
 

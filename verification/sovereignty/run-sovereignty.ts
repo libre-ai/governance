@@ -34,13 +34,24 @@ async function gitHeadCommit(repoRoot: string): Promise<string> {
   return stdout.trim();
 }
 
-async function collectInventory(
+export async function collectInventory(
   repoRoot: string,
 ): Promise<DependencyInventory | { readonly error: string }> {
   try {
+    // Cargo.lock is optional since the governance split (ADR-0020): this
+    // repository has no Rust workspace (AGENTS.md, "No Rust workspace"), and
+    // lockfile-inventory.test.ts already covers that case as legitimate
+    // rather than an error — this mirrors the same existence check instead
+    // of letting a bare readFile's ENOENT fail SOV-03 on every run here.
+    // Repositories that do carry a Rust workspace keep both lockfiles
+    // covered, unaffected by this branch.
+    const cargoLockPath = join(repoRoot, "Cargo.lock");
     const [bunLock, cargoLock] = await Promise.all([
       readFile(join(repoRoot, "bun.lock"), "utf8"),
-      readFile(join(repoRoot, "Cargo.lock"), "utf8"),
+      readFile(cargoLockPath, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return "";
+        throw error;
+      }),
     ]);
     return buildDependencyInventory(bunLock, cargoLock);
   } catch (error) {

@@ -1,5 +1,14 @@
 # Audit parité : Libre AI Radar vs Inoreader
 
+> **Statut de calibrage (2026-08-18, ADR-0027) :** cet audit mesure la
+> **spec** du produit, pas son code livré — requalifié **« spec-baseline,
+> non opposable »** jusqu'à ré-exécution contre du code réellement livré.
+> Les chiffres de couverture restent un inventaire de traits utile, mais ne
+> peuvent fonder aucun `promotion_criteria`/`kill_predicate` de fiche
+> produit avant cette ré-exécution ni avant que le jalon dogfooding du
+> produit soit atteint. Voir
+> `docs/adr/0027-parity-gates-fire-only-after-dogfooding.md`.
+
 **Date:** 2026-07-22  
 **Propriétaire spec:** Radar (Experiences)  
 **Benchmark:** Inoreader (inoreader.com) — « Best Overall RSS Feed Reader » (Wired)  
