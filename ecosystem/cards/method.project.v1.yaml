@@ -135,10 +135,11 @@ phases:
         evidence:
           date: "2026-08-19"
           reference: >-
-            libre-ai/orchestrator #22 (aa219c3) —
-            docs/evidence/2026-08-19-first-real-fanout-campaign.md: 2/2 jobs,
-            schema-valid cross-checked verdicts, no --dry-run; both roles
-            independently rendered an honest reject on a real finding
+            https://github.com/libre-ai/orchestrator/pull/22 (aa219c3) — the
+            evidence file 2026-08-19-first-real-fanout-campaign.md in that
+            repository: 2/2 jobs, schema-valid cross-checked verdicts, no
+            --dry-run; both roles independently rendered an honest reject on
+            a real finding
       - id: compat-policy-accepted
         text: "Evidence item 4: orchestrator compat-policy accepted."
         weight: 3
@@ -146,8 +147,9 @@ phases:
         evidence:
           date: "2026-08-19"
           reference: >-
-            libre-ai/orchestrator #15 merged — public-surface and refusal-code
-            snapshots, breaking changes rehearsed blank
+            https://github.com/libre-ai/orchestrator/pull/15 merged —
+            public-surface and refusal-code snapshots, breaking changes
+            rehearsed blank
       - id: skills-gates-green
         text: "Evidence item 5: skills collection T1/T2 gates green in CI."
         weight: 4
