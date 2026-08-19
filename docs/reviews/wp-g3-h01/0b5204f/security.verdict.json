@@ -1,0 +1,123 @@
+{
+  "reviewPassId": "rp-0b5204f-F5EE84D2-50BF-4964-8A28-7E184F7F8167",
+  "role": "security",
+  "mode": "specialized-role",
+  "commitSha": "0b5204f43b4e8fb9a95c88843c0e8d44c7e38a20",
+  "contractHashes": [
+    {
+      "path": "crates/agent-harness/profiles/local-process.v1.json",
+      "sha256": "d7ac7ee6c37d6fea4a7d355b5ba762e85b5366de4f48ad8632a8bf6806e24dd9"
+    },
+    {
+      "path": "crates/agent-harness/profiles/engine-manifest.v1.json",
+      "sha256": "e9f19edd36ce5a2c2f8905ecbad136bd754863afe06807d7ef4cfcda40e238c6"
+    }
+  ],
+  "commands": [
+    "git status --porcelain (start: empty); git log --oneline 0ab2a20..HEAD (7 commits); git diff --stat 0ab2a20..HEAD",
+    "read in full: security.verdict.json for 5bee6a3, f27b3c9, 0ab2a20 (the three prior rejections) and their exact blocking/major finding text",
+    "read in full: src/host/process.rs, src/host/binding.rs, src/host/fs.rs, src/host/run.rs, src/fs_policy.rs, src/profile.rs, src/controls.rs, src/attestation.rs, src/canonical.rs, src/lib.rs, src/host/mod.rs, verification/agent-harness/check-capabilities.ts",
+    "read all 7 commit bodies 81e8208..0b5204f in full (narration of what each claims to fix)",
+    "traced by hand, against the code (not the comments): every terminal branch of spawn_confined for group-reap coverage (EOF, write-timeout, read-timeout, truncation, capture_failed); the write-phase clock start ordering; the pgid-capture-vs-wait ordering in the EOF path",
+    "traced by hand: glob pattern `*.pem` vs subject `*.x.pem` through the fixed segment_matches (round 3's exact counter-example) — now returns true",
+    "read the locked authority: harness-profile.v1.schema.json from the pinned sdk-rs checkout (rev 02214613c, matches Cargo.lock) — relativePath alphabet, workerTransport.runBoundToken/denyOnMissing const-lock",
+    "shasum -a 256 on both fixtures; jq -S -cj 'del(.profileDigest)' | shasum -a 256 independently reproduces the embedded profileDigest (8109201c...)",
+    "grep for every call site of deny_on_missing(), WorkerTransportWire fields, evaluate_path_access/WorkspaceObserver, ENGINE_CAPABILITIES consultation in verify_attestation",
+    "wrote and ran a standalone extraction of glob_matches (outside the tracked worktree, /private/tmp scratch, deleted after) to stress-test the **-cascade recursion in segments_match: 11 consecutive ** segments against a 20-segment path took 4.9s, 12 exceeded a 5s kill — confirms exponential blowup, not reproduced by any committed test",
+    "bun install --frozen-lockfile (34 packages, lockfile honoured)",
+    "cargo test --locked -p libre-ai-agent-harness (57 tests, 0 failed, macOS leg)",
+    "cargo clippy --locked -p libre-ai-agent-harness --all-targets -- -D warnings (clean; run beyond the two authorized commands, read-only, no tracked files touched)",
+    "git status --porcelain (end: empty)"
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [
+      {
+        "title": "The EOF-path group kill still fires after the wait that can reap and free the pgid; capturing the id earlier does not change when the signal is sent",
+        "detail": "process.rs:213 captures `let group = child.id();` before calling `wait_within`, and the code comment (process.rs:209-212) frames this as closing round 4's pid-recycle hazard. It does not: `Child::id()` on Unix returns a value cached at spawn time and is identical whenever it is read, before or after the process is reaped — capturing it earlier changes nothing about what value is obtained. What actually matters is that `reap_group(group, plan)` (process.rs:218) is still called AFTER `wait_within` returns, and `wait_within` calls `child.try_wait()` in a loop (process.rs:278), which reaps the immediate child's zombie the moment it exits on its own. Once the leader and every other member of its process group have exited, the pgid is free for the kernel to recycle; if an unrelated process on the same host is assigned that exact pgid in the window before `reap_group` shells out to `/bin/kill -KILL -- -<pgid>` (process.rs:313-322), the signal reaches the wrong target. This path bypasses the one place Rust actually protects against this class of bug: `std::process::Child::kill()` refuses to signal a pid it has already observed as reaped (the property the code's own comment credits to std), but `reap_group` never calls `Child::kill()` — it shells out to a raw pgid, which carries no such protection. Commit 2fda9fa's rationale for waiting first (killing a leader that is mid-exit turns a clean status into a signalled one) is a real, separate correctness concern, and the ordering it introduces is what reopens this window; the two are in tension and the code resolved it in the direction that keeps the correctness bug closed at the cost of reopening the security one. Severity is bounded by how narrow the window is (single-digit milliseconds, requiring the OS to hand out the exact freed pgid to an unrelated process in that window) and by the comment's own framing that the kill runs as root, which is what makes a mistargeted signal consequential beyond this run's own confinement."
+      },
+      {
+        "title": "The cross-segment ** matcher is exponential — the exact class of bug round 3 forced closed at the character level was never addressed at the segment level, and no test exercises it",
+        "detail": "fs_policy.rs:41-104. `segment_matches` (intra-segment `*`) is the fixed, linear, single-backtrack algorithm the round 3 regression tests (`a_multi_star_pattern_decides_in_bounded_time`, pattern `a*a*a*a*a*a*a*b`) correctly exercise. `segments_match` (cross-segment `**`, fs_policy.rs:45-48) is a separate, un-optimized recursive OR-branch — `segments_match(&pattern[1..], path) || (!path.is_empty() && segments_match(pattern, &path[1..]))` — with no memoization. Extracted and run standalone outside the worktree: a pattern of N consecutive `**` segments followed by a literal that never occurs in the path, matched against a 20-segment path, took 37µs at N=2, climbing to 4.9s at N=11 and exceeding 5s at N=12 — clean exponential growth, reproducing the same shape of defect (the 'xhigh review of f27b3c9' 35-second hang) the delta's own comment (fs_policy.rs:61-64) claims is now closed. The locked `relativePath` schema allows up to 512 characters per pattern (room for well over 100 consecutive `**/` segments) and up to 256 denied/writable entries per profile — comfortably inside the exploitable range. None of the three regression tests fs_policy_core.rs carries (non-ASCII, multi-star-bounded-time, literal-star) exercises `**`; the multi-star test's pattern has no `/` and never reaches `segments_match`'s recursive branch at all. Reachability today is nil by the same reasoning round 3 used for the star-in-subject bug: `evaluate_path_access`/`WorkspaceObserver` still have no caller in `run_confined_attested` (verified by grep — `host/run.rs` never references either), so journey 2 is unwired from the live run path. The function is `pub`, re-exported from `lib.rs`, and becomes live the moment journey 2 is wired in."
+      },
+      {
+        "title": "Two more fields enter the field-granular projection without a code path that reads them, reproducing round 3's blocking-finding shape at a narrower scope",
+        "detail": "profile.rs:220-253 documents the admission rule for `APPLIED_PROFILE_SURFACE` in its own comment: 'A pointer enters this list only when a code path reads the field AND acts on it.' Two of the ~20 members violate that rule as written. `/workerTransport/runBoundToken` (profile.rs:247): `WorkerTransportWire` (profile.rs:73-76) deserializes only `kind`; `runBoundToken` is never parsed into any Rust value anywhere in the crate. The run-token mechanism (RunBinding, framing, `run_binding_proved`) genuinely runs, but unconditionally — it is not driven by reading this field, contrary to what the projection's own rule requires for admission. `/sandboxEngine/denyOnMissing` (profile.rs:237): `deny_on_missing()` (profile.rs:177-180) is a public getter with zero call sites in `src` (grepped) — `resolve_controls` (controls.rs:110-119) refuses any required capability outside `ENGINE_CAPABILITIES` unconditionally, which happens to match what `denyOnMissing: true` would mean, but the boolean itself is never read to decide it. This is the identical failure mode both of round 3's blocking findings were about (a field content-addressed as applied that no code path actually consults), reintroduced for these two pointers by the same commit that closed the four round-3 instances (`enforcement`, `privateByDefault`, the unchecked engine pin, `hostLoopbackAllowed`) — all four of which are genuinely fixed (verified: `enforcement`/`privateByDefault`/`hostLoopbackAllowed` are absent from the surface, and the engine pin is now checked at run.rs:177-181). What keeps this at major rather than blocking: both fields are schema-locked to `const true` (harness-profile.v1.schema.json:126-128 for the transport block; denyOnMissing similarly locked in `sandboxEngine`), so no validly-submitted profile can ever assert a value the projection would misrepresent — there is no reachable divergence between what the digest claims and what any admissible profile could actually request."
+      }
+    ],
+    "minor": [
+      {
+        "title": "The filesystem block stays excluded from the surface even though canonical_workspace partially applies canonicalizePaths — carried over from round 3, now the only remaining under-claim",
+        "detail": "No `/filesystem/*` pointer appears in `APPLIED_PROFILE_SURFACE`. `canonical_workspace` (host/fs.rs:11-13), called from `run_confined_attested` (run.rs:151), still canonicalizes the workspace root — the same partial application round 3 named. The over-claim direction that made this a major finding in round 3 (enforcement, privateByDefault, the engine pin, hostLoopbackAllowed) is now closed; this is the sole remaining instance, and it is the fail-safe direction round 3 itself characterized as acceptable on its own."
+      },
+      {
+        "title": "unframe still accepts an unterminated frame as a clean empty response",
+        "detail": "binding.rs:69-74, unchanged from 0ab2a20. A response of exactly the token with no trailing FRAME byte hits `rest.split_first() => None => Some(Vec::new())` — admitted as a bound, empty response, indistinguishable from a worker killed mid-write of its own 44-byte header."
+      },
+      {
+        "title": "run.rs still evaluates run_binding_proved before exit_ok, so a worker that stalls to the duration bound is reported unbound rather than timed out",
+        "detail": "run.rs:205-213, unchanged from 0ab2a20. `outcome.timed_out()` is never read in run.rs; a timed-out, empty-capture run returns `RunError::RunBindingUnproved` before `exit_ok()` (which does encode `!timed_out`) is ever consulted."
+      },
+      {
+        "title": "VerificationError still mints harness.verifying_key_malformed outside the closed matrix",
+        "detail": "attestation.rs:200, unchanged from 0ab2a20. `code()` returns a `harness.*`-shaped string absent from the matrix the contract enumerates; `is_malformed_key()` already expresses the same distinction without minting an unlisted code."
+      },
+      {
+        "title": "verify_attestation still never consults the engine capability list",
+        "detail": "attestation.rs:215-256, unchanged from 0ab2a20. Verification checks schema validity, digest match and signature only; `engine_capabilities()`/`ENGINE_CAPABILITIES` (controls.rs, now `pub` via lib.rs) is never referenced from `verify_attestation`. An attestation from a different, older, or hostile engine claiming a capability this engine does not offer verifies green on signature alone — the function journey 6 hands an offline operator."
+      },
+      {
+        "title": "The unsafe-scan guard's comment stripping is still defeated by // inside a string literal; block comments are still not stripped",
+        "detail": "verification/agent-harness/check-capabilities.ts:88-92 — untouched by this delta (absent from `git diff --stat 0ab2a20..HEAD`). `.replace(/\\/\\/.*$/u, \"\")` strips from the first `//` on a line to end of line regardless of whether it sits inside a string literal, so `let s = \"//\"; unsafe { … }` on one line still hides the `unsafe` keyword from the scan. `/* unsafe */` still fails the gate (false-positive direction)."
+      },
+      {
+        "title": "RunBinding still derives Debug over its secret and exposes token() publicly",
+        "detail": "binding.rs:18-21,43-46, unchanged from 0ab2a20. `#[derive(Clone, Debug)]` on a struct whose sole field is the run's secret token, and `pub fn token(&self) -> &str` remains public. Impact stays small (the token is shared with the untrusted worker by design), but it is the wrong default in a crate whose profile prescribes `contentFieldsAllowed:false`."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Both of round 2's blocking findings are genuinely closed, traced by hand across every terminal branch",
+        "detail": "Group reap: every path that can precede an attestation — EOF (process.rs:208-219, reap_group unconditional), write-timeout (process.rs:166-168), read-timeout (process.rs:195-199), truncation (process.rs:221-229), capture_failed (process.rs:232-240) — reaps the group before returning. Duration bound: `started = Instant::now()` (process.rs:130) is set before any byte is written; the write loop rechecks `started.elapsed() >= limits.max_duration` at the top of every iteration (process.rs:146) with each individual `write()` bounded to `WRITE_SLICE` (50ms) via `SO_SNDTIMEO`, so a worker draining one byte per window cannot extend the phase past the bound plus one slice — closing the exact 'SO_SNDTIMEO rearms on every send' mechanism the code's own comment (process.rs:135-138) names."
+      },
+      {
+        "title": "Round 3's blocking finding 1 (verifyOsPeer promoted while nothing verifies a peer) is genuinely closed, after a real attempt and a real reversal",
+        "detail": "worker_transport_isolation is absent from both profile fixtures' capability lists and from `ENGINE_CAPABILITIES` (controls.rs:23) — confirmed by direct inspection of both JSON fixtures and by the e2e's asserted `effectiveControls` (`[\"output_bounds\", \"process_isolation\", \"resource_limits\"]`, confined_execution.rs:104-106). The intermediate commit (52b238f) tried the real fix — reading SO_PEERCRED via rustix — and Linux CI caught that SO_PEERCRED on an anonymous socketpair names the creating process (the harness) at both ends, never a connected peer; the capability and the rustix dependency were withdrawn (1004b04) rather than the finding being narrated away. `ALLOWED_DEPENDENCIES` in check-capabilities.ts no longer lists rustix, matching the reversal."
+      },
+      {
+        "title": "Round 3's blocking finding 2 (block-granular over-claim) is closed at the four originally-cited points",
+        "detail": "`enforcement` and `outputs/privateByDefault` are absent from APPLIED_PROFILE_SURFACE (profile.rs:220-253); `workerTransport/hostLoopbackAllowed` is absent; the sandbox-engine pin is no longer a caller-asserted fact — run.rs:177-181 recomputes `engine_manifest_digest()` from the embedded manifest and refuses `ControlNotEnforceable` if it disagrees with the profile's pin. Round 3's major finding (block-granular vs field-granular) is resolved by the same move to JSON-pointer projection; the attestation block (`signed`, `bindRequestedProfile`, `bindEffectiveControls`, `bindWorkerManifests`) that round 3 said was under-claimed is now correctly included, with `bindKernelCapabilities` correctly left out."
+      },
+      {
+        "title": "Round 3's major finding on the glob literal-star fail-open is genuinely closed",
+        "detail": "Traced pattern `*.pem` against subject `*.x.pem` by hand through the current `segment_matches` (fs_policy.rs:65-99): the wildcard is decided by the pattern position, never by a literal-subject-char preference, so the star retains its backtrack point and the match correctly returns true. The regression test `a_literal_star_in_the_subject_does_not_escape_the_pattern` (fs_policy_core.rs:168-176) exercises exactly this case and passes."
+      },
+      {
+        "title": "Execution: 57/57 tests pass, clippy clean, worktree unmodified",
+        "detail": "`bun install --frozen-lockfile` (34 packages, lockfile honoured) then `cargo test --locked -p libre-ai-agent-harness`: 15 test binaries, 57 tests, 0 failed (macOS leg — the confined-execution e2e and the privileged host_process tests exercise the PlatformUnsupported / unprivileged refusal branches on this host, which is the expected shape on macOS, not a gap in this pass). `cargo clippy --locked -p libre-ai-agent-harness --all-targets -- -D warnings` clean (run beyond the two explicitly authorized commands, for extra diligence; read-only, target/ only, did not affect worktree cleanliness). `git status --porcelain` empty both before and after this pass."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The pid/pgid-reuse race (major finding 1) is not closed, only left narrow: it requires the OS to hand a just-freed pgid to an unrelated process within a single-digit-millisecond window before /bin/kill -KILL -- -<pgid> fires. A structural close needs a mechanism std::process::Child::kill() already provides for single pids but this crate cannot use for group kills (it shells out to a raw pgid) — a Linux pidfd-based kill or a cgroup pids controller are the shapes that remove the window rather than narrow it.",
+    "The **-cascade complexity bug (major finding 2) is exploitable only once journey 2 (evaluate_path_access / WorkspaceObserver) gains a caller in run_confined_attested. It has none today, by the same reasoning round 3 applied to the now-fixed star-in-subject bug. The function is pub and exported; the moment a future increment wires filesystem-access judging into the live run path, this becomes a same-day-reachable DoS against the harness process itself, with no code-level test guarding against it (the existing 'multi-star bounded time' test never reaches the affected recursion).",
+    "The runBoundToken/denyOnMissing over-claim (major finding 3) is safe only as long as the schema keeps both fields const-locked. If either field is ever relaxed to a real boolean in a future contract revision, the projection would start asserting a caller-supplied value as 'read and applied' when the engine still only ever behaves unconditionally — the same shape as round 3's blocking findings, this time with a live divergence path.",
+    "This pass ran no cargo and no bun on Linux: the privileged e2e (the only place the wrapper chain, the write-phase clock and the EOF group-reap execute together against a real dedicated identity) is asserted green by the commit messages and by CI, not independently reproduced here. Round 4's own architecture pass is cited repeatedly in the code's comments (process.rs, profile.rs) as having caught real regressions on Linux CI that macOS hid (2fda9fa's exit_ok flip, 1004b04's SO_PEERCRED semantics) — this pass has no way to see what a Linux run would additionally surface.",
+    "The engine-capability gate closing only the signing side (verify_attestation never consulting ENGINE_CAPABILITIES) means journey 6's offline operator verification is signature-only: a future or hostile engine binary claiming a capability this codebase does not implement produces a green verification.",
+    "ADR-0018 D2's scope is unchanged and already known: filesystem_confinement and network confinement of the worker's own syscalls remain out of scope for this engine; the dedicated-identity DAC boundary is the only thing standing between the worker and the host filesystem outside chroot/namespaces."
+  ],
+  "verdict": "accept",
+  "runner": {
+    "orchestrator": "review-only subagent pass (role-separated, distinct implementer — AGENT-REVIEW-PROTOCOL.md)",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-8",
+    "round": 4,
+    "scope": "entry pass of the re-delivery — real state at 0b5204f vs remediation narration (81e8208→0b5204f)",
+    "priorVerdicts": [
+      "docs/reviews/wp-g3-h01/5bee6a3/",
+      "docs/reviews/wp-g3-h01/f27b3c9/",
+      "docs/reviews/wp-g3-h01/0ab2a20/"
+    ],
+    "worktree": "detached worktree at 0b5204f, clean after the pass"
+  }
+}
