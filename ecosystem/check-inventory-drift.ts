@@ -80,40 +80,60 @@ export function reconcileInventory(
   return { drifts, notes };
 }
 
+/** Two retries beyond the first attempt — 1s then 3s — same budget as ecosystem/check-context-conformance.ts's ghWithRetry. */
+const RETRY_DELAYS_MS = [1000, 3000];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchLiveRepositories(): Promise<LiveRepository[]> {
-  const proc = Bun.spawn(
-    [
-      "gh",
-      "api",
-      "--paginate",
-      `orgs/${ORGANIZATION}/repos?per_page=100`,
-      "--jq",
-      ".[] | [.name, (.private | tostring)] | @tsv",
-    ],
-    { stdout: "pipe", stderr: "pipe" },
-  );
-  const [output, errors, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  if (exitCode !== 0) {
-    // Fail closed: an unreachable API must fail the gate, not pass it silently.
-    throw new Error(
-      `gh api orgs/${ORGANIZATION}/repos failed (exit ${exitCode}): ${errors.trim()}`,
+  let lastError = "";
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const proc = Bun.spawn(
+      [
+        "gh",
+        "api",
+        "--paginate",
+        `orgs/${ORGANIZATION}/repos?per_page=100`,
+        "--jq",
+        ".[] | [.name, (.private | tostring)] | @tsv",
+      ],
+      { stdout: "pipe", stderr: "pipe" },
     );
+    const [output, errors, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    if (exitCode === 0) {
+      return output
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => {
+          const [name, isPrivate] = line.split("\t");
+          if (name === undefined || (isPrivate !== "true" && isPrivate !== "false")) {
+            throw new Error(`unexpected gh api output line: ${JSON.stringify(line)}`);
+          }
+          return { name, isPrivate: isPrivate === "true" };
+        });
+    }
+    // Retried below on any non-zero exit (rate limit, other 4xx/5xx, network)
+    // — there is no confirmed-empty-org answer that looks like a failure
+    // here (an empty org is exit 0 with no output), so every failure is
+    // genuinely transient-or-unverifiable, never a real "zero repositories"
+    // answer worth trusting on the first try.
+    lastError = errors.trim() || `gh api orgs/${ORGANIZATION}/repos failed (exit ${exitCode})`;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait !== undefined) await delay(wait);
   }
-  return output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [name, isPrivate] = line.split("\t");
-      if (name === undefined || (isPrivate !== "true" && isPrivate !== "false")) {
-        throw new Error(`unexpected gh api output line: ${JSON.stringify(line)}`);
-      }
-      return { name, isPrivate: isPrivate === "true" };
-    });
+  // Fail closed: an unreachable API must fail the gate — loudly, as "unable
+  // to verify" — never silently pass it, and never launder it into a
+  // fabricated drift finding (no drift is ever asserted below this point).
+  throw new Error(
+    `unable to verify the ${ORGANIZATION} organization after ${RETRY_DELAYS_MS.length + 1} attempt(s): ${lastError}`,
+  );
 }
 
 if (import.meta.main) {
