@@ -25,6 +25,48 @@ export function diffAdvisories(base: readonly string[], head: readonly string[])
   };
 }
 
+export type AuditScope =
+  | { readonly kind: "auditable" }
+  | { readonly kind: "nothing-to-audit" }
+  | { readonly kind: "unparseable"; readonly detail: string };
+
+const DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "optionalDependencies",
+] as const;
+
+/**
+ * What a package.json asks of `bun audit` before any lockfile is looked for.
+ *
+ * Bun refuses to persist an empty lockfile ("No packages! Deleted empty
+ * lockfile", 1.4.0-canary.1, measured 2026-09-07 on libre-ai/carriere), so a
+ * manifest with no dependency at all can never ship a bun.lock — demanding
+ * one demanded an artifact that cannot exist. Nothing to audit is a held
+ * assertion, said explicitly by the caller; a manifest with dependencies and
+ * no lockfile remains the unpinned, unauditable failure it always was.
+ */
+export function auditScope(manifestText: string): AuditScope {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(manifestText);
+  } catch (error) {
+    return { kind: "unparseable", detail: error instanceof Error ? error.message : String(error) };
+  }
+  if (manifest === null || typeof manifest !== "object") {
+    return { kind: "unparseable", detail: "package.json is not a JSON object" };
+  }
+  const record = manifest as Record<string, unknown>;
+  for (const field of DEPENDENCY_FIELDS) {
+    const value = record[field];
+    if (value !== null && typeof value === "object" && Object.keys(value).length > 0) {
+      return { kind: "auditable" };
+    }
+  }
+  return { kind: "nothing-to-audit" };
+}
+
 export interface AuditReading {
   /** The audit RAN — clean or with findings. False means it could not answer. */
   readonly ran: boolean;

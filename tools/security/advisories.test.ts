@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { diffAdvisories, extractAdvisoryIds, readAudit } from "./advisories";
+import { auditScope, diffAdvisories, extractAdvisoryIds, readAudit } from "./advisories";
 
 // The 2026-08-04 incident these helpers descend from: GHSA-7p8r-x3mc-p8w7 on
 // fast-uri, pinned inside the advisory range by the fleet override.
@@ -37,6 +37,41 @@ describe("diffAdvisories", () => {
     const delta = diffAdvisories(["GHSA-7p8r-x3mc-p8w7"], []);
     expect(delta.introduced).toEqual([]);
     expect(delta.preExisting).toEqual([]);
+  });
+});
+
+// Measured 2026-09-07 on libre-ai/carriere: its package.json is
+// {"name":"@libre-ai/carriere","private":true,"license":"EUPL-1.2"} — no
+// dependency field at all, added so the reusable context-hygiene/licensing
+// workflows have a manifest to read. `bun install` (1.4.0-canary.1) answers
+// "No packages! Deleted empty lockfile": Bun refuses to persist an empty
+// lockfile, so "package.json without bun.lock" was demanding an artifact that
+// cannot exist. A manifest with nothing to audit is an assertion that holds,
+// said out loud; a manifest WITH dependencies and no lockfile stays red.
+describe("auditScope", () => {
+  test("a manifest without any dependency field is nothing to audit", () => {
+    const scope = auditScope('{"name":"@libre-ai/carriere","private":true,"license":"EUPL-1.2"}');
+    expect(scope).toEqual({ kind: "nothing-to-audit" });
+  });
+
+  test("empty dependency objects are nothing to audit either", () => {
+    expect(auditScope('{"dependencies":{},"devDependencies":{}}')).toEqual({
+      kind: "nothing-to-audit",
+    });
+  });
+
+  test.each([
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "optionalDependencies",
+  ])("a non-empty %s field makes the manifest auditable", (field) => {
+    expect(auditScope(`{"${field}":{"left-pad":"1.0.0"}}`)).toEqual({ kind: "auditable" });
+  });
+
+  test("an unparseable manifest is an unanswered question, never a pass", () => {
+    const scope = auditScope("{not json");
+    expect(scope.kind).toBe("unparseable");
   });
 });
 
