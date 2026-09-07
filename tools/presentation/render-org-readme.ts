@@ -7,6 +7,14 @@
  * lifecycle alone. The output lives between the project-status sentinels and
  * is never hand-edited.
  *
+ * The CLI reads the COMMITTED projection (`ecosystem/projections/
+ * fleet-status.v1.json`) — the same file `libre-ai/website` ships — so its
+ * output is only as fresh as that file. `check-org-readme-drift.ts` fails
+ * named when the projection lags the live cards (measured 2026-09-07: a
+ * projection last regenerated 2026-08-03 made this CLI reproduce the
+ * already-published section byte for byte). Regenerate first with
+ * `bun ecosystem/render-fleet-status.ts`, then render.
+ *
  * Usage: bun tools/presentation/render-org-readme.ts   (prints the section)
  */
 import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";

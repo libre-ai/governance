@@ -8,11 +8,11 @@
       "kind": "product",
       "layer": "couche-1",
       "summary": "Entraînement professionnel à une pratique sourcée et responsable de l'IA — ni quiz, ni scoring RH (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "display": "8,3 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-19"
     },
     {
       "repository": "libre-ai/boussole-politique",
@@ -20,11 +20,11 @@
       "kind": "product",
       "layer": "couche-1",
       "summary": "Compare tes positions aux votes, sans étiquette — local-only, chiffrement au repos pour les données sensibles (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "display": "22,2 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/carriere",
@@ -43,12 +43,12 @@
       "project": "radar",
       "kind": "product",
       "layer": "couche-1",
-      "summary": "Intelligence de flux locale : OPML, RSS, Atom et JSON Feed vers des exports curés explicables (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "summary": "Intelligence de flux locale : OPML, RSS 2.0 et Atom 1.0 vers des exports curés explicables (couche 1).",
+      "display": "0 % du périmètre actuellement déclaré",
       "maturity": "specified",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/notebook",
@@ -56,11 +56,11 @@
       "kind": "product",
       "layer": "couche-1",
       "summary": "Espace de connaissances local et privé par défaut, export de contexte contrôlé (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "display": "10,5 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/policy",
@@ -68,11 +68,11 @@
       "kind": "product",
       "layer": "couche-1",
       "summary": "Habilitation de sécurité pour modèles d'IA — verdicts explicables contre la politique de l'organisation (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "display": "16,7 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/sessions",
@@ -80,11 +80,11 @@
       "kind": "product",
       "layer": "couche-1",
       "summary": "Sessions d'apprentissage et de facilitation ancrées dans des sources citées, rôles et délégation bornée (couche 1).",
-      "display": "20 % du périmètre actuellement déclaré",
+      "display": "10 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/spec-studio",
@@ -99,6 +99,30 @@
       "last_verified_on": "2026-07-30"
     },
     {
+      "repository": "libre-ai/travel-agent",
+      "project": "travel-agent",
+      "kind": "product",
+      "layer": "couche-1",
+      "summary": "Planificateur d'itinéraires raisonnant sur des faits vérifiés, où le modèle compose et le code oppose son veto, avec isolation stricte de l'instance de voyage.",
+      "display": "14,6 % du périmètre actuellement déclaré",
+      "maturity": "specified",
+      "confidence": "medium",
+      "exposure": "spec-published",
+      "last_verified_on": "2026-08-18"
+    },
+    {
+      "repository": "libre-ai/harness",
+      "project": "harness",
+      "kind": "satellite",
+      "layer": "couche-2",
+      "summary": "Frontière d'exécution confinée pour workers d'agents — crate Rust bootstrap sans effet système, spécification migrée sous Specification Lock, aucune capacité runtime ouverte.",
+      "display": "0 % du périmètre actuellement déclaré",
+      "maturity": "specified",
+      "confidence": "medium",
+      "exposure": "spec-published",
+      "last_verified_on": "2026-08-18"
+    },
+    {
       "repository": "libre-ai/missions",
       "project": "missions",
       "kind": "application",
@@ -108,26 +132,26 @@
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/orchestrator",
       "project": "orchestrator",
       "kind": "satellite",
       "layer": "couche-2",
-      "summary": "Orchestration d'agents : crate + outillage de revue en éventail auto-nettoyé.",
-      "display": "50 % du périmètre actuellement déclaré",
+      "summary": "Cœur de décision d'orchestration d'agents — crate Rust sans effet — et outillage de revue en éventail à worktrees auto-nettoyés.",
+      "display": "100 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/artifacts",
       "project": "artifacts",
       "kind": "satellite",
       "layer": "couche-3",
-      "summary": "Artefacts signés et vérifiables de la constellation.",
+      "summary": "Vérification de candidats d'artefacts : digest de contenu adressable, liaison au rapport de preuves, refus fermé — en mémoire.",
       "display": "50 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
@@ -139,7 +163,7 @@
       "project": "authz-biscuit",
       "kind": "satellite",
       "layer": "couche-3",
-      "summary": "Autorisation interne deny-by-default (Biscuit), politiques datalog vendorées sous gate.",
+      "summary": "Autorisation interne Biscuit Ed25519, refus par défaut : émission, atténuation, vérification, révocation et rotation à deux clés.",
       "display": "50 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
@@ -151,7 +175,7 @@
       "project": "envelope",
       "kind": "satellite",
       "layer": "couche-3",
-      "summary": "Enveloppe d'API canonique { data, meta } et erreurs normalisées.",
+      "summary": "Noyau de sécurité K3 : enveloppe d'intégrité pour contenu non fiable — le contenu externe est une donnée, jamais une instruction.",
       "display": "50 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
@@ -163,12 +187,12 @@
       "project": "provenance",
       "kind": "satellite",
       "layer": "couche-3",
-      "summary": "Traçabilité de provenance des contenus et exports.",
-      "display": "50 % du périmètre actuellement déclaré",
+      "summary": "Généalogie de contribution d'agents (BOT-C) : construire et vérifier en Ed25519 des enregistrements agent-contributor-lineage.v1.",
+      "display": "0 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/auth",
@@ -188,11 +212,11 @@
       "kind": "satellite",
       "layer": "couche-4",
       "summary": "Classification de contenus et de données partagée.",
-      "display": "50 % du périmètre actuellement déclaré",
+      "display": "0 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/collab-core",
@@ -212,11 +236,11 @@
       "kind": "satellite",
       "layer": "couche-4",
       "summary": "Relais de collaboration : transport des sessions d'édition partagée.",
-      "display": "50 % du périmètre actuellement déclaré",
+      "display": "0 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/data",
@@ -236,11 +260,11 @@
       "kind": "satellite",
       "layer": "couche-4",
       "summary": "Objets de connaissance et projections versionnées.",
-      "display": "50 % du périmètre actuellement déclaré",
+      "display": "0 % du périmètre actuellement déclaré",
       "maturity": "usable",
       "confidence": "medium",
       "exposure": "spec-published",
-      "last_verified_on": "2026-07-30"
+      "last_verified_on": "2026-08-18"
     },
     {
       "repository": "libre-ai/rgpd-kit",

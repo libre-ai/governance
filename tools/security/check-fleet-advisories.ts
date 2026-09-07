@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { concludeGate, GateReport } from "../quality/gate-report";
-import { readAudit } from "./advisories";
+import { auditScope, readAudit } from "./advisories";
 
 // ADR-0021 D1 — the periodic fleet control that owns the state of the world.
 //
@@ -69,6 +69,23 @@ for (const repo of repositories) {
     // Asserted, not skipped: "this repository has no JS dependency surface"
     // is a statement about the repository, and it counts as an inspection.
     report.check(repo.name, true, "no package.json — no JS dependency surface to audit");
+    continue;
+  }
+  const scope = auditScope(manifest.stdout);
+  if (scope.kind === "unparseable") {
+    report.check(repo.name, false, `package.json unparseable — ${scope.detail}`);
+    continue;
+  }
+  if (scope.kind === "nothing-to-audit") {
+    // A manifest without any dependency field cannot carry a lockfile: Bun
+    // deletes an empty one ("No packages! Deleted empty lockfile"). Asking
+    // for bun.lock here asked for an artifact that cannot exist (carriere,
+    // 2026-09-07). Asserted out loud, never skipped in silence.
+    report.check(
+      repo.name,
+      true,
+      "package.json declares no dependency — nothing to audit (Bun persists no empty lockfile)",
+    );
     continue;
   }
   const lockfile = raw("bun.lock");
