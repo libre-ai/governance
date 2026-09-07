@@ -19,7 +19,7 @@ jobs:
     name: Run sovereignty.v1 checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # SOV-02 bundles the clone: git refuses to bundle a shallow repository.
           fetch-depth: 0
@@ -46,7 +46,7 @@ jobs:
           cat "$report_md" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload evidence artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sovereignty-report
           path: distribution/evidence/sovereignty/

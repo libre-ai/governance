@@ -28,7 +28,7 @@ jobs:
     name: Licensing and contribution governance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Verify DCO sign-offs
@@ -122,7 +122,7 @@ jobs:
             fi
           done < <(git rev-list "$BEFORE_SHA..$AFTER_SHA" $DCO_EXCLUDE)
           exit "$missing"
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: libre-ai/governance
           ref: ${{ inputs.tooling_ref }}
@@ -131,7 +131,7 @@ jobs:
         # reuse lint is git-aware: the pinned governance checkout carries its
         # own licence set and must not be linted as caller content.
         run: echo ".governance-tooling/" >> .git/info/exclude
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
       - name: Install pinned REUSE toolchain
