@@ -27,6 +27,25 @@ export function shouldAlert(previousConclusion: string | null | undefined): bool
   return previousConclusion === "failure";
 }
 
+export interface LoopRun {
+  readonly conclusion: string;
+  readonly url: string;
+  readonly event: string;
+}
+
+/**
+ * A loop's own runs are its scheduled ticks and its manual dispatches (the
+ * documented re-run path). Workflows that also run on `push`/`pull_request`
+ * (context-conformance, inventory-drift) produce runs that belong to the CI
+ * gate, not to the loop: a branch failing twice is not the fleet drifting,
+ * and must never be the "previous run" this alert counts.
+ */
+const LOOP_EVENTS: ReadonlySet<string> = new Set(["schedule", "workflow_dispatch"]);
+
+export function previousLoopRun(runs: readonly LoopRun[]): LoopRun | null {
+  return runs.find((run) => LOOP_EVENTS.has(run.event)) ?? null;
+}
+
 export function issueTitle(workflowName: string): string {
   return `${workflowName}: two consecutive failed runs`;
 }
@@ -81,10 +100,11 @@ if (import.meta.main) {
     return new TextDecoder().decode(result.stdout);
   };
 
-  // Runs are read oldest-status-first is not guaranteed; `gh run list`
-  // returns most-recent-first, and the current (still in_progress) run is
-  // excluded by `--status completed` since it has not finished yet — the
-  // first row here is genuinely the run immediately before this one.
+  // `gh run list` returns most-recent-first, and the current (still
+  // in_progress) run is excluded by `--status completed` since it has not
+  // finished yet — the first LOOP row here is genuinely the loop run
+  // immediately before this one. The limit leaves room for the push and
+  // pull_request runs that `previousLoopRun` discards on mixed workflows.
   const previousRuns = JSON.parse(
     run([
       "gh",
@@ -95,12 +115,12 @@ if (import.meta.main) {
       "--status",
       "completed",
       "--limit",
-      "1",
+      "30",
       "--json",
-      "conclusion,url",
+      "conclusion,url,event",
     ]),
-  ) as { conclusion: string; url: string }[];
-  const previous = previousRuns[0] ?? null;
+  ) as LoopRun[];
+  const previous = previousLoopRun(previousRuns);
 
   if (previous === null || !shouldAlert(previous.conclusion)) {
     console.log(

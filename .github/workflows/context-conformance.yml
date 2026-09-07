@@ -33,6 +33,9 @@ on:
 
 permissions:
   contents: read
+  # The repeat-failure alert files and closes governance issues on the
+  # scheduled runs only (see the event guard on its steps).
+  issues: write
 
 jobs:
   context-conformance:
@@ -57,3 +60,18 @@ jobs:
         run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
       - name: Measure context conformance against docs/method/CONTEXT-TEMPLATE.md
         run: bun run check:context-conformance
+      # A red scheduled run here is only visible to someone who opens the
+      # Actions tab (AGENTIC-LOOP-INVENTORY.md, "Contrôle de dérive périodique"
+      # — "absence de ligne récente" is its own failure mode). One red run
+      # stays a run; two in a row files a deduplicated governance issue. The
+      # push/pull_request runs of this workflow belong to the CI gate and are
+      # excluded by the event guard: a branch failing twice is not the fleet
+      # drifting.
+      - name: File an issue if this is the second consecutive failed run
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: Context conformance
+          WORKFLOW_FILE: context-conformance.yml
+          CURRENT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bun tools/security/repeat-failure-alert.ts

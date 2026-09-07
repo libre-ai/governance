@@ -20,6 +20,9 @@ on:
 
 permissions:
   contents: read
+  # The repeat-failure alert files and closes governance issues on the
+  # scheduled runs only (see the event guard on its steps).
+  issues: write
 
 concurrency:
   group: inventory-drift-${{ github.ref }}
@@ -82,3 +85,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-toolchain-source.ts
+      # A red scheduled run here is only visible to someone who opens the
+      # Actions tab (AGENTIC-LOOP-INVENTORY.md, "Contrôle de dérive périodique"
+      # — "absence de ligne récente" is its own failure mode). One red run
+      # stays a run; two in a row files a deduplicated governance issue. The
+      # push/pull_request runs of this workflow belong to the CI gate and are
+      # excluded by the event guard: a branch failing twice is not the fleet
+      # drifting.
+      - name: File an issue if this is the second consecutive failed run
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: Inventory drift
+          WORKFLOW_FILE: inventory-drift.yml
+          CURRENT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bun tools/security/repeat-failure-alert.ts

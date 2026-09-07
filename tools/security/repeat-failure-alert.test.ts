@@ -4,6 +4,7 @@ import {
   issueBody,
   issueTitle,
   type OpenIssue,
+  previousLoopRun,
   shouldAlert,
 } from "./repeat-failure-alert";
 
@@ -68,5 +69,38 @@ describe("findOpenIssue", () => {
 
   test("returns null against an empty issue list", () => {
     expect(findOpenIssue([], "anything")).toBeNull();
+  });
+});
+
+describe("previousLoopRun", () => {
+  const runs = [
+    { conclusion: "failure", url: "https://x/runs/9", event: "pull_request" },
+    { conclusion: "success", url: "https://x/runs/8", event: "push" },
+    { conclusion: "failure", url: "https://x/runs/7", event: "schedule" },
+    { conclusion: "success", url: "https://x/runs/6", event: "schedule" },
+  ];
+
+  test("skips push and pull_request runs — a branch failing is not the loop failing", () => {
+    expect(previousLoopRun(runs)).toEqual({
+      conclusion: "failure",
+      url: "https://x/runs/7",
+      event: "schedule",
+    });
+  });
+
+  test("counts a manual dispatch as a loop run — it is the documented re-run path", () => {
+    const dispatched = {
+      conclusion: "success",
+      url: "https://x/runs/5",
+      event: "workflow_dispatch",
+    };
+    expect(previousLoopRun([dispatched])).toEqual(dispatched);
+  });
+
+  test("returns null when no loop run exists yet", () => {
+    expect(previousLoopRun([])).toBeNull();
+    expect(
+      previousLoopRun([{ conclusion: "failure", url: "https://x/runs/1", event: "push" }]),
+    ).toBeNull();
   });
 });
