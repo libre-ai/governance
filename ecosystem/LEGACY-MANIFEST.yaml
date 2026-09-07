@@ -201,3 +201,37 @@ repositories:
     # Website product (tracked in repositories.v1.yaml); the removed legacy content
     # is NOT restored. Status transitions removed -> reserved-active-product-home.
     github_status: reserved-active-product-home
+hub_archive:
+  # The hub was archived on 2026-07-30 (ADR-0020 general activation; owner
+  # act recorded at gate-acceptance-log line 3.8). GitHub refuses every write
+  # on an archived repository — no merge, no close, no comment, no branch
+  # deletion — so whatever was open at that instant stays open, frozen with
+  # the archive, for as long as the repository stays archived. Recorded so a
+  # pull-request sweep or a truth audit does not read that open state as
+  # pending work: the hub is history, never a live surface (docs/README.md).
+  repository: libre-ai/libre-ai
+  archived_on: 2026-07-30
+  reference: docs/adr/0020-general-activation-and-hub-dismantling.md
+  observed_on: 2026-09-07
+  open_pull_requests:
+    - number: 290
+      url: https://github.com/libre-ai/libre-ai/pull/290
+      title: Replace Dioxus with Bun in vision.md
+      author: constantin-jais
+      opened_on: 2026-07-30
+      draft: true
+      files:
+        - vision.md
+      state: open-frozen-by-archive
+      # The document it edits is carried by governance: vision.md at this
+      # repository's root is the single authority for the durable vision
+      # (docs/README.md, "Vision durable"); the hub copy is its history. The
+      # three hunks of the pull request are NOT applied here as they stand:
+      # the retrospective wording ("Dioxus, Axum, Tokio et SQLx … présents
+      # dans des produits") already exists in governance's vision.md in a
+      # rephrased past-tense form; the explored-path line ("Rust-first et
+      # Dioxus") and the two non-goals ("conserver Dioxus dans la cible",
+      # "rouvrir Bun vs Dioxus") stand unchanged in governance — the first
+      # is history, the two others still hold. Any change to that text is a
+      # governance pull request, never a hub write.
+      disposition: carried-by-governance-vision-md
