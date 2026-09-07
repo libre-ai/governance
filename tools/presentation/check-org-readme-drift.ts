@@ -2,33 +2,33 @@
  * Org profile README drift gate (Domain I, Process & CI — chantier 3).
  *
  * `render-org-readme.ts` computes the organization profile's status section
- * from a fresh fleet-status projection, but nothing verified that
- * `libre-ai/.github`'s published `profile/README.md` still carries what that
- * computation would produce today — the two live in different repositories,
- * and `ecosystem/repositories.v1.yaml` can change here without anyone
- * touching the other one.
+ * from the committed fleet-status projection, but nothing verified that
+ * `libre-ai/.github`'s published `profile/README.md` still carries what a
+ * fresh computation would produce today — the two live in different
+ * repositories, and `ecosystem/repositories.v1.yaml` or any project card can
+ * change without anyone touching the other one.
  *
- * Two ways to close that gap: push the render across repositories on every
- * change, or read the live README back and fail when it diverges. The first
- * needs a second credential (the default token cannot write another
- * repository), a cross-repo write path to reason about, and a second branch
- * protection on the receiving end — real weight for what a manual
- * `render-org-readme.ts` run and paste already fixes in one command. This
- * gate takes the second path: the fix stays a human or agent action, but
- * drift can no longer pass unnoticed, which is the failure mode this
- * exists to remove (docs/method/AGENTIC-LOOP-INVENTORY.md, "Contrôle de
- * dérive périodique" — silence is indistinguishable from correctness unless
- * something checks).
+ * The gate reads the live README back and fails when it diverges from a
+ * section rendered from the LIVE cards (never from a committed
+ * intermediate). Since 2026-09-07 it also fails when the committed
+ * projection `ecosystem/projections/fleet-status.v1.json` lags those same
+ * live cards: that file is what `render-org-readme.ts` renders from and what
+ * `libre-ai/website` ships as a pinned git-dep, and a stale copy made the
+ * gate's own remedy ("run render-org-readme.ts and paste") re-render the
+ * already-published, already-wrong section byte for byte. Two named
+ * failures, two named commands: regenerate the projection with
+ * `bun ecosystem/render-fleet-status.ts`, re-render the section with
+ * `bun tools/presentation/render-org-readme.ts`.
  *
- * The fleet-status projection is recomputed from every declared card here,
- * never read from the committed `ecosystem/projections/fleet-status.v1.json`
- * copy — that file's own freshness is unverified by any gate today, and
- * comparing a live README against a possibly-stale intermediate would let
- * two wrongs read as a pass.
+ * The heal path (`heal-org-readme.ts`) shares `readLiveState` so it splices
+ * exactly the section this gate compares against, never a third rendering.
+ * Failure surfaces through docs/method/AGENTIC-LOOP-INVENTORY.md's
+ * "Contrôle de dérive périodique" — silence is indistinguishable from
+ * correctness unless something checks.
  */
 import { parseFleet } from "../../ecosystem/check-fleet-presentation";
 import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
-import { buildFleetStatus } from "../../ecosystem/render-fleet-status";
+import { buildFleetStatus, type FleetStatus } from "../../ecosystem/render-fleet-status";
 import { renderOrgSection, summarizeMigration } from "./render-org-readme";
 
 function countOccurrences(haystack: string, needle: string): number {
@@ -66,8 +66,34 @@ export function checkOrgReadmeDrift(liveReadme: string, freshSection: string): s
   return [];
 }
 
+/**
+ * Compares the committed projection against the projection the live cards
+ * produce right now. Row-by-row so the failure names the repositories that
+ * moved, not just "differs".
+ */
+export function checkProjectionFreshness(committed: FleetStatus, live: FleetStatus): string[] {
+  const committedByRepository = new Map(committed.rows.map((r) => [r.repository, r]));
+  const liveByRepository = new Map(live.rows.map((r) => [r.repository, r]));
+  const stale: string[] = [];
+  for (const [repository, liveRow] of liveByRepository) {
+    const committedRow = committedByRepository.get(repository);
+    if (committedRow === undefined || JSON.stringify(committedRow) !== JSON.stringify(liveRow)) {
+      stale.push(repository);
+    }
+  }
+  for (const repository of committedByRepository.keys()) {
+    if (!liveByRepository.has(repository)) stale.push(repository);
+  }
+  if (stale.length === 0 && committed.rows.length === live.rows.length) return [];
+  return [
+    `ecosystem/projections/fleet-status.v1.json lags the live project cards (${stale.sort().join(", ")}) — ` +
+      "run `bun ecosystem/render-fleet-status.ts` and commit the result; render-org-readme.ts and " +
+      "libre-ai/website both read this file",
+  ];
+}
+
 // ---------------------------------------------------------------------------
-// CLI (network I/O — not unit-tested; the comparison above is)
+// Live state (network I/O — not unit-tested; the comparisons above are)
 
 function fetchFromGitHub(repository: string, path: string): string | null {
   const result = Bun.spawnSync([
@@ -81,44 +107,85 @@ function fetchFromGitHub(repository: string, path: string): string | null {
   return new TextDecoder().decode(result.stdout);
 }
 
-if (import.meta.main) {
-  const { concludeGate, GateReport } = await import("../quality/gate-report");
-  const report = new GateReport();
+export interface LiveState {
+  readonly readme: string;
+  readonly freshSection: string;
+  readonly liveStatus: FleetStatus;
+  readonly committedStatus: FleetStatus;
+}
 
+export interface LiveStateFailure {
+  readonly unreadable: readonly string[];
+}
+
+/**
+ * Everything the gate and the heal compare: the published README, the
+ * section the live cards render to, and both projections. One reader, so
+ * the two callers cannot disagree on what "fresh" means.
+ */
+export async function readLiveState(): Promise<LiveState | LiveStateFailure> {
+  const unreadable: string[] = [];
   const fleet = parseFleet(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const yamlApi = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML;
   const cards: unknown[] = [];
-  let unreadable = false;
   for (const entry of fleet) {
     if (entry.card === undefined) continue;
     const text = fetchFromGitHub(entry.repository, entry.card);
     if (text === null) {
-      report.check(entry.repository, false, `declared card ${entry.card} is unreadable at main`);
-      unreadable = true;
+      unreadable.push(`${entry.repository}: declared card ${entry.card} is unreadable at main`);
       continue;
     }
     cards.push(yamlApi.parse(text));
   }
 
   const migrationText = fetchFromGitHub("libre-ai/libre-ai", "ecosystem/migration-index.v1.yaml");
+  if (migrationText === null) unreadable.push("libre-ai/libre-ai: migration index unreadable");
   const readme = fetchFromGitHub("libre-ai/.github", "profile/README.md");
+  if (readme === null) unreadable.push("libre-ai/.github: profile/README.md unreadable");
+  if (migrationText === null || readme === null || unreadable.length > 0) return { unreadable };
 
-  if (migrationText === null || readme === null || unreadable) {
-    report.check(
-      "org readme drift",
-      false,
-      `cannot compute or read live state (migration index: ${migrationText !== null}, ` +
-        `.github README: ${readme !== null}, all cards readable: ${!unreadable})`,
-    );
+  const liveStatus = buildFleetStatus(cards);
+  const committedStatus = (await Bun.file(
+    new URL("../../ecosystem/projections/fleet-status.v1.json", import.meta.url),
+  ).json()) as FleetStatus;
+  return {
+    readme,
+    freshSection: renderOrgSection(liveStatus, summarizeMigration(migrationText)),
+    liveStatus,
+    committedStatus,
+  };
+}
+
+export function isLiveState(state: LiveState | LiveStateFailure): state is LiveState {
+  return "readme" in state;
+}
+
+if (import.meta.main) {
+  const { concludeGate, GateReport } = await import("../quality/gate-report");
+  const report = new GateReport();
+  const state = await readLiveState();
+
+  if (!isLiveState(state)) {
+    for (const failure of state.unreadable) report.check("live state", false, failure);
   } else {
-    const status = buildFleetStatus(cards);
-    const fresh = renderOrgSection(status, summarizeMigration(migrationText));
-    const drift = checkOrgReadmeDrift(readme, fresh);
+    const projectionDrift = checkProjectionFreshness(state.committedStatus, state.liveStatus);
+    if (projectionDrift.length === 0) {
+      report.check(
+        "fleet-status projection",
+        true,
+        `ecosystem/projections/fleet-status.v1.json matches the live cards (${state.liveStatus.rows.length} rows)`,
+      );
+    } else {
+      for (const failure of projectionDrift)
+        report.check("fleet-status projection", false, failure);
+    }
+
+    const drift = checkOrgReadmeDrift(state.readme, state.freshSection);
     if (drift.length === 0) {
       report.check(
         "org readme drift",
         true,
-        `libre-ai/.github profile/README.md matches a fresh render (${status.rows.length} rows)`,
+        `libre-ai/.github profile/README.md matches a fresh render (${state.liveStatus.rows.length} rows)`,
       );
     } else {
       for (const failure of drift) report.check("org readme drift", false, failure);
