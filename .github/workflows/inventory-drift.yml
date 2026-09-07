@@ -74,6 +74,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-hub-orphans.ts
+      # Owner decision 2026-09-07 ("restore Dependabot everywhere through a
+      # governance template"): every non-archived repository carries the
+      # byte-exact variant of distribution/templates/dependabot/ selected by
+      # its manifests at main. Reads the fleet in one GraphQL batch, like
+      # context-conformance; the report names each drifted repository and the
+      # first differing line, so the wave that fixes it needs no second look.
+      - name: Every repository carries the canonical Dependabot configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-dependabot-conformance.ts
       # The toolchain source is a fleet value with a single live declaration
       # (toolchains/bun.json). Checking it per-repository is impossible: each
       # repository reads that declaration through its PINNED git-dep, so a
