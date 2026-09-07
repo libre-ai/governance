@@ -1,0 +1,23 @@
+{
+  "data": {
+    "repo0": {
+      "config": { "text": "<TEMPLATE:bun>" },
+      "packageJson": { "id": "blob-package-json" },
+      "cargoToml": null,
+      "workflows": { "id": "tree-workflows" }
+    },
+    "repo1": {
+      "config": null,
+      "packageJson": null,
+      "cargoToml": { "id": "blob-cargo-toml" },
+      "workflows": { "id": "tree-workflows" }
+    },
+    "repo2": {
+      "config": { "text": "<FIXTURE:drifted>" },
+      "packageJson": { "id": "blob-package-json" },
+      "cargoToml": { "id": "blob-cargo-toml" },
+      "workflows": { "id": "tree-workflows" }
+    },
+    "repo3": null
+  }
+}

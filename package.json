@@ -44,6 +44,7 @@
     "pretest": "bun run check:bun",
     "check:bun-snapshot": "bun run check:bun:runtime && bun tools/quality/verify-bun-snapshot.ts",
     "check:toolchain": "bun run check:bun && bun tools/quality/check-toolchain.ts",
-    "check:context-conformance": "bun run check:bun:runtime && bun ecosystem/check-context-conformance.ts"
+    "check:context-conformance": "bun run check:bun:runtime && bun ecosystem/check-context-conformance.ts",
+    "check:dependabot-conformance": "bun run check:bun:runtime && bun ecosystem/check-dependabot-conformance.ts"
   }
 }

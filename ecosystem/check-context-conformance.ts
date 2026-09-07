@@ -350,9 +350,9 @@ export interface GhFetchResult {
 
 const NOT_FOUND_PATTERN = /\(HTTP 404\)/;
 /** Two retries beyond the first attempt — 1s then 3s — before giving up and reporting unable-to-verify. */
-const RETRY_DELAYS_MS = [1000, 3000];
+export const RETRY_DELAYS_MS = [1000, 3000];
 
-function delay(ms: number): Promise<void> {
+export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -376,7 +376,7 @@ async function ghRaw(
  * never retried; anything else is retried up to `RETRY_DELAYS_MS.length`
  * times before surfacing as `error`.
  */
-async function ghWithRetry(args: string[]): Promise<GhFetchResult> {
+export async function ghWithRetry(args: string[]): Promise<GhFetchResult> {
   let lastError = "";
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const result = await ghRaw(args);
@@ -389,7 +389,7 @@ async function ghWithRetry(args: string[]): Promise<GhFetchResult> {
   return { text: null, error: lastError };
 }
 
-function fetchFile(repository: string, path: string): Promise<GhFetchResult> {
+export function fetchFile(repository: string, path: string): Promise<GhFetchResult> {
   return ghWithRetry([
     "api",
     `repos/${repository}/contents/${path}?ref=main`,
@@ -530,7 +530,7 @@ export function parseBatchResponse(
   return result;
 }
 
-async function ghGraphQLRaw(
+export async function ghGraphQLRaw(
   query: string,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["gh", "api", "graphql", "-F", "query=@-"], {
