@@ -68,6 +68,19 @@ describe("scheduled loops", () => {
     expect(alert?.if).toMatch(LOOP_EVENT_GUARD);
   });
 
+  // The issue the alert opened must not outlive the failure it reports: an
+  // open issue about a loop that is green again is one more line nobody
+  // reads (governance#85 stayed unread for a week). The green run closes it,
+  // with the run URL as the evidence.
+  test.each(scheduled)("%s closes its issue once it is green again", (name) => {
+    const workflow = parse(name);
+    const resolves = alertSteps(workflow).filter((step) => (step.run ?? "").includes("--resolve"));
+    expect(resolves).toHaveLength(1);
+    const resolve = resolves[0];
+    expect(resolve?.if).toMatch(/success\(\)/);
+    expect(resolve?.if).toMatch(LOOP_EVENT_GUARD);
+  });
+
   test.each(scheduled)("%s hands the alert the identity it reports under", (name) => {
     const workflow = parse(name);
     for (const step of alertSteps(workflow)) {

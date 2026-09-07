@@ -112,10 +112,11 @@ jobs:
             }
           done
           exit $fail
-      # Only reached on failure (below), so paid for exclusively on the run
-      # that needs it: this workflow otherwise has no Bun dependency at all.
+      # Only the alerting steps below need Bun: the alert on a red run, the
+      # resolve on a green one. Installed on both outcomes, skipped only when
+      # the run was cancelled — this workflow otherwise has no Bun dependency.
       - name: Install archived Bun toolchain
-        if: failure()
+        if: ${{ !cancelled() }}
         env:
           BUN_ARCHIVE_URL: https://github.com/libre-ai/governance/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
           BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
@@ -136,3 +137,13 @@ jobs:
           WORKFLOW_FILE: truth-drift.yml
           CURRENT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: bun tools/security/repeat-failure-alert.ts
+      # The green run closes the issue the alert opened (idempotent: nothing
+      # open, nothing closed), so the issue never outlives the failure.
+      - name: Close the repeat-failure issue now that the loop is green
+        if: success() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: Public truth drift
+          WORKFLOW_FILE: truth-drift.yml
+          CURRENT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bun tools/security/repeat-failure-alert.ts --resolve

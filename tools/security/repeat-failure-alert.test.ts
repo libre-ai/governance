@@ -5,6 +5,8 @@ import {
   issueTitle,
   type OpenIssue,
   previousLoopRun,
+  resolutionComment,
+  selectMode,
   shouldAlert,
 } from "./repeat-failure-alert";
 
@@ -69,6 +71,28 @@ describe("findOpenIssue", () => {
 
   test("returns null against an empty issue list", () => {
     expect(findOpenIssue([], "anything")).toBeNull();
+  });
+});
+
+describe("selectMode", () => {
+  test("defaults to alerting — the historical, argument-free invocation", () => {
+    expect(selectMode([])).toBe("alert");
+  });
+
+  test("--resolve selects the closing path", () => {
+    expect(selectMode(["--resolve"])).toBe("resolve");
+  });
+
+  test("refuses an unknown flag rather than silently alerting", () => {
+    expect(() => selectMode(["--close"])).toThrow(/--close/);
+  });
+});
+
+describe("resolutionComment", () => {
+  test("names the loop and the green run that closes the issue", () => {
+    const comment = resolutionComment("Org README drift", "https://x/runs/3");
+    expect(comment).toContain("Org README drift");
+    expect(comment).toContain("https://x/runs/3");
   });
 });
 
