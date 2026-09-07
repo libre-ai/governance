@@ -74,27 +74,35 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-hub-orphans.ts
-      # Owner decision 2026-09-07 ("restore Dependabot everywhere through a
-      # governance template"): every non-archived repository carries the
-      # byte-exact variant of distribution/templates/dependabot/ selected by
-      # its manifests at main. Reads the fleet in one GraphQL batch, like
-      # context-conformance; the report names each drifted repository and the
-      # first differing line, so the wave that fixes it needs no second look.
-      - name: Every repository carries the canonical Dependabot configuration
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bun ecosystem/check-dependabot-conformance.ts
       # The toolchain source is a fleet value with a single live declaration
       # (toolchains/bun.json). Checking it per-repository is impossible: each
       # repository reads that declaration through its PINNED git-dep, so a
       # stale pin compares a stale workflow to a stale policy and stays green.
-      # Last of the job on purpose: this gate is knowingly red until the
+      # Late in the job on purpose: this gate is knowingly red until the
       # toolchain migration wave lands, and a step that fails early would mask
       # every gate placed after it for the whole duration of the wave.
       - name: Every workflow installs the Bun toolchain from the declared source
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-toolchain-source.ts
+      # Owner decision 2026-09-07 ("restore Dependabot everywhere through a
+      # governance template"): every non-archived repository carries the
+      # byte-exact variant of distribution/templates/dependabot/ selected by
+      # its manifests at main. Reads the fleet in one GraphQL batch, like
+      # context-conformance; the report names each drifted repository and the
+      # first differing line, so the wave that fixes it needs no second look.
+      # Scheduled and dispatched runs only: this job is a required pull
+      # request check of this repository, and the fleet baseline is 0/35 by
+      # construction until the adoption wave lands — a required check that
+      # no governance pull request can turn green is the phantom requirement
+      # the branch-protection norm forbids. The weekly run stays red instead,
+      # and its second consecutive red files the governance issue below. Last
+      # of the job for the same reason as the toolchain step above.
+      - name: Every repository carries the canonical Dependabot configuration
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-dependabot-conformance.ts
       # A red scheduled run here is only visible to someone who opens the
       # Actions tab (AGENTIC-LOOP-INVENTORY.md, "Contrôle de dérive périodique"
       # — "absence de ligne récente" is its own failure mode). One red run
