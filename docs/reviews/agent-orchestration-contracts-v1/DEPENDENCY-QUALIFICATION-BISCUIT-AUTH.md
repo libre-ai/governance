@@ -58,25 +58,47 @@ superseded.
 The dependency line stays an exact registry version, `biscuit-auth = { version = "=6.0.0",
 default-features = false }`, and `[patch.crates-io]` resolves it to
 `authz-biscuit/third_party/biscuit-auth-6.0.0/`: the published archive (94 files, byte-identical
-to the checksum above, including `Cargo.toml.orig`, `Cargo.lock`, `samples/`, `examples/`,
-`benches/`, `tests/`) plus exactly the #306 hunks. `PATCH.md` in that directory records the
-provenance, the diff, the qualification steps for every update and the removal condition. The
-REUSE annotation keeps the tree under its upstream Apache-2.0 licence and copyright; the
-declared-vs-effective licence gate excludes `third_party/` by doctrine (`LICENSING.md`,
-"Third-party material").
+to the checksum above, `Cargo.toml.orig` included — tracked with `git add -f` because common
+global gitignores exclude `*.orig`; the round-1 review found it silently dropped) plus exactly
+the #306 hunks, committed as `third_party/patches/biscuit-auth-6.0.0-upstream-306.diff`.
+`PATCH.md` in that directory records the provenance, the diff, the qualification steps for every
+update, the two upstream rustc warnings the copy emits under the reduced feature set (recorded,
+never silenced in the tree) and the removal condition. The REUSE annotation keeps the tree and the
+diff under their upstream Apache-2.0 licence and copyright; the declared-vs-effective licence gate
+excludes `third_party/` by doctrine (`LICENSING.md`, "Third-party material").
 
-`ecosystem-engine` does not carry a second copy: its `[patch.crates-io]` points at the
-`authz-biscuit` repository by git `rev` (cargo resolves the package by name inside the repository;
-`cargo deny check sources` accepts it under `[sources.allow-org] github = ["libre-ai"]`). One copy in
-the fleet, re-pinned to the merge commit when the `authz-biscuit` PR lands.
+**Provenance gate (machine-checked, blocking):** `scripts/verify-vendored-biscuit-auth.sh`
+downloads the archive from `static.crates.io`, verifies its SHA-256 against the value declared in
+`PATCH.md`, applies the committed diff and `diff -r`s the result against the vendored tree (only
+`PATCH.md` may differ). It is a blocking step of the `dependency-policy` CI job and the single
+local command of `PATCH.md` step 1. It replaces the registry checksum that `Cargo.lock` enforced
+for 5.0.0 and that a path patch removes; without it, an edit under `third_party/` — 32 000 lines
+including the signature verifier — would be reviewed by eye only.
+
+**Fleet form — one copy, consumed by rev-pinned organisation git-dep (ADR-0031):** the copy lives
+in the repository that qualifies it (`authz-biscuit`). `ecosystem-engine` carries no second copy:
+its `[patch.crates-io]` points at the `authz-biscuit` repository by full git `rev` (cargo resolves
+the package by name inside the repository; `cargo deny check sources` accepts it under
+`[sources.allow-org] github = ["libre-ai"]`), and it carries the **orphan-rev gate**
+(`scripts/check-patch-rev.ts`, in `bun run check`): the rev must compare `identical` or `behind`
+against `authz-biscuit` `main`, otherwise red. A pull request pinned on an unmerged branch head is
+red by construction until the re-pin that follows the producer's squash-merge (read the merge
+commit, replace `rev`, `cargo update -p biscuit-auth`, rerun the gate). The round-1 architecture
+pass had found that this form contradicted the letter of ADR-0020 §2.5 ("the patch follows each
+final workspace"), that a stale rev keeps resolving indefinitely (GitHub keeps pull-request refs)
+and that cargo picks between two same-named copies by directory walk with a warning; the owner
+arbitrated the form and ADR-0031 amends §2.5 accordingly (single home, secondary consumers by
+git-dep, orphan-rev gate required, copy = archive + committed diff).
 
 Alternatives set aside: enabling `datalog-macro` (re-introduces the unmaintained proc-macro
 family the 5.0 pin was chosen to avoid); a git dependency on upstream `main` past #306 (unpinned
 crypto and datalog changes on the way to 7.0 — see below — and no registry checksum to qualify);
-a fork repository (a second remote to govern for five lines of `use`).
+a fork repository (a second remote to govern for five lines of `use`); a second `third_party/`
+copy in `ecosystem-engine` (§2.5 literal — two trees to keep byte-equal by hand, no gate sees
+their drift).
 
-Precedent: `notebook/third_party/rustcrypto-aes-0.8.4` (ADR-0020 §2.5 — the patch travels with its
-consumer).
+Precedent: `notebook/third_party/rustcrypto-aes-0.8.4` (ADR-0020 §2.5), where `notebook` is both
+the qualifying home and the only consumer — consistent with ADR-0031 D1.
 
 ## Removal condition
 
@@ -93,21 +115,37 @@ this note must be rewritten for it.
 `authz-biscuit` validates the canonical shape of blocks 0 and 1 by reprinting them and reparsing
 with the version-matched parser, and guards the round trip up front because the printer emits
 strings and identifiers unescaped. The proof is version-bound; it was redone for the new pair with
-the `fbbe360` method (`authz-biscuit` `evidence/reviews/bfc2c0d/`):
+the `fbbe360` method (`authz-biscuit` `evidence/reviews/bfc2c0d/`, round 1), then re-reviewed by
+two independent K4 passes (`docs/reviews/biscuit-auth-6/81ce4b5/`: security accept, architecture
+reject — the record credited tests that never reached the guard branches they were cited for,
+12 of 18 mutants survived) and re-issued as `evidence/reviews/81ce4b5/` (round 2), which
+supersedes `bfc2c0d/`. What the round-2 record holds:
 
-- proved faithful and relied upon: sets (`{..}`, members in symbol-table order), `{,}` vs `{}`,
-  strict vs lenient equality (`===`/`!==` vs `==`/`!=`), key-algorithm scope prefixes
-  (`ed25519/<hex>`); a byte-class property over `0x01..=0x7f` — 126 bytes reparse exactly, `"` and
-  `\` are denied, no third outcome;
-- **confirmed gap** on the plain API migration: a holder-appended block carrying an array, map,
-  `null`, closure or `extern::` call — including one whose closure parameter name or map key
-  embedded the `fbbe360` payload — was accepted; **closed** by rejecting those kinds as a class
-  (exhaustive `Term`/`Op` matches) — the issuer never emits them, so their presence in a signed
-  block is non-canonical, and the proof obligation stays at the 5.0 set instead of gaining three
-  identifier channels;
+- **proved faithful and relied upon** (round-trip tests): string terms over every byte
+  `0x01..=0x7f` except `"` and `\` plus UTF-8; sets (`{..}`, members in symbol-table order) and
+  `{,}` vs `{}`; strict vs lenient equality (`===`/`!==` vs `==`/`!=`); dates up to
+  `9999-12-31T23:59:59Z` (`253402300799`); rule-level key scopes (`ed25519/<hex>`);
+- **rejected by the guard, one test per rule, each proved to turn red under its mutant** (26
+  mutants replayed: 24 killed, 2 equivalent by construction — `Term::Parameter` cannot be
+  signed, a token-only authorizer holds no policy): `"`/`\` in any string, non-identifier
+  variable and predicate names in facts, rule heads, rule bodies and check bodies, `null`,
+  arrays, maps, closures, `extern::` calls (the datalog 3.3 class), the strict `And`/`Or`
+  (printed `&&!`/`||!`, read back as `&& !x`), `try_or` and the lazy `&&`/`||` in binary form
+  (reparse inserts a closure), dates above `253402300799` (print as 1969 or `<invalid date>`),
+  and a block-level scope on block 0 or 1 — read on the decoded structure, since
+  `Block::print_source` never prints one (round 1 had a dead `parsed.scopes` check and an
+  over-claim in `SECURITY.md`);
+- every forgery of those tests lives in block 2, which no structural validator reads, so
+  `auth.biscuit_invalid` is attributable to the guard alone;
 - the guard runs on a token-only authorizer (`token.authorizer()`, no ambient fact, no policy,
   never executed) before revocation and structural validation; the verification order of
-  `authz-biscuit/SECURITY.md` is unchanged, at the cost of one extra block translation per request.
+  `authz-biscuit/SECURITY.md` is unchanged. The second load is measured, not asserted: 13.9 µs of
+  a 127.2 µs `authorize()` in release (10.9 %), 59.7 µs of 1.28 ms in debug;
+- Ed25519 is enforced, not asserted: 6.0 keys are algorithm-tagged and every key entry point
+  (`BiscuitIssuer::new`, `VerificationKeyRing::new`, `begin_rotation`) refuses a P-256 key;
+- `SECURITY.md` claims exactly those two lists and states that constructs outside both are not
+  claimed either way; holder attenuation written in datalog 3.3 idioms is documented as denied
+  as a class.
 
 ## Contracts under datalog 3.3
 
@@ -136,17 +174,30 @@ side — never printed, never reparsed; the issuer's own attenuation binds a set
   the vendored crate — `unused import crate::crypto::PublicKey`, `parse_any_algorithm` never
   used — which `-D warnings` does not deny because the tree is not a workspace member; the copy
   is not edited beyond #306);
-- every update of the vendored copy re-diffs it against the archive and re-runs the injectivity
-  method; any change to the printer sources or to the paired parser version requires a new
-  evidence record.
+- the provenance gate (`scripts/verify-vendored-biscuit-auth.sh`) is blocking in CI and rerun
+  locally on every update of the vendored copy; any change to the printer sources or to the
+  paired parser version requires a new evidence record, and the mutation replay of the guard is
+  part of that record;
+- `ecosystem-engine` runs the orphan-rev gate (`check:patch-rev`) in `bun run check` (ADR-0031 D3).
 
 ## Residual risks
 
 - The vendored copy is a fork of a crates.io release until upstream publishes #306; its life is
-  bounded by the removal condition above.
+  bounded by the removal condition above, which no gate dates: the day 7.0.0 publishes, the only
+  signal is a Dependabot bump that turns the `[patch]` into a cargo warning.
 - `Authorizer::dump()` unwraps the conversion of block checks in 6.0 as in 5.0; a signed but
-  malformed block could in principle panic rather than deny (pre-existing, unchanged).
-- Two token loads per authorization (guard + decision).
+  malformed block could in principle panic rather than deny (pre-existing, unchanged). Two
+  further panics are reachable through `biscuit_auth::builder` directly (a `Term::Parameter` in a
+  check expression at `append`; a malformed key in a `trusting` scope string), never from
+  `authorize()`.
+- Two token loads per authorization (guard + decision): measured at 10.9 % of `authorize()` in
+  release.
+- Constructs the printer can emit that are in neither of the two proved lists of `SECURITY.md`
+  (bitwise, arithmetic, set algebra, prefix/suffix/regex, length/type, negate/parens,
+  comparisons, `i64` extremes, bytes) were probed faithful by the security pass but are not
+  covered by a committed test and are not claimed.
+- A token issued by a 5.0.0 build authorizing under 6.0.0 is asserted by reading (`Term::Set` in
+  the binary, printed `{..}`), not executed.
 - Advisory verdicts are time-dependent (non-blocking job, by design).
 
 A mutation of `authz-biscuit`, a couche-3 brick, requires the two-role human review and the
