@@ -72,7 +72,9 @@ Additional exact conformance evidence:
 
 - `biscuit-auth 5.0.0`, crates.io checksum
   `95490f2c91dc452247d00a2fb4779bcedb7693e669354fa1fe2a96679f4950cc`, Apache-2.0,
-  dev-only and default-features disabled;
+  dev-only and default-features disabled (promotion-time record; the dependency was requalified
+  at `6.0.0` on 2026-09-08 — current state in `DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md`, form in
+  ADR-0031 — without reopening this package);
 - all 15 authorization vectors execute the cataloged policy in the selected Biscuit engine;
 - key overlap/retirement/unknown registry and root-block revocation/store outage gates fail closed;
 - Datalog limits are 256 facts, 32 iterations and 50 ms per vector.
