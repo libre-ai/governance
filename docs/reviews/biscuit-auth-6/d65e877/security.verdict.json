@@ -1,0 +1,193 @@
+{
+  "reviewPassId": "rp-d65e877-authz-biscuit-pr12-security-r2",
+  "role": "security",
+  "mode": "specialized-role",
+  "repository": "libre-ai/authz-biscuit",
+  "pullRequest": 12,
+  "round": 2,
+  "commitSha": "d65e877f1430b1791955ac29cfafffc50f574176",
+  "baseSha": "5ff4c934b784b25e1eaa82aeb2b15c783c0cb075",
+  "reviewedRange": "81ce4b579d383f8368f06c8f4e6e3765b518225f..d65e877f1430b1791955ac29cfafffc50f574176 (4 commits: 09aae8b guard/scopes/Ed25519, 8d493c3 provenance gate, bb32056 docs, d65e877 SECURITY.md + round-2 record; 14 files, +1317/-78)",
+  "contractHashes": [
+    {
+      "path": "vendored/authz/authority-v1.datalog",
+      "sha256": "eb88b62cd252414bf80089f9be7478475310b3b25d88da528d389a4971e310ea",
+      "upstream": "unchanged since round 1 (git diff 81ce4b5..HEAD -- vendored/ = 0 lines)"
+    },
+    {
+      "path": "vendored/authz/authority-v2.datalog",
+      "sha256": "f5c0648cf0c2ebf43f73a444ca4df0a84a7349c02d7d0cc31cc86c77daf1db58",
+      "upstream": "unchanged since round 1"
+    },
+    {
+      "path": "vendored/authz/sessions-v1.datalog",
+      "sha256": "93bc93e9a4c7b17716787bc9b56df592652b1df0f02d581765cc61010ecaefe1",
+      "upstream": "unchanged since round 1"
+    },
+    {
+      "path": "vendored/authz/missions-v1.datalog",
+      "sha256": "9bfa33eda5e34b8a8d1262881fc951e2455c47769ccaf48d0359bed14a20d2be",
+      "upstream": "unchanged since round 1"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v1.datalog",
+      "sha256": "f20dae7884e49fa00982044a51e99b7f09a5598487bc21f222fcb2d692e3126b",
+      "upstream": "unchanged since round 1"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v2.datalog",
+      "sha256": "de119ba6fe0679793403a66e9b5c29f69a781b53d6eb255e17888c8bb6c2cf37",
+      "upstream": "unchanged since round 1"
+    },
+    {
+      "path": "biscuit-auth-6.0.0.crate (static.crates.io, re-downloaded by scripts/verify-vendored-biscuit-auth.sh)",
+      "sha256": "d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b",
+      "upstream": "equals PATCH.md declaration; round-1 index cksum identical"
+    },
+    {
+      "path": "third_party/patches/biscuit-auth-6.0.0-upstream-306.diff",
+      "sha256": "ef06cb26960989e0853ce550080d5fbfef23171105da384fcc88793a8a5b8ecb",
+      "upstream": "byte-identical to `gh pr diff 306 --repo eclipse-biscuit/biscuit-rust` (cmp exit 0, 2895 bytes both)"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/12/head:pr-12-r2-sec; git worktree add <scratch>/ab-r2-sec --detach pr-12-r2-sec; HEAD = d65e877f1430b1791955ac29cfafffc50f574176; git merge-base HEAD origin/main = 5ff4c93; git status --porcelain empty at start",
+    "read: round-1 verdict governance/docs/reviews/biscuit-auth-6/81ce4b5/security.verdict.json; git diff 81ce4b5..HEAD (src/authorize.rs, src/keys.rs, src/token.rs, .github/workflows/ci.yml, tests/authz.rs, SECURITY.md, PATCH.md, REUSE.toml, scripts/verify-vendored-biscuit-auth.sh); SECURITY.md in full; evidence/reviews/81ce4b5/ROUND-2-GUARD-MUTATION-SCOPES-AND-PROVENANCE.md in full",
+    "read in the vendored 6.0.0 tree: src/token/authorizer/snapshot.rs:187-247 (snapshot), src/format/convert.rs:132-150 (token_block_to_proto_snapshot_block, scope field), src/format/schema.rs:353-430 (AuthorizerSnapshot/AuthorizerWorld/SnapshotBlock), src/token/builder/authorizer.rs:330-366 (build_inner block order), src/datalog/expression.rs:132-143 and 540-580 (Unary/Binary printers: no parenthesisation), src/datalog/symbol.rs:187-215 (print_term: `hex:` for bytes, `{,}` for the empty set), src/token/mod.rs:407-435 (third-party append); biscuit-parser 0.2.0 parser.rs:366-386 (unary_negate binds expr6), 392-470 (binary_op_0..8), 502-640 (precedence layers expr..expr9, expr2 non-associative), 649-676 (binary_method: All/Any require `$x ->`), 765-777 (parse_bytes: take_while1)",
+    "cargo fmt --check -> exit 0; cargo clippy --all-targets --all-features -- -D warnings -> exit 0 (2 vendored warnings, unchanged); cargo test --locked --all-features -> exit 0, tests/authz.rs 53 passed 1 ignored; cargo deny check -> exit 0; cargo audit -> exit 0 (99 crate dependencies); reuse lint -> compliant 139/139",
+    "gh pr view 12: OPEN, MERGEABLE, head d65e877, 9 commits; gh pr checks 12: Bun quality / Dependency policy / Rust quality / context-hygiene / licensing all pass; gh api branches/main/protection/required_status_checks -> contexts include \"Dependency policy\"; gh run view --job 102003569338 --log on run 34208484223 (headSha d65e877): the step 'Verify the vendored biscuit-auth copy against the published archive (blocking)' executed and printed 'verify-vendored: OK'",
+    "scripts/verify-vendored-biscuit-auth.sh on the clean tree -> exit 0; `echo '// probe' >> third_party/biscuit-auth-6.0.0/src/crypto/mod.rs` -> exit 1 with the diff line `989a990 > // probe`; git restore; `mv third_party/biscuit-auth-6.0.0/Cargo.toml.orig` away -> exit 1 with `Only in <archive>: Cargo.toml.orig`; git restore; cmp restored file identical; git status clean afterwards",
+    "gh pr diff 306 --repo eclipse-biscuit/biscuit-rust > pr306.diff; cmp against third_party/patches/biscuit-auth-6.0.0-upstream-306.diff -> BYTE-IDENTICAL (sha256 ef06cb26…)",
+    "throwaway tests/probe_r2.rs (untracked, removed with the worktree): R1 third-party blocks (Ed25519/P-256 external keys, with/without block scope, block 1 as a third-party block), R2 block-level scopes on blocks 0/1/2 + rule-level P-256/Ed25519 key scopes, R3 47 op/term cases outside the SECURITY.md lists (bitwise, arithmetic, comparisons, set algebra, prefix/suffix/regex, length/type, negate/parens, i64 extremes, bytes incl. empty, empty set, date 0/253402300799/253402300800, date in set, 4000/12000-byte strings, NUL/newline/`; //` strings, All/Any/Get binary form, 8 precedence shapes, 2 malformed stacks) each reporting guard outcome, reprint, structural fidelity of parse(print) and the outcome of the reprint re-signed as block 2, R5 P-256 at the three key entry points + P-256 root token against an Ed25519 ring; cargo test --test probe_r2 -- --nocapture --test-threads=1 -> 4 passed, raw log ab-review-r2/probe-raw.log",
+    "cleanup: git worktree remove --force <scratch>/ab-r2-sec; git branch -D pr-12-r2-sec; main clone untouched (no commit, no push, no comment)"
+  ],
+  "roundOneFindingsStatus": [
+    {
+      "finding": "MAJOR 1 — block-level scopes on blocks 0 and 1 neither printed nor rejected (dead `parsed.scopes.is_empty()`)",
+      "status": "closed",
+      "proof": "src/authorize.rs:133 `if !canonical_blocks_have_no_block_scope(&signed_blocks)` -> auth.biscuit_invalid, before revocation (:136); :486-492 reads `authorizer.snapshot()?.world.blocks[0..2].scope` and returns false on `Err` (fail-closed) or `blocks.len() < 2`; snapshot.rs:202-212 maps `self.blocks` (token blocks, authority first per builder/authorizer.rs:341-366) through convert.rs:143-147 which copies `block.scopes` -> `scope`. Dead conditions removed at :199-205 and :262-268. Probe: `R2 block1 scope[previous|authority|pubkey] snapshot_blocks=2 scope_lens=[0, 1] printed_has_trusting=false -> DENY(auth.biscuit_invalid)` (3/3, was ACCEPT/ACCEPT/operation_denied in round 1); `R2 block0 scope[previous|authority|pubkey] -> DENY(auth.biscuit_invalid)` (3/3); `R1 block1-as-third-party[ed25519|p256] +scope(authority) -> DENY(auth.biscuit_invalid)`; `R2 block2 scope[*] -> ACCEPT(policy=0)` as documented (SECURITY.md:40-43, 138-139). Author test `block_level_scopes_on_blocks_0_and_1_are_rejected_structurally`, mutant M25 killed."
+    },
+    {
+      "finding": "MAJOR 2 — `&&!`/`||!`, `try_or`, dates >= 2^63 accepted although their reprint is not faithful; completeness claim false",
+      "status": "partially closed",
+      "proof": "The four named instances are rejected: src/authorize.rs:449 `Op::Binary(Binary::And | Binary::Or) => false`, :451 `Op::Binary(Binary::TryOr | Binary::LazyAnd | Binary::LazyOr) => false`, :435 `Term::Date(seconds) => *seconds <= 253_402_300_799`; probe `R3 [date-253402300800] -> DENY(auth.biscuit_invalid)`, `R3 [date-in-set-u64max] -> DENY(auth.biscuit_invalid)` (set recursion), `R3 [date-boundary-253402300799] -> ACCEPT | FAITHFUL`; author tests guard_strict_and/or, guard_try_or, guard_lazy_and/or, guard_date_range; mutants M19-M24 killed. The completeness sentence is withdrawn (SECURITY.md:104-105, 149-150). NOT closed as a class: the same finding-C standard (holder block accepted although its reprint is not a faithful rendering) still has instances the round did not consider — see new major below (printer emits no parentheses; empty `Term::Bytes`; `All`/`Any` in binary form) — and SECURITY.md:30-31 step 5 still states the blanket claim 'Reject any token whose decoded terms would not survive the pinned print/parse round trip unchanged', which those instances contradict."
+    },
+    {
+      "finding": "MAJOR 3 — nothing machine-checked binds third_party/biscuit-auth-6.0.0/ to the published archive; Cargo.toml.orig missing",
+      "status": "closed",
+      "proof": ".github/workflows/ci.yml:128-129 step 'Verify the vendored biscuit-auth copy against the published archive (blocking)' `run: scripts/verify-vendored-biscuit-auth.sh` in job dependency-policy, no `continue-on-error` (the only one, :154, is on the advisories step); 'Dependency policy' is in branches/main required_status_checks; CI job log on d65e877 shows the step ran ('verify-vendored: OK'). Script: URL hardcoded to https://static.crates.io (:21, no mirror/env override), SHA read from PATCH.md (:23) and compared (:40-43), `patch --strip=2 --forward` of the committed diff (:50) inside `set -euo pipefail`, `diff --recursive --exclude=PATCH.md` (:53). Red proven locally: appended line -> `989a990 > // probe … FAILED` exit 1; Cargo.toml.orig moved away -> `Only in <archive>: Cargo.toml.orig … FAILED` exit 1; clean tree exit 0. Cargo.toml.orig tracked: `git ls-files -s` -> 100644 a7756e3 third_party/biscuit-auth-6.0.0/Cargo.toml.orig; PATCH.md:52-58 documents the force-add. Committed diff byte-identical to upstream #306 (cmp exit 0, sha256 ef06cb26…)."
+    },
+    {
+      "finding": "MINOR 1 — Ed25519-only asserted, not enforced, at key entry points; `public_keys()` hardcodes \"Ed25519\"",
+      "status": "closed",
+      "proof": "src/keys.rs:42-47 `is_ed25519`, :51 (`VerificationKeyRing::new`), :79 (`begin_rotation`), src/token.rs:214-215 (`BiscuitIssuer::new`) -> auth.key_unavailable; src/keys.rs:166-169 algorithm derived from `key.public_key.algorithm()`. Probe: `R5 issuer[p256] -> auth.key_unavailable`, `R5 ring::new[p256] -> auth.key_unavailable`, `R5 begin_rotation[p256] -> auth.key_unavailable`, `R5 public_keys -> [\"Ed25519\"]`, `R5 p256-root-token vs ed25519 ring -> DENY(auth.biscuit_invalid)`. Author test `non_ed25519_keys_are_refused_at_every_entry_point`. Note: closed for the configured keys only; P-256 remains reachable from token bytes through third-party blocks (new minor below)."
+    },
+    {
+      "finding": "MINOR 2 — two panics in the vendored builder reachable through the re-exported biscuit-auth API (Term::Parameter at append; malformed key in a `trusting` scope string)",
+      "status": "open",
+      "proof": "Unchanged by design: the copy must stay archive + #306 (PATCH.md:52-58, gate). Recorded in evidence/reviews/81ce4b5/ROUND-2-…md:200-203 'Not done in this round'. Still unreachable from authorize(): the only `.code(..)` call takes the embedded policy (src/authorize.rs:168) and `attenuate` builds from validated strings. Author test `term_parameter_never_reaches_a_signed_block` documents the panic as the reason the `Term::Parameter` arm is unreachable (mutant M18 equivalent)."
+    },
+    {
+      "finding": "MINOR 3 — PATCH.md byte-identity claim false (Cargo.toml.orig) and the two vendored rustc warnings not denied",
+      "status": "closed",
+      "proof": "Cargo.toml.orig tracked (see MAJOR 3); PATCH.md:52-58 corrected; PATCH.md:60-70 'Known upstream warnings' records `unused import: crate::crypto::PublicKey` and `parse_any_algorithm is never used` and states they are deliberately not silenced (an `#![allow]` would fail the gate). Replayed: clippy exit 0 with exactly those 2 warnings from `biscuit-auth (lib)`."
+    },
+    {
+      "finding": "MINOR 4 — dependency closure 82 -> 99 with an unconditional ECDSA/P-256 chain and serde_json; duplicate versions",
+      "status": "open",
+      "proof": "Unchanged: `cargo audit` -> 'Scanning Cargo.lock for vulnerabilities (99 crate dependencies)', exit 0; cargo deny exit 0 (duplicates remain at warn level per deny.toml:27). No commit in the round touches Cargo.lock or deny.toml. Not remediable without dropping upstream's non-optional dependencies; the round-1 assessment 'inert unless a P-256 key is supplied' is corrected by the new minor: the P-256 verify path is exercised by third-party blocks carried in token bytes."
+    },
+    {
+      "finding": "MINOR 5 — holder attenuations written in datalog 3.3 idioms denied as a class, undocumented",
+      "status": "closed",
+      "proof": "SECURITY.md:176-184 'Holder-appended blocks (block 2 onwards) … A block written in datalog 3.3 idioms is therefore denied as a class … `&&`, `||` … `.all`/`.any`, `.try_or`, `.get`, `null`, arrays and maps, as well as `&&!`/`||!` and out-of-range dates. The only holder attenuation this crate accepts is the shape its own `attenuate()` emits, or a hand-built block restricted to strings, dates, variables, sets and the pre-3.3 operators.'"
+    }
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [
+      {
+        "title": "The guard still accepts holder blocks whose reprint is not a faithful rendering: the 6.0 printer emits no parentheses, so every compound expression without an explicit `Parens` op reparses to a different tree under parser 0.2.0's precedence layers (or not at all); an empty `Term::Bytes` prints as `hex:` which the parser rejects; `All`/`Any` in binary form print as `.any(true)` which the parser rejects — SECURITY.md step 5 (line 30-31) still claims the class is rejected",
+        "severity": "major",
+        "detail": "src/authorize.rs:452 `Op::Unary(_) | Op::Binary(_) => true` and :436 `Term::Bytes(_) => true` pass these constructs. The printer (third_party/…/src/datalog/expression.rs:540-580, :132-143) renders `Binary::print(left, right)` as `left op right` with no grouping; only an explicit `Unary::Parens` op yields `( … )`. The parser (biscuit-parser-0.2.0 parser.rs:502-640) is a precedence-climbing parser (`||` < `&&` < comparisons, non-associative at expr2:524-542 < `|` < `^` < `&` < `+ -` < `* /` < `!` binding expr6 < methods), so a stack program whose evaluation order differs from that precedence prints as a string that reparses to another program. Empirical, holder-appended block 2 (no root key), token ACCEPTED by the guard and by evaluation, reprint re-signed as a fresh block 2: `[1, 2, Add, 3, Mul, 9, Equal]` -> ACCEPT(policy=0), printed `check if 1 + 2 * 3 === 9;`, reparsed `[1, 2, 3, Mul, Add, 9, Equal]` (= 7 === 9), reprint -> DENY(auth.operation_denied); `[6, 2, 1, Sub, Sub, 5, Equal]` (6-(2-1)=5) -> ACCEPT, printed `6 - 2 - 1 === 5`, reprint -> DENY; `[1, 3, 2, BitwiseXor, BitwiseAnd, 1, Equal]` -> ACCEPT, printed `1 & 3 ^ 2 === 1`, reparsed as `(1 & 3) ^ 2`, reprint -> DENY; `[2, 3, Mul, TypeOf, \"integer\", Equal]` -> ACCEPT, printed `2 * 3.type() === \"integer\"`, reprint -> DENY; `[true, false, Equal, Negate]` -> ACCEPT, printed `!true === false`, reparsed `[true, Negate, false, Equal]` (same value, different tree); `[1, 2, LessThan, true, Equal]` -> ACCEPT, printed `1 < 2 === true`, PARSE-ERROR (comparisons are non-associative); `[Bytes([]), Bytes([]), Equal]` -> ACCEPT, printed `hex: === hex:`, PARSE-ERROR (parse_bytes = take_while1, parser.rs:765-777); `[{1}, true, Any]` and `[{1}, true, All]` -> guard passes, printed `{1}.any(true)` / `{1}.all(true)`, PARSE-ERROR (binary_method requires `$x ->`, parser.rs:656-665), denied only by evaluation (auth.operation_denied) — the same closure-inserted-on-reparse class the round rejected for `TryOr`/`LazyAnd`/`LazyOr` (doc comment src/authorize.rs:408-411 names those three and omits `All`/`Any`). Impact on the decision: none found — blocks 0 and 1 are matched on exact op slices (`canonical_operation_check`/`exact_expiration_check`), block 2 is never reprinted by this crate, and the value divergences above only make the *reprint* stricter or unparsable. What is wrong is the guarantee text: SECURITY.md:30-31 'Reject any token whose decoded terms would not survive the pinned print/parse round trip unchanged' is a blanket claim contradicted by these accepted tokens, while SECURITY.md:149-150 says constructs outside the two lists are 'not claimed either way' — the two sentences cannot both hold. Either the guard rejects every op sequence that is not a single precedence-conformant tree (or requires `Parens` around every compound operand; or rejects `All`/`Any`/`Get` in binary form and empty bytes), or step 5 is reworded to the exact lists and the record's 'CONFIRMED, closed' for this class is downgraded to 'four instances closed'.",
+        "evidence": "R3 [precedence-(1+2)*3===9] -> ACCEPT(policy=0) | printed=`check if 1 + 2 * 3 === 9;` | DIVERGES parsed=[Value(Integer(1)), Value(Integer(2)), Value(Integer(3)), Binary(Mul), Binary(Add), Value(Integer(9)), Binary(Equal)] | reprint-as-block2 -> DENY(auth.operation_denied)\nR3 [precedence-1&(3^2)===1] -> ACCEPT(policy=0) | printed=`check if 1 & 3 ^ 2 === 1;` | DIVERGES … | reprint-as-block2 -> DENY(auth.operation_denied)\nR3 [precedence-(1<2)===true] -> ACCEPT(policy=0) | printed=`check if 1 < 2 === true;` | PARSE-ERR\nR3 [bytes-empty] -> ACCEPT(policy=0) | printed=`check if hex: === hex:;` | PARSE-ERR([Error { input: \"hex:\", code: Char …\nR3 [any-binary-no-closure] -> DENY(auth.operation_denied) | printed=`check if {1}.any(true);` | PARSE-ERR([Error { input: \"any(true)\", code: Tag …\n$ sed -n 452p src/authorize.rs -> `Op::Unary(_) | Op::Binary(_) => true,`\n$ sed -n 30,31p SECURITY.md -> `5. Reject any token whose decoded terms would not survive the pinned print/parse round trip unchanged`"
+      }
+    ],
+    "minor": [
+      {
+        "title": "P-256 signature verification is reachable from untrusted token bytes: a third-party block signed with a Secp256r1 external key is accepted, and a rule-level `trusting secp256r1/<hex>` scope round-trips and is accepted — the Ed25519-only boundary now enforced at the key entry points does not cover the chain, contrary to SECURITY.md step 3 and to the round-1 residual 'inert unless supplied by configuration'",
+        "severity": "minor",
+        "detail": "SECURITY.md:11-15 restricts the *configured* keys to Ed25519 and :28 says 'Verify the Ed25519 signature and Biscuit chain'. biscuit-auth 6.0 verifies each third-party block with the algorithm-tagged public key carried in the block itself (third_party/…/src/token/mod.rs:411-435, `PublicKey::from_proto(&external_signature.public_key)`), so a token holder can make the verifier execute the ecdsa/p256 code path by appending a P-256-signed block; no configuration is involved. Empirical: `R1 third-party[p256] blocks=3 ext_key_alg=Some(1) -> ACCEPT(policy=0)` (Algorithm 1 = Secp256r1), `R1 block1-as-third-party[p256] -> ACCEPT(policy=0)`, `R2 block2 rule-scope[p256] printed=`check if true trusting secp256r1/03fc…;` parsed_scopes=Ok(PublicKey { algorithm: Secp256r1 }) -> ACCEPT(policy=0)`. No escalation: a third-party block can only add checks, and a P-256 *root* is refused (`R5 p256-root-token vs ed25519 ring -> DENY(auth.biscuit_invalid)`). What is inaccurate is the attack-surface statement: the 17-crate P-256 chain added in 6.0 (round-1 minor 4) is exercised by unauthenticated input, and the crate has no switch to refuse non-Ed25519 external keys (an `external_key.algorithm != Ed25519` check on `snapshot().world.blocks[*].external_key` would close it in the same structural pass as the scope check).",
+        "evidence": "R1 third-party[p256] blocks=3 ext_key_alg=Some(1) -> ACCEPT(policy=0)\nR1 third-party[p256] +scope(previous) -> ACCEPT(policy=0)\nR2 block2 rule-scope[p256] … parsed_scopes=Ok(\"[PublicKey(PublicKey { key: […], algorithm: Secp256r1 })]\") -> ACCEPT(policy=0)\n$ sed -n 28p SECURITY.md -> `3. Verify the Ed25519 signature and Biscuit chain.`"
+      },
+      {
+        "title": "The provenance gate binds the tree to archive + *committed* diff, not to upstream #306; it compares content only",
+        "severity": "minor",
+        "detail": "scripts/verify-vendored-biscuit-auth.sh:19,50 applies whatever `third_party/patches/biscuit-auth-6.0.0-upstream-306.diff` contains; a change that edits both the .diff and the tree consistently stays green, so the equality 'committed diff == upstream #306' is a review fact (verified here: cmp exit 0, sha256 ef06cb26…), not a gate fact. `diff --recursive` (:53) compares file contents: a mode change or a symlink with identical target content is not reported, and `--exclude=PATCH.md` leaves that file unconstrained (by design). The download source is fixed to static.crates.io (:21) with no mirror or environment override, and the expected SHA is read from PATCH.md (:23), so a tampered PATCH.md can only make the gate red, never green. Stated so the gate is not read as stronger than it is; CI review of any change under third_party/patches/ remains the control for the first point.",
+        "evidence": "$ sed -n 19p scripts/verify-vendored-biscuit-auth.sh -> patch_file=\"$root/third_party/patches/${crate_name}-${crate_version}-upstream-306.diff\"\n$ sed -n 53p scripts/verify-vendored-biscuit-auth.sh -> if diff --recursive --exclude=PATCH.md \"$unpacked\" \"$vendored\"; then\n$ cmp pr306.diff third_party/patches/biscuit-auth-6.0.0-upstream-306.diff -> (exit 0)"
+      },
+      {
+        "title": "SECURITY.md's 'proved faithful … and relied upon' list omits the two operators the canonical block-1 shape actually relies on (`.contains` on a set, `<` on dates) and every integer/bool term; they are proved only implicitly by the exact op-slice matchers",
+        "severity": "minor",
+        "detail": "SECURITY.md:107-119 lists strings, sets, `===`/`!==`/`==`/`!=`, dates <= 253402300799 and rule-level key scopes as 'relied upon'. Steps 7-8 rely on `Binary::Contains` (block 1 `{operations}.contains($operation)`) and `Binary::LessThan` (`$time < <date>`), which are outside both lists and therefore 'not claimed' by :149-150 — while `canonical_operation_check`/`exact_expiration_check` (src/authorize.rs) do depend on their faithful reprint. Empirically they are faithful (`R3 [set-contains] … FAITHFUL`, `R3 [lt] … FAITHFUL`, and the 53 canonical tests), so this is a list-completeness defect, not an enforcement one.",
+        "evidence": "R3 [set-contains] -> ACCEPT(policy=0) | printed=`check if {1}.contains(1);` | FAITHFUL\nR3 [lt] -> ACCEPT(policy=0) | printed=`check if 1 < 2;` | FAITHFUL\n$ sed -n 107,119p SECURITY.md   # no `contains`, no `<`"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Attack 1 — provenance gate: red on any byte, green on the clean tree, blocking and required in CI, diff byte-identical to upstream",
+        "detail": "Clean run exit 0; one appended comment line in src/crypto/mod.rs -> exit 1 with the offending diff line; Cargo.toml.orig removed -> exit 1 'Only in <archive>: Cargo.toml.orig'; tree restored byte-identical (cmp) and git status clean. ci.yml:128-129 has no `continue-on-error`/`if`; the job 'Dependency policy' is a required status check on main; the CI log for run 34208484223 (head d65e877) shows the step executed with 'verify-vendored: OK'. `gh pr diff 306` and the committed .diff are byte-identical.",
+        "evidence": "verify-vendored: FAILED — the vendored tree differs from archive + upstream diff (see above)\nmutated exit=1\nOnly in /var/folders/…/biscuit-auth-6.0.0: Cargo.toml.orig\ndropped exit=1\nclean exit=0"
+      },
+      {
+        "title": "Attack 2 — block scopes: 6/6 forgeries on blocks 0/1 denied with auth.biscuit_invalid, third-party block 1 with a scope denied, block 2 scopes accepted as documented; `snapshot()` failure is fail-closed",
+        "detail": "See roundOneFindingsStatus MAJOR 1. `canonical_blocks_have_no_block_scope` returns false on `Err` from `snapshot()` and on fewer than two blocks; `snapshot()` (snapshot.rs:187-247) re-translates the same blocks `build_inner` already translated, so a failure there would already have failed `token.authorizer()` at src/authorize.rs:121-123.",
+        "evidence": "R2 block1 scope[previous] snapshot_blocks=2 scope_lens=[0, 1] printed_has_trusting=false -> DENY(auth.biscuit_invalid)\nR2 block0 scope[pubkey] -> DENY(auth.biscuit_invalid)\nR2 block2 scope[pubkey] -> ACCEPT(policy=0)"
+      },
+      {
+        "title": "Attack 3 — operators the round-1 pass called faithful re-probed on d65e877: 29/29 single-operator shapes faithful and accepted; the four round-1 counter-examples now denied by the guard",
+        "detail": "bitwise and/or/xor, add/sub/mul/div, < > <= >=, set intersection/union/contains, starts_with/ends_with/matches, length, type, negate, parens, i64::MIN/MAX, non-empty bytes, empty set `{,}`, date 0 and 253402300799, 4000-byte string, strings with NUL, newline and `; //` -> ACCEPT, parse(print) structurally equal to the built ops, reprint re-signed -> ACCEPT. 12000-byte string -> transport bound (16 384) denies before the guard. Date 253402300800 and a set holding Date(u64::MAX) -> DENY(auth.biscuit_invalid). Malformed stacks (`[1,2,3,Add]`, `[Negate]`) print `<invalid expression: …>` and are denied by evaluation.",
+        "evidence": "R3 [bitwise-and] -> ACCEPT(policy=0) | printed=`check if 6 & 3 === 2;` | FAITHFUL | reprint-as-block2 -> ACCEPT(policy=0)\nR3 [empty-set-length] -> ACCEPT(policy=0) | printed=`check if {,}.length() === 0;` | FAITHFUL\nR3 [str-12000] -> TRANSPORT-ERR(auth.biscuit_invalid)\nR3 [date-253402300800] -> DENY(auth.biscuit_invalid) | printed=`check if <invalid date> === <invalid date>;`"
+      },
+      {
+        "title": "Attack 4 — Ed25519 at the three entry points: 3/3 refused with auth.key_unavailable; metadata derived from the key; P-256 root token denied",
+        "detail": "See roundOneFindingsStatus MINOR 1.",
+        "evidence": "R5 issuer[p256] -> Some(\"auth.key_unavailable\")\nR5 ring::new[p256] -> Some(\"auth.key_unavailable\")\nR5 begin_rotation[p256] -> Some(\"auth.key_unavailable\")\nR5 p256-root-token vs ed25519 ring -> DENY(auth.biscuit_invalid)"
+      },
+      {
+        "title": "Attack 5 — gates replayed locally and on GitHub: fmt/clippy/test/deny/audit/reuse green; 53 tests + 1 ignored; PR checks 5/5, all five required on main",
+        "detail": "cargo fmt --check 0; clippy -D warnings 0 (the two vendored warnings recorded in PATCH.md:60-70); cargo test --locked --all-features: tests/authz.rs 53 passed, 0 failed, 1 ignored (`double_load_cost_is_measured`); cargo deny check 0; cargo audit 0 on 99 crates; reuse lint compliant 139/139 (REUSE.toml:17 now also covers third_party/patches/*.diff). Contracts: `git diff 81ce4b5..HEAD -- vendored/` empty; six hashes equal to round 1.",
+        "evidence": "test result: ok. 53 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (tests/authz.rs)\nfmt exit=0 clippy exit=0 test exit=0 deny exit=0 audit exit=0 reuse exit=0\ngh pr checks 12 -> Bun quality pass, Dependency policy pass, Rust quality pass, context-hygiene pass, licensing pass\nrequired_status_checks.contexts = [Bun quality, Rust quality, context-hygiene / …, licensing / …, Dependency policy]"
+      },
+      {
+        "title": "Attack 6 — evidence record and SECURITY.md cross-checked against code",
+        "detail": "The record's mutant table names tests that exist in tests/authz.rs (guard_* 22 tests, block_level_scopes…, non_ed25519_keys…, term_parameter_never…); the mutation replay itself (26 mutants) was not re-executed here — the table is the author's claim. SECURITY.md:121-139 rejected list: each bullet maps to a guard arm (:430-452, :486-492) and to a probe or author test. SECURITY.md:141-144 'unreachable' claims for Term::Parameter and the policy walk are consistent with the code (`token.authorizer()` holds no policy). The record's own 'Not done' list (:191-207) matches what this pass found still open, except the precedence/empty-bytes/All-Any class, which it does not mention.",
+        "evidence": "$ grep -c '^fn guard_' tests/authz.rs -> 22\n$ sed -n 191,207p evidence/reviews/81ce4b5/ROUND-2-GUARD-MUTATION-SCOPES-AND-PROVENANCE.md"
+      }
+    ]
+  },
+  "residualRisks": [
+    "Print/parse injectivity for holder blocks (block 2+) is bounded by the exact lists in SECURITY.md:107-139 and nothing else: any compound expression without explicit `Parens`, empty bytes, and `All`/`Any`/`Get` in binary form are accepted by the guard with a reprint that is stricter, different or unparsable. No consumer of the block-2 reprint exists in this crate today; a future audit/log feature that prints holder blocks would show something other than what was evaluated.",
+    "SECURITY.md:30-31 (step 5) and :149-150 make contradictory statements about coverage; a reader of step 5 alone believes a guarantee the code does not provide.",
+    "P-256 signature verification and rule-level `secp256r1/` scopes are reachable from token bytes through third-party blocks; the round-1 assessment that the P-256 chain is inert is withdrawn. No escalation was found (third-party blocks only add checks).",
+    "The provenance gate proves tree == archive + committed diff; 'committed diff == upstream #306' is a review fact re-verified in this pass, not a gate fact. Content-only comparison (modes/symlinks not compared).",
+    "The 26-mutant replay reported in the evidence record was not re-executed by this pass; the killing-test names were checked to exist.",
+    "Rolling deployment (a 5.0.0-issued token authorizing under 6.0.0) remains asserted by reading only, as in round 1.",
+    "This pass ran on macOS; Linux CI legs are taken from the GitHub check rollup and job log on d65e877."
+  ],
+  "runner": {
+    "orchestrator": "independent K4 security reviewer (adversarial, read-only, no commit/push/comment)",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 2,
+    "scope": "libre-ai/authz-biscuit PR #12 at d65e877 (4 commits over the round-1 candidate 81ce4b5): guard extension (And/Or/TryOr/LazyAnd/LazyOr/date range), structural block-scope check, Ed25519 at key entry points, provenance gate + committed #306 diff + Cargo.toml.orig, SECURITY.md exact lists, round-2 evidence record",
+    "priorVerdicts": [
+      "governance/docs/reviews/biscuit-auth-6/81ce4b5/security.verdict.json (round 1, this reviewer: accept, 3 major, 5 minor)",
+      "evidence/reviews/fbbe360/REVERSE-ADVERSARIAL-REJECT.md (5.0.0 / 0.1.2 pair)",
+      "evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md (6.0.0 / 0.2.0 pair, author-side, superseded)",
+      "evidence/reviews/81ce4b5/ROUND-2-GUARD-MUTATION-SCOPES-AND-PROVENANCE.md (author-side round-2 record at d65e877)"
+    ],
+    "worktree": "detached worktree at d65e877 under the session scratchpad (ab-r2-sec), removed with the throwaway branch pr-12-r2-sec after the pass; probe file tests/probe_r2.rs never committed; main clone untouched"
+  },
+  "verdict": "accept"
+}
