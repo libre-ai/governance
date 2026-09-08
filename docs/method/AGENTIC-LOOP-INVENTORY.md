@@ -133,6 +133,36 @@ périmée est un fix dans _ce_ dépôt (`bun ecosystem/render-fleet-status.ts`,
 nommé par le gate depuis le 2026-09-07) : non automatisé, la même limite 2
 s'appliquant à une PR ouverte ici avec le jeton par défaut.
 
+## Dependabot bun — suspendu le 2026-09-08
+
+Décision propriétaire du 2026-09-08 : « retirer le bloc bun du gabarit
+Dependabot, garder github-actions + cargo ». Le gabarit publié la veille
+(#88) déclarait un écosystème `bun` sur tout dépôt portant un
+`package.json` ; son premier run sur `governance` (run 34139635260, job
+« bun in /. ») a échoué avec :
+
+```
+Dependabot::DependencyFileNotSupported — Unsupported bun.lock
+'lockfileVersion' 2 in /bun.lock. The bun version Dependabot runs
+supports up to 1.
+```
+
+Tous les lockfiles de la flotte sont écrits par bun 1.4 (format v2). Le bloc
+`bun` était donc une boucle dont chaque tour échoue et n'ouvre aucune PR : un
+garde-fou muet, indiscernable d'un garde-fou qui ne tourne pas — exactement
+la panne que cet inventaire existe pour nommer. Le gabarit ne porte plus que
+`github-actions.yml` et `cargo.yml` ; le test
+`ecosystem/check-dependabot-conformance.test.ts` affirme qu'aucune variante
+ne déclare `package-ecosystem: bun`, de sorte qu'un retour passe par une
+décision et non par une édition.
+
+| Champ                           | Valeur                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Filet pendant la suspension** | `Fleet advisories` (hebdomadaire, `bun audit` sur chaque lockfile vivant, `tools/security/check-fleet-advisories.ts`) pour les advisories ; les montées de version bun se font par vagues d'agents, jamais en silence.                                                                                                                                                                                                                                                                                                               |
+| **Condition de retour**         | dependabot-core lit `bun.lock` lockfileVersion 2. Suivi amont : [dependabot/dependabot-core#16026](https://github.com/dependabot/dependabot-core/issues/16026) (« Bun 1.4 uses lockfile v2 which dependabot currently does not support », ouverte au 2026-09-08, `help-wanted`).                                                                                                                                                                                                                                                     |
+| **Comment vérifier**            | ne jamais rétablir sur la flotte sur la foi du changelog : ajouter un bloc `bun` au `.github/dependabot.yml` d'**un seul** dépôt (branche de PR d'essai), déclencher « Check for updates » dans l'onglet Insights → Dependency graph → Dependabot, et lire le journal du job `bun in /.` : un run qui ouvre une PR (ou conclut « no updates ») prouve la lecture v2, une erreur `DependencyFileNotSupported` reconduit la suspension. Puis rétablir la variante dans `governance` et laisser la vague de conformité porter la copie. |
+| **Échec observable**            | une PR Dependabot `bun` ouverte sur un dépôt alors que le gabarit ne déclare pas l'écosystème = copie non conforme ; le gate `check-dependabot-conformance` la nomme à la première ligne divergente `[rattrapable]`.                                                                                                                                                                                                                                                                                                                 |
+
 ## Critères d'arrêt manquants — dette assumée
 
 Ces boucles tournent sans borne formelle. Elles sont listées parce qu'une dette
