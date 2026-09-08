@@ -1,0 +1,177 @@
+{
+  "reviewPassId": "rp-f934164-authz-biscuit-pr12-security-r3",
+  "role": "security",
+  "mode": "specialized-role",
+  "repository": "libre-ai/authz-biscuit",
+  "pullRequest": 12,
+  "round": 3,
+  "commitSha": "f934164b14b2fbf1dae08bdf1fc754a2a8fd54a8",
+  "baseSha": "5ff4c934b784b25e1eaa82aeb2b15c783c0cb075",
+  "reviewedRange": "d65e877f1430b1791955ac29cfafffc50f574176..f934164b14b2fbf1dae08bdf1fc754a2a8fd54a8 (5 commits: 2812844 P-256 begin_rotation test, d763703 holder-block one-operation guard, f25c7be SECURITY.md, 61007c5 measurement, f934164 round-3 addendum; 4 files, +644/-72: SECURITY.md, evidence/reviews/81ce4b5/ROUND-3-ADDENDUM.md, src/authorize.rs, tests/authz.rs)",
+  "contractHashes": [
+    {
+      "path": "vendored/authz/authority-v1.datalog",
+      "sha256": "eb88b62cd252414bf80089f9be7478475310b3b25d88da528d389a4971e310ea",
+      "upstream": "unchanged since rounds 1-2 (git diff d65e877..HEAD -- third_party/ vendored/ = 0 bytes)"
+    },
+    {
+      "path": "vendored/authz/authority-v2.datalog",
+      "sha256": "f5c0648cf0c2ebf43f73a444ca4df0a84a7349c02d7d0cc31cc86c77daf1db58",
+      "upstream": "unchanged"
+    },
+    {
+      "path": "vendored/authz/sessions-v1.datalog",
+      "sha256": "93bc93e9a4c7b17716787bc9b56df592652b1df0f02d581765cc61010ecaefe1",
+      "upstream": "unchanged"
+    },
+    {
+      "path": "vendored/authz/missions-v1.datalog",
+      "sha256": "9bfa33eda5e34b8a8d1262881fc951e2455c47769ccaf48d0359bed14a20d2be",
+      "upstream": "unchanged"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v1.datalog",
+      "sha256": "f20dae7884e49fa00982044a51e99b7f09a5598487bc21f222fcb2d692e3126b",
+      "upstream": "unchanged"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v2.datalog",
+      "sha256": "de119ba6fe0679793403a66e9b5c29f69a781b53d6eb255e17888c8bb6c2cf37",
+      "upstream": "unchanged"
+    },
+    {
+      "path": "biscuit-auth-6.0.0.crate (static.crates.io, re-downloaded by scripts/verify-vendored-biscuit-auth.sh)",
+      "sha256": "d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b",
+      "upstream": "equals PATCH.md declaration (script output 'archive SHA-256 … matches PATCH.md')"
+    },
+    {
+      "path": "third_party/patches/biscuit-auth-6.0.0-upstream-306.diff",
+      "sha256": "ef06cb26960989e0853ce550080d5fbfef23171105da384fcc88793a8a5b8ecb",
+      "upstream": "unchanged since round 2 (byte-identity with upstream #306 established in round 2, not re-fetched here)"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/12/head:pr-12-r3-sec; git worktree add <scratch>/ab-r3-sec --detach pr-12-r3-sec; HEAD = f934164b14b2fbf1dae08bdf1fc754a2a8fd54a8; git merge-base HEAD origin/main = 5ff4c93; git status --porcelain empty at start",
+    "read: round-1 and round-2 verdicts (governance/docs/reviews/biscuit-auth-6/{81ce4b5,d65e877}/security.verdict.json); git diff d65e877..HEAD -- src/ tests/; SECURITY.md in full; evidence/reviews/81ce4b5/ROUND-3-ADDENDUM.md in full; src/authorize.rs:95-203 (verification order), :205-367 (authority_principal, validate_initial_attenuation, exact op-slice matchers), :391-500 (blocks_roundtrip_safe, canonical_blocks_have_no_block_scope), :502-556 (holder_expressions_carry_at_most_one_operation); src/keys.rs:42-97; src/token.rs attenuation_block; tests/authz.rs helpers (assert_guard_denies -> block2_outcome == Err(auth.biscuit_invalid))",
+    "read in the vendored 6.0.0 tree: src/datalog/expression.rs:132-143 and 540-580 (Unary/Binary printers, no parenthesisation), :691-735 (Expression::print: stack.len() != 1 -> None -> `<invalid expression: …>`); src/format/convert.rs:556-602 (set decoder: variables, nested sets and mixed kinds rejected at load); src/format/schema.rs:224-232 (op::Content = Value | Unary | Binary | Closure); src/token/mod.rs:407-435 (third-party append); biscuit-parser 0.2.0 parser.rs:366-390 (unary_negate binds expr6, unary_parens), :451-470 (binary_op_8 method names incl. all/any/get/try_or), :604-690 (expr9 method chaining, binary_method requires `$x ->` for all/any), :741-777 (parse_integer with optional `-`, parse_date take_while1 until `, )]; }`, parse_bytes = hex: + take_while1), :787-791 and parameter_name (`{` + alphabetic-first name + `}`), :806-870 (set: `{,}` or homogeneous non-empty), :907-911 (term alt order: parameter, string, date, variable, integer, bytes, boolean, null, array, map, set)",
+    "cargo fmt --all --check -> exit 0; cargo clippy --all-targets --all-features --locked -- -D warnings -> exit 0 (the 2 recorded vendored warnings only); cargo test --locked --all-features -> exit 0, tests/authz.rs 57 passed 0 failed 1 ignored; cargo deny check -> exit 0 (advisories ok, bans ok, licenses ok, sources ok); cargo audit -> exit 0 (99 crate dependencies); reuse lint -> compliant 140/140; scripts/verify-vendored-biscuit-auth.sh -> exit 0 'verify-vendored: OK'",
+    "provenance gate replayed: `echo '// probe' >> third_party/biscuit-auth-6.0.0/src/crypto/mod.rs` -> script prints `989a990 > // probe` then 'verify-vendored: FAILED' (exit 1); file restored from a byte copy; git status clean; script exit 0 again. CI: gh run view --job 102068638303 --log (run 34228561247, head f934164) shows the blocking step printed 'verify-vendored: OK'",
+    "mutant M28 replayed: src/keys.rs:79 `!is_ed25519(&new_key.public_key) ||` removed (git apply) -> `cargo test --test authz non_ed25519_keys_are_refused_at_every_entry_point` FAILED at tests/authz.rs:3002 'called `Result::unwrap_err()` on an `Ok` value'; reverse-applied -> 1 passed",
+    "mutant M32 replayed: src/authorize.rs:545 `operations <= 1` -> `<= 2` -> guard_holder_expression_with_two_operations FAILED (tests/authz.rs:2202), guard_holder_expression_with_parens ok; reverse-applied -> 2 passed",
+    "measurement: cargo test --release --locked --all-features --test authz double_load_cost_is_measured -- --ignored --nocapture -> guard pass runs [13.151µs, 13.223µs, 28.619µs], full authorize() runs [121.919µs, 122.057µs, 124.269µs]; median guard 13.223µs, median full 122.057µs, share 10.8% (macOS arm64)",
+    "probe tests/probe_r3.rs (never committed, 6 tests, ~170 printed cases): R1 third-party blocks (Ed25519/P-256 × one-op/compound/parens, block-level scope), R2 root-forged blocks 0/1 (five expiry-op variants, fifth check, block-0 extra check, block 1 as third-party), R2 block-2 scopes, R3 122 holder-block expression shapes classified accepted-faithful / refused / accepted-non-faithful by print_block_source(2) + biscuit_parser::parse_source + Debug-equality of op sequences, R3 check kinds / multiple queries / rules / block 3, R3 singleton sets, R5 key entry points and a P-256 root token",
+    "gh pr view 12: OPEN, MERGEABLE, head f934164, 14 commits; gh pr checks 12: Bun quality / Dependency policy / Rust quality / context-hygiene / licensing all pass"
+  ],
+  "roundTwoFindingsStatus": [
+    {
+      "finding": "MAJOR 1 — compound holder expressions accepted with a divergent reprint (printer emits no parentheses; empty Term::Bytes; All/Any in binary form); SECURITY.md step 5 blanket claim",
+      "status": "closed for the multi-operation class; the single-operation residue is documented for empty bytes and All/Any/Get, and has one undeclared instance (new MINOR 1 below)",
+      "proof": "src/authorize.rs:140-149: `signed_blocks.snapshot()` taken once, `Err` -> auth.biscuit_invalid (fail-closed), then `!canonical_blocks_have_no_block_scope(&snapshot.world.blocks) || !holder_expressions_carry_at_most_one_operation(&snapshot.world.blocks)` -> auth.biscuit_invalid, before revocation (:150). :523-556: per expression, Value ops free, Unary counted (Parens -> false), Binary/Closure counted, content-less op -> false, `operations <= 1`; applied to `blocks.iter().skip(2)` over `block.rules` and every `check.queries`. Probe on f934164: the six round-2 precedence forgeries `[1,2,Add,3,Mul,9,Equal]`, `[6,2,1,Sub,Sub,5,Equal]`, `[1,3,2,Xor,And,1,Equal]`, `[2,3,Mul,TypeOf,\"integer\",Equal]`, `[true,false,Equal,Negate]`, `[1,2,LessThan,true,Equal]` -> DENY(auth.biscuit_invalid) (were ACCEPT in round 2); `(1)`, `(true)` -> DENY; block 3 compound -> DENY, block 3 one-op -> ACCEPT; third-party block (Ed25519 and P-256) compound/parens -> DENY, one-op -> ACCEPT; a rule (not a check) in block 2 with a compound expression -> DENY; `reject if 1 + 2 === 4` -> DENY; second query of an `or` check compound -> DENY; second expression of a check compound -> DENY. Rule is per expression: `check if 1 < 2, 2 < 3` and a 3-expression check with one op each -> ACCEPT | FAITHFUL. Mutants M28 and M32 replayed here (killed); M31/M33 are the author's table. SECURITY.md:35-43 step 5 now names the exact rejected list and the coverage bound; :153-165 documents the rule; :172-176 states the not-covered set. Residue: single-operation expressions whose reprint diverges — empty `Term::Bytes` (`hex: === hex:` -> ACCEPT(policy=0) | PARSE-ERR, declared in ROUND-3-ADDENDUM.md:103-109 and :161 but absent from SECURITY.md), `.all/.any` in binary form (DENY(auth.operation_denied) | PARSE-ERR, attributed to the evaluator at SECURITY.md:207-210), `.get` in binary form (DENY(auth.operation_denied) | FAITHFUL — prints `{1}.get(0)`, which the parser reads; the addendum's 'unparsable' for `.get` is inexact), and the singleton Bool/Bytes set class found in this round (new MINOR 1)."
+    },
+    {
+      "finding": "MINOR 1 — P-256 signature verification reachable from token bytes through third-party blocks; rule-level `secp256r1/` scope accepted",
+      "status": "open (declared out of round-3 scope, ROUND-3-ADDENDUM.md:163-164)",
+      "proof": "Probe: `R1 third-party[p256][one-op] blocks=3 -> ACCEPT(policy=0)`, `R1 third-party[p256] +scope(previous) -> ACCEPT(policy=0)`, `R1 block1-as-third-party[p256] -> ACCEPT(policy=0)`, `R2 block2 rule-scope[p256] printed=\"check if true trusting secp256r1/02ab…\" -> ACCEPT(policy=0)`. No code change touches src/token/mod.rs:411-435 of the vendored copy or adds an external-key algorithm check on `snapshot().world.blocks[*]`. No escalation (third-party blocks only add checks; P-256 root still refused: `R5 p256-root-token vs ed25519 ring -> DENY(auth.biscuit_invalid)`). The new holder guard applies to third-party blocks too (compound -> DENY), so the P-256 path carries no wider expression surface than an Ed25519 holder block."
+    },
+    {
+      "finding": "MINOR 2 — provenance gate binds the tree to archive + committed diff, content-only",
+      "status": "open by design (unchanged; gate replayed red/green)",
+      "proof": "scripts/verify-vendored-biscuit-auth.sh unchanged in the range (git diff d65e877..HEAD names 4 files, none under scripts/). Replay: appended line -> `989a990 > // probe … FAILED` exit 1; restored -> exit 0; CI job 102068638303 on head f934164 printed 'verify-vendored: OK'. Committed diff sha256 ef06cb26… equals round 2."
+    },
+    {
+      "finding": "MINOR 3 — 'proved faithful and relied upon' list omitted `.contains` on a set and `<` on dates",
+      "status": "closed",
+      "proof": "SECURITY.md:120-123 now lists `{..}.contains($x)` on a set and `<`/`<=` between a variable and a date with test `set_contains_and_date_comparisons_round_trip` (tests/authz.rs, reparsed ops matched structurally against the built ops, then accepted). Probe: `R3 [set-contains-var] -> ACCEPT | FAITHFUL`, `R3 [lt-date]`, `R3 [le-date]`, `R3 [gt-date]`, `R3 [ge-date]` -> ACCEPT | FAITHFUL. The bullet at :124-127 ('sets … printed `{\"a\", \"b\"}` … reparsed to the same set') is stated for string members and holds for them; it does not hold for singleton Bool/Bytes sets (new MINOR 1), which are outside what block 1 binds."
+    },
+    {
+      "finding": "Round-1 MINOR 2 (two vendored builder panics reachable through the re-exported API) and MINOR 4 (dependency closure 99 crates with an unconditional P-256 chain)",
+      "status": "open (unchanged, as declared in round 2)",
+      "proof": "No commit in the range touches third_party/, Cargo.lock or deny.toml (`git diff d65e877..HEAD --stat` = SECURITY.md, ROUND-3-ADDENDUM.md, src/authorize.rs, tests/authz.rs). `cargo audit` -> 99 crate dependencies, exit 0; `cargo deny check` exit 0."
+    }
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [],
+    "minor": [
+      {
+        "title": "A singleton set whose only member is a Bool or Bytes term reprints as `{true}` / `{false}` / `{hex:…}` / `{hex:}`, which parser 0.2.0 reads as a `Term::Parameter` — a single-operation holder expression the guard accepts with a reprint that is not a faithful rendering; outside both SECURITY.md lists and not declared anywhere",
+        "severity": "minor",
+        "detail": "The printer renders a set as `{m1, m2}` (symbol.rs print_term) and a one-member set as `{m}`. parser.rs:907-911 tries `parameter` before `set`, and parser.rs:787-791 + parameter_name accept `{` + a name starting with an alphabetic byte and continuing over `[A-Za-z0-9_:]` + `}`. `true`, `false` and `hex:<lowercase hex>` (the empty-bytes `hex:` included) satisfy that grammar; integers (digit or `-` first), dates (digit first) and strings (`\"` first) do not, and any set with two or more members contains `, ` and is not a parameter. Empirical, holder-appended block 2, guard passed, token ACCEPTED, reprint reparsed to a different structure: `R3 [set-true-eq] -> ACCEPT(policy=0) | printed=\"check if {true} === {true};\" | DIVERGES parsed=[Value(Parameter(\"true\")), Value(Parameter(\"true\")), Binary(Equal)]`; `R3 [set-false-contains-false] -> ACCEPT(policy=0) | printed=\"check if {false}.contains(false);\" | DIVERGES parsed=[Value(Parameter(\"false\")), …]`; `R3 [set-bytes-ab-contains] -> ACCEPT(policy=0) | printed=\"check if {hex:ab}.contains(hex:ab);\" | DIVERGES parsed=[Value(Parameter(\"hex:ab\")), …]`; `R3 [set-with-empty-bytes-eq] -> ACCEPT(policy=0) | printed=\"check if {hex:} === {hex:};\" | DIVERGES parsed=[Value(Parameter(\"hex:\")), …]`. Controls: `{false, true}.contains(true)`, `{hex:ab, hex:cd}.contains(hex:ab)`, `{1}.contains(1)`, `{-1}.contains(-1)`, `{\"read\"}.contains(\"read\")` -> ACCEPT | FAITHFUL. Impact on the decision: none — blocks 0 and 1 are matched on `Term::Set` by exact op slices (src/authorize.rs:334-347, :359-366) and the canonical set holds quoted strings, so a Parameter in the reparse can only deny; block 2 is never reprinted by this crate. Impact on the claim: this is a third member of the 'single operation, unfaithful reprint' residue next to empty bytes and `.all/.any` in binary form, and unlike those it is recorded nowhere (SECURITY.md:172-176 names nested/mixed/variable sets and 3.3 idioms; ROUND-3-ADDENDUM.md:103-109 names empty bytes and all/any/get). Two closures are available: reject in `term_ok` (src/authorize.rs:443-455) a `Term::Set` of exactly one `Term::Bool` or `Term::Bytes` member and an empty `Term::Bytes` (three arms, same fail-closed style as the date bound), or add the class to SECURITY.md's rejected/not-claimed text. Either keeps the 'not claimed either way' sentence honest; today a reader of the faithful-list bullet on sets (:124-127) is not told the qualification.",
+        "evidence": "R3 [set-true-eq] -> ACCEPT(policy=0) | printed=`check if {true} === {true};` | DIVERGES built=[[Value(Set({Bool(true)})), Value(Set({Bool(true)})), Binary(Equal)]] parsed=[[Value(Parameter(\"true\")), Value(Parameter(\"true\")), Binary(Equal)]] | ACCEPTED-NON-FAITHFUL\nR3 [set-bytes-ab-contains] -> ACCEPT(policy=0) | printed=`check if {hex:ab}.contains(hex:ab);` | DIVERGES … parsed=[[Value(Parameter(\"hex:ab\")), Value(Bytes([171])), Binary(Contains)]] | ACCEPTED-NON-FAITHFUL\nR3 [set-true-false-contains-true] -> ACCEPT(policy=0) | printed=`check if {false, true}.contains(true);` | FAITHFUL | accepted-faithful\n$ sed -n 787,791p parser.rs -> fn parameter … delimited(char('{'), parameter_name, char('}'))\n$ sed -n 907,911p parser.rs -> alt((parameter, string, date, variable, integer, bytes, boolean, null, array, parse_map, set,))"
+      },
+      {
+        "title": "The known single-operation residue (empty `Term::Bytes` accepted with an unparsable reprint) lives only in the evidence addendum; SECURITY.md never mentions it, and the addendum's 'unparsable' is inexact for `.get`",
+        "severity": "minor",
+        "detail": "ROUND-3-ADDENDUM.md:103-109 and :161-162 state that an empty `Term::Bytes` prints `hex:` (unparsable) and is accepted by the guard, and that `.all/.any/.get` in binary form print unparsably and are denied by the evaluator. SECURITY.md carries neither `hex:` nor 'empty bytes' (grep = 0 hits); its not-covered paragraph (:172-176) names nested, mixed-type and variable-bearing sets and the 3.3 idioms only, and its holder paragraph (:202-216) attributes `.all/.any/.get` to the evaluator without the empty-bytes case. Probe: `R3 [bytes-empty-eq] -> ACCEPT(policy=0) | printed=\"check if hex: === hex:;\" | PARSE-ERR`, `R3 [bytes-empty-heq] -> ACCEPT(policy=0) | PARSE-ERR`; `R3 [get-binary] -> DENY(auth.operation_denied) | printed=\"check if {1}.get(0);\" | FAITHFUL` — `.get(x)` parses (binary_method's default arm takes a plain expression), so the addendum's 'print .any(true) (unparsable)' generalisation to `.get` is wrong in the detail, right in the conclusion (evaluator denies). Also `R3 [date-length]` / `R3 [date-type]` -> DENY(auth.operation_denied) | PARSE-ERR: a date followed by a method call is swallowed by parse_date's take_while1 (parser.rs:749-757); denied by the evaluator, so not a guard gap, listed for the record. SECURITY.md is the document a service integrator reads; the addendum is the reviewer's. A one-line closure exists either way: `Term::Bytes(bytes) => !bytes.is_empty()` in term_ok (src/authorize.rs:449) rejects the guard-accepted instance in the same style as the date bound, or the sentence moves into SECURITY.md:172-176.",
+        "evidence": "R3 [bytes-empty-eq] -> ACCEPT(policy=0) | printed=`check if hex: === hex:;` | PARSE-ERR([Error { input: \"hex:\", code: Char …) | ACCEPTED-NON-FAITHFUL\nR3 [get-binary] -> DENY(auth.operation_denied) | printed=`check if {1}.get(0);` | FAITHFUL | refused\n$ grep -c 'hex:' SECURITY.md -> 0\n$ sed -n 103,109p evidence/reviews/81ce4b5/ROUND-3-ADDENDUM.md"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Reading of the owner decision — counting unary operations is the safer of the two readings, and costs this crate nothing",
+        "detail": "The decision text says 'one binary operation, no Parens'; the code counts unaries too (src/authorize.rs:534-538). The narrower reading (one binary plus any unaries) would re-admit divergent reprints: `[true, false, Equal, Negate]` prints `!true === false` and reparses as `(!true) === false` (parser.rs:366-376, `!` binds expr6), `[2, 3, Mul, TypeOf, …]` prints `2 * 3.type()` and reparses with `.type()` bound to `3`; under the strict reading both are refused (`R3 [precedence-!(true===false)] -> DENY(auth.biscuit_invalid)`, `R3 [precedence-(2*3).type()] -> DENY`). What the strict reading refuses in addition is faithful two-operation shapes: `!true === false` written as `[true, Negate, false, Equal]`, `{,}.length() === 0`, `6 & 3 === 2`, `$x.length() === 4` (all DENY(auth.biscuit_invalid) in the probe, all FAITHFUL). Neither reading refuses anything `attenuate()` emits — src/token.rs attenuation_block writes four checks with at most one operation each (`{operations}.contains($operation)`, `$time < {expires_at}`), and `holder_expressions_with_a_single_operation_stay_accepted` plus the 57-test suite hold. A single unary alone stays admissible (`!false` -> ACCEPT | FAITHFUL; `!1`, `{1}.length()`, `1.type()` -> DENY(auth.operation_denied) by the evaluator, FAITHFUL). Verdict on the interpretation: safer, not neutral, not harmful within this crate; harmful only to a hand-built holder block that needs `.length()`/`.type()`/`!` combined with a comparison, which SECURITY.md:159-160 and :210-216 now say.",
+        "evidence": "R3 [precedence-!(true===false)] -> DENY(auth.biscuit_invalid) | printed=`check if !true === false;` | DIVERGES built=[[…Binary(Equal), Unary(Negate)]] parsed=[[Value(Bool(true)), Unary(Negate), Value(Bool(false)), Binary(Equal)]]\nR3 [negate-then-eq (faithful, 2 ops)] -> DENY(auth.biscuit_invalid) | printed=`check if !true === false;` | FAITHFUL\nR3 [negate-false] -> ACCEPT(policy=0) | printed=`check if !false;` | FAITHFUL"
+      },
+      {
+        "title": "Attack 1 — the new rule probed at its edges: value-only, malformed, multi-expression, multi-query, multi-predicate, rules, check kinds, block 3, third-party",
+        "detail": "Value-only expressions: `true` -> ACCEPT | FAITHFUL; `false`, `\"a\"`, `1`, `{1}`, `$x` (unbound), `$operation` (bound, non-bool), a date -> DENY(auth.operation_denied) | FAITHFUL. Zero-operation malformed stacks `[1, 2]` and `[]`, one-operation underflows `[1, Add]`, `[Negate]`, `[1, 2, 3, LessThan]` -> guard passes (0 or 1 op), printer emits `<invalid expression: …>`, evaluator denies (auth.operation_denied). Per-expression scope confirmed: two and three one-operation expressions in one check -> ACCEPT | FAITHFUL; a compound second expression -> DENY(auth.biscuit_invalid). Two queries (`or`) with one op each -> ACCEPT; second query compound -> DENY. `check all` one-op -> ACCEPT; `reject if` one-op -> ACCEPT, compound -> DENY. Rules in block 2: one-op -> ACCEPT, compound / `(true)` -> DENY(auth.biscuit_invalid), non-bool single op -> DENY(auth.operation_denied). Three predicates + one op -> ACCEPT | FAITHFUL. Block 3 (after a canonical block 2): compound -> DENY, one-op -> ACCEPT (`skip(2)` covers every later block). Third-party blocks Ed25519 and P-256: one-op ACCEPT, compound and parens DENY. `snapshot()` failure: fail-closed by construction (src/authorize.rs:140-142 `let Ok(snapshot) = … else { return Err(auth.biscuit_invalid) }`); no token-byte input was found that fails `snapshot()` after `authorizer()` succeeded (snapshot re-translates the same blocks), so this branch is asserted by reading.",
+        "evidence": "R3 [two-values-no-op] -> DENY(auth.operation_denied) | printed=`check if <invalid expression: [Value(Integer(1)), Value(Integer(2))]>;`\nR3 [three-expressions-one-op-each] -> ACCEPT(policy=0) | printed=`check if operation($operation), {\"read\"}.contains($operation), !false, 1 === 1;` | FAITHFUL\nR3 [two-queries-second-compound] -> DENY(auth.biscuit_invalid)\nR3 [rule-parens] -> DENY(auth.biscuit_invalid) | printed=`derived($o) <- operation($o), (true);`\nR3 [block3-compound blocks=4] -> DENY(auth.biscuit_invalid)\nR1 third-party[p256][compound] blocks=3 -> DENY(auth.biscuit_invalid)"
+      },
+      {
+        "title": "Attack 2 — blocks 0 and 1 forged with the root key: the rule does not apply to `[0..2]`, and it does not need to — every deviation from the exact three-op sequences is denied by the structural matchers",
+        "detail": "authority_only + a hand-built block 1 signed with the root key (control -> ACCEPT(policy=0)). Expiry expression variants: `[$time, date, LessThan, Parens]` prints `($time < …)` -> DENY; `[$time, date, LessThan, true, Equal]` prints `$time < … === true` (unparsable) -> DENY; `[$time, date, LessThan, Negate, Negate]` prints `!!$time < …` -> DENY; `<=` -> DENY; `date > $time` -> DENY. A fifth check in block 1 (one-op or compound) -> DENY (`parsed.checks.len() != 4`, src/authorize.rs:283); an extra compound check in block 0 -> DENY (`parsed.checks.len() != 1`, :221). The matchers require the literal op slices `[Set, Variable, Contains]` (:334-339) and `[Variable, Date, LessThan]` (:359-364) with one expression per query (:327, :352), and those printed strings are produced by exactly those sequences (Contains prints `L.contains(R)` with L a set literal and R a variable; LessThan prints `L < R`), so no other binary reprints into the canonical text. Block 1 as a third-party block (Ed25519 or P-256) with the canonical shape -> ACCEPT, as in round 2.",
+        "evidence": "R2 root-forged control -> ACCEPT(policy=0)\nR2 root-forged [block1 expiry parens] printed-last=`check if time($time), ($time < 2030-03-17T18:46:40Z);` -> DENY(auth.biscuit_invalid)\nR2 root-forged [block1 expiry ===true] printed-last=`check if time($time), $time < 2030-03-17T18:46:40Z === true;` -> DENY(auth.biscuit_invalid)\nR2 root-forged [block1 fifth check one-op] -> DENY(auth.biscuit_invalid)\nR2 root-forged [block0 extra compound check] -> DENY(auth.biscuit_invalid)"
+      },
+      {
+        "title": "Attack 3 — 122 holder-block shapes classified on f934164: accepted-faithful 46, refused 69, accepted-non-faithful 7 (empty bytes ×2, empty-bytes singleton set ×1, Bool/Bytes singleton sets ×4)",
+        "detail": "Accepted-faithful: `<`, `>`, `<=`, `>=` on ints and on a variable vs date; `===`, `==`, `!==`, `!=` on ints, strings (empty, newline, NUL, `; //`, é€😀, 4000 bytes), bools, dates (0 and 253402300799), sets, non-empty bytes; `-2 < -1`, i64::MIN/MAX; `.starts_with`, `.ends_with`, `.matches(\"^a.c$\")`, `.contains` on strings; `{..}.contains` on int/str/date sets and on `{false, true}` / `{hex:ab, hex:cd}`; `{,} === {,}`; `!false`; `true`; multi-expression and multi-predicate one-op checks. Refused by the guard (auth.biscuit_invalid): every two-operation shape (faithful or not), `Parens`, `And`/`Or` (`&&!`), `TryOr`/`LazyAnd`/`LazyOr`, `Ffi` unary/binary, `Closure`, dates 253402300800 and u64::MAX, a set holding Date(u64::MAX); by the decoder before the guard: mixed-type and nested sets (`sets elements must have the same type`, `sets cannot contain other sets`, convert.rs:588-591 / :571-575); by the transport bound: a 12000-byte string; by the evaluator (auth.operation_denied): arithmetic/bitwise single ops (`1 + 2`, `6 & 3`, …), `.intersection`/`.union`, `.length()`/`.type()` on any operand, `!1`, `!\"a\"`, non-bool values alone, malformed stacks, `.all/.any/.get` in binary form, a date followed by a method (`1970-01-01T00:00:00Z.length()`, unparsable but denied). Accepted-non-faithful (the set that had to be empty outside the two lists): `hex: === hex:`, `hex: == hex:` (PARSE-ERR), `{hex:} === {hex:}`, `{true} === {true}`, `{true}.contains(true)`, `{false}.contains(false)`, `{hex:ab}.contains(hex:ab)` (reparsed as `Term::Parameter`). The first two belong to the empty-bytes case the addendum declares; the last five are the new minor (the `{hex:}` singleton sits in both).",
+        "evidence": "R3 [bitand] -> DENY(auth.operation_denied) | printed=`check if 6 & 3;` | FAITHFUL | refused\nR3 [bitand-eq (faithful, 2 ops)] -> DENY(auth.biscuit_invalid) | printed=`check if 6 & 3 === 2;` | FAITHFUL | refused\nR3 [set-mixed-eq] -> DENY(auth.biscuit_invalid) | PRINT-ERR(Format(DeserializationError(\"deserialization error: sets elements must have the same type\")))\nR3 [date-length] -> DENY(auth.operation_denied) | printed=`check if 1970-01-01T00:00:00Z.length();` | PARSE-ERR\nR3 [str-12000-eq] -> TRANSPORT-ERR(auth.biscuit_invalid)\nR3 [any-binary] -> DENY(auth.operation_denied) | printed=`check if {1}.any(true);` | PARSE-ERR"
+      },
+      {
+        "title": "Attack 4 — P-256 at the key entry points: the round-2 architecture blocking is closed; M28 turns the test red",
+        "detail": "tests/authz.rs non_ed25519_keys_are_refused_at_every_entry_point: `begin_rotation` now receives `valid_from = now + 1 s` (later than the current key's `now - 1 s`), key ID 3, `old_key_valid_until = now + 2000 s` (overlap ≥ 900 s), an unused public key; the ring is asserted unchanged after the refusal, and an Ed25519 control (`ring.clone()`) runs the identical rotation and ends with two Ed25519 keys. Mutant M28 (src/keys.rs:79 term removed) replayed: the test FAILS at :3002 (`unwrap_err` on `Ok`); reverted: passes. Probe: `R5 issuer[p256] -> Some(\"auth.key_unavailable\")`, `R5 ring::new[p256] -> Some(\"auth.key_unavailable\")`, `R5 begin_rotation[p256, all other preconditions held] -> Some(\"auth.key_unavailable\")`, `R5 begin_rotation[ed25519 control] -> Ok(()) keys=[\"Ed25519\", \"Ed25519\"]`, `R5 p256-root-token vs ed25519 ring -> DENY(auth.biscuit_invalid)`.",
+        "evidence": "M28 applied: test non_ed25519_keys_are_refused_at_every_entry_point ... FAILED — panicked at tests/authz.rs:3002:14: called `Result::unwrap_err()` on an `Ok` value: ()\nM28 reverted: test non_ed25519_keys_are_refused_at_every_entry_point ... ok\nR5 begin_rotation[ed25519 control] -> Ok(()) keys=[\"Ed25519\", \"Ed25519\"]"
+      },
+      {
+        "title": "Attack 5 — measurement reproduced: guard pass 13.2 µs of 122.1 µs, 10.8 % (author: 13.4 / 123.1, 10.9 %)",
+        "detail": "`double_load_cost_is_measured` now times load + dump() + snapshot() (the three calls authorize() makes, src/authorize.rs:124-143) against the whole authorize(), three runs of 2000 iterations, median. One release run on this machine: guard runs [13.151µs, 13.223µs, 28.619µs], full runs [121.919µs, 122.057µs, 124.269µs], share 10.8 %. The code comment at src/authorize.rs:116-118 cites the author's figures (13.4 / 123.1 µs); same order of magnitude. The test stays `#[ignore]`, so the figure is evidence, not a gate.",
+        "evidence": "double-load: guard pass (load + dump + snapshot) runs = [13.151µs, 13.223µs, 28.619µs], full authorize() runs = [121.919µs, 122.057µs, 124.269µs]; median guard = 13.223µs, median full = 122.057µs, share = 10.8%"
+      },
+      {
+        "title": "Attack 6 — gates replayed locally and on GitHub: fmt/clippy/test/deny/audit/reuse/verify-vendored green; 57 tests + 1 ignored (+4 vs round 2); PR checks 5/5",
+        "detail": "cargo fmt --all --check 0; clippy -D warnings 0 (the two vendored warnings recorded in PATCH.md); cargo test --locked --all-features: tests/authz.rs 57 passed, 0 failed, 1 ignored (new: guard_holder_expression_with_two_operations, guard_holder_expression_with_parens, holder_expressions_with_a_single_operation_stay_accepted, set_contains_and_date_comparisons_round_trip); cargo deny check 0; cargo audit 0 on 99 crates; reuse lint compliant 140/140 (139 + the addendum); scripts/verify-vendored-biscuit-auth.sh 0, red on a one-line mutation. Contracts: six hashes and the committed #306 diff equal to rounds 1-2; `git diff d65e877..HEAD -- third_party/ vendored/` empty. gh pr checks 12: five passes on run 34228561247 (head f934164); the Dependency policy job log shows the blocking provenance step ran.",
+        "evidence": "test result: ok. 57 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (tests/authz.rs)\nfmt exit=0 clippy exit=0 test exit=0 deny exit=0 audit exit=0 reuse exit=0 verify exit=0\nverify-vendored: FAILED — the vendored tree differs from archive + upstream diff (see above) [mutated]\ngh pr checks 12 -> Bun quality pass, Dependency policy pass, Rust quality pass, context-hygiene pass, licensing pass"
+      },
+      {
+        "title": "Attack 7 — evidence record and SECURITY.md cross-checked against code",
+        "detail": "ROUND-3-ADDENDUM.md:55-109 matches src/authorize.rs:523-556 and the two guard tests; the mutant table M31-M33 names tests that exist; M32 re-executed here (killed), M31/M33 not re-executed. SECURITY.md:35-43 (step 5) now enumerates the rejected list and states the coverage bound once; :149-150-style contradiction of round 2 is gone. :153-165 describes the rule as 'one unary or binary operation per expression and never Parens', matching the code, and names the refused-but-faithful example `$x.length() === 4`. :172-176 not-covered paragraph is accurate for what it names (mixed/nested sets refused at load: convert.rs:571-591, confirmed by probe) and silent on empty bytes and singleton Bool/Bytes sets (minors above). :202-216 holder paragraph: `.all/.any/.get` attributed to the evaluator — confirmed (`DENY(auth.operation_denied)` for all three). The `Closure` arm in expression_ok (src/authorize.rs:539) is unreachable: blocks_roundtrip_safe (:460) rejects `Op::Closure` before the snapshot pass (probe `closure-op -> DENY(auth.biscuit_invalid)`); harmless.",
+        "evidence": "$ grep -n 'operations <= 1' src/authorize.rs -> 545\n$ sed -n 172,176p SECURITY.md\nR3 [closure-op] -> DENY(auth.biscuit_invalid) | printed=`check if true;` | DIVERGES built=[[Closure([], [Value(Bool(true))])]] parsed=[[Value(Bool(true))]]"
+      }
+    ]
+  },
+  "residualRisks": [
+    "Print/parse injectivity for holder blocks (block 2+) is bounded by the exact lists in SECURITY.md:115-165 and nothing else. Known accepted single-operation expressions whose reprint is not faithful: an empty `Term::Bytes` (declared in the addendum only) and a one-member set of a Bool or Bytes term (undeclared, found this round). Both are inert for the decision (no consumer of the block-2 reprint; blocks 0/1 matched on exact op slices), and both are closable with one `term_ok` arm each.",
+    "P-256 signature verification and rule-level `secp256r1/` scopes remain reachable from token bytes through third-party blocks; no escalation, no switch to refuse non-Ed25519 external keys.",
+    "The provenance gate proves tree == archive + committed diff; 'committed diff == upstream #306' is a round-2 review fact (sha256 unchanged), not a gate fact; content-only comparison.",
+    "Mutants M31 and M33 of the new rule were not re-executed by this pass (M28 and M32 were); the killing-test names exist.",
+    "`snapshot()` fail-closed branch (src/authorize.rs:140-142) is asserted by reading; no token-byte input reaching it after a successful `authorizer()` was found.",
+    "Rolling deployment (a 5.0.0-issued token authorizing under 6.0.0) remains asserted by reading only, as in rounds 1-2.",
+    "This pass ran on macOS arm64; Linux CI legs are taken from the GitHub check rollup and the Dependency policy job log on f934164."
+  ],
+  "verdict": "accept",
+  "runner": {
+    "orchestrator": "independent K4 security reviewer (adversarial, read-only, no commit/push/comment)",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 3,
+    "scope": "libre-ai/authz-biscuit PR #12 at f934164 (5 commits over the round-2 candidate d65e877): holder-block one-operation guard with unaries counted (owner decision 2026-09-08), begin_rotation P-256 test reached, SECURITY.md exact lists, timed guard pass, round-3 addendum",
+    "priorVerdicts": [
+      "governance/docs/reviews/biscuit-auth-6/81ce4b5/security.verdict.json (round 1, this reviewer: accept, 3 major, 5 minor)",
+      "governance/docs/reviews/biscuit-auth-6/d65e877/security.verdict.json (round 2, this reviewer: accept, 1 major, 3 minor; round-1 minors 2 and 4 open)",
+      "evidence/reviews/fbbe360/REVERSE-ADVERSARIAL-REJECT.md (5.0.0 / 0.1.2 pair)",
+      "evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md (6.0.0 / 0.2.0 pair, author-side, superseded)",
+      "evidence/reviews/81ce4b5/ROUND-2-GUARD-MUTATION-SCOPES-AND-PROVENANCE.md and ROUND-3-ADDENDUM.md (author-side records)"
+    ],
+    "worktree": "detached worktree at f934164 under the session scratchpad (ab-r3-sec), removed after the pass; throwaway branch pr-12-r3-sec deleted if permitted; probe file tests/probe_r3.rs never committed; mutants M28/M32 and the provenance mutation applied and reversed in the worktree only; main clone untouched"
+  }
+}
