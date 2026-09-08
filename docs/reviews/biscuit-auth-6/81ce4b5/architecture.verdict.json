@@ -1,0 +1,122 @@
+{
+  "reviewPassId": "rp-81ce4b5-authz-biscuit-pr12-architecture",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "81ce4b579d383f8368f06c8f4e6e3765b518225f",
+  "linkedPullRequests": [
+    {
+      "repo": "libre-ai/ecosystem-engine",
+      "number": 13,
+      "headSha": "0646684f546f109b3cee9b97952b56a5dd14426c"
+    },
+    {
+      "repo": "libre-ai/governance",
+      "number": 91,
+      "headSha": "fac9f2f8cd3ba07c04d79c377154bb141a78199b"
+    }
+  ],
+  "contractHashes": [
+    {
+      "path": "vendored/authz/authority-v1.datalog",
+      "sha256": "eb88b62cd252414bf80089f9be7478475310b3b25d88da528d389a4971e310ea",
+      "source": "evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md (not recomputed in this pass; the Bun quality check carrying check:schemas is SUCCESS on 81ce4b5)"
+    },
+    {
+      "path": "third_party/biscuit-auth-6.0.0 (crates.io archive)",
+      "sha256": "d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b",
+      "source": "shasum -a 256 on ~/.cargo/registry/cache/.../biscuit-auth-6.0.0.crate = crates.io API checksum"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/12/head:pr-12-review-arch; git worktree add <scratch>/ab-review-arch --detach pr-12-review-arch; git status --porcelain empty at start and at end; worktree removed and branch deleted at the end",
+    "git log origin/main..HEAD (5 commits read in full); git diff origin/main...HEAD excluding third_party/ and Cargo.lock read in full; SECURITY.md, AGENTS.md, README.md, src/authorize.rs, src/token.rs, tests/authz.rs, third_party/biscuit-auth-6.0.0/PATCH.md, Cargo.toml, deny.toml, REUSE.toml, evidence/reviews/bfc2c0d/, G2-Z01-QUALIFICATION.md, .github/workflows/ci.yml, .github/dependabot.yml read",
+    "gh pr view 12/13/91 (bodies, checks: 5/5 SUCCESS on #12); gh pr diff 13 and 91 read in full",
+    "gh api repos/libre-ai/notebook/contents/third_party (+ rustcrypto-aes-0.8.4/PATCH.md, root Cargo.toml [patch]); governance docs/adr/0020 §2.1, §2.5 read; ADR-0021 skimmed",
+    "cargo test --locked --all-features: 28 passed (tests/authz.rs), 0 lib, 0 doctest; cargo clippy --all-targets --all-features -- -D warnings: exit 0 with 2 rustc warnings from third_party/; cargo deny check: advisories ok, bans ok (9 duplicate warnings + 1 unmatched-organization warning), licenses ok, sources ok; reuse lint: compliant (135/135); cargo tree -d: 9 crates / 21 versions",
+    "diff -rq ~/.cargo/registry/src/.../biscuit-auth-6.0.0 third_party/biscuit-auth-6.0.0; tar tzf archive (94 files) vs git ls-files (94 files); comm on the two lists; git check-ignore -v on Cargo.toml.orig",
+    "gh api repos/eclipse-biscuit/biscuit-rust/commits/a6b72596 (files + patch lines) compared line-for-line with the local hunks; gh api .../pulls/306 (merged 2025-09-16); gh api .../releases (last: biscuit-auth-6.0.0 2025-07-16); curl crates.io API (max_version 6.0.0, checksum, created_at)",
+    "18 mutations of blocks_roundtrip_safe replayed one by one against the 28-test suite (sed to a copy, cp into the worktree, cargo test, git checkout): 6 killed, 12 survived; 5 review probes appended to tests/authz.rs (never committed) to prove 5 survivors are non-equivalent; tree restored",
+    "cargo git-dep resolution reproduced offline: clone of authz-biscuit at 81ce4b5 as file:// git source with [patch.crates-io] biscuit-auth = { git, rev } — case 1 (one copy) resolves; case 2 (a second third_party/ directory with the same package name, committed on a throwaway clone) resolves with a WARNING, not an error",
+    "GitHub code search org:libre-ai biscuit-auth filename:Cargo.toml -> authz-biscuit, ecosystem-engine only; git ls-remote origin refs/pull/12/*; gh issue list authz-biscuit (empty)",
+    "bun run check on governance#91 NOT replayed (documentation-only diff; the PR body reports 913 tests / 0 fail)"
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The redone injectivity proof credits regression tests that never exercise the branch they are cited for: the closure, binary extern, set-member, fact, rule and predicate-name rejections of the guard are not tested in isolation, and the string/variable channel tests cannot attribute a denial to the guard at all (12 of 18 mutants survive)",
+        "detail": "Mutation replay on src/authorize.rs blocks_roundtrip_safe (head 81ce4b5, 28 tests): killed = Term::Null->true, Term::Array->true, Term::Map->true, Op::Unary(Ffi)->true, checks unwalked, expressions unwalked (6). Survived with 28 passed = Op::Closure(..)->true, Op::Binary(Ffi)->true, Term::Set(_)->true (no member recursion), facts unwalked, rules unwalked, predicate name unchecked, rule body unwalked, rule head unwalked, Term::Variable->true, safe_string without the backslash rule, safe_string without the quote rule (11) plus Term::Parameter->true (equivalent: a built block carries no parameter). Raw output for the two class-C kinds the record names as closed: `M07_closure_pass: test result: ok. 28 passed; 0 failed` and `M06_binary_ffi_pass: test result: ok. 28 passed; 0 failed`. Cause for closure: both cited regressions (tests/authz.rs:1051-1074 case \"closure\" = `check if [1].any($x -> $x == 1);`, and tests/authz.rs:1077-1136 closure_check with `Op::Value(Term::Array(...))` first) are denied by Term::Array before the closure branch is reached. Cause for the A-channel tests (print_parse_string_injection_channels_fail_closed, print_parse_variable_name_injection_fails_closed, every_ascii_byte_in_a_string_term_either_round_trips_or_is_denied): the forged block 1 is also non-canonical for the structural validators (steps 7-8), which deny with the same code `auth.biscuit_invalid`; with the guard's quote or backslash rule removed the suite still passes (`M16: 28 passed`, `M17: 28 passed`, `M15: 28 passed`), so the counter named `denied_by_guard` (tests/authz.rs:1213, 1266) and the commit-56d6462 / SECURITY.md:238 / evidence C-section claims 'denied by the guard' are not what the suite proves. Five probe tests written in this pass (block-2 checks that evaluate true, so only the guard can deny: `{1}.any($x -> true)` via Op::Closure over a Term::Set; `1.extern::always(2)` via Op::Binary(Binary::Ffi); `{\"a\\\"\"}.length() == 1`; a block-2 fact whose predicate name is `x); check if true; //`) pass on head and fail under the corresponding mutant — proof that the survivors are real gaps, not equivalent mutants, and that the missing tests are writable with the existing helpers. evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md is declared immutable (line 3) and states at lines 437-446 that closure and extern rejection are covered by the two named regressions: that statement is false for closures and for binary extern calls. The record therefore has to be re-issued, not patched. Fleet memory: branch-level coverage already let a mutation through in 07/2026; this is the same defect class on a couche-3 security guard."
+      }
+    ],
+    "major": [
+      {
+        "title": "PATCH.md's provenance recipe does not hold on the committed tree: Cargo.toml.orig is absent, silently dropped by a machine-local global gitignore",
+        "detail": "third_party/biscuit-auth-6.0.0/PATCH.md:44-48 states 'Every other file — including Cargo.toml, Cargo.toml.orig, Cargo.lock, .cargo_vcs_info.json ... is byte-identical to the archive, so provenance can be re-verified by unpacking the archive and diffing this tree against it', and §Qualification step 1 requires 'the diff must be exactly the #306 hunks and this file'. Measured: archive = 94 files, tracked tree = 94 files, but `comm` shows archive-only `Cargo.toml.orig` and tree-only `PATCH.md`; `git check-ignore -v` -> `~/.gitignore_global:21:*.orig`. governance#91 line 'the published archive (94 files, byte-identical ..., including Cargo.toml.orig ...)' repeats the false statement. Step 1 as written fails on a fresh clone. Fix: `git add -f third_party/biscuit-auth-6.0.0/Cargo.toml.orig` (or state its exclusion) and correct both documents. Everything else holds: the 5 differing files carry exactly the 15 +/- lines of upstream a6b72596 (compared line-for-line), archive SHA-256 equals the crates.io checksum, .cargo_vcs_info.json is present."
+      },
+      {
+        "title": "ecosystem-engine#13's form ('one copy in the fleet', git-dep into a non-member subdirectory of authz-biscuit) contradicts the precedent and the ADR clause it cites, is outside the owner decision as stated, and its failure modes are undocumented",
+        "detail": "ADR-0020 §2.5 (governance docs/adr/0020, 'Décision de sécurité'): 'le patch cryptographique aes suit chaque workspace final dont le graphe contient aes' — the precedent notebook root Cargo.toml:30 comments '(design §5.2.4 — the patch travelled with its consumer)'. governance#91 quotes that principle ('Precedent: notebook/third_party/rustcrypto-aes-0.8.4 (ADR-0020 §2.5 — the patch travels with its consumer)') and, four lines earlier, records the opposite: 'ecosystem-engine does not carry a second copy: its [patch.crates-io] points at the authz-biscuit repository by git rev'. ADR-0020 §2.1 sets 'un repo par package/crate pour les satellites de code partagé'; a shared crate consumed by two repositories from a third_party/ directory that is not a workspace member is neither pattern. The owner decision of 2026-09-08 as quoted in this brief names Voie A + notebook precedent + §2.5, not a cross-repo git-dep. Reproduced offline: cargo resolves `biscuit-auth = { git = <authz-biscuit>, rev = 81ce4b5 }` by scanning the repository for a package named biscuit-auth (case 1 OK). With a second directory carrying the same package name (the natural state during a 7.0 requalification, or any copy left beside the first) cargo emits `warning: skipping duplicate package biscuit-auth v6.0.0 ... in favor of .../third_party/biscuit-auth-6.0.0/Cargo.toml` and exits 0 — the copy picked is decided by directory walk order, not by a manifest. Neither PR nor the note documents this. Options for the owner: (a) apply §2.5 literally — ecosystem-engine carries its own third_party copy + PATCH.md, byte-equality checked by a drift gate; (b) keep the git-dep and amend ADR-0020 §2.5 with the cross-repo form and its duplicate-name rule; (c) a satellite repository for the patched crate per §2.1 (rejected in the note as 'a second remote to govern for five lines of use')."
+      },
+      {
+        "title": "No mechanism prevents ecosystem-engine#13 from merging with a rev that main will not contain; the stated consequence ('will no longer be reachable') is inexact in the direction that hides the problem",
+        "detail": "ecosystem-engine#13 Cargo.toml:+33-34 and the PR body carry the rule in prose only ('must be re-pinned to the merge commit ... until then this PR must not merge'). ecosystem-engine scripts/*.ts contain no check on Cargo git revs (grep rev/git+ empty); `bun run check` (package.json:30) runs check:bun, toolchain, schemas, secret-scan, personal-data, lint, typecheck. `git ls-remote origin refs/pull/12/*` -> 81ce4b5 refs/pull/12/head: GitHub keeps PR refs after --delete-branch, and cargo fetches a full-SHA rev directly, so a stale rev keeps building indefinitely with no failure signal — the opposite of the 'no longer reachable' framing. A gate is needed: fail when the pinned rev of an intra-org git-dep is not an ancestor of the target repository's main (`gh api repos/libre-ai/authz-biscuit/compare/main...<rev>` status must be 'identical' or 'behind')."
+      },
+      {
+        "title": "G2-Z01-QUALIFICATION.md, still linked from README.md as current 'security invariants and reviewer evidence', asserts 5.0.0 and 'There is no vendored source, mutable Git dependency' — the class of claim commit 56d6462 says it removed",
+        "detail": "README.md:11-12 at head: 'Security invariants and reviewer evidence are in SECURITY.md, G2-Z01-QUALIFICATION.md and evidence/'. G2-Z01-QUALIFICATION.md:30-43: 'pins biscuit-auth = 5.0.0', 'biscuit-parser 0.1.2 ... biscuit-parser-legacy workspace alias', 'There is no vendored source, mutable Git dependency'. Commit 56d6462: 'README.md and project.v1.yaml no longer claim \"no vendored source\"' — the document README links to as evidence still does. The file is a dated record (Status: complete; merged by PR #101) but carries no supersession banner, and the git diff origin/main...HEAD touches neither it nor the README sentence that promotes it. governance PROMOTION-PACKAGE.md:73 ('biscuit-auth 5.0.0') is in the same state on the governance side."
+      }
+    ],
+    "minor": [
+      {
+        "title": "Double load is API-forced, not a design choice, and its cost is asserted, not measured",
+        "detail": "Verified in the vendored API: `Authorizer` (token/authorizer.rs pub fns) has no fact/code-adding method after build; `AuthorizerBuilder::dump_code` (builder/authorizer.rs:291) returns a string, not decoded terms; `Authorizer::dump` (authorizer.rs:646) is the only decoded view — so the guard cannot share the decision authorizer. The bfc2c0d commit message and authorize.rs:120-131 present the choice as preserving steps 5-10 order; the order argument is secondary to the API constraint. One alternative is not evaluated: `Biscuit::container()` (token/mod.rs:355, pub) -> `SerializedBiscuit` (format/mod.rs:40, pub) -> `format::convert::proto_block_to_token_block` (convert.rs:48, pub) -> `Block` with pub facts/rules/checks/symbols (block.rs:16-36), which decodes signed blocks without building a world. 'One extra block translation per request' has no number: no benches/ directory, no figure in the PR."
+      },
+      {
+        "title": "Debts carried without an owner-tracked exit: duplicate crate versions (9/21), unconditional P-256/ECDSA closure (+19 lock entries), two permanent rustc warnings on every build, and the vendored-copy removal condition",
+        "detail": "cargo tree -d: block-buffer 0.9/0.10/0.12, cpufeatures 0.2/0.3, crypto-common 0.1/0.2, der 0.6/0.7, digest 0.9/0.10/0.11, pkcs8 0.9/0.10, sha2 0.9/0.10/0.11, spki 0.6/0.7, syn 1/2 under `multiple-versions = \"warn\"` (deny.toml unchanged, pre-existing policy); cause upstream pins sha2 ^0.9 / pkcs8 0.9 (third_party Cargo.toml). ecdsa, elliptic-curve, p256 are non-optional in the vendored manifest; lock delta +19/-2 (82->99). clippy: `unused import crate::crypto::PublicKey` (third_party .../builder.rs:14) and `parse_any_algorithm never used` (.../crypto/mod.rs:753) — path dependencies are not lint-capped, so they print on every build; documented in PR body and governance#91, exit condition = removal of the copy. Removal condition: PATCH.md §Removal and governance#91 say 'first published version including #306 — expected 7.0'; `gh issue list` on authz-biscuit is empty; governance has no watch item; the only reminder is incidental — Dependabot cargo ecosystem is enabled (.github/dependabot.yml:65) and would open a bump PR when 7.0.0 publishes, making the [patch] unused with a cargo warning, not an error. ADR-0021 D1 covers advisories, not releases."
+      },
+      {
+        "title": "Stale narration left in place: tests/authz.rs:871 still reads 'biscuit-auth 5.0 exposes only Ed25519 key material'",
+        "detail": "The 6.0 closure now contains p256/ecdsa and `PublicKey` carries an algorithm; src/token.rs:210-214 was rewritten for this fact, the test comment was not."
+      },
+      {
+        "title": "cargo deny prints `warning[unmatched-organization]: allowed 'github.com' organization was not encountered` — the ADR-0020 §2.5 allow-org entry is unused in this repository",
+        "detail": "deny.toml [sources.allow-org] github = [\"libre-ai\"] is unchanged by the PR (pre-existing). The [patch] is a path, so no git source exists here; the warning is noise on every run. Not introduced by the PR; recorded because ecosystem-engine#13 relies on the same key to accept its git-dep."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Narration held by the code: test counts, archive provenance, upstream diff, release state, fleet copy count, lock delta, verification order",
+        "detail": "#[test] in tests/authz.rs per commit: 5ff4c93 20, bfc2c0d 20, deccd92 25, 56d6462 26, 81ce4b5 28 — matches '20 -> 20 -> 25 -> 26 -> 28'. Archive SHA-256 d5884fc8...992b = crates.io checksum; 6.0.0 created 2025-07-16; #306 merged 2025-09-16; last upstream release biscuit-auth-6.0.0 (no published version carries #306 — true today). The 5 vendored hunks equal the upstream commit a6b72596 line for line. GitHub code search: biscuit-auth appears in Cargo.toml of authz-biscuit and ecosystem-engine only. Lock delta is additive (+19 names, -getrandom 0.1, -wasi 0.9; no version bump of a pre-existing crate). ecosystem-engine main already pins biscuit-parser =0.2.0 (Cargo.toml:21), so 'the datalog 3.3 syntax the contracts are read with elsewhere' holds. authorize.rs: guard at the token-only authorizer precedes revocations.check, authority_principal, validate_initial_attenuation and the AuthorizerBuilder — SECURITY.md steps 5-10 order preserved. Contracts byte-unchanged (no diff under vendored/)."
+      },
+      {
+        "title": "Reversibility: one revert restores 5.0.0; fbbe360 remains intact; the new record's commit anchors survive only through refs/pull/12/head",
+        "detail": "git diff --stat HEAD origin/main outside third_party/: 14 files; with third_party/ removal a single revert commit returns to 5ff4c93's manifest and lock (lock delta additive). evidence/reviews/fbbe360/ is untouched (git diff --stat empty) and referenced as 'Predecessor record (immutable)' in the new record. The new record names bfc2c0d, deccd92, 496db81 and their tree hashes; after squash-merge with --delete-branch these are reachable only via refs/pull/12/head — same situation as the four existing records (22a3bfc, 87a802e, bd7baeb, fbbe360, hub-era commits), so it follows the repository's convention. A revert must exclude evidence/ or the record of the confirmed gap is lost."
+      },
+      {
+        "title": "governance#91 records what the PR does (Voie A), with two stated exceptions",
+        "detail": "The note's form, removal condition, proof summary and contract section match the code at 81ce4b5, except: the Cargo.toml.orig statement (major above) and the §2.5 precedent sentence contradicted by the ecosystem-engine paragraph (major above). The '7.0 = crypto rupture' consequence is prose only ('this note must be rewritten for it'); no watch item, issue or gate carries it."
+      },
+      {
+        "title": "Worktree unmodified at the end; main clone untouched",
+        "detail": "All mutations were applied on a copy and reverted with git checkout; git status --porcelain empty before removal; worktree removed and branch pr-12-review-arch deleted. Side effects outside the worktree: a throwaway clone under the session scratchpad (gitdep2/) and a cargo git checkout cache entry for it under ~/.cargo/git; no commit, push or GitHub write."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The guard's class-C rejection is correct by reading (exhaustive Term/Op matches, authorize.rs:404-418) — the blocking finding is about proof, not behaviour; but a couche-3 security guard whose immutable record credits tests that do not touch the branch is exactly the defect the 07/2026 mutation incident taught the fleet to gate on.",
+    "The A-channel tests (string, variable) inherit from 5.0 a non-isolating design (guard and structural validators share the code auth.biscuit_invalid); the re-delivery should either assert on a guard-specific signal or forge a block 1 that reparses fully canonical (the fbbe360 exploit shape), so that removing a guard rule turns a test red.",
+    "cargo's duplicate-package resolution for git sources is a warning: any future second copy in authz-biscuit silently decides which biscuit-auth ecosystem-engine builds.",
+    "Nothing in the fleet will fail the day 7.0.0 is published while the vendored 6.0.0 copy remains — the removal condition is a sentence in two documents.",
+    "This pass ran on claude-fable-5-1; independence from the implementer lineage is by role and worktree, not by model family."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only K4 pass, architecture role, independent worktree (AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 1,
+    "scope": "authz-biscuit#12 at 81ce4b5 (5 commits) + ecosystem-engine#13 (0646684) + governance#91 (fac9f2f); axes: narration fidelity, double-load design, guard module boundary with mutation replay, introduced debt, reversibility, cross-repo pin form, qualification note fidelity, gate replay",
+    "priorVerdicts": [],
+    "worktree": "detached worktree at 81ce4b5 under the session scratchpad, clean at the end, removed"
+  }
+}

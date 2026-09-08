@@ -1,0 +1,413 @@
+{
+  "reviewPassId": "rp-d65e877-authz-biscuit-pr12-architecture-r2",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "commitSha": "d65e877f1430b1791955ac29cfafffc50f574176",
+  "linkedPullRequests": [
+    {
+      "repo": "libre-ai/ecosystem-engine",
+      "number": 13,
+      "headSha": "434cf1c2a797a51f831522bca13541cdbfd2cfb0"
+    },
+    {
+      "repo": "libre-ai/governance",
+      "number": 91,
+      "headSha": "0505b4f23b5f3c5c0ee9300d67162682117c7cc1"
+    }
+  ],
+  "contractHashes": [
+    {
+      "path": "third_party/biscuit-auth-6.0.0 (crates.io archive)",
+      "sha256": "d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b",
+      "source": "scripts/verify-vendored-biscuit-auth.sh run in the worktree: fresh download from static.crates.io, SHA-256 matches PATCH.md, patch -p2 of the committed #306 diff, diff -r against the tree: OK"
+    },
+    {
+      "path": "vendored/authz/authority-v1.datalog",
+      "sha256": "eb88b62cd252414bf80089f9be7478475310b3b25d88da528d389a4971e310ea",
+      "source": "unchanged since round 1: git diff 81ce4b5..d65e877 -- vendored/ is empty"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/12/head:pr-12-r2-arch; git worktree add <scratch>/ab-r2-arch --detach (d65e877); same for ecosystem-engine pull/13/head (434cf1c) and governance pull/91/head (0505b4f); git status --porcelain empty in the three worktrees at start and at end; worktrees removed and branches deleted",
+    "git log/diff 81ce4b5..d65e877 read in full outside third_party/ (src/authorize.rs, src/keys.rs, src/token.rs, tests/authz.rs 672 added lines, SECURITY.md, README.md, G2-Z01-QUALIFICATION.md, PATCH.md, REUSE.toml, ci.yml, scripts/verify-vendored-biscuit-auth.sh, evidence/reviews/81ce4b5/ROUND-2-GUARD-MUTATION-SCOPES-AND-PROVENANCE.md); third_party delta = Cargo.toml.orig + patches/biscuit-auth-6.0.0-upstream-306.diff + PATCH.md",
+    "cargo test --locked --all-features: 53 passed, 1 ignored, 0 failed (tests/authz.rs, 54 #[test]); cargo clippy --all-targets --all-features -- -D warnings: Finished, 2 upstream warnings from third_party/; cargo deny check: advisories ok, bans ok (9 duplicate warnings), licenses ok, sources ok (+ unmatched-organization warning); reuse lint: compliant 139/139",
+    "Mutation replay: 30 mutants applied one at a time by literal substitution on src/authorize.rs (26 of the record + M24b/M25b/M25c/M25d/M30) and on src/keys.rs / src/token.rs (M27/M28/M29), cargo test --test authz per mutant, diff of the mutated file recorded, file restored (git status clean after each); per-mutant logs kept under the session scratchpad",
+    "Two review probes appended to tests/authz.rs (never committed): begin_rotation with a P-256 key whose every other precondition holds — passes on head, FAILS under M28 with the ring reporting [\"Ed25519\", \"P-256\"]; a NUL byte (0x00) in a forged block-1 resource string — reparses byte-identical, denied auth.operation_denied (faithful, outside the 0x01..=0x7f range the property test covers); a third probe: block-2 `{1}.any(true)` (Binary::Any without closure) and `{1}.get(0)` -> both auth.operation_denied (denied by evaluation, not by step 5)",
+    "cargo test --release --test authz double_load_cost_is_measured -- --ignored --nocapture: token-only load 7.693 µs, full authorize() 124.204 µs, share 6.2 % (record: 13.872 µs / 127.192 µs, 10.9 %)",
+    "ecosystem-engine#13: bun install --frozen-lockfile; bun run check without GITHUB_TOKEN -> check:patch-rev: 4 tests pass, then `FAIL biscuit-auth -> libre-ai/authz-biscuit@81ce4b5 is NOT on main (diverged)`, exit 1 (lint and typecheck do not run after it; run separately: both green); GITHUB_TOKEN=invalid -> `CANNOT CHECK ... HTTP 401`, exit 1; rev = authz-biscuit origin/main (99f3b0d) -> `OK ... (identical)` exit 0; rev = origin/main~1 (5ff4c93) -> `OK ... (behind)` exit 0; rev = \"main\" -> `0 intra-organisation git patch(es)` + `Orphan-rev gate: OK` exit 0; `{ rev = ..., git = ... }` key order -> `0 patch(es)` + OK exit 0; Cargo.toml restored each time",
+    "Re-pin sequence replayed on #13 with rev = d65e877: cargo update -p biscuit-auth -> lock delta 1 line (git source), gate red (diverged, expected), cargo test --locked --offline green (4 tests); Cargo.toml + Cargo.lock restored; cargo deny check sources in ecosystem-engine: sources ok under [sources.allow-org] github = [\"libre-ai\"]",
+    "governance#91: bun install --frozen-lockfile; bun run check: exit 0, 913 pass / 0 fail, biome 3 warnings (pre-existing); ADR-0031 read in full and compared with ADR-0030 (same header fields and sections: Contexte / Décisions / Invariants / Conséquences), ADR-0020 §2.1/§2.5, INVARIANTS.md I-05, DECISION-REGISTER.md header; grep of tools/ for a gate reading an ADR's Invariants section: none; docs/reviews/biscuit-auth-6/81ce4b5/ present on governance main (commit 8729695, #92), not in #91's tree (branch 1 commit behind main)",
+    "gh pr checks: #12 5/5 pass (Dependency policy 37 s carries the provenance step); #13 Bun quality FAIL, 4 others pass; #91 all pass; required checks on authz-biscuit and ecosystem-engine main both list Dependency policy, Bun quality, Rust quality, context-hygiene, licensing"
+  ],
+  "roundOneFindingsStatus": [
+    {
+      "finding": "BLOCKING — injectivity proof credited tests that never exercised the cited guard branch (12/18 mutants survived, denied_by_guard not attributable)",
+      "status": "closed",
+      "evidence": "16 guard_* tests + 6 operator/date tests forge block 2 only (tests/authz.rs:2150-2160 rule, helpers block2_outcome/assert_guard_denies:2195-2211). Replay of the 18 round-1 mutants: M01-M17 killed by the tests the record names (e.g. `M07 KILLED(1): guard_closure`, `M08 KILLED(1): guard_binary_extern`, `M09 KILLED(1): guard_set_member`, `M16 KILLED(2): every_ascii_byte... guard_str_backslash`, `M17 KILLED(5)`); M18 survived, equivalent (term_parameter_never_reaches_a_signed_block:2534). denied_by_guard now counts a block-2 probe (tests/authz.rs:1955-1960, asserts 2 / 126 / 126). Under M07 the failure is `left: Ok(())` (accepted), under M08 `left: Err(\"auth.operation_denied\")` — attribution holds in both directions."
+    },
+    {
+      "finding": "MAJOR — Cargo.toml.orig absent, PATCH.md provenance recipe false on the committed tree",
+      "status": "closed",
+      "evidence": "git ls-files third_party/biscuit-auth-6.0.0/Cargo.toml.orig -> tracked (8d493c3, git add -f; PATCH.md:55-58 states it); git ls-files third_party = 96 (94 archive + PATCH.md + patches/…-306.diff); scripts/verify-vendored-biscuit-auth.sh run: `archive SHA-256 d5884fc8… matches PATCH.md` … `OK — the vendored tree is the published archive plus the committed upstream diff`; step is in the required job Dependency policy (ci.yml:127-128, gh api required_status_checks)."
+    },
+    {
+      "finding": "MAJOR — ecosystem-engine#13 form contradicts ADR-0020 §2.5 and the precedent; failure modes undocumented",
+      "status": "closed",
+      "evidence": "governance#91 0505b4f adds docs/adr/0031-amend-adr-0020-2-5-vendored-patch-single-copy.md: D1 single home, D2 rev-pinned org git-dep (`un SHA complet, jamais une branche`), D3 orphan-rev gate required at every consumer, D4 copy = archive + committed diff; §Contexte names the two failure modes found in round 1 (PR refs kept by GitHub, duplicate-package walk order); the note DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md:78-101 rewrites the precedent sentence (`notebook` = home and only consumer, consistent with D1). Status line: `accepted — arbitrage propriétaire du 2026-09-08`; the doctrine merge itself is the signature (AGENTS.md) and #91 is open. The duplicate-package warning is `traité comme une erreur par la revue` (D2) — a review rule, no gate (see minor)."
+    },
+    {
+      "finding": "MAJOR — no mechanism prevents merging #13 with a rev that main will not contain",
+      "status": "partially",
+      "evidence": "scripts/check-patch-rev.ts exists, wired in `check` before lint (package.json:27,31), CI passes secrets.GITHUB_TOKEN (ci.yml:51-57). Verified: current pin -> `FAIL … 81ce4b5 is NOT on main (diverged)` exit 1; HTTP 401 -> `CANNOT CHECK` exit 1 (a 403 takes the same `!response.ok` path, check-patch-rev.ts:69-71); identical and behind -> OK. NOT held: rev = \"main\" -> `0 intra-organisation git patch(es)` / `Orphan-rev gate: OK` exit 0; `{ rev = …, git = … }` key order -> same green. The regex (check-patch-rev.ts:38-40) silently drops what it cannot parse, and the test `a short or branch rev is not a pin and is not accepted as one` (check-patch-rev.test.ts:19-22) asserts that silent drop as the expected behaviour. See major finding 1."
+    },
+    {
+      "finding": "MAJOR — G2-Z01-QUALIFICATION.md promoted as current evidence while asserting 5.0.0 / no vendored source",
+      "status": "closed",
+      "evidence": "G2-Z01-QUALIFICATION.md:3-12 banner `Historical record (hub era, closed 2026-07)` naming 5.0.0, 0.1.2, `no vendored source` and the current locations; README.md:12-16 distinguishes current record evidence/reviews/81ce4b5/ from immutable history (bb32056). governance PROMOTION-PACKAGE.md:73 (`biscuit-auth 5.0.0`) is untouched by #91 — out of #12's tree, recorded under debt."
+    },
+    {
+      "finding": "MINOR — double load API-forced, cost asserted not measured",
+      "status": "partially",
+      "evidence": "tests/authz.rs:2748-2775 `double_load_cost_is_measured` (#[ignore]) times `verified.authorizer()` alone against full authorize(); replayed in release: 7.693 µs / 124.204 µs = 6.2 % (record 10.9 %, single run, no variance in either). What the guard pass actually costs — `dump()` walk plus the new `snapshot()` (authorize.rs:486-492; snapshot.rs:187-260 re-translates every block into a fresh symbol table and serialises facts, keys and policies) — is not in the measure. authorize.rs:120-131 comment now states the API constraint first (record §MAJOR architecture double-load)."
+    },
+    {
+      "finding": "MINOR — debts without owner-tracked exit: duplicate versions, P-256/ECDSA closure, two rustc warnings, removal condition",
+      "status": "partially",
+      "evidence": "Warnings: recorded in PATCH.md:60-69 with the reason they are not silenced (gate would reject an #![allow]) — closed as a documented decision. Duplicates: cargo deny still reports 9 duplicate warnings, deny.toml unchanged. P-256 closure: unchanged in the lock; the crate now refuses P-256 keys at its entry points (keys.rs:42-47, token.rs:210-216) but the code stays linked. Removal condition: still prose (PATCH.md §Removal, ADR-0031 §Conséquences last bullet); governance note §Residual risks now states `which no gate dates` — acknowledged, no owner, no watch item."
+    },
+    {
+      "finding": "MINOR — stale narration tests/authz.rs:871 (`5.0 exposes only Ed25519`)",
+      "status": "closed",
+      "evidence": "tests/authz.rs:871-873 rewritten to the 6.0 fact and points at non_ed25519_keys_are_refused_at_every_entry_point."
+    },
+    {
+      "finding": "MINOR — cargo deny unmatched-organization warning in authz-biscuit",
+      "status": "open",
+      "evidence": "cargo deny check on d65e877 still prints `warning[unmatched-organization]: allowed 'github.com' organization was not encountered` (deny.toml unchanged). In ecosystem-engine the same key is now matched: `cargo deny check sources` -> sources ok. Not claimed as remediated by the author."
+    },
+    {
+      "finding": "RESIDUAL — A-channel tests share auth.biscuit_invalid with the structural validators",
+      "status": "closed",
+      "evidence": "All guard tests moved to block 2 (no validator reads it: authority_principal reads block 0, validate_initial_attenuation block 1, canonical_blocks_have_no_block_scope blocks 0-1 only); the faithfulness half of the byte property stays on block 1 (tests/authz.rs:1924-1950) and the attribution half on block 2 (1955-1960)."
+    }
+  ],
+  "mutationReplay": [
+    {
+      "mutant": "M01",
+      "mutation": "Term::Null -> true",
+      "result": "killed",
+      "killedBy": "guard_null, datalog_3_3_only_terms_in_any_signed_block_fail_closed",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M02",
+      "mutation": "Term::Array -> true",
+      "result": "killed",
+      "killedBy": "guard_array, datalog_3_3_only_terms…",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M03",
+      "mutation": "Term::Map -> true",
+      "result": "killed",
+      "killedBy": "guard_map, closure_parameter_and_map_key_injection_channels_fail_closed, datalog_3_3_only_terms…",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M04",
+      "mutation": "Op::Unary(Ffi) -> true",
+      "result": "killed",
+      "killedBy": "guard_unary_extern, datalog_3_3_only_terms…",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M05",
+      "mutation": "checks not walked",
+      "result": "killed",
+      "killedBy": "20 tests (every guard_* expression test, byte property, 3.3 class tests)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M06",
+      "mutation": "rule expressions not walked",
+      "result": "killed",
+      "killedBy": "19 tests incl. guard_rule_expression",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M07",
+      "mutation": "Op::Closure -> true",
+      "result": "killed",
+      "killedBy": "guard_closure (outcome under mutant: Ok(()) = accepted)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M08",
+      "mutation": "Op::Binary(Ffi) -> true",
+      "result": "killed",
+      "killedBy": "guard_binary_extern (outcome under mutant: auth.operation_denied)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M09",
+      "mutation": "Term::Set without member recursion",
+      "result": "killed",
+      "killedBy": "guard_set_member",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M10",
+      "mutation": "facts not walked",
+      "result": "killed",
+      "killedBy": "guard_fact_predicate_name, guard_fact_term",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M11",
+      "mutation": "rules not walked",
+      "result": "killed",
+      "killedBy": "guard_rule_body_name, guard_rule_expression, guard_rule_head_name",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M12",
+      "mutation": "predicate name unchecked",
+      "result": "killed",
+      "killedBy": "guard_check_body_name, guard_fact_predicate_name, guard_rule_body_name, guard_rule_head_name",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M13",
+      "mutation": "rule body not walked",
+      "result": "killed",
+      "killedBy": "guard_check_body_name, guard_rule_body_name, guard_variable_name",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M14",
+      "mutation": "rule head not walked",
+      "result": "killed",
+      "killedBy": "guard_rule_head_name",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M15",
+      "mutation": "Term::Variable -> true",
+      "result": "killed",
+      "killedBy": "guard_variable_name",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M16",
+      "mutation": "safe_string without the backslash rule",
+      "result": "killed",
+      "killedBy": "guard_str_backslash, every_ascii_byte_in_a_string_term_either_round_trips_or_is_denied",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M17",
+      "mutation": "safe_string without the quote rule",
+      "result": "killed",
+      "killedBy": "guard_str_quote, guard_fact_term, guard_rule_expression, guard_set_member, every_ascii_byte…",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M18",
+      "mutation": "Term::Parameter -> true",
+      "result": "survived-equivalent",
+      "killedBy": "— (53 passed; term_parameter_never_reaches_a_signed_block proves append fails/panics on a parameter)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M19",
+      "mutation": "Binary::And -> true",
+      "result": "killed",
+      "killedBy": "guard_strict_and (outcome under mutant: Ok(()) = accepted)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M20",
+      "mutation": "Binary::Or -> true",
+      "result": "killed",
+      "killedBy": "guard_strict_or",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M21",
+      "mutation": "Binary::TryOr -> true",
+      "result": "killed",
+      "killedBy": "guard_try_or (outcome under mutant: auth.operation_denied)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M22",
+      "mutation": "Binary::LazyAnd -> true",
+      "result": "killed",
+      "killedBy": "guard_lazy_and",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M23",
+      "mutation": "Binary::LazyOr -> true",
+      "result": "killed",
+      "killedBy": "guard_lazy_or",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M24",
+      "mutation": "Term::Date range -> true",
+      "result": "killed",
+      "killedBy": "guard_date_range (outcome under mutant: Ok(()) = accepted)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M24b (new)",
+      "mutation": "Term::Date bound <= -> < (boundary off by one)",
+      "result": "killed",
+      "killedBy": "guard_date_range (boundary 253402300799 must be accepted)",
+      "matchesRecord": "not in record"
+    },
+    {
+      "mutant": "M25",
+      "mutation": "block-level scope check -> blocks.len() >= 2 only",
+      "result": "killed",
+      "killedBy": "block_level_scopes_on_blocks_0_and_1_are_rejected_structurally (outcome under mutant: AuthorizationDecision matched_policy 0 = accepted)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M25b (new)",
+      "mutation": "take(2) -> take(1) (block 1 scope unchecked)",
+      "result": "killed",
+      "killedBy": "block_level_scopes_on_blocks_0_and_1_are_rejected_structurally",
+      "matchesRecord": "not in record"
+    },
+    {
+      "mutant": "M25c (new)",
+      "mutation": "take(2) -> skip(1).take(1) (block 0 scope unchecked)",
+      "result": "killed",
+      "killedBy": "block_level_scopes_on_blocks_0_and_1_are_rejected_structurally",
+      "matchesRecord": "not in record"
+    },
+    {
+      "mutant": "M25d (new)",
+      "mutation": "call to canonical_blocks_have_no_block_scope removed from authorize()",
+      "result": "killed",
+      "killedBy": "block_level_scopes_on_blocks_0_and_1_are_rejected_structurally",
+      "matchesRecord": "not in record"
+    },
+    {
+      "mutant": "M26",
+      "mutation": "policies not walked",
+      "result": "survived-equivalent",
+      "killedBy": "— (53 passed; token.authorizer() carries no policy: snapshot.rs/authorizer policies come only from AuthorizerBuilder)",
+      "matchesRecord": true
+    },
+    {
+      "mutant": "M27 (new)",
+      "mutation": "keys.rs is_ed25519 -> always true",
+      "result": "killed",
+      "killedBy": "non_ed25519_keys_are_refused_at_every_entry_point",
+      "matchesRecord": "outside record scope (src/authorize.rs only)"
+    },
+    {
+      "mutant": "M28 (new)",
+      "mutation": "keys.rs begin_rotation: `!is_ed25519(&new_key.public_key) ||` removed",
+      "result": "SURVIVED — non-equivalent",
+      "killedBy": "none (53 passed). Probe: P-256 key with valid_from = now + 1 s, fresh key_id, overlap 2000 s -> begin_rotation Ok, ring.public_keys() = [\"Ed25519\", \"P-256\"]; committed test uses valid_from = now - 1 s (tests/authz.rs:2717), refused first by `new_key.valid_from < now` (keys.rs:87)",
+      "matchesRecord": "outside record scope; contradicts commit 09aae8b (`refused … at all three entry points`) and SECURITY.md:12-14"
+    },
+    {
+      "mutant": "M29 (new)",
+      "mutation": "token.rs BiscuitIssuer::new Ed25519 refusal removed",
+      "result": "killed",
+      "killedBy": "non_ed25519_keys_are_refused_at_every_entry_point",
+      "matchesRecord": "outside record scope"
+    },
+    {
+      "mutant": "M30 (new)",
+      "mutation": "`blocks.len() >= 2 &&` removed from canonical_blocks_have_no_block_scope",
+      "result": "survived-equivalent",
+      "killedBy": "— (a 1-block token is denied later by validate_initial_attenuation with the same code; no observable difference)",
+      "matchesRecord": "not in record"
+    }
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The Ed25519 refusal in VerificationKeyRing::begin_rotation is a refusal branch no committed test exercises: mutant M28 survives the 53-test suite, and the probe shows a P-256 key entering the ring under it",
+        "detail": "keys.rs:79 `if !is_ed25519(&new_key.public_key) || …` is the branch; the only test named for it, non_ed25519_keys_are_refused_at_every_entry_point (tests/authz.rs:2699-2743), builds `p256_key` with `valid_from: now - Duration::from_secs(1)` (2717) and hands it to begin_rotation (2729-2733) — `new_key.valid_from < now` (keys.rs:87) refuses that key before the algorithm is looked at. Replay: with the `!is_ed25519(&new_key.public_key) ||` term deleted, `cargo test --test authz` -> `53 passed; 0 failed; 1 ignored`. Non-equivalence proved by a probe (never committed): P-256 key, valid_from = now + 1 s, key_id 6, old key valid until now + 2000 s -> under the mutant begin_rotation returns Ok and `ring.public_keys()` reports `[\"Ed25519\", \"P-256\"]` (assertion output: `ring now reports [\"Ed25519\", \"P-256\"]`); on head the same probe passes with auth.key_unavailable. The narration credits this test for the branch: commit 09aae8b `Red first (a Secp256r1 KeyPair was accepted at all three entry points), then refused with auth.key_unavailable`; SECURITY.md:12-14 `VerificationKeyRing::new and begin_rotation refuse any non-Ed25519 key`; evidence record §MINOR (security) `Now refused … at all three entry points … Test: non_ed25519_keys_are_refused_at_every_entry_point`; governance note :148-149. For the begin_rotation entry point the committed test cannot have been red before the fix. The record's 26-mutant scope is src/authorize.rs only, so its table is not contradicted; the claim is. This is the defect class the round-1 blocking named (a test credited for a branch it does not reach), on a refusal branch introduced by this PR — blocking by the round-2 rule. Fix is one line: give the rotation probe a key whose every other precondition holds (valid_from = now + 1 s, as in two_key_rotation_has_a_bounded_overlap), so that M28 turns the test red; re-issue the record's Ed25519 paragraph with that mutant."
+      }
+    ],
+    "major": [
+      {
+        "title": "The orphan-rev gate is green on the inputs it cannot parse: `rev = \"main\"` and a `{ rev, git }` key order both print `0 intra-organisation git patch(es)` / `Orphan-rev gate: OK` and exit 0 — contradicting ADR-0031 D2 (`jamais une branche`) and D3 (`un gate muet n'est pas un gate`), which names this script as the reference realisation",
+        "detail": "check-patch-rev.ts:38-40: a single regex requires `git = \"https://github.com/<o>/<r>\"` before `rev = \"<40 hex>\"` inside one `{…}`; anything else is `continue`d (43). Measured on the #13 worktree, Cargo.toml edited then restored: rev = \"main\" -> `Orphan-rev gate: 0 intra-organisation git patch(es) in [patch.crates-io]` / `Orphan-rev gate: OK`, exit 0; `biscuit-auth = { rev = \"81ce…\", git = \"https://github.com/libre-ai/authz-biscuit\" }` -> same output, exit 0. A `branch = \"main\"` or `tag = …` git-dep, or the `[patch.crates-io.biscuit-auth]` table form, take the same silent path. The unit test check-patch-rev.test.ts:19-22 (`a short or branch rev is not a pin and is not accepted as one`) asserts `parseGitPatches(...) === []`, i.e. it locks the silent drop in as the specification. cargo deny (`unknown-git = deny` + allow-org libre-ai) accepts any libre-ai git source, branch included, so nothing else catches it. Fleet memory: silent-guardrail class (a gate must prove it ran on what it was meant to see). Fix: count every git source under [patch.crates-io] (parse the section as TOML — `Bun.TOML.parse` / `import … with { type: \"toml\" }` — or match `git =` independently of `rev =`), and fail with a named reason on any intra-organisation git source whose rev is not a full SHA; add the red tests (branch rev, key order, table form, `branch =`)."
+      },
+      {
+        "title": "ADR-0031 declares `Aucun invariant nouveau` while D1 and D3 impose fleet-wide obligations (one home per patched crate; a blocking orphan-rev gate at every secondary consumer) that no invariant carries, and I-05 as written covers vendored *contracts*, not patched crates; no machine gate checks the claim",
+        "detail": "INVARIANTS.md:11 I-05: `les copies vendorées de contrats sous gate de dérive sont des projections vérifiées (jamais éditées à la main, jamais canoniques)` — contracts. ADR-0031 §Invariants extends it by analogy (`comme check:schemas l'est pour les contrats`) and adds nothing for D1 (`un seul foyer dans la flotte`) or D3 (`Chaque consommateur secondaire porte un gate bloquant`). AGENTS.md: `INVARIANTS.md is exhaustive by construction: doctrine absent from it does not exist, whatever another document asserts`. Gate replay: `bun run check` on #91 -> exit 0, 913 pass; grep of tools/quality/*.ts for `## Invariants` / `Aucun invariant` -> no tool reads an ADR's Invariants section, so the exhaustiveness rule has no executant for ADRs (the brief's `I-25` is the skills invariant, INVARIANTS.md:31 — not this gate). Precedent cuts both ways: ADR-0020 §2.5's own bounds (allow-org, pin-SHA + review) are also absent from INVARIANTS.md (grep allow-org/git-dep/patch.crates-io -> none), and ADR-0030 uses the same `Aucun invariant nouveau` form with two named existing invariants. Owner decision, two options: (a) carry D1+D3 into INVARIANTS.md (new I-xx dated 2026-09-08, or widen I-05 from `contrats` to `contrats et crates patchés`) and cite it from the ADR; (b) state in §Invariants that D1–D4 are ADR-level security bounds of the same nature as §2.5 and deliberately not invariants — making the exhaustiveness rule's exception explicit instead of silent. Form otherwise matches ADR-0030 (same header fields, same four sections); DECISION-REGISTER.md needs no entry by its own header (`never been an index of every accepted ADR`)."
+      }
+    ],
+    "minor": [
+      {
+        "title": "The `.get` / `.all` / `.any` sentence of SECURITY.md attributes to step 5 denials that come from evaluation",
+        "detail": "SECURITY.md:176-181: `they pass through step 5 like every signed block. A block written in datalog 3.3 idioms is therefore denied as a class … .all/.any, .try_or, .get …`. Probe on block 2: `[{1}, true, Binary::Any]` (no closure) -> auth.operation_denied; `[{1}, 0, Binary::Get]` -> auth.operation_denied. op_ok passes Binary::Any/All/Get (authorize.rs:452 `Op::Unary(_) | Op::Binary(_) => true`); the denial is the evaluator's, fail-closed but not step 5. The paragraph's conclusion (denied as a class) holds; its `therefore` does not. Same precision point for `plus multi-byte UTF-8` (SECURITY.md:109): the property samples one code point, `é` (tests/authz.rs:1918-1920)."
+      },
+      {
+        "title": "The double-load figure measures the token-only load, not the guard pass, and is a single run",
+        "detail": "double_load_cost_is_measured (tests/authz.rs:2748-2775) times `verified.authorizer()` only. The guard pass added by this PR is load + `dump()` walk + `snapshot()` (authorize.rs:486-492 -> snapshot.rs:187-260: every block re-translated into a fresh symbol table, facts/keys/policies serialised to proto), none of which is in the number. Replay on this machine: 7.693 µs / 124.204 µs = 6.2 % vs the record's 13.872 µs / 127.192 µs = 10.9 % — same order, not the same figure, no variance reported in either. The record's sentence `the double load is measured instead of asserted` is true of the load, not of the guard's cost."
+      },
+      {
+        "title": "`bun run check` in ecosystem-engine stops at the red gate, so lint and typecheck do not run on a red pin",
+        "detail": "package.json:31 orders check:patch-rev before lint and typecheck; with the gate red the log ends at `error: script \"check:patch-rev\" exited with code 1` and neither lint nor typecheck runs (replayed: both green when run alone). While D3 makes the PR red by construction, every other Bun gate is invisible on it. Put the gate last, or run it in its own CI step."
+      },
+      {
+        "title": "Debts still without a gate, owner or trace after round 2",
+        "detail": "(1) ADR-0031 D2: `l'avertissement skipping duplicate package de cargo est traité comme une erreur par la revue` — a review rule; cargo exits 0 on it (reproduced in round 1) and no gate greps for it. (2) Removal condition of the vendored copy: still a sentence (PATCH.md, ADR-0031 §Conséquences); governance note §Residual risks now says `which no gate dates` — acknowledged, unowned. (3) cargo deny in authz-biscuit: 9 duplicate-version warnings and the unmatched-organization warning unchanged; P-256/ECDSA code stays in the closure (now refused at the entry points, still linked). (4) governance PROMOTION-PACKAGE.md:73 still reads `biscuit-auth 5.0.0` (untouched by #91). (5) The round-2 record (evidence/reviews/81ce4b5/…) names governance `docs/reviews/biscuit-auth-6/81ce4b5/` — present on governance main (commit 8729695, PR #92), absent from #91's tree (1 commit behind main): resolvable after #91 rebases or merges, dangling in the PR as it stands."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Narration held by the code on the four new commits",
+        "detail": "09aae8b: 16 guard_* + 6 operator/date + term_parameter + scopes + Ed25519 + ignored timing = 26 new #[test] (28 -> 54 declared, 53 run + 1 ignored: matches); red-first claims reproduced by the mutants (M19 -> `Ok(())`, M24 -> `Ok(())`, M25 -> AuthorizationDecision matched_policy 0, M21/M08 -> auth.operation_denied) except the begin_rotation claim (blocking). 8d493c3: gate script, ci.yml step in the required job, REUSE annotation for the diff, Cargo.toml.orig force-added, PATCH.md steps rewritten — all present; `Red first: one vendored file altered -> exit 1` not replayed (script logic reads as stated: diff -r non-zero -> exit 1). bb32056: banner and README as described. d65e877: SECURITY.md lists match the tests one-for-one for step 5 (each item has a guard_* test and a killed mutant); the record's `Not done` section is accurate (no test for bitwise/arithmetic/etc., no 5.0-issued-token replay). The commit groups five obligations as declared; a partial revert would have to be split by hand."
+      },
+      {
+        "title": "Re-pin sequence of ADR-0031 D3 is executable as written",
+        "detail": "Replayed on #13 with rev = d65e877: edit rev, `cargo update -p biscuit-auth` -> lock delta 1 line (`git+…?rev=d65e877…`), `cargo test --locked --offline` green (4 tests), gate red with the expected reason (diverged). After the squash-merge the same steps with the merge SHA give `identical` (verified with today's authz-biscuit main 99f3b0d: `OK … (identical)`; parent 5ff4c93: `OK … (behind)`). Scanning stays deterministic: the merged tree carries one package named biscuit-auth (third_party/patches/ holds a .diff, not a manifest)."
+      },
+      {
+        "title": "Gates on the three heads",
+        "detail": "#12 d65e877: cargo test 53 passed / 1 ignored; clippy -D warnings Finished (2 upstream warnings, recorded in PATCH.md); cargo deny advisories/bans/licenses/sources ok; reuse lint 139/139; provenance script OK against a fresh download; gh checks 5/5 pass, Dependency policy required on main. #13 434cf1c: bun run check red at check:patch-rev with the reason `81ce4b5 is NOT on main (diverged)` (intended); lint + typecheck green alone; cargo deny sources ok; gh: Bun quality FAIL, 4 pass. #91 0505b4f: bun run check exit 0 (913 pass, 3 biome warnings pre-existing); gh checks all pass."
+      },
+      {
+        "title": "Worktrees unmodified at the end; main clones untouched",
+        "detail": "Every mutation and probe applied on the detached worktree files and reverted with git checkout; `git status --porcelain` empty in ab-r2-arch, ee-r2-arch, gov-r2-arch before removal; three worktrees removed and branches pr-12-r2-arch, pr-13-r2-arch, pr-91-r2-arch deleted. Side effects outside: ~/.cargo/git checkout of authz-biscuit@d65e877 (cargo update replay), one crates.io archive download discarded by the script's trap. No commit, push, comment or GitHub write."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The begin_rotation Ed25519 branch is correct by reading (keys.rs:79) — the blocking finding is about proof and narration, as in round 1; the fix is a one-line test change plus a record re-issue.",
+    "A libre-ai git-dep pinned on a branch, a tag, or written in table form passes both cargo deny (allow-org) and the orphan-rev gate green; until the gate parses TOML, ADR-0031 D2's `jamais une branche` is a review rule.",
+    "The guard's cost per request now includes a full authorizer snapshot serialisation on every token; no figure covers it.",
+    "ADR-0031's obligations live only in the ADR; INVARIANTS.md's exhaustiveness rule has no executant for ADR Invariants sections, so a future ADR can declare `no invariant` over new doctrine unchecked.",
+    "This pass ran on claude-fable-5-1, the same model family as round 1; independence from the implementer lineage is by role and worktree, not by model family."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only K4 pass, architecture role, round 2, independent detached worktrees (AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 2,
+    "scope": "authz-biscuit#12 at d65e877 (4 new commits 09aae8b, 8d493c3, bb32056, d65e877 on top of 81ce4b5) + ecosystem-engine#13 at 434cf1c + governance#91 at 0505b4f; axes: round-1 finding status, mutation replay (30 mutants: 26 of the record + 4 new on the added branches + M27-M30 on key entry points), record table fidelity, narration fidelity of commits/SECURITY.md/PATCH.md/README/ADR-0031, orphan-rev gate behaviour, ADR-0031 doctrine consistency, remaining debt, gates on the three heads",
+    "priorVerdicts": [
+      {
+        "reviewPassId": "rp-81ce4b5-authz-biscuit-pr12-architecture",
+        "commitSha": "81ce4b579d383f8368f06c8f4e6e3765b518225f",
+        "round": 1,
+        "verdict": "reject",
+        "path": "governance docs/reviews/biscuit-auth-6/81ce4b5/architecture.verdict.json"
+      }
+    ],
+    "worktree": "detached worktrees at d65e877 / 434cf1c / 0505b4f under the session scratchpad, clean at the end, removed"
+  }
+}
