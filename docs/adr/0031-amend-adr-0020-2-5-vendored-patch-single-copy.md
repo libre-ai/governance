@@ -3,8 +3,9 @@
 - **Statut :** accepted — arbitrage propriétaire du 2026-09-08 par question structurée (ADR-0022/I-24). Owner-arbitration: 2026-09-08
 - **Date :** 2026-09-08
 - **Portée :** amendement de la décision de sécurité ADR-0020 §2.5 (clause « le patch cryptographique `aes` suit chaque workspace final dont le graphe contient `aes` ») ; enregistrement de la forme retenue pour la migration `biscuit-auth` 6.0.0 (`authz-biscuit#12`, `ecosystem-engine#13`, dossier `docs/reviews/biscuit-auth-6/`).
-- **Étend :** ADR-0020 §2.1 (git-deps inter-repos épinglées par SHA), §2.5 (bornes de sécurité des git-deps), I-05 (copies vendorées = projections vérifiées, jamais éditées à la main).
+- **Étend :** ADR-0020 §2.1 (git-deps inter-repos épinglées par SHA), §2.5 (bornes de sécurité des git-deps).
 - **Amende :** ADR-0020 §2.5, la seule clause de localisation du patch vendorisé ; les autres bornes de §2.5 (`allow-org`, pin-SHA + revue, quarantaine des registres) restent en vigueur inchangées.
+- **Invariants :** I-05 élargi (des seuls contrats vendorés aux crates patchés, texte historique conservé en note datée) ; I-28 créé (D1–D3) — `docs/decisions/INVARIANTS.md` ; entrée D37 de `docs/decisions/DECISION-REGISTER.md`. Décision propriétaire du 2026-09-08 sur le finding majeur architecture du round 2 (`docs/reviews/biscuit-auth-6/d65e877/architecture.verdict.json`), voir § Invariants.
 
 ## Contexte
 
@@ -95,12 +96,38 @@ consignés dans `PATCH.md`, jamais réduits au silence dans l'arbre.
 
 ## Invariants
 
-Aucun invariant nouveau. **I-05** s'applique : une copie vendorisée est une
-projection vérifiée par gate, jamais éditée à la main, jamais canonique — le
-gate de provenance de D4 en est l'exécutant pour un crate patché, comme
-`check:schemas` l'est pour les contrats. Les bornes de sécurité d'ADR-0020 §2.5
-(`allow-org`, pin-SHA + revue, quarantaine des registres) restent la source
-d'arbitrage des git-deps ; cet ADR n'en amende que la clause de localisation.
+Le round 2 de la revue K4 (`docs/reviews/biscuit-auth-6/d65e877/`, finding
+majeur architecture) a relevé que la première version de cette section
+déclarait « aucun invariant nouveau ; I-05 s'applique » alors que le texte
+d'I-05 ne couvrait que les _contrats_ vendorés, et que D1 (foyer unique) et D3
+(gate de `rev` orphelin chez chaque consommateur) sont des obligations de
+flotte sans entrée au registre — or ce qui n'y figure pas n'est pas doctrine
+(ADR-0008 §7, `AGENTS.md`). Le propriétaire a tranché le 2026-09-08 entre
+« porter D1/D3 au registre » et « déclarer une exception explicite » : les
+deux entrées ci-dessous sont portées, la présente section ne se réclame plus
+d'un invariant existant par analogie.
+
+- **I-05 élargi** (numéro conservé) : toute copie vendorisée — contrat sous
+  gate de dérive **ou crate patché sous gate de provenance** — est une
+  projection vérifiée par gate, jamais éditée à la main, jamais canonique. Le
+  gate de provenance de D4 en est l'exécutant pour un crate patché, comme
+  `check:schemas` l'est pour les contrats. Le texte du 2026-07-28 est conservé
+  dans l'entrée en note datée ; le cas contrat n'est pas modifié, de sorte que
+  les ADR antérieurs qui citent I-05 (ADR-0020 §Invariants, ADR-0024 §2.1,
+  `TARGET.md`) restent vrais tels quels.
+- **I-28 créé** : un patch vendorisé a un foyer unique dans la flotte — le
+  dépôt qui le qualifie (preuve, gate de provenance, condition de retrait) ;
+  tout consommateur secondaire le prend en git-dep d'organisation épinglée par
+  SHA complet et porte un gate bloquant de `rev` orphelin. Ancrage : D1–D3
+  ci-dessus, sans reformulation ; réalisations de référence
+  `authz-biscuit/scripts/verify-vendored-biscuit-auth.sh` et
+  `ecosystem-engine/scripts/check-patch-rev.ts`.
+
+Les bornes de sécurité d'ADR-0020 §2.5 (`allow-org`, pin-SHA + revue,
+quarantaine des registres) restent la source d'arbitrage des git-deps et ne
+sont pas portées au registre par cet ADR — I-28 les cite comme condition,
+il ne les restate pas ; cet ADR n'amende de §2.5 que la clause de
+localisation.
 
 ## Conséquences
 
@@ -114,7 +141,12 @@ d'arbitrage des git-deps ; cet ADR n'en amende que la clause de localisation.
   du foyer.
 - La note de qualification
   `docs/reviews/agent-orchestration-contracts-v1/DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md`
-  cite cet ADR pour la forme et ne se réclame plus du précédent `aes` seul.
+  cite cet ADR pour la forme et ne se réclame plus du précédent `aes` seul ;
+  elle renvoie au dossier de revue `docs/reviews/biscuit-auth-6/` (un
+  sous-répertoire par head revu) pour les verdicts de chaque round.
+- `docs/decisions/INVARIANTS.md` porte I-05 élargi et I-28 ;
+  `docs/decisions/DECISION-REGISTER.md` porte D37, sur le modèle de D36
+  (ADR-0030, précédent d'amendement).
 - Retrait : la copie et son `[patch.crates-io]` disparaissent chez le foyer,
   puis chez chaque consommateur (qui revient à la version de registre), dès
   qu'une version publiée incluant le correctif est qualifiée — pour

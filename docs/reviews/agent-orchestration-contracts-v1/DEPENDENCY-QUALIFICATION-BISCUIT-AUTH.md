@@ -19,7 +19,9 @@
 ## History
 
 `5.0.0` (registry checksum `95490f2c91dc452247d00a2fb4779bcedb7693e669354fa1fe2a96679f4950cc`) was
-selected at the contracts-v1 promotion as a test-only dependency of `ecosystem-engine`, after `6.0.0`
+selected at the contracts-v1 promotion (recorded as promotion-time evidence in
+`PROMOTION-PACKAGE.md`, "Additional exact conformance evidence" — a dated pointer there names this
+note as the current state) as a test-only dependency of `ecosystem-engine`, after `6.0.0`
 had been evaluated and set aside: its minimal `default-features = false` build did not compile, and
 enabling `datalog-macro` to work around it introduced the unmaintained `proc-macro-error2 2.0.1`
 (`RUSTSEC-2026-0173`). `authz-biscuit` later adopted the same exact pin as its runtime dependency,
@@ -116,10 +118,16 @@ this note must be rewritten for it.
 with the version-matched parser, and guards the round trip up front because the printer emits
 strings and identifiers unescaped. The proof is version-bound; it was redone for the new pair with
 the `fbbe360` method (`authz-biscuit` `evidence/reviews/bfc2c0d/`, round 1), then re-reviewed by
-two independent K4 passes (`docs/reviews/biscuit-auth-6/81ce4b5/`: security accept, architecture
-reject — the record credited tests that never reached the guard branches they were cited for,
-12 of 18 mutants survived) and re-issued as `evidence/reviews/81ce4b5/` (round 2), which
-supersedes `bfc2c0d/`. What the round-2 record holds:
+two independent K4 passes per round, whose verdicts live in this repository under
+`docs/reviews/biscuit-auth-6/<reviewed head>/` (one `README.md` plus one `*.verdict.json` per
+role): round 1 (`81ce4b5/`: security accept, architecture reject — the record credited tests that
+never reached the guard branches they were cited for, 12 of 18 mutants survived), after which the
+record was re-issued as `evidence/reviews/81ce4b5/` (round 2), which supersedes `bfc2c0d/`; round
+2 (`d65e877/`: security accept, architecture reject on one untested refusal branch —
+`begin_rotation`'s P-256 refusal, mutant M28 surviving — plus the two design-level majors on the
+companion deliverables: the orphan-rev gate green on forms it does not parse, and the invariant
+claim of ADR-0031, resolved by I-05 widened and I-28). No double accept yet; the round-3 record of
+`authz-biscuit` supersedes `81ce4b5/` when issued. What the round-2 record holds:
 
 - **proved faithful and relied upon** (round-trip tests): string terms over every byte
   `0x01..=0x7f` except `"` and `\` plus UTF-8; sets (`{..}`, members in symbol-table order) and
@@ -139,8 +147,12 @@ supersedes `bfc2c0d/`. What the round-2 record holds:
   `auth.biscuit_invalid` is attributable to the guard alone;
 - the guard runs on a token-only authorizer (`token.authorizer()`, no ambient fact, no policy,
   never executed) before revocation and structural validation; the verification order of
-  `authz-biscuit/SECURITY.md` is unchanged. The second load is measured, not asserted: 13.9 µs of
-  a 127.2 µs `authorize()` in release (10.9 %), 59.7 µs of 1.28 ms in debug;
+  `authz-biscuit/SECURITY.md` is unchanged. The second load is measured, not asserted: the
+  ignored test `double_load_cost_is_measured` (`tests/authz.rs`) times it against a full
+  `authorize()`, and the figure is held by the current evidence record of `authz-biscuit`, not
+  restated here — the round-2 architecture pass replayed it at a different share and noted that
+  the measure covers the token-only load, not the guard pass (`dump()` walk + `snapshot()`);
+  the round-3 record re-measures it;
 - Ed25519 is enforced, not asserted: 6.0 keys are algorithm-tagged and every key entry point
   (`BiscuitIssuer::new`, `VerificationKeyRing::new`, `begin_rotation`) refuses a P-256 key;
 - `SECURITY.md` claims exactly those two lists and states that constructs outside both are not
@@ -190,8 +202,10 @@ side — never printed, never reparsed; the issuer's own attenuation binds a set
   further panics are reachable through `biscuit_auth::builder` directly (a `Term::Parameter` in a
   check expression at `append`; a malformed key in a `trusting` scope string), never from
   `authorize()`.
-- Two token loads per authorization (guard + decision): measured at 10.9 % of `authorize()` in
-  release.
+- Two token loads per authorization (guard + decision): the share of `authorize()` is measured by
+  `double_load_cost_is_measured` and recorded in the current evidence record of `authz-biscuit`
+  (single run, no variance reported; token-only load, guard pass not included — see the round-2
+  architecture verdict).
 - Constructs the printer can emit that are in neither of the two proved lists of `SECURITY.md`
   (bitwise, arithmetic, set algebra, prefix/suffix/regex, length/type, negate/parens,
   comparisons, `i64` extremes, bytes) were probed faithful by the security pass but are not
