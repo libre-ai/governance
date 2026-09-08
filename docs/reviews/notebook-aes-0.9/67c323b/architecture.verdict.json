@@ -1,0 +1,238 @@
+{
+  "reviewPassId": "rp-67c323b-notebook-pr35-architecture-r1",
+  "role": "architecture",
+  "mode": "specialized-role",
+  "repository": "libre-ai/notebook",
+  "pullRequest": 35,
+  "round": 1,
+  "commitSha": "67c323b68c28326c8aedc2cbd99f1cb45926adee",
+  "baseSha": "f0a01a3bfbf1fa6da285510464cade53b6a3e7f8",
+  "companions": {
+    "governance": "a84635d (local main of libre-ai/governance, read only: ADR-0031, INVARIANTS.md I-05/I-28, D37, docs/reviews/notebook-core-v2/)"
+  },
+  "linkedPullRequests": [
+    {
+      "repo": "libre-ai/notebook",
+      "number": 35,
+      "headSha": "67c323b68c28326c8aedc2cbd99f1cb45926adee",
+      "commits": ["eeffa84", "b333b8b", "a1bdc7a", "49e7314", "6d620fc", "67c323b"]
+    }
+  ],
+  "contractHashes": [
+    {
+      "path": ".cargo/config.toml (head)",
+      "sha256": "905d672074d5ddacb91e9fdd8b5555fd1b7978fad904dd9c6664e2bb5c92b34e",
+      "source": "shasum on the head worktree; enters the qualification manifest written by tools/qualification/notebook-core-v2/build.ts (wasmBuildConfiguration.sha256)"
+    },
+    {
+      "path": ".cargo/config.toml (main f0a01a3)",
+      "sha256": "91a502066e179b2525929d903b188b1b6bb10e6b105a81b33a834497c50481a4",
+      "source": "git show f0a01a3:.cargo/config.toml | shasum; this is the value recorded in governance docs/reviews/notebook-core-v2/gate-b/9ee3f8d/evidence/builds/core-build-manifest.json and gate-b/9ee3f8d/evidence/performance/final/manifest.json (approved Gate B candidate)"
+    },
+    {
+      "path": "vendored/wit/notebook-core-v2/world.wit",
+      "sha256": "132d4cec0116352c8cea2c356b6dd6638758e07c7e182dc01042ea5667daa295",
+      "source": "unchanged by the PR; scripts/check-vendored-wit.ts reports byte-exact against the contracts pin (1 file)"
+    },
+    {
+      "path": "Cargo.lock (head)",
+      "sha256": "8eee9fa1c7a2956385217bdbe862040318862e2288cb13000751a76bdc0d15e3",
+      "source": "64 packages, one `aes` entry (0.9.3, registry), no [patch] section in Cargo.toml"
+    },
+    {
+      "path": "scripts/check-zeroize-chain.ts",
+      "sha256": "41d6a3e3c0558427d980da15018bb4f1c08ceb227d49c7eab09c0c4c93a4c298",
+      "source": "the gate under review; every mutant below was applied to a copy in the detached worktree and reverted (git status clean after each)"
+    },
+    {
+      "path": "crates/notebook-core/src/crypto.rs",
+      "sha256": "4d98587a404ef63cfc4700db4ff592e30b05286c2aa1e06eaf61f5ae2a465e74",
+      "source": "compile-time ZeroizeOnDrop assertion, cpubits width assertion, wasm32 belt compile_error"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/35/head:pr-35-arch; git worktree add <scratch>/nb-r1-arch --detach pr-35-arch (67c323b); bun install --frozen-lockfile (46 packages); rustup: 1.97.0 via rust-toolchain.toml, wasm32-unknown-unknown installed; git status --porcelain empty at start and at end; second detached worktree <scratch>/nb-r1-mut at 67c323b with its own CARGO_TARGET_DIR for the cargo mutants and the revert test; third detached worktree <scratch>/nb-r1-main at origin/main f0a01a3 for the gate replay; fourth <scratch>/nb-r1-red at eeffa84; all four removed at the end; the main clone ~/Documents/libre-ai/notebook was not modified (only the local ref pr-35-arch the brief asked to create)",
+    "Narration: `git log --format=%B` of the six commits and `gh pr view 35 --json body,statusCheckRollup,mergeStateStatus` read in full; PR checks 5/5 SUCCESS, mergeStateStatus CLEAN; branch protection on main: required contexts = Bun quality, Rust quality, context-hygiene, licensing, Dependency policy; strict=false; no required approving reviews",
+    "Claims replayed: a1bdc7a `git show --shortstat` = 37 files, +47/-7190; PR range f0a01a3..67c323b = 48 files, +348/-7288; eeffa84 Cargo.lock diff = one [[package]] cpubits 0.1.1 + one dependency line, nothing else; b333b8b Cargo.lock removes cpufeatures, crypto-common, generic-array, opaque-debug, version_check (grep of `-name =` lines); duplicate crates in the lock: cpufeatures 2->1, crypto-common 2->1, syn 2->2, generic-array 1->0, packages 68->64 (PR body: 3 -> 1 duplicate warnings, confirmed); `git merge-tree --write-tree 6d620fc f0a01a3` = b600f78ff6125becb1094194899e1b2efc15abe0 = `git rev-parse 67c323b^{tree}` (merge reproduced with zero conflict); DEPENDENCIES.md versions vs Cargo.lock: serde 1.0.229, serde_json 1.0.151, argon2 0.6.0, zeroize 1.9.0, aes 0.9.3, aes-gcm 0.11.1, ghash 0.6.0, polyval 0.7.3, cpubits 0.1.1, sha2 0.11.0, subtle 2.6.1, base64 0.22.1, wit-bindgen 0.61.1, wasmparser/wit-component 0.258.0 — all equal",
+    "Gates at head (exit codes): cargo fmt --all --check 0; cargo clippy --all-targets --all-features -- -D warnings 0; cargo clippy --all-targets --locked -- -D warnings 0; cargo clippy --locked -p libre-ai-notebook-core --target wasm32-unknown-unknown -- -D warnings 0; cargo test --locked --all-features 10+11+0 = 21 passed; cargo test --locked 21 passed; cargo deny check bans licenses sources 0 (bans: 1 duplicate warning `syn`; sources: warning[unmatched-organization] github.com organization not encountered); cargo deny check advisories 0; cargo audit --deny warnings 0 (64 crate dependencies, 1242 advisories); reuse lint compliant 122/122; bun run check 0 (check:wit 1 file byte-exact; check:zeroize-chain `aes 0.9.3 / ghash 0.6.0 / polyval 0.7.3: zeroize on`; bun test scripts 5 pass; bun test apps/notebook 52 pass; biome ci 42 files clean); node scripts/check-component-encoding.ts 0 under Node v26.8.1 (SIMD128, 0 imports, 512 MiB cap, jco-transpile 0.4.2, core 469752 bytes, component 472037 bytes)",
+    "Belt replay: `.cargo/config.toml` without `--cfg cpubits=\"64\"` -> `cargo check --locked -p libre-ai-notebook-core --target wasm32-unknown-unknown` exit 101 with `error: wasm32 builds must carry --cfg cpubits=\"64\" from .cargo/config.toml (fixslice width belt)` (matches the commit message); with the flag restored, exit 0. The `RUSTFLAGS=\"\"` variant was NOT replayed: the harness refused the env-prefixed cargo invocation twice; the commit's claim rests on cargo's documented rule that an environment RUSTFLAGS replaces the config list",
+    "Red-by-construction replay at eeffa84 (fresh target dir): cargo check --locked native -> error[E0277] `AesGcm<Aes256, U12>: ZeroizeOnDrop` not satisfied, exit 101; same on --target wasm32-unknown-unknown, exit 101 (matches 'does not compile on aes-gcm 0.10.3, native and wasm32')",
+    "Gate on origin/main (f0a01a3, anchors present): cargo metadata --locked exit 0; bun check-zeroize-chain.ts (head version of the script) -> `aes 0.8.4 / ghash 0.5.1 / polyval 0.6.2: zeroize on`, exit 0 — the author's declared deviation (gate green on main, brief assumed red) is confirmed. Same worktree with the two anchors removed from Cargo.toml and crates/notebook-core/Cargo.toml: `cargo metadata --locked` -> `error: cannot update the lock file ... because --locked was passed`, exit 101; the gate nevertheless printed `ghash 0.5.1: zeroize MISSING (features: [])`, `polyval 0.6.2: zeroize MISSING (features: [])`, exit 1, and `git status` then showed ` M Cargo.lock` — the gate re-resolved and rewrote the lock of the tree it audited (see blocking finding)",
+    "Mutation replay: 14 mutants on Cargo.toml, .cargo/config.toml, crypto.rs, validate.rs, check-zeroize-chain.ts and package.json (table below); each applied with the Edit tool on a detached worktree, gate/test run, then reverted; worktrees clean after each step",
+    "Reversibility: on a detached worktree at 67c323b, `git revert --no-commit 6d620fc 49e7314 a1bdc7a b333b8b eeffa84` -> exit 0, 'Auto-merging' Cargo.lock / Cargo.toml / DEPENDENCIES.md, `git diff --name-only --diff-filter=U` empty, staged diff 48 files +7288/-348, 31 third_party/rustcrypto-aes-0.8.4 files restored plus LICENSES/LicenseRef-ThirdParty-Notices.txt; on that tree `cargo check --locked --target wasm32-unknown-unknown` exit 0, `cargo test --locked` 21 passed, `cargo tree -i aes` -> `aes v0.8.4 (third_party/rustcrypto-aes-0.8.4)`. One revert commit returns to the fork",
+    "Gate B / app build: `git diff --stat f0a01a3 67c323b -- apps tools` empty; `ls toolchains` ENOENT at head (the file exists only in the grafted hub history: 3 commits under toolchains/*); no `qualify:*` script in package.json; `bun run --cwd apps/notebook build` -> prebuild `bun ../../tools/quality/check-bun-minimum.ts` Module not found, exit 1; `bun apps/notebook/scripts/build.ts` (from root and from apps/notebook) -> `Could not resolve: \"@libre-ai/ui\"` (its package.json exports `import`/`default` -> ./dist/index.js, not shipped by the git-dep; only the `bun` condition points at src), exit 1; `packages/` does not exist in the repo although build.ts reads packages/ui/src/styles.css; `bun run check` runs `bun test --cwd apps/notebook` only, never the build",
+    "Governance (read only, no edit): ADR-0031 D1/D2/D4, §Invariants, §Conséquences ('Retrait : ... dès qu'une version publiée incluant le correctif est qualifiée'); INVARIANTS.md:11 (I-05 widened) and :34 (I-28); DECISION-REGISTER.md:43 (D37 'Second case after notebook's aes (home and only consumer, consistent)'); ADR-0020 §2.5 ('le patch cryptographique aes suit chaque workspace final ... (aujourd'hui notebook)'); grep of the fork across governance: ecosystem/migration-index.v1.yaml:420-425, distribution/evidence/2026-07-29-dependency-bench.md:23, docs/security/notebook-core-v2-review/PERFORMANCE.md:56, docs/transformation/REPOSITORY-MAP.md:21, docs/architecture/TARGET.md:76, docs/superpowers/specs/2026-07-28-multi-repo-activation-design.md:83,123,147, docs/reviews/agent-orchestration-contracts-v1/DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md:102, gate-b/{96934a8,5395e45,9ee3f8d,5190972,bfc9e4c}/*.md; no governance file mentions the retirement; docs/reviews/notebook-core-v2/README.md still reads 'Gate B APPROVED' on 9ee3f8d; AGENT-REVIEW-PROTOCOL.md: 'Any normative change after a verdict makes affected approval stale and requires a fresh pass'",
+    "In-repo residue: grep -i 'rustcrypto-aes|ThirdParty-Notices|patch aes|aes 0.8|BACKEND.patch|PATCH.md|fork|AeadInPlace|aes-gcm 0.10' outside DEPENDENCIES.md -> none; third_party/ holds only dtcg-format-2025.10 (biome `!third_party` still justified); README.md:12 sentence identical to project.v1.yaml current_situation; `cargo tree -i cpubits --target wasm32`: aes 0.9.3, libre-ai-notebook-core (direct) and polyval 0.7.3 all depend on it; `cargo tree -i zeroize -e features`: aes-gcm feature zeroize -> aes feature zeroize and ghash -> polyval"
+  ],
+  "mutationReplay": [
+    {
+      "mutant": "M1",
+      "target": "Cargo.toml [workspace.dependencies] aes-gcm",
+      "mutation": "features = [\"aes\", \"zeroize\"] -> [\"aes\"]",
+      "result": "killed",
+      "killedBy": "check:zeroize-chain: `ghash 0.6.0: zeroize MISSING (features: [])`, `polyval 0.7.3: zeroize MISSING (features: [hazmat])`, exit 1; and cargo check --locked native: error[E0277] `AesGcm<Aes256, U12>: ZeroizeOnDrop` not satisfied (crypto.rs:22), exit 101 — two independent observers. Side effect observed: the gate run rewrote Cargo.lock (` M Cargo.lock`) before cargo check ran, so `--locked` then passed on the rewritten lock"
+    },
+    {
+      "mutant": "M2",
+      "target": "Cargo.toml [workspace.dependencies] aes (direct pin)",
+      "mutation": "features = [\"zeroize\"] removed",
+      "result": "SURVIVED — equivalent",
+      "killedBy": "none: gate `Zeroize chain intact`, cargo check exit 0, Cargo.lock unchanged. aes-gcm 0.11 forwards `aes?/zeroize`, so the direct `zeroize` feature on `aes` is redundant; the direct pin's only load-bearing role is hosting the two assertions (minor finding 3)"
+    },
+    {
+      "mutant": "M3",
+      "target": ".cargo/config.toml rustflags",
+      "mutation": "`--cfg cpubits=\"64\"` removed",
+      "result": "killed",
+      "killedBy": "cargo check --locked --target wasm32-unknown-unknown: `error: wasm32 builds must carry --cfg cpubits=\"64\" ... (fixslice width belt)`, exit 101 (CI step 'wasm32 — check and clippy', job Rust quality, required)"
+    },
+    {
+      "mutant": "M4",
+      "target": "scripts/check-zeroize-chain.ts ZEROIZE_CHAIN",
+      "mutation": "[\"aes\", \"ghash\", \"polyval\"] -> [\"aes\", \"polyval\"] (ghash ignored)",
+      "result": "killed",
+      "killedBy": "bun test scripts: 'accepts a graph where zeroize propagates to every crate of the chain' and 'refuses ghash 0.5 not forwarding zeroize to polyval, naming the crate' fail; 3 pass / 2 fail, exit 1"
+    },
+    {
+      "mutant": "M5",
+      "target": "check-zeroize-chain.ts duplicate-version refusal",
+      "mutation": "`if (candidates.length > 1)` neutralised (`&& false`)",
+      "result": "killed",
+      "killedBy": "bun test scripts: 'refuses two resolved versions of one chain crate' fails; 4 pass / 1 fail, exit 1"
+    },
+    {
+      "mutant": "M6",
+      "target": "check-zeroize-chain.ts feature lookup",
+      "mutation": "features read from `packages[].features` (absent in the fixtures) with default [\"zeroize\"] instead of `resolve.nodes[].features`",
+      "result": "killed",
+      "killedBy": "bun test scripts: 'refuses ghash 0.5 not forwarding zeroize to polyval' fails (polyval reported on); 4 pass / 1 fail, exit 1"
+    },
+    {
+      "mutant": "M7",
+      "target": "crypto.rs cpubits! width assertion",
+      "mutation": "`64 => { const FIXSLICE_WORD_BITS: u32 = 64; }` -> `= 32`",
+      "result": "killed (wasm32 only, by design)",
+      "killedBy": "cargo check --locked --target wasm32-unknown-unknown: error[E0080] evaluation panicked: `wasm32 must compile the 64-bit fixsliced AES backend`, exit 101; native cargo check exit 0 (the assertion is `!cfg!(target_arch = \"wasm32\") || ...`), so the only observer is the new CI wasm32 step"
+    },
+    {
+      "mutant": "M8",
+      "target": "crypto.rs ZeroizeOnDrop assertion block",
+      "mutation": "the whole `const _: () = { assert_zeroize_on_drop::<Aes256Gcm>(); assert_zeroize_on_drop::<aes::Aes256>(); }` removed",
+      "result": "SURVIVED — by construction",
+      "killedBy": "none: clippy --all-features -D warnings 0, cargo test 21 passed, gate intact, wasm32 clippy 0. Removing the assertion is removing the test; no second observer (no test asserting the assertion's presence, no grep gate). Recorded, not counted as a defect: the same holds for any compile-time assertion"
+    },
+    {
+      "mutant": "M9",
+      "target": "crates/notebook-core/src/validate.rs NONCE_BYTES",
+      "mutation": "12 -> 16",
+      "result": "killed",
+      "killedBy": "cargo test --locked --all-features: validate::tests::enforces_fixed_secret_and_plaintext_bounds (validate.rs:260) and validate::tests::enforces_every_kdf_boundary_without_adjustment (validate.rs:203) FAILED; 8 passed / 2 failed, exit 101 (the golden vector binary was not reached because the unit binary failed first)"
+    },
+    {
+      "mutant": "M10",
+      "target": "crates/notebook-core/Cargo.toml [lints.rust] unexpected_cfgs check-cfg",
+      "mutation": "table removed",
+      "result": "killed",
+      "killedBy": "cargo clippy -D warnings: `error: unexpected cfg condition name: cpubits` (`-D unexpected-cfgs` implied by `-D warnings`), exit 101 on wasm32 AND on native (the cpubits! macro expands cfg predicates on every target)"
+    },
+    {
+      "mutant": "M11",
+      "target": "Cargo.lock vs manifests (stale lock)",
+      "mutation": "manifests changed without updating Cargo.lock (anchors removed on the origin/main worktree; aes-gcm feature removed in M1)",
+      "result": "gate does not refuse — see blocking finding",
+      "killedBy": "`cargo metadata --locked` exit 101 (`cannot update the lock file ... because --locked was passed`) while `bun scripts/check-zeroize-chain.ts` ran `cargo metadata --format-version 1` without `--locked`, re-resolved, rewrote Cargo.lock in the worktree and printed a verdict on the re-resolved graph. Merge is still blocked in that scenario by `cargo test --locked` in the required job Rust quality, not by this gate"
+    },
+    {
+      "mutant": "M12",
+      "target": "check-zeroize-chain.ts null-resolve refusal",
+      "mutation": "explicit `resolve === null` branch removed; nodes default to []",
+      "result": "SURVIVED — equivalent",
+      "killedBy": "none (5 pass): with `resolve` null every chain crate is reported 'not in the resolved graph' or 'zeroize MISSING', so `ok` stays false; the branch only improves the message. Fail-closed either way"
+    },
+    {
+      "mutant": "M13",
+      "target": "package.json `check` script",
+      "mutation": "` && bun run check:zeroize-chain` removed",
+      "result": "SURVIVED — no observer",
+      "killedBy": "none: ci.yml runs `bun run check` and does not name `check:zeroize-chain`; no governance tool asserts the script list (same class as the round-3 note on ecosystem-engine's `check:patch-rev`). Recorded as a debt, not a defect of this PR"
+    },
+    {
+      "mutant": "M14",
+      "target": "check-zeroize-chain.ts verdict",
+      "mutation": "`features.includes(\"zeroize\")` -> always true",
+      "result": "killed",
+      "killedBy": "bun test scripts: 'refuses ghash 0.5 not forwarding zeroize to polyval, naming the crate' fails (unanchored.json fixture); 4 pass / 1 fail, exit 1"
+    }
+  ],
+  "findings": {
+    "blocking": [
+      {
+        "title": "The zeroize-chain gate does not run `cargo metadata --locked` — it runs `cargo metadata --format-version 1`, re-resolves on a manifest/lock mismatch and rewrites the Cargo.lock of the tree it audits; four narrations say the opposite and no test covers the spawn",
+        "detail": "scripts/check-zeroize-chain.ts:64-67 spawns `cargo` with [\"metadata\", \"--format-version\", \"1\"]; the error string two lines below says `cargo metadata --locked failed`. The same false statement is in ci.yml:42-44 (added by 6d620fc: 'reads the resolved graph through `cargo metadata --locked`'), in the eeffa84 message ('reading the resolved graph (`cargo metadata --locked`)'), in the 6d620fc message ('shells out to `cargo metadata --locked`') and in DEPENDENCIES.md review notes ('reads `cargo metadata --locked` and refuses ...'). Replayed twice: on origin/main with the anchors removed, `cargo metadata --locked` exits 101 (`cannot update the lock file`) while the gate re-resolves, prints `ghash 0.5.1: zeroize MISSING` and leaves ` M Cargo.lock` behind; on mutant M1 the gate rewrote Cargo.lock before the following `cargo check --locked`, which then passed on the rewritten lock. The PR body's evidence line 'Same graph with the two anchors removed: ghash 0.5.1: zeroize MISSING ...' can only have been produced by such a lock-rewriting run — the sentence 'same graph' is not what happened, the graph was re-resolved. Why blocking in the architecture role: this gate is the declared replacement for the retired direct feature anchors (b333b8b: 'The gate is what lets the anchors go'), i.e. the control on whose strength a security anchor was removed; the control shipped is not the control described, it has a side effect on the checkout, and `readResolvedMetadata()` has no test (the five tests exercise `evaluateZeroizeChain` on fixtures only, so a mutant on the argv is unobservable). Exploitability today is bounded: a PR whose lock is stale fails `cargo test --locked` in the required job Rust quality, so the mismatch cannot merge through this gate — the verdict text would be wrong, the merge would still be blocked elsewhere. Fix is small: pass `--locked` (and drop the stale `?? []` comment about it), export the argv as a constant and assert it in check-zeroize-chain.test.ts, and re-derive the PR-body demonstration from the unanchored.json fixture rather than from a live re-resolution."
+      }
+    ],
+    "major": [
+      {
+        "title": "The Gate B approval is made stale by this PR and nothing on either side records it; the retirement condition of ADR-0031 is claimed 'met' while the PR itself lists PATCH.md §2–4 as not executed",
+        "detail": "Facts: the approved Gate B candidate (governance docs/reviews/notebook-core-v2/gate-b/9ee3f8d, README 'APPROVE Gate B') records `.cargo/config.toml` sha256 91a5020… in evidence/builds/core-build-manifest.json and evidence/performance/final/manifest.json; head's file hashes 905d672…; the AES engine moves from the patched 0.8.4 fork to registry 0.9.3 with aes-gcm 0.11 (same output bytes, golden green, but a different backend selection mechanism and a different key-schedule implementation). AGENT-REVIEW-PROTOCOL.md: 'Any normative change after a verdict makes affected approval stale and requires a fresh pass'. At head, apps/notebook/README.md:72 still says 'Gate B est approuvée sur le candidat immuable 9ee3f8d', project.v1.yaml has no criterion for the re-qualification, and governance's Gate B README still reads APPROVED with no 'stale for the aes 0.9 engine' line. The only places that say 'Gate B re-qualification trigger' are the PR body and the 49e7314 message — neither is durable (protocol §Audit trail: promotion evidence must be durable in the repository review dossier). Second half: a1bdc7a says 'ADR-0031 D1 states the retirement condition: a vendored patch lives only until a published version carrying the fix is qualified. That condition is met', and DEPENDENCIES.md §History repeats it; ADR-0031 §Conséquences reads 'dès qu'une version publiée incluant le correctif est qualifiée'; the PR body lists §2 (three browser engines), §3 (reproducible bytes against the recorded manifest) and §4 (20-iteration matrix) as 'still to be executed by the owner'. Under the ADR's wording aes 0.9.3 is not yet qualified; the retirement is legitimate only under the owner's reading given in this round's brief ('cpubits tient l'intention'), which is recorded in no file. What is missing on the governance side (not done by this pass, per the brief): (1) a dated line in docs/reviews/notebook-core-v2/gate-b/README.md, or a new gate-b/<head>/ directory, stating that the 9ee3f8d approval is stale for the aes 0.9.3 engine and which PATCH.md steps remain; (2) a dependency-qualification note for aes on the model of docs/reviews/agent-orchestration-contracts-v1/DEPENDENCY-QUALIFICATION-BISCUIT-AUTH.md recording the owner decision of 2026-09-08, its reading of 'qualifiée', and the compile-time proofs that stand in for the fork; (3) dated notes on the texts that still describe a vendored aes in notebook — ADR-0031 D1 paragraph 'notebook est aujourd'hui l'unique workspace ... foyer et seul consommateur', D37 'Second case after notebook's aes (home and only consumer, consistent)', ADR-0020 §2.5 '(aujourd'hui notebook)', TARGET.md:76, REPOSITORY-MAP.md:21, PERFORMANCE.md:56, migration-index.v1.yaml:420-425 (historical destination, needs a 'retired 2026-09-08 in notebook#35' note). On the notebook side, apps/notebook/README.md:72 and project.v1.yaml should carry the staleness (a pending exit criterion under `activation`, or a note on `l5-wasm-golden-vectors-on-export-path`)."
+      }
+    ],
+    "minor": [
+      {
+        "title": "ci.yml attributes the ZeroizeOnDrop proof to wasm32 only; it is target-independent",
+        "detail": "ci.yml (6d620fc) comment: 'the cpubits width assertion, the --cfg cpubits=\"64\" belt and the AesGcm: ZeroizeOnDrop proof in crypto.rs only mean something for wasm32-unknown-unknown'. The first two are wasm32-gated (`!cfg!(target_arch = \"wasm32\") || ...`, `#[cfg(all(target_arch = \"wasm32\", not(cpubits = \"64\")))]`); the ZeroizeOnDrop assertion is not gated and is killed natively (M1: E0277 on `cargo check` without `--target`; eeffa84 red on both targets). The wasm32 step is still justified by the first two; the comment overclaims the third."
+      },
+      {
+        "title": "PR-body figures predate the merge commit: '69 crates' and 'core 469754 bytes' are pre-67c323b values; head gives 64 crates and 469752 bytes",
+        "detail": "PR body 'Gates (local, exit codes)': `cargo audit --deny warnings 0 (69 crates)` and `check-component-encoding ... core 469754 bytes`. At 67c323b: cargo audit scans 64 crate dependencies (main's #34 collapsed the wasm crate duplicates: 68 -> 64 packages in the lock), and the release core module is 469752 bytes. The 49e7314 message's 469754 was true at that commit. The body was not refreshed after the merge; every other figure (21/21, 5/5, 52/52, 122/122, 3 -> 1 duplicate warnings) matches head."
+      },
+      {
+        "title": "`cpubits 0.1.1` as an exact direct pin has a divergence mode the gate does not cover; the direct `aes` pin's `zeroize` feature is redundant",
+        "detail": "The width assertion evaluates the `cpubits!` macro of the crate *this workspace* pins (=0.1.1). It equals the width `aes` compiles with only while `aes` resolves to the same cpubits package. A future `aes` bumping its requirement to a semver-incompatible cpubits (0.2) would resolve two cpubits versions: the assertion would then prove the width of 0.1.1 while aes uses 0.2's rule, and nothing refuses that (cpubits is not in ZEROIZE_CHAIN; `cargo deny` bans.multiple-versions = \"warn\"). The belt already closes this on wasm32 — `--cfg cpubits=\"64\"` is a rustc cfg seen by every crate, cpubits 0.1.1 and later documents it as the override, and the compile_error enforces its presence — so the heuristic assertion is a second, weaker proof. Two options for the owner: (a) keep the pin and add `cpubits` to the uniqueness half of the gate (one line in ZEROIZE_CHAIN-like list, without the zeroize check), or (b) drop the direct cpubits pin and the heuristic assertion, keeping belt + compile_error as the single proof (simpler graph, one fewer exact pin on a heuristic crate). Also observed: `polyval 0.7.3` selects its backend through cpubits as well (`cargo tree -i cpubits`), which the narration does not mention — the belt covers it, the assertion does not. Separately, mutant M2 shows the `features = [\"zeroize\"]` on the direct `aes` pin is decorative (aes-gcm forwards `aes?/zeroize`); DEPENDENCIES.md lists it as the pin's feature set, which is true but not load-bearing — the direct `aes` pin exists only to host `aes::Aes256` in the assertion, as the crate Cargo.toml comment says."
+      },
+      {
+        "title": "Debts without owner, pre-existing but touched by this PR's narrative",
+        "detail": "(1) The qualification harness is not runnable from a clone: tools/qualification/notebook-core-v2/build.ts and check-toolchain.ts read toolchains/notebook-qualification.json (absent at head; present only in the grafted hub history), the README documents `bun run qualify:*` scripts that package.json does not define, and apps/notebook/scripts/build.ts needs NOTEBOOK_QUALIFICATION_NODE. The PR states it (body + 49e7314) but no file in the repo does; the 'Gate B re-qualification' the PR triggers cannot be executed by anyone but the owner's machine. (2) The product app does not build in either mode: `bun run --cwd apps/notebook build` fails at `prebuild` (`../../tools/quality/check-bun-minimum.ts` does not exist — the tool lives in node_modules/@libre-ai/governance/tools/quality/), a direct `bun apps/notebook/scripts/build.ts` fails to resolve `@libre-ai/ui` (git-dep exports `import` -> ./dist/index.js, not shipped), and build.ts reads packages/ui/src/styles.css which is not in this repository; `bun run check` never builds the app, so `notebook.core_provenance_mismatch` is unreachable code today — the answer to the brief's question 'does the app still build' is: it did not build before this PR either (apps/ and tools/ unchanged). (3) ci.yml:31 justifies `fetch-depth: 0` with a `check:forgotten` script that package.json does not define (pre-existing on main). (4) `cargo deny check sources` warns `unmatched-organization` (allow-org libre-ai with no git-dep in the graph) on every run. (5) M13: nothing asserts that `check:zeroize-chain` stays in the `check` script. (6) The `syn` duplicate remains (warn)."
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Narration held by the code on every replayed claim except the two named above",
+        "detail": "eeffa84 red by construction (E0277 native and wasm32); Cargo.lock gains cpubits only; b333b8b: registry aes 0.9.3, [patch] gone, `AeadInOut` mapping with `TryFrom<&[u8]>` nonce and `From<[u8;16]>` tag as described, no new unwrap (a wrong-length nonce maps to InternalFailure on seal, `false` on open), five packages dropped as listed, 21/21 both feature sets; a1bdc7a: 37 files / -7190, no residual reference to the fork outside DEPENDENCIES.md §History, LicenseRef and REUSE annotation removed with reuse lint 122/122, README.md:12 byte-identical to project.v1.yaml current_situation, `!third_party` still needed for dtcg; 49e7314: belt red exit 101 without the flag, green with it, native untouched; 6d620fc: wasm32 step blocking in a required job (branch protection lists Rust quality), Bun quality gets the toolchain action; 67c323b: merge-tree of the parents equals the commit tree (no conflict, no manual resolution)."
+      },
+      {
+        "title": "I-05 / I-28 after this PR",
+        "detail": "No vendored crate remains in notebook: I-28 (single home, provenance gate, orphan-rev gate) has no object here and needs no executant. I-05 still has one: scripts/check-vendored-wit.ts keeps vendored/wit/notebook-core-v2/world.wit byte-exact against the contracts pin (1 file, green in `bun run check`) — that is the 'contrat sous gate de dérive' half of I-05 and is unaffected by the crate half. Coherent. The comment in check-vendored-wit.ts cites I-05 by number and remains true under the widened text."
+      },
+      {
+        "title": "The gate's uniqueness rule is the right shape for the retired anchors, and both observers agree on the fixture set",
+        "detail": "The gate refuses absence, duplicate versions and a missing feature per crate name (M4, M5, M6, M14 killed by the five tests); the compile-time assertion kills the aes-gcm feature loss independently (M1). The remaining gap is the spawn (blocking finding), not the evaluation."
+      },
+      {
+        "title": "Reversibility: one commit",
+        "detail": "`git revert --no-commit` of the five branch commits on top of 67c323b applies with zero conflicts (Cargo.lock, Cargo.toml and DEPENDENCIES.md auto-merge against main's #34 bump), restores the 31 fork files, the licence ref and the [patch.crates-io]; the reverted tree passes `cargo check --locked` on wasm32 and 21/21 native tests and resolves `aes` to third_party/. Reverting the fork removal without reverting the migration is not meaningful (the fork pins 0.8.4); the five commits revert as a unit."
+      },
+      {
+        "title": "Worktrees unmodified at the end; main clone untouched",
+        "detail": "Every mutation applied with the Edit tool and reverted; `git status --porcelain` empty in nb-r1-arch, nb-r1-red and (before removal) nb-r1-main; nb-r1-mut carried an uncommitted `git revert --no-commit` when removed with --force. Side effects outside the worktrees: none in ~/Documents/libre-ai/notebook except the local ref pr-35-arch the brief asked to create; GitHub read via `gh pr view` / `gh api` only; no commit, push, comment or write. Other reviewers' worktrees seen in `git worktree list` (nb-base, nb-r1-sec) were not touched."
+      }
+    ]
+  },
+  "residualRisks": [
+    "The `RUSTFLAGS=\"\"` half of the belt claim (49e7314) was not replayed by this pass — the harness refused an env-prefixed cargo invocation; the flag-removal half (exit 101) was.",
+    "The compile-time proofs (ZeroizeOnDrop, width, belt) have no second observer: removing an assertion is invisible to every gate (M8). This is inherent to compile-time assertions; a grep-style presence check in the gate script would be the only mitigation.",
+    "Gate B evidence for the aes 0.9.3 engine does not exist yet (browser golden vectors, reproducible bytes against a recorded manifest, performance matrix); until it does, the approved Gate B candidate and the engine on main diverge, and the product host stays behind NOTEBOOK_BACKUP_FEATURE_ENABLED=0 (default) — the divergence has no user exposure today.",
+    "The zeroize-chain gate reads a graph that cargo may re-resolve; in CI the checkout is clean and the lock is consistent whenever Rust quality is green, so the practical window is a PR with a stale lock, which Rust quality already refuses.",
+    "This pass ran on claude-fable-5-1, the same model family as the authoring session; independence is by role and detached worktree (AGENT-REVIEW-PROTOCOL 'Independence rule'), not by model family."
+  ],
+  "verdict": "reject",
+  "runner": {
+    "orchestrator": "review-only K4 pass, architecture role, round 1, independent detached worktrees (AGENT-REVIEW-PROTOCOL.md 'Independence rule')",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 1,
+    "scope": "libre-ai/notebook#35 at 67c323b (six commits eeffa84, b333b8b, a1bdc7a, 49e7314, 6d620fc, 67c323b); axes: narration fidelity (commit messages, PR body, DEPENDENCIES.md) replayed claim by claim, 14 mutants, brief fidelity (cpubits and aes direct pins), ADR-0031 / I-05 / I-28 conformity and governance consignment, Gate B manifest and app build consequence, reversibility, unowned debts, gates replayed (fmt, clippy x3, test x2, deny x2, audit, reuse, bun run check, check-component-encoding)",
+    "priorVerdicts": [],
+    "worktree": "detached worktrees at 67c323b (x2), f0a01a3 and eeffa84 under the session scratchpad, clean at the end, removed"
+  }
+}
