@@ -16,10 +16,17 @@
  *      skipped: an archived repository refuses every write, so no
  *      configuration can be brought into conformance there.
  *   2. The manifest set at `main` selects the template variant
- *      (`selectVariant`): github-actions always, bun when `package.json`
- *      exists (Dependabot's `bun` ecosystem reads package.json + bun.lock),
- *      cargo when `Cargo.toml` exists. A manifest set with no published
- *      variant fails loudly — the gate never guesses a configuration.
+ *      (`selectVariant`): github-actions always, cargo when `Cargo.toml`
+ *      exists. A manifest set with no published variant fails loudly — the
+ *      gate never guesses a configuration. `package.json` selects nothing
+ *      since the owner decision of 2026-09-08: Dependabot's bun updater
+ *      reads bun.lock lockfileVersion 1 only ("Unsupported bun.lock
+ *      'lockfileVersion' 2 in /bun.lock. The bun version Dependabot runs
+ *      supports up to 1.", governance run 34139635260) while every fleet
+ *      lockfile is version 2 (bun 1.4) — a bun entry is a permanent job
+ *      error that opens no pull request. Upstream: dependabot-core#16026.
+ *      The test suite asserts that no variant declares the bun ecosystem;
+ *      reintroducing it is an owner decision, not a template edit.
  *   3. `.github/dependabot.yml` exists at `main` and is byte-exact to the
  *      selected variant in `distribution/templates/dependabot/`. A drift
  *      names the variant and the first differing line, so the fleet wave
@@ -56,7 +63,7 @@ import {
   type ReviewOutcome,
 } from "./check-context-conformance";
 
-export const TEMPLATE_VARIANTS = ["github-actions", "bun", "cargo", "bun-cargo"] as const;
+export const TEMPLATE_VARIANTS = ["github-actions", "cargo"] as const;
 export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number];
 export type DependabotTemplates = Readonly<Record<TemplateVariant, string>>;
 
@@ -75,7 +82,6 @@ export async function loadTemplates(): Promise<DependabotTemplates> {
 
 export interface ManifestPresence {
   readonly workflows: boolean;
-  readonly packageJson: boolean;
   readonly cargoToml: boolean;
 }
 
@@ -85,11 +91,10 @@ export interface ManifestPresence {
  * is the floor of every variant because every fleet repository runs the
  * governance gates through `.github/workflows`; a repository without that
  * directory has no variant on purpose — it is not a fleet member yet.
+ * Cargo.toml is the only other selector (see the header: no bun variant).
  */
 export function selectVariant(manifests: ManifestPresence): TemplateVariant | null {
   if (!manifests.workflows) return null;
-  if (manifests.packageJson && manifests.cargoToml) return "bun-cargo";
-  if (manifests.packageJson) return "bun";
   if (manifests.cargoToml) return "cargo";
   return "github-actions";
 }
@@ -109,8 +114,8 @@ const BLOCK_START = "  - package-ecosystem: ";
 /**
  * Splits a variant into its header and per-ecosystem blocks so the test
  * suite can assert what the byte-exact comparison cannot express on its own:
- * the four committed files are one template, not four — same header, and an
- * ecosystem block identical wherever it appears.
+ * the committed files are one template, not several — same header, an
+ * ecosystem block identical wherever it appears, and no bun block anywhere.
  */
 export function splitTemplate(text: string): TemplateParts {
   const marker = text.indexOf(UPDATES_MARKER);
@@ -249,7 +254,7 @@ function repoAlias(index: number): string {
 
 /**
  * One aliased `repository(...)` block per entry: the configuration's text
- * plus the mere existence (`id`) of the three manifests that select the
+ * plus the mere existence (`id`) of the two manifests that select the
  * variant. Aliases are by index, never by name — GraphQL alias syntax
  * disallows the hyphens several repository names carry.
  */
@@ -264,7 +269,6 @@ export function buildBatchQuery(repositories: readonly string[]): string {
     return [
       `  ${repoAlias(index)}: repository(owner: ${owner}, name: ${name}) {`,
       `    config: object(expression: "main:${CONFIG_PATH}") { ... on Blob { text } }`,
-      `    packageJson: object(expression: "main:package.json") { id }`,
       `    cargoToml: object(expression: "main:Cargo.toml") { id }`,
       `    workflows: object(expression: "main:.github/workflows") { id }`,
       `  }`,
@@ -281,7 +285,6 @@ interface GraphQLObjectNode {
 }
 interface GraphQLRepoNode {
   readonly config?: GraphQLBlobNode | null;
-  readonly packageJson?: GraphQLObjectNode | null;
   readonly cargoToml?: GraphQLObjectNode | null;
   readonly workflows?: GraphQLObjectNode | null;
 }
@@ -313,7 +316,6 @@ export function parseBatchResponse(
       config: { text: node.config?.text ?? null, error: null },
       manifests: {
         workflows: node.workflows != null,
-        packageJson: node.packageJson != null,
         cargoToml: node.cargoToml != null,
       },
       fetchError: null,
@@ -367,12 +369,11 @@ async function fetchFleetViaRest(
 ): Promise<Map<string, RepoDependabotState>> {
   const result = new Map<string, RepoDependabotState>();
   for (const repository of repositories) {
-    const [workflows, packageJson, cargoToml] = await Promise.all([
+    const [workflows, cargoToml] = await Promise.all([
       existsViaRest(repository, ".github/workflows"),
-      existsViaRest(repository, "package.json"),
       existsViaRest(repository, "Cargo.toml"),
     ]);
-    const manifestError = workflows.error ?? packageJson.error ?? cargoToml.error;
+    const manifestError = workflows.error ?? cargoToml.error;
     if (manifestError !== null) {
       result.set(repository, {
         config: { text: null, error: manifestError },
@@ -386,7 +387,6 @@ async function fetchFleetViaRest(
       config,
       manifests: {
         workflows: workflows.present,
-        packageJson: packageJson.present,
         cargoToml: cargoToml.present,
       },
       fetchError: null,
