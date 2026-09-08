@@ -1,0 +1,171 @@
+{
+  "reviewPassId": "rp-81ce4b5-authz-biscuit-pr12-security",
+  "role": "security",
+  "mode": "specialized-role",
+  "repository": "libre-ai/authz-biscuit",
+  "pullRequest": 12,
+  "commitSha": "81ce4b579d383f8368f06c8f4e6e3765b518225f",
+  "baseSha": "5ff4c934b784b25e1eaa82aeb2b15c783c0cb075",
+  "contractHashes": [
+    {
+      "path": "vendored/authz/authority-v1.datalog",
+      "sha256": "eb88b62cd252414bf80089f9be7478475310b3b25d88da528d389a4971e310ea",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "vendored/authz/authority-v2.datalog",
+      "sha256": "f5c0648cf0c2ebf43f73a444ca4df0a84a7349c02d7d0cc31cc86c77daf1db58",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "vendored/authz/sessions-v1.datalog",
+      "sha256": "93bc93e9a4c7b17716787bc9b56df592652b1df0f02d581765cc61010ecaefe1",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "vendored/authz/missions-v1.datalog",
+      "sha256": "9bfa33eda5e34b8a8d1262881fc951e2455c47769ccaf48d0359bed14a20d2be",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v1.datalog",
+      "sha256": "f20dae7884e49fa00982044a51e99b7f09a5598487bc21f222fcb2d692e3126b",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "vendored/authz/agent-runs-v2.datalog",
+      "sha256": "de119ba6fe0679793403a66e9b5c29f69a781b53d6eb255e17888c8bb6c2cf37",
+      "upstream": "libre-ai/contracts main — identical"
+    },
+    {
+      "path": "biscuit-auth-6.0.0.crate (static.crates.io)",
+      "sha256": "d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b",
+      "upstream": "equals PATCH.md and index.crates.io cksum"
+    }
+  ],
+  "commands": [
+    "git fetch origin pull/12/head:pr-12-review-sec; git worktree add <scratch>/ab-review-sec --detach pr-12-review-sec (HEAD 81ce4b5, 5 commits over origin/main 5ff4c93); git status --porcelain empty at start",
+    "read in full: SECURITY.md, AGENTS.md, Cargo.toml, deny.toml, REUSE.toml, .gitignore, third_party/biscuit-auth-6.0.0/PATCH.md, src/authorize.rs, src/token.rs, src/keys.rs, src/lib.rs, tests/authz.rs (diff), evidence/reviews/fbbe360/REVERSE-ADVERSARIAL-REJECT.md, evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md, the six vendored/authz/*.datalog, git diff origin/main...HEAD (107 files, +32831/-149)",
+    "read in the vendored 6.0.0 tree: src/datalog/symbol.rs (print_term, SymbolTable::from/extend/insert/is_disjoint), src/datalog/expression.rs (Unary::print, Binary::print), src/token/block.rs (print_source), src/token/mod.rs (print_block_source, authorizer, append_with_keypair, append_third_party), src/token/authorizer.rs (dump, from_token), src/token/builder/authorizer.rs (build_inner, load_and_translate_block), src/token/builder/term.rs (Term, MapKey, convert_from), src/token/builder/expression.rs (Op, Unary, Binary), src/token/builder/scope.rs, src/format/schema.rs, src/format/mod.rs (SerializedBiscuit pub API), Cargo.toml [dependencies]/[features]",
+    "read in biscuit-parser 0.2.0 (~/.cargo registry): parser.rs name/printable/parse_string_internal/parse_string/parse_integer/parse_date/variable/set/non_empty_set/array/parse_map/map_key/term/term_in_fact/term_in_set/line_comment/multiline_comment/reduce/unary_method/unary_negate/unary_parens/binary_op_*/parse_source",
+    "curl -sSL https://static.crates.io/crates/biscuit-auth/biscuit-auth-6.0.0.crate; shasum -a 256 -> d5884fc8…992b; curl https://index.crates.io/bi/sc/biscuit-auth | grep vers 6.0.0 -> cksum d5884fc8…992b; tar xzf; gh pr diff 306 --repo eclipse-biscuit/biscuit-rust (85 lines, 5 files, merged a6b72596 2025-09-16); patch -p2 (5 files patched, 0 rejects); diff -r <archive+306> third_party/biscuit-auth-6.0.0 -> only 'Only in archive: Cargo.toml.orig' and 'Only in vendored: PATCH.md'",
+    "cargo fmt --check (exit 0); cargo clippy --all-targets --all-features -- -D warnings (exit 0; 2 rustc warnings in the vendored crate, not denied because it is not a workspace member); cargo test --locked --all-features (exit 0; tests/authz.rs 28 passed, 0 unit tests)",
+    "cargo deny check (exit 0: advisories/bans/licenses/sources ok; 10 warnings: 9 duplicate-version, 1 unmatched-organization); cargo audit (exit 0, 99 crates, 0 advisories); cargo tree -d; reuse lint (compliant 3.3, 135/135 files, EUPL-1.2 + Apache-2.0); Cargo.lock name delta main->PR: +19 (base16ct crypto-bigint der ecdsa elliptic-curve ff group hmac itoa p256 pem-rfc7468 pkcs8 primeorder rfc6979 sec1 serde_json serdect spki zmij) -2 (getrandom 0.1, wasi) = 82 -> 99 packages",
+    "gh api repos/libre-ai/contracts/contents/contracts/authz/<6 files> | base64 -d | shasum -a 256 vs vendored/authz/*.datalog: 6/6 identical; gh pr view 12: OPEN, MERGEABLE, 5 checks SUCCESS (context-hygiene, licensing, Bun quality, Rust quality, Dependency policy)",
+    "wrote and ran a throwaway probe tests/zz_review_sec.rs in the worktree (never committed, deleted with the worktree): 7 probes R1-R7 driving the real 6.0 API and authorize() under catch_unwind — third-party block, block-level scopes, 36 operator/term print-parse cases in a holder block 2, 15 string sequences in a forged block 1, Term::Parameter, nested/mixed/int/21-member sets and 5 extreme dates in a forged block 1, ':' identifiers, 7 keyword-named facts in block 0, a protobuf-level forged block 1 with a duplicated symbol and with an undeclared symbol index (re-signed through SerializedBiscuit::append_serialized with the root-derived next key), secp256r1 scope prefix",
+    "git worktree remove --force <scratch>/ab-review-sec; git branch -D pr-12-review-sec (end: main clone status unchanged)"
+  ],
+  "findings": {
+    "blocking": [],
+    "major": [
+      {
+        "title": "Block-level scopes on blocks 0 and 1 are neither printed nor rejected: the `parsed.scopes.is_empty()` checks are dead code and SECURITY.md step 8's 'no … scope' is unenforced",
+        "severity": "major",
+        "detail": "SECURITY.md:35-37 requires block 1 to carry 'no fact, rule, policy, scope or context' and src/token.rs:214 states 'blocks 0 and 1 reject every scope'. The enforcement is src/authorize.rs:193 and :254 (`if !parsed.scopes.is_empty() … deny`). That field can never be non-empty on this path: `Block::print_source` (third_party/biscuit-auth-6.0.0/src/token/block.rs:49-73) joins facts, rules and checks only — it never emits a `trusting …;` statement for `block.scopes` — and `parse_source` (biscuit-parser-0.2.0 parser.rs:990-1065) only fills `SourceResult.scopes` from block-scope statements, which are therefore never present. Rule-level scopes (`check if … trusting …`) are printed by `print_rule_body` (symbol.rs:283-300) and are the only ones the evidence record's B4 exercised. Empirical, root-key holder forging a canonical block 1 with `BlockBuilder::scope(..)`: `Scope::Previous` -> ACCEPT(policy=0), `Scope::Authority` -> ACCEPT(policy=0), `Scope::PublicKey(k)` -> DENY(auth.operation_denied) (authority facts no longer visible to block 1's own checks, so `tenant(..)` fails); in every case `print_block_source(1).contains(\"trusting\") == false`. No escalation was found: a block scope only changes which facts that block's own checks see, and the decision authorizer's policies keep their default authority+authorizer scope, so a scope can only make block 1 harder to satisfy. What is wrong is the documented invariant and the dead check that pretends to enforce it; the actual guarantee is 'blocks 0 and 1 may carry any block-level scope, which cannot widen'.",
+        "evidence": "R2 block1 scope[previous] printed_has_trusting=false -> ACCEPT(policy=0)\nR2 block1 scope[authority] printed_has_trusting=false -> ACCEPT(policy=0)\nR2 block1 scope[pubkey] printed_has_trusting=false -> DENY(auth.operation_denied)\n$ sed -n 49,73p third_party/biscuit-auth-6.0.0/src/token/block.rs   # facts, rules, checks — no scopes\n$ grep -n 'parsed.scopes.is_empty()' src/authorize.rs -> 193, 254"
+      },
+      {
+        "title": "The 6.0 printer still emits non-injective constructs that the extended guard passes: strict `And`/`Or` print as `&&!`/`||!` and reparse as `&& !x`/`|| !x` (LazyAnd/LazyOr + Closure(Negate)), `TryOr` reparses with a closure it did not have, and `Term::Date >= 2^63` prints as a 1969 date the parser cannot read back — the evidence record's 'every construct … either faithful or rejected' is false",
+        "severity": "major",
+        "detail": "src/authorize.rs:415-421 `op_ok` returns true for every `Op::Binary(_)` except Ffi, and :409 `term_ok` returns true for every `Term::Date(_)`. The vendored printer (third_party/biscuit-auth-6.0.0/src/datalog/expression.rs:558-559) prints `Binary::And` as `{} &&! {}` and `Binary::Or` as `{} ||! {}`; biscuit-parser 0.2.0 has no `&&!` token (parser.rs:394-399 only `||`/`&&`) and reads `true &&! true` as `true && !true`. Empirical, holder-appended block 2 (no root key): `check if true &&! true` -> guard passes, token ACCEPT(policy=0), while the reprinted source evaluates to false; `check if false ||! true` -> ACCEPT while the reprint is `false || !true` = false. `(1 / 0).try_or(7) === 7` reparses with `Closure([], [1, 0, Div, Parens])` as LHS (binary had no closure) — evaluation denies (operation_denied), fail-closed but not faithful. `Term::Date(u64::MAX)` prints `1969-12-31T23:59:59Z` (symbol.rs:192 `*d as i64`), `Term::Date(1<<63)` and `253402300800` print `<invalid date>`; the parser rejects all three (parse_date: `unix_timestamp().try_into::<u64>()`), yet the guard accepts the block (R3 -> ACCEPT). Nested, mixed-type and variable-bearing sets pass `term_ok` recursion but fail earlier at proto->block conversion ('sets cannot contain other sets', 'set elements must have the same type') — fail-closed at load. Impact on the trusted validators: none — `canonical_operation_check` / `exact_expiration_check` (src/authorize.rs:299-341) match the exact op slices `[Set, Var, Contains]` and `[Var, Date, LessThan]`, so any extra op or unparsable date denies (R5 block1 expiry[u64::MAX|1<<63|year10000|u64::MAX-999|0] -> DENY(auth.biscuit_invalid)); R3 also shows `LazyAnd`, bitwise, arithmetic, set algebra, prefix/suffix/regex, length/type, negate/parens, comparisons, i64::MIN/MAX and bytes are faithful. What is wrong is the completeness claim carried by the immutable record evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md:6,60 and tests/authz.rs:1631-1633 ('every construct the 6.0 printer can emit is either proved to reparse faithfully … or rejected up front by the guard'), and SECURITY.md:113 ('the `Term`/`Op` matches in the guard are exhaustive') read as a proof of coverage: by the record's own finding-C standard (a holder block accepted although its reprint is not a faithful rendering = CONFIRMED gap), `And`, `Or`, `TryOr` and out-of-range `Date` are unremediated instances of that gap.",
+        "evidence": "R3 And(strict): printed=`check if true &&! true;` DIVERGES parsed=[Value(Bool(true)), Closure([], [Value(Bool(true)), Unary(Negate)]), Binary(LazyAnd)] -> ACCEPT(policy=0)\nR3 Or(strict): printed=`check if false ||! true;` DIVERGES parsed=[Value(Bool(false)), Closure([], [Value(Bool(true)), Unary(Negate)]), Binary(LazyOr)] -> ACCEPT(policy=0)\nR3 TryOr: printed=`check if (1 / 0).try_or(7) === 7;` DIVERGES parsed=[Closure([], [Value(Integer(1)), Value(Integer(0)), Binary(Div), Unary(Parens)]), Value(Integer(7)), Binary(TryOr), …] -> DENY(auth.operation_denied)\nR3 Date u64::MAX: printed=`check if 1969-12-31T23:59:59Z === 1969-12-31T23:59:59Z;` PARSE-ERROR -> ACCEPT(policy=0)\nR3 Date 1<<63: printed=`check if <invalid date> === <invalid date>;` PARSE-ERROR -> ACCEPT(policy=0)\nR3 NestedSet: PRINT-ERROR Format(DeserializationError(\"… sets cannot contain other sets\")) -> DENY(auth.biscuit_invalid)\n$ sed -n 558,559p third_party/biscuit-auth-6.0.0/src/datalog/expression.rs\n            Binary::And => format!(\"{} &&! {}\", left, right),\n            Binary::Or => format!(\"{} ||! {}\", left, right),"
+      },
+      {
+        "title": "Nothing machine-checked binds `third_party/biscuit-auth-6.0.0/` to the published archive: the registry checksum that Cargo.lock enforced for 5.0.0 is replaced by a manual procedure in PATCH.md, and the tree already deviates from what PATCH.md asserts",
+        "severity": "major",
+        "detail": "Cargo.toml:23-24 `[patch.crates-io] biscuit-auth = { path = … }` removes biscuit-auth from registry resolution, so Cargo.lock carries no checksum for it and deny.toml `[sources]` (unknown-registry/unknown-git = deny, deny.toml:31-32) does not govern path sources — `cargo deny check sources` is 'ok' by construction. The only provenance control is PATCH.md's 'Qualification requirements' step 1 (re-download, verify SHA, unpack, diff), executed by hand. .github/workflows/ci.yml has no step touching third_party/ (grep 'third_party|PATCH' -> none; the Dependency policy job runs cargo deny/audit on the lockfile only). Executed here: the archive SHA-256 equals PATCH.md and the crates.io index cksum, `patch -p2` of upstream #306 applies cleanly to the archive, and `diff -r` against the vendored tree reports no source difference — the copy is what it claims, today. But PATCH.md:45-47 states that `Cargo.toml.orig` is 'byte-identical to the archive', and the file is absent from the vendored tree (present in the archive, not excluded by .gitignore); the record's own step 1 would already fail on this tree ('the diff must be exactly the #306 hunks and this file'). For a deny-by-default authorization core whose signature verification, datalog evaluator and token parser now live as ~32 000 committed lines, any later edit under third_party/ is reviewed by eye only — the class of silent guard-rail the fleet doctrine names.",
+        "evidence": "$ shasum -a 256 biscuit-auth-6.0.0.crate\nd5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b  biscuit-auth-6.0.0.crate\n$ curl -s https://index.crates.io/bi/sc/biscuit-auth | grep '\"vers\":\"6.0.0\"' | grep -o '\"cksum\":\"[0-9a-f]*\"'\n\"cksum\":\"d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b\"\n$ patch -p2 < pr306.diff   # 5 files patched, exit 0, no .rej\n$ diff -r biscuit-auth-6.0.0 <worktree>/third_party/biscuit-auth-6.0.0\nOnly in biscuit-auth-6.0.0: Cargo.toml.orig\nOnly in <worktree>/third_party/biscuit-auth-6.0.0: PATCH.md\n$ grep -n 'third_party\\|PATCH' .github/workflows/ci.yml   # (no output)"
+      }
+    ],
+    "minor": [
+      {
+        "title": "Ed25519-only is asserted, not enforced, at the two key-entry APIs now that 6.0 keys are algorithm-tagged; `public_keys()` metadata hardcodes \"Ed25519\"",
+        "severity": "minor",
+        "detail": "biscuit-auth 6.0 makes `KeyPair`/`PublicKey` enums over Ed25519 and Secp256r1 (third_party/…/src/crypto/mod.rs:30,285; `KeyPair::new_with_algorithm`, `PublicKey::from_bytes(bytes, Algorithm)`). `BiscuitIssuer::new` (src/token.rs:204-227) and `VerificationKeyRing::new`/`begin_rotation` (src/keys.rs:40-52, 54-96) accept any caller-supplied key without checking `algorithm()`; the comment at src/token.rs:210-214 only says the crate itself never selects P-256. SECURITY.md:9 ('one issuer-held Ed25519 private key') and `PublicKeyMetadata.algorithm: \"Ed25519\"` (src/keys.rs:151, a constant) would misreport a P-256 key placed in the ring by configuration. Both entry points are trusted inputs, so this is a claim/enforcement gap, not a token-side attack.",
+        "evidence": "$ sed -n 151p src/keys.rs\n                algorithm: \"Ed25519\",\n$ grep -n 'algorithm()' src/*.rs   # (no output)"
+      },
+      {
+        "title": "Two panics in the vendored builder are reachable through the biscuit-auth API the crate re-exports, not through authorize()",
+        "severity": "minor",
+        "detail": "(1) `BlockBuilder::check(..)` accepts a `Check` whose expression carries `Term::Parameter` (build=Ok), and the later `Biscuit::append` panics at third_party/biscuit-auth-6.0.0/src/token/builder/term.rs:226 (`panic!(\"Remaining parameter {}\")`); `BlockBuilder::fact` with a parameter is correctly refused (`Language(Parameters { missing_parameters: [\"p\"] })`). (2) `BlockBuilder::code(\"check if true trusting secp256r1/<malformed hex>;\")` panics at src/token/builder/scope.rs:74 (`.expect(\"invalid public key\")`). Neither is reachable from `authorize()`: no token-derived text is fed to `code()` (the only `.code(..)` call takes the embedded policy, src/authorize.rs:168) and `BoundedBiscuit::attenuate` builds its block from validated strings (src/token.rs:382-407). They matter for any caller that constructs blocks with `biscuit_auth::builder` directly.",
+        "evidence": "R5 Parameter in check: build=Ok(\"ok\")\nR5 Parameter append=PANIC (vendored term.rs:226 `Remaining parameter`)\nR7 [bad-secp-in-source] code()=PANIC"
+      },
+      {
+        "title": "PATCH.md's byte-identity claim is already false on this tree (`Cargo.toml.orig` missing) and the Rust gate does not deny the two rustc warnings the vendored crate emits under `default-features = false`",
+        "severity": "minor",
+        "detail": "PATCH.md:45-47 lists `Cargo.toml.orig` among files 'byte-identical to the archive'; the archive contains it, the vendored tree does not (ls third_party/biscuit-auth-6.0.0 -> .cargo_vcs_info.json CHANGELOG.md Cargo.lock Cargo.toml LICENSE PATCH.md README.md benches build.rs examples samples src tests), and .gitignore has no `*.orig` rule, so it was dropped by hand. `cargo clippy --all-targets --all-features -- -D warnings` exits 0 but prints two warnings from the path dependency (third_party/biscuit-auth-6.0.0/src/token/builder.rs:14 unused import `crate::crypto::PublicKey`; src/crypto/mod.rs:753 `parse_any_algorithm` never used) — `-D warnings` applies to workspace members only, so the 'zero warnings' gate is silent on the vendored crate; both are upstream dead code under the reduced feature set, not introduced by #306 (which does not touch those files).",
+        "evidence": "warning: unused import: `crate::crypto::PublicKey`\n  --> third_party/biscuit-auth-6.0.0/src/token/builder.rs:14:5\nwarning: function `parse_any_algorithm` is never used\n   --> third_party/biscuit-auth-6.0.0/src/crypto/mod.rs:753:4\nwarning: `biscuit-auth` (lib) generated 2 warnings\nclippy exit=0"
+      },
+      {
+        "title": "Dependency closure grows 82 -> 99 packages with an unconditional ECDSA/P-256 chain and serde_json that the crate never uses; three crates now resolve to two or three versions",
+        "severity": "minor",
+        "detail": "Upstream 6.0.0 declares `ecdsa`, `elliptic-curve`, `p256`, `pkcs8 0.9` and `serde_json` as non-optional (third_party/biscuit-auth-6.0.0/Cargo.toml:108,126,141,144,169), so `default-features = false` cannot drop them. Cargo.lock delta main->PR: +19 names (base16ct crypto-bigint der ecdsa elliptic-curve ff group hmac itoa p256 pem-rfc7468 pkcs8 primeorder rfc6979 sec1 serde_json serdect spki zmij), -2 (getrandom 0.1, wasi). `cargo deny check` exits 0 but reports 9 `duplicate` warnings (pkcs8/der/spki x2 from the explicit pkcs8 0.9 pin next to elliptic-curve's 0.10; sha2/digest/block-buffer x3; cpufeatures, crypto-common, syn x2) under `multiple-versions = \"warn\"` (deny.toml:27), and `cargo audit` reports 0 advisories on 99 crates. Severity stays minor: audit is clean, the chain is inert unless a P-256 key is supplied (see the Ed25519 finding), and the reduction it buys (no biscuit-quote / proc-macro-error2) is real; it is a widening of the attack surface of a couche-3 crate that 5.0.0 did not have.",
+        "evidence": "main=82 pr=99\nADDED: base16ct crypto-bigint der ecdsa elliptic-curve ff group hmac itoa p256 pem-rfc7468 pkcs8 primeorder rfc6979 sec1 serde_json serdect spki zmij\nREMOVED: getrandom wasi\n$ cargo deny check -> exit 0; warning[duplicate] x9 (pkcs8, der, spki, cpufeatures, crypto-common, syn: 2; block-buffer, digest, sha2: 3); warning[unmatched-organization] x1\n$ cargo audit -> exit 0, 99 crate dependencies, no advisories"
+      },
+      {
+        "title": "Holder attenuations written in datalog 3.3 idioms are denied as a class, and SECURITY.md does not say so",
+        "severity": "minor",
+        "detail": "biscuit-parser 0.2.0 desugars `a && b` / `a || b` into `LazyAnd`/`LazyOr` with a `Closure` right-hand side (parser.rs:479), and `.all`/`.any`/`.try_or`/`.get` likewise need closures or arrays; the guard rejects `Op::Closure`, arrays, maps and null (src/authorize.rs:412,418). Empirical: a holder block 2 `check if true && true;`, `check if false || true;`, `check if [1].get(0) == 1;`, `check if [1].all($x -> $x == 1);`, `check if null === null;` -> DENY(auth.biscuit_invalid). SECURITY.md:'Issuance and attenuation' says further attenuation is available without the issuer key; the only shape that survives is the crate's own `attenuate()` output (or hand-built blocks restricted to strings, dates, variables, sets and the pre-3.3 operators). This is a deliberate fail-closed choice; the constraint on third-party attenuation is undocumented.",
+        "evidence": "R7 [check-and-and] -> DENY(auth.biscuit_invalid)\nR7 [check-or-or] -> DENY(auth.biscuit_invalid)\nR7 [check-get] -> DENY(auth.biscuit_invalid)\nR7 [check-all-closure] -> DENY(auth.biscuit_invalid)\nR7 [check-strict-eq-null] -> DENY(auth.biscuit_invalid)"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "title": "Attack 1 — copy integrity: the vendored tree is the published archive plus exactly the #306 hunks",
+        "detail": "SHA-256 of the downloaded archive equals PATCH.md and the crates.io index cksum; `gh pr diff 306` (5 files, `#[cfg(feature = \"datalog-macro\")]` gating of `ToAnyParam`/`AnyParam` imports and the uuid impl) applies with `patch -p2` without rejects; `diff -r` shows no differing file — only `Cargo.toml.orig` absent and `PATCH.md` added (minor finding above). No cryptographic, datalog, serialization or token-format source differs.",
+        "evidence": "patch exit=0 (5 files); diff -r exit=1 with only 'Only in' lines; no '.rej'"
+      },
+      {
+        "title": "Attack 2 — term guard: every 3.3 term/op kind is enumerated by the exhaustive matches and each rejected kind denies with auth.biscuit_invalid, also inside a third-party block",
+        "detail": "Variant lists read from third_party/…/src/token/builder/term.rs:23-35 (Term: Variable Integer Str Date Bytes Bool Set Parameter Null Array Map), :115-119 (MapKey), expression.rs:110-115 (Op: Value Unary Binary Closure), :17-23 (Unary incl. Ffi), :27-58 (Binary incl. Ffi, TryOr, Get, All, Any, LazyAnd, LazyOr, And, Or). src/authorize.rs:404-421 covers all of them (rustc exhaustiveness). Empirical: array, map, null, closure, extern, poisoned closure-parameter name and poisoned map key (author's tests) plus R1 third-party block carrying `[1].contains(1)` -> DENY(auth.biscuit_invalid); `Term::Parameter` cannot reach a signed block (builder refuses or panics before signing, see minor); no panic in authorize() across all probes (catch_unwind).",
+        "evidence": "R1 third-party[plain] blocks=3 -> ACCEPT(policy=0)\nR1 third-party[array] blocks=3 -> DENY(auth.biscuit_invalid)"
+      },
+      {
+        "title": "Attack 3 — injectivity on the string, identifier and set channels: no counter-example found beyond the operator/date gap reported above",
+        "detail": "Forged canonical block 1 (root key) with resource strings: NUL byte, empty string, `//`, `/*`, `*/`, `/*x*/`, CRLF, `{,}`, `;\\n`, 4-byte emoji, U+2028, BOM, 8000 chars -> all fixed points of print/parse (parser `printable` only stops at `\"` and `\\`, comments are stripped only between statements); `\"` and `\\u0041` -> not fixed points and denied by the guard. Identifiers with `:` (`$op:x`) round-trip (parser `name` accepts `:`; the `reduce` terminator list only trims error input) -> ACCEPT on a canonical block. Seven keyword-named facts (`check`, `allow`, `deny`, `trusting`, `if`, `null`, `true`) in block 0 reparse as a 4th fact -> DENY. Set ordering by symbol index carries no information (BTreeSet equality). A protobuf-level forged block 1 with the operation symbol declared twice loads (within-block duplicates pass `is_disjoint`, symbol.rs:139-144), prints `{\"propose\"}` and is normalised by `load_and_translate_block` (string-keyed `insert`, symbol.rs:95-106) so binary and print agree -> ACCEPT identical to the legit token; an undeclared index prints `{\"<1030?>\"}` and denies at the guard's build (convert_from Err) -> DENY(auth.biscuit_invalid), no panic. Invalid UTF-8 is unreachable (prost rejects non-UTF-8 `string` fields at decode).",
+        "evidence": "R4 [NUL] fixed_point=true -> DENY(auth.biscuit_invalid)\nR4 [\"] fixed_point=false -> DENY(auth.biscuit_invalid)\nR5 var-colon printed=`check if operation($op:x), {\"read\"}.contains($op:x);` -> ACCEPT(policy=0)\nR5 kw-fact[check] parse=facts=4 checks=1 -> DENY(auth.biscuit_invalid)\nR6 crafted loads; printed line2=`check if operation($operation), {\"propose\"}.contains($operation);`\nR6 crafted -> op=propose ACCEPT(policy=0)   R6 legit -> op=propose ACCEPT(policy=0)\nR6 unknown-index loads; printed=Ok(\"… {\\\"<1030?>\\\"}.contains($operation);\") -> DENY(auth.biscuit_invalid)"
+      },
+      {
+        "title": "Attack 4 — `Authorizer::dump()` unwraps are not reachable from a token",
+        "detail": "third_party/…/src/token/authorizer.rs:654,665,673 unwrap `convert_from(.., &self.symbols)`. Every fact, rule and check in `self.blocks`/`self.world` was translated into `self.symbols` by `load_and_translate_block` (builder/authorizer.rs:478-502, all `?`-propagating) before the Authorizer exists, so every index resolves; third-party blocks are translated from their own `block.symbols` (:457-461). A block with an undeclared index fails that translation -> `build` Err -> src/authorize.rs:121-123 maps to auth.biscuit_invalid. Empirically no panic with a third-party block, a duplicated symbol, an undeclared index, nested/mixed sets (rejected at proto->block conversion) or any of the 36 op cases. The unwraps remain a latent panic if a future 6.x stores untranslated terms.",
+        "evidence": "R6 unknown-index … -> DENY(auth.biscuit_invalid)   (no 'PANIC' line in any probe output for authorize)"
+      },
+      {
+        "title": "Attack 5 — double load: both views come from the same `build_inner` and the SECURITY.md order 5-10 is the code order",
+        "detail": "`Biscuit::authorizer()` = `Authorizer::from_token` = `AuthorizerBuilder::new().build(token)` (token/authorizer.rs:56-58); the decision authorizer is `AuthorizerBuilder::new().fact(..)*.code(policy).build(&token)`. Both call `build_inner(Some(token))` (builder/authorizer.rs:330-366), whose block loading depends only on the token (symbols, public keys, origins), not on authorizer facts or policies; no limit applies at build and the guard authorizer is never executed. Code order src/authorize.rs: 95 root id (step 4) -> 121-127 guard (5) -> 128 revocation (6) -> 129 authority_principal (7) -> 130 validate_initial_attenuation (8) -> 131-140 tenant + remaining <= 900 s (9) -> 142-171 ambient facts + policy + build (10) -> 172-178 authorize_with_limits (11). The only asymmetry is cosmetic: a `build` failure maps to auth.biscuit_invalid on the first load and auth.operation_denied on the second (:171), unreachable because the second cannot fail where the first succeeded.",
+        "evidence": "$ grep -n 'let signed_blocks\\|drop(signed_blocks)\\|revocations.check\\|authority_principal(&token\\|validate_initial_attenuation(&token\\|.build(&token)\\|authorize_with_limits' src/authorize.rs -> 121 127 128 129 130 170 173"
+      },
+      {
+        "title": "Attack 7 — contracts: 6/6 byte-exact with libre-ai/contracts, and no contract relies on set semantics",
+        "detail": "The six vendored files hash-match `contracts/authz/*` on libre-ai/contracts main and the evidence record's table. Read in full: every collection literal is a `[…].contains($operation)` over distinct string constants (14 occurrences, counted by the PR's test); no `length`, `intersection`, `union`, `===` on collections, no duplicate member, and no array/set literal in the authority templates. Array vs set therefore changes no allow/deny outcome; the PR's `canonical_policies_allow_and_deny_as_before_under_the_6_0_evaluator` covers one positive/negative pair per authorizer contract (sessions, missions, agent-runs v1/v2). `check:schemas` (scripts/check-vendored.ts against the contracts pin ee144f03) is green in CI.",
+        "evidence": "authority-v1 … agent-runs-v2: upstream==local SAME (6/6)"
+      },
+      {
+        "title": "Attack 8 — gates replayed locally: fmt clean, clippy exit 0, 28/28 tests, deny/audit/reuse clean; PR checks 5/5 SUCCESS",
+        "detail": "`cargo fmt --check` exit 0; `cargo clippy --all-targets --all-features -- -D warnings` exit 0 (two vendored-crate warnings, minor above); `cargo test --locked --all-features` exit 0 — tests/authz.rs 28 passed (the evidence record's 26 at 56d6462 + 2 contract tests at 81ce4b5), 0 unit tests; `cargo deny check` exit 0; `cargo audit` exit 0; `reuse lint` compliant. gh pr view 12: OPEN, MERGEABLE, head 81ce4b5, 5 commits, checks context-hygiene / licensing / Bun quality / Rust quality / Dependency policy all SUCCESS. Worktree clean before and after (probe file deleted with the worktree; main clone untouched).",
+        "evidence": "test result: ok. 28 passed; 0 failed; 0 ignored (tests/authz.rs)\nfmt exit=0  clippy exit=0  test exit=0  deny exit=0  audit exit=0  reuse: compliant 135/135"
+      }
+    ]
+  },
+  "residualRisks": [
+    "The two structural over-claims (block-level scopes 'rejected'; 'every construct faithful or rejected') live in SECURITY.md and in an immutable evidence record; the record says 'do not edit', so correcting the claim means a new record, not a patch. Until then a reader of the security argument believes a guarantee the code does not provide.",
+    "Vendored-copy integrity is a one-time manual fact. Without a CI step that re-downloads the archive, checks the SHA, applies #306 and diffs the tree, a later edit under third_party/ (32 831 lines including the signature verifier) is caught only by human review; the removal condition in PATCH.md (first published version carrying #306, expected 7.0.0 with a crypto API break) has no date.",
+    "Rolling deployment: no test proves that a token issued by the 5.0.0 build (datalog 3.2 blocks, `[…]` sets) still authorizes under this 6.0.0 build; the block-1 check of such a token is a `Term::Set` in the binary, which the 6.0 printer renders as `{…}`, so it should pass — asserted by reading, not executed (adding biscuit-auth 5.0.0 as a dev-dependency would change Cargo.lock and was out of scope for a read-only pass).",
+    "Ed25519-only is a property of how the crate is called, not of the crate: a P-256 root key or ring key supplied by configuration is accepted and misreported as Ed25519 by `public_keys()`.",
+    "This pass ran on macOS only; the PR's Linux CI legs are taken from the GitHub check rollup (5/5 SUCCESS on 81ce4b5), not reproduced.",
+    "Holder-side attenuation written with `&&`, `||`, `.get`, `.all/.any`, `try_or`, `null`, arrays or maps is denied as a class; any service that appends its own blocks must know this, and SECURITY.md does not state it."
+  ],
+  "verdict": "accept",
+  "runner": {
+    "orchestrator": "independent K4 security reviewer (adversarial, read-only, no commit/push/comment)",
+    "provider": "anthropic",
+    "model": "claude-fable-5-1",
+    "round": 1,
+    "scope": "libre-ai/authz-biscuit PR #12 at 81ce4b5 (5 commits over 5ff4c93): biscuit-auth 5.0.0 -> vendored 6.0.0 + #306, biscuit-parser 0.1.2 -> 0.2.0, term/op guard, injectivity re-proof, contracts under datalog 3.3",
+    "priorVerdicts": [
+      "evidence/reviews/fbbe360/REVERSE-ADVERSARIAL-REJECT.md (5.0.0 / 0.1.2 pair)",
+      "evidence/reviews/bfc2c0d/PRINT-PARSE-INJECTIVITY-6-0.md (6.0.0 / 0.2.0 pair, author-side)"
+    ],
+    "worktree": "detached worktree at 81ce4b5 under the session scratchpad, removed with the throwaway branch pr-12-review-sec after the pass; main clone untouched"
+  }
+}
