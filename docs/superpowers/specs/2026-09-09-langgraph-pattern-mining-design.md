@@ -1,7 +1,7 @@
 # Design — LangGraph comme oracle de questions et de scénarios de panne
 
 - **Date :** 2026-09-09
-- **Statut :** design non normatif, prêt pour revue propriétaire ; ne modifie ni doctrine, ni contrat verrouillé, ni autorisation d'implémentation
+- **Statut :** design approuvé par le propriétaire en session le 2026-09-09 ; l'ADR et toute évolution contractuelle restent soumis à leurs propres revues et gates
 - **Portée :** méthode d'étude de LangGraph, lacunes de l'orchestration Libre AI et frontières d'une éventuelle réalisation
 - **Décision de session :** option C — LangGraph nourrit un catalogue de questions et de scénarios de panne ; il ne devient jamais une autorité ni une spécification implicite
 
