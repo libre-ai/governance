@@ -27,7 +27,8 @@
 - Brand assets remain unpublished until the owner approves their exact `LicenseRef-Libre-AI-Brand-1.0` text and the visual-similarity dossier.
 - New non-trivial logic starts with a failing test. No `unwrap`, panic-equivalent assertion in runtime code, hidden warning, or ignored failure.
 - Each repository ends with `bun run check` green and no warning introduced by this work. Existing Governance warnings are removed in a separate preparatory commit.
-- The original working directories remain untouched; implementation uses isolated worktrees under `/Users/ifi6567/Documents/libre-ai-worktrees/`.
+- The original working directories remain untouched; implementation uses
+  isolated worktrees under the repository parent's `.worktrees/` directory.
 - Local absolute paths never enter a tracked file.
 - Commits are descriptive English commits with DCO sign-off and no `Co-Authored-By` trailer.
 - No push, pull request, merge, asset publication, or deployment occurs without the corresponding external-action or owner-signature authority.
@@ -329,7 +330,7 @@ Record the full commit SHA. The candidate requires role-separated doctrine revie
 - [ ] **Step 1: Create the isolated UI worktree and prove its baseline**
 
 ```bash
-git worktree add /Users/ifi6567/Documents/libre-ai-worktrees/brand-ui -b brand/open-verifiable-factory main
+git worktree add ../.worktrees/brand-ui -b brand/open-verifiable-factory main
 bun install --frozen-lockfile
 bun run check
 ```
@@ -635,7 +636,7 @@ Expected: all three engines and no-JS/degraded variants pass; no remote request 
 - [ ] **Step 1: Create the isolated website worktree and baseline**
 
 ```bash
-git worktree add /Users/ifi6567/Documents/libre-ai-worktrees/brand-website -b brand/open-verifiable-factory main
+git worktree add ../.worktrees/brand-website -b brand/open-verifiable-factory main
 bun install --frozen-lockfile
 bun run check
 ```
@@ -830,7 +831,7 @@ git commit -s -m "feat: generate the organization brand introduction"
 - [ ] **Step 4: Create the isolated `.github` worktree and update both profiles**
 
 ```bash
-git worktree add /Users/ifi6567/Documents/libre-ai-worktrees/brand-dot-github -b brand/open-verifiable-factory main
+git worktree add ../.worktrees/brand-dot-github -b brand/open-verifiable-factory main
 ```
 
 Generate the two intro blocks with the Governance command. Preserve the status section byte-for-byte. Remove the obsolete hand-authored hero and fixed product-count language, but keep product descriptions only where they still match current cards.

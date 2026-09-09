@@ -12,6 +12,7 @@ path = [
   "Cargo.lock",
   "Cargo.toml",
   "apps/**",
+  "brand/*.ts",
   "biome.json",
   "bun.lock",
   "bunfig.toml",
@@ -31,9 +32,10 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Libre AI contributors"
 SPDX-License-Identifier = "EUPL-1.2"
 
-# Editorial documentation and first-party project/ecosystem records.
+# Editorial documentation, generated public brand copy, and first-party
+# project/ecosystem records.
 [[annotations]]
-path = ["*.md", "**/*.md", "docs/**", "ecosystem/FORGOTTEN.yaml", "ecosystem/LEGACY-MANIFEST.yaml", "ecosystem/objects/**", "ecosystem/projections/**", "llms.txt"]
+path = ["*.md", "**/*.md", "brand/projections/**", "docs/**", "ecosystem/FORGOTTEN.yaml", "ecosystem/LEGACY-MANIFEST.yaml", "ecosystem/objects/**", "ecosystem/projections/**", "llms.txt"]
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Libre AI contributors"
 SPDX-License-Identifier = "CC-BY-4.0"
