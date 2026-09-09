@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
 import type { FleetStatus, FleetStatusRow } from "../../ecosystem/render-fleet-status";
-import { checkOrgReadmeDrift, checkProjectionFreshness } from "./check-org-readme-drift";
+import {
+  checkOrgBrandIntroDrift,
+  checkOrgReadmeDrift,
+  checkProjectionFreshness,
+} from "./check-org-readme-drift";
+import { BRAND_INTRO_BEGIN, BRAND_INTRO_END } from "./render-org-brand-intro";
 
 const wrap = (body: string) => `${STATUS_SECTION_BEGIN}\n${body}\n${STATUS_SECTION_END}`;
 
@@ -82,5 +87,21 @@ describe("checkOrgReadmeDrift", () => {
     const failures = checkOrgReadmeDrift(live, section);
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain("dupliquée");
+  });
+});
+
+describe("checkOrgBrandIntroDrift", () => {
+  const fresh = `${BRAND_INTRO_BEGIN}\nFresh intro.\n${BRAND_INTRO_END}`;
+
+  test("accepts one byte-identical introduction", () => {
+    expect(checkOrgBrandIntroDrift(`# Libre AI\n\n${fresh}\n`, fresh, "fr")).toEqual([]);
+  });
+
+  test("rejects missing, duplicate and drifting introductions", () => {
+    expect(checkOrgBrandIntroDrift("# Libre AI", fresh, "fr")[0]).toContain("missing");
+    expect(checkOrgBrandIntroDrift(`${fresh}\n${fresh}`, fresh, "fr")[0]).toContain("dupliquée");
+    expect(
+      checkOrgBrandIntroDrift(`${BRAND_INTRO_BEGIN}\nStale.\n${BRAND_INTRO_END}`, fresh, "en")[0],
+    ).toContain("diverges");
   });
 });

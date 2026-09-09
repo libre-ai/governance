@@ -26,9 +26,17 @@
  * "Contrôle de dérive périodique" — silence is indistinguishable from
  * correctness unless something checks.
  */
+
+import type { PublicBrandProjection } from "../../brand/build-public-projection";
 import { parseFleet } from "../../ecosystem/check-fleet-presentation";
 import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
 import { buildFleetStatus, type FleetStatus } from "../../ecosystem/render-fleet-status";
+import {
+  BRAND_INTRO_BEGIN,
+  BRAND_INTRO_END,
+  type BrandLanguage,
+  renderOrgBrandIntro,
+} from "./render-org-brand-intro";
 import { renderOrgSection, summarizeMigration } from "./render-org-readme";
 
 function countOccurrences(haystack: string, needle: string): number {
@@ -62,6 +70,29 @@ export function checkOrgReadmeDrift(liveReadme: string, freshSection: string): s
         "ecosystem/repositories.v1.yaml — run `bun tools/presentation/render-org-readme.ts` and " +
         "paste the result between the sentinels",
     ];
+  }
+  return [];
+}
+
+export function checkOrgBrandIntroDrift(
+  liveReadme: string,
+  freshIntro: string,
+  language: BrandLanguage,
+): string[] {
+  const beginCount = countOccurrences(liveReadme, BRAND_INTRO_BEGIN);
+  const endCount = countOccurrences(liveReadme, BRAND_INTRO_END);
+  const path = language === "en" ? "profile/README.md" : "profile/README.fr.md";
+  if (beginCount === 0 || endCount === 0) {
+    return [`.github ${path}: generated brand introduction missing (sentinels not found)`];
+  }
+  if (beginCount > 1 || endCount > 1) {
+    return [`.github ${path}: introduction de marque dupliquée — une seule paire est admise`];
+  }
+  const begin = liveReadme.indexOf(BRAND_INTRO_BEGIN);
+  const end = liveReadme.indexOf(BRAND_INTRO_END);
+  const committed = liveReadme.slice(begin, end + BRAND_INTRO_END.length);
+  if (committed !== freshIntro) {
+    return [`.github ${path}: the published brand introduction diverges from a fresh render`];
   }
   return [];
 }
@@ -109,7 +140,10 @@ function fetchFromGitHub(repository: string, path: string): string | null {
 
 export interface LiveState {
   readonly readme: string;
+  readonly frenchReadme: string;
   readonly freshSection: string;
+  readonly freshEnglishIntro: string;
+  readonly freshFrenchIntro: string;
   readonly liveStatus: FleetStatus;
   readonly committedStatus: FleetStatus;
 }
@@ -142,15 +176,25 @@ export async function readLiveState(): Promise<LiveState | LiveStateFailure> {
   if (migrationText === null) unreadable.push("libre-ai/libre-ai: migration index unreadable");
   const readme = fetchFromGitHub("libre-ai/.github", "profile/README.md");
   if (readme === null) unreadable.push("libre-ai/.github: profile/README.md unreadable");
-  if (migrationText === null || readme === null || unreadable.length > 0) return { unreadable };
+  const frenchReadme = fetchFromGitHub("libre-ai/.github", "profile/README.fr.md");
+  if (frenchReadme === null) unreadable.push("libre-ai/.github: profile/README.fr.md unreadable");
+  if (migrationText === null || readme === null || frenchReadme === null || unreadable.length > 0) {
+    return { unreadable };
+  }
 
   const liveStatus = buildFleetStatus(cards);
   const committedStatus = (await Bun.file(
     new URL("../../ecosystem/projections/fleet-status.v1.json", import.meta.url),
   ).json()) as FleetStatus;
+  const brandProjection = (await Bun.file(
+    new URL("../../brand/projections/public-brand.v1.json", import.meta.url),
+  ).json()) as PublicBrandProjection;
   return {
     readme,
+    frenchReadme,
     freshSection: renderOrgSection(liveStatus, summarizeMigration(migrationText)),
+    freshEnglishIntro: renderOrgBrandIntro(brandProjection, "en"),
+    freshFrenchIntro: renderOrgBrandIntro(brandProjection, "fr"),
     liveStatus,
     committedStatus,
   };
@@ -189,6 +233,17 @@ if (import.meta.main) {
       );
     } else {
       for (const failure of drift) report.check("org readme drift", false, failure);
+    }
+
+    for (const failure of checkOrgBrandIntroDrift(state.readme, state.freshEnglishIntro, "en")) {
+      report.check("org brand intro drift", false, failure);
+    }
+    for (const failure of checkOrgBrandIntroDrift(
+      state.frenchReadme,
+      state.freshFrenchIntro,
+      "fr",
+    )) {
+      report.check("org brand intro drift", false, failure);
     }
   }
   concludeGate("Org README drift", report);
