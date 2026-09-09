@@ -1,6 +1,6 @@
 # Authorized Execution Contracts — Phase 3 Design
 
-- **Status:** proposed for owner review
+- **Status:** approved for Phase 3 planning — owner, 2026-09-09
 - **Date:** 2026-09-09
 - **Programme authority:** ADR-0032 and accepted ADR-0034/D40
 - **Scope:** candidate contracts, canonical semantics, adversarial vectors and disposable TypeScript/Rust projections
@@ -50,7 +50,7 @@ only under later work packages after a separate Specification Lock.
 
 ## 3. Candidate contract set
 
-Nine candidates form one review unit. Splitting them would leave identities or
+Eleven candidates form one review unit. Splitting them would leave identities or
 authority transfers implicit between independently reviewable fragments.
 
 1. `execution-graph.v1` — authorized topology and per-step policy.
@@ -68,11 +68,20 @@ authority transfers implicit between independently reviewable fragments.
    authoritative effect status.
 9. `orchestrator-event.v3` — causal graph events, decisions, transfers and the
    effect-continuity barrier.
+10. `retention-policy-schema.v2` — the policy shape admitting Orchestrator-owned
+    execution records and deletion tombstones.
+11. `retention-policy.v2` — exact retention, deletion and restore rules for the
+    new data classes while preserving every v1 rule.
 
 The extra transfer and authorization candidates are required by ADR-0034 D2.
 Reusing `execution-authorization.v1` for a graph successor would silently add
 graph, generation and transfer semantics to an immutable v1 contract. That is
 forbidden even though v1 already carries an opaque plan digest.
+
+The two retention candidates are required because the execution records and
+continuity barrier are new server data classes. Treating them as existing
+Missions or Proof data would misstate authority and leave deletion/restore
+semantics implicit. `retention-policy.v1` and its schema remain byte-identical.
 
 No `common.v2` is introduced. New `organizationId` properties reuse the bounded
 identifier shape of `common.v1` by reference. Existing schemas and the
@@ -264,7 +273,35 @@ authority. The minimum set is:
 Operational errors expose only these codes and aggregate counters. They never
 include identifiers, digests, paths, prompts, choices, comments or raw errors.
 
-## 12. Canonical vectors and TDD
+## 12. Retention, deletion and restore
+
+`retention-policy-schema.v2` is a major successor of the immutable v1 schema.
+It retains every existing owner, location, mode and trigger, then admits the
+`agent-orchestrator` owner and the two new bounded data classes below.
+
+`retention-policy.v2` reproduces every v1 rule without reinterpretation and
+adds:
+
+- `orchestrator-execution-record` — content-free canonical graph, generation,
+  step, decision-consumption and effect-continuity state in PostgreSQL; fixed
+  `P1Y` default retention, configurable only up to `P6Y`, with the effective
+  value required to equal the owning mission record's effective retention;
+- `execution-deletion-tombstone` — organization, mission and lineage digests,
+  deletion generation and deletion timestamp only; fixed `P35D` retention from
+  explicit deletion, equal to the maximum encrypted-backup lifetime.
+
+Decision context, free-text comments, effect requests, destinations and raw
+observations remain Proof/Artifact content governed by the existing
+`proof-artifact` while-referenced rule. Content-free operational logs keep the
+existing `P30D` rule. Neither existing rule is widened.
+
+Deletion first removes referenced content and execution records, writes the
+minimal tombstone, then makes the mission non-executable. Restore replays the
+tombstone before any execution record. After `P35D`, every backup capable of
+resurrecting the deleted state has expired, so the tombstone may expire too.
+No executable lineage survives that point.
+
+## 13. Canonical vectors and TDD
 
 `contracts/fixtures/authorized-execution-v1/` contains bounded, public,
 synthetic documents:
@@ -278,7 +315,9 @@ synthetic documents:
   answers;
 - effect and lineage vectors for duplicate delivery, reservation concurrent
   with sealing, old-run replay, two successors from one generation, two
-  emissions in one attempt, unknown effect, proof deletion and restore.
+  emissions in one attempt, unknown effect, proof deletion and restore;
+- retention vectors proving v1-rule preservation, execution-record alignment
+  with mission retention, tombstone lifetime and tombstone-first restore.
 
 Authoring follows strict red-green cycles. Each semantic rule first appears as
 a failing vector/checker test, fails for the named reason, then receives the
@@ -293,9 +332,9 @@ independently validate every schema fixture and reproduce every digest from the
 pinned candidate revision. Phase 3 does not implement the Orchestrator state
 machine; Phase 4 must independently consume the semantic vectors.
 
-## 13. Review and promotion gates
+## 14. Review and promotion gates
 
-All nine catalog entries are `candidate`, `major-versioned` and require
+All eleven catalog entries are `candidate`, `major-versioned` and require
 architecture, security and privacy review in one shared dossier. Reviews run as
 separate review-only passes against an immutable authoring commit.
 
@@ -316,7 +355,7 @@ and remote gates green, an explicit lock review over the final candidate SHA
 and a new owner decision. No producer, runtime, API route or deployment may use
 candidate status as authorization.
 
-## 14. Sovereignty and dependency policy
+## 15. Sovereignty and dependency policy
 
 No dependency is added. Contract validation continues to use the existing
 open-source AJV toolchain; Rust projections continue to use the existing
@@ -328,12 +367,12 @@ LangGraph, LangChain, LangSmith and Agent Server remain research inputs only.
 No name, type, serializer, checkpoint or API from those projects appears in a
 canonical contract or disposable SDK projection.
 
-## 15. Delivery sequence
+## 16. Delivery sequence
 
 1. Record Phase 3 opening and commit this reviewed design in Governance.
 2. Write and commit the cross-repository implementation plan.
 3. Create isolated worktrees for Contracts, SDK TypeScript and SDK Rust.
-4. Author contract tests and vectors first, then the nine candidate schemas,
+4. Author contract tests and vectors first, then the eleven candidate authorities,
    semantics, catalog entries and checker support.
 5. Commit the immutable candidate authority revision.
 6. Pin both SDKs to that revision, regenerate disposable projections and make
@@ -346,18 +385,21 @@ canonical contract or disposable SDK projection.
    post-merge checks on each exact default-branch SHA.
 10. Stop at the separate Specification Lock owner gate.
 
-## 16. Acceptance criteria
+## 17. Acceptance criteria
 
 Phase 3 authoring is complete when:
 
 - all existing locked contract files are byte-identical to their pre-Phase-3
   revision;
-- nine strict candidates are cataloged and have positive/negative fixtures;
+- eleven strict candidates are cataloged and have positive/negative fixtures;
 - every graph, identity, decision, retry, effect and lineage rule above has an
   executable vector with a closed expected outcome;
-- all nine RFC 8785 preimages reproduce the expected SHA-256 digest;
+- all nine execution-protocol RFC 8785 preimages reproduce the expected SHA-256 digest;
 - TypeScript and Rust projections are generated from one exact authority SHA
   and validate the same fixture corpus;
+- execution records share the owning mission's effective retention, deletion
+  tombstones survive every eligible backup, and restore cannot resurrect a
+  deleted lineage;
 - no runtime repository or dependency changed;
 - architecture, security and privacy reviews approve one immutable candidate
   set with no open Blocking or Major finding;
@@ -365,7 +407,7 @@ Phase 3 authoring is complete when:
 - candidate status is explicit everywhere and no Specification Lock is
   claimed.
 
-## 17. Rollback and non-objectives
+## 18. Rollback and non-objectives
 
 Before promotion, rollback removes the four feature branches or reverts their
 additive commits. No deployed code, database, mission, artifact or runtime state
