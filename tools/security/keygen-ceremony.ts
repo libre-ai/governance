@@ -44,12 +44,6 @@ function deriveKeyId(publicKeyPem: string): string {
   return `prod_key_${date}_${hash}`;
 }
 
-interface KeyGenerationOutput {
-  publicKeyPem: string;
-  keyId: string;
-  sealedEnvelopePath?: string;
-}
-
 function generateKeyPair(): { privateKeyPem: string; publicKeyPem: string } {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
     privateKeyEncoding: { format: "pem", type: "pkcs8" },

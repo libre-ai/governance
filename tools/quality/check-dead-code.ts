@@ -328,7 +328,6 @@ console.log("Dead-code gate");
 console.log(`  entry points discovered: ${entryPoints.size}`);
 for (const check of checks) console.log(`  examined ${check.examined} ${check.label}`);
 
-const failures: string[] = [];
 const { concludeGate, GateReport } = await import("./gate-report");
 const report = new GateReport();
 for (const check of checks) {

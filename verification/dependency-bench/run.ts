@@ -125,9 +125,12 @@ async function caseTwo(): Promise<void> {
       2,
     ),
   );
+  // Keep the benchmark fixture's interpolation literal without making Biome
+  // mistake the fixture source for an interpolation bug in this runner.
+  const interpolation = ["$", "{name}"].join("");
   await write(
     "satellite/src/index.ts",
-    "export function greet(name: string): string {\n  return `bonjour ${name}`;\n}\n",
+    `export function greet(name: string): string {\n  return \`bonjour ${interpolation}\`;\n}\n`,
   );
   await write(
     "consumer/package.json",
