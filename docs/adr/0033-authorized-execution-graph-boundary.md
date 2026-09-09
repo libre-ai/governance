@@ -40,15 +40,18 @@ Le premier contrat candidat décrit un graphe orienté, fini et acyclique avec :
 - une collection bornée de nœuds à identifiants uniques ;
 - une collection bornée d'arêtes à identifiants uniques ;
 - au moins un nœud terminal explicite ;
-- aucun nœud orphelin, aucune arête pendante et aucun chemin sans terminaison ;
+- chaque nœud accessible depuis l'entrée ;
+- chaque nœud capable d'atteindre au moins un terminal ;
+- aucune arête sortante depuis un terminal et aucune arête pendante ;
 - un digest canonique couvrant la topologie complète et toutes ses références.
 
-Une seule étape peut être prête ou en cours à un instant donné. Une sortie
-validée sélectionne exactement zéro arête pour un terminal ou exactement une
-arête non terminale à partir d'un résultat fermé. Zéro transition non terminale,
-plusieurs transitions compatibles, un type inconnu ou une référence divergente
-bloquent le run avec un code fermé ; aucun ordre de déclaration ou d'arrivée ne
-départage l'ambiguïté.
+Une seule étape peut être prête ou en cours à un instant donné. Chaque nœud non
+terminal déclare un ensemble fini de résultats fermés et associe chacun d'eux à
+exactement une arête, sans wildcard ni route par défaut. Une sortie validée
+sélectionne zéro arête pour un terminal ou exactement l'arête du résultat fermé
+pour un nœud non terminal. Résultat inconnu, transition absente, plusieurs
+transitions compatibles ou référence divergente bloquent le run avec un code
+fermé ; aucun ordre de déclaration ou d'arrivée ne départage l'ambiguïté.
 
 Le parallélisme, le fan-out/fan-in, les jointures, les sous-graphes et les cycles
 sont invalides dans `execution-graph.v1`. Le retry d'une étape est une nouvelle
@@ -96,10 +99,12 @@ byte-identique est idempotent. Un identifiant réutilisé avec un contenu
 divergent, une cause inconnue, un trou de séquence, une autre organisation ou
 un autre digest met le run en quarantaine et ne projette jamais un succès.
 
-Ces identifiants appartiennent aux enregistrements métier
-organization-private. Le journal opérationnel et OTEL n'en copient aucun sous
-forme stable ; ils ne portent que versions, catégories fermées, compteurs
-agrégés et corrélation éphémère non réversible.
+Ces identifiants appartiennent aux enregistrements métier privés à
+l'organisation. Cette formulation ne crée pas une nouvelle valeur de
+classification wire et ne renomme pas `tenant-private` dans les contrats
+verrouillés. Le journal opérationnel et OTEL n'en copient aucun sous forme
+stable ; ils ne portent que versions, catégories fermées, compteurs agrégés et
+corrélation éphémère non réversible.
 
 ### D4 — Retry et effets suivent un protocole fail-closed
 
@@ -107,6 +112,20 @@ Une étape déclare une politique de retry fermée, une limite d'attempts et sa
 classe `calculation` ou `external-effect`. Chaque retry crée un nouvel
 `attemptId`; il ne remet aucun budget à zéro et ne change ni `stepId`, ni plan,
 ni capacité. Atteindre une limite interdit toute nouvelle invocation.
+
+Une étape `external-effect` choisit exactement une politique de reprise fermée,
+liée au digest du profil de l'exécuteur :
+
+- `executor-idempotent` — l'exécuteur déduplique atomiquement le même
+  `effectId` et le même digest de requête avant tout effet irréversible ;
+- `terminal-status-with-fencing` — l'exécuteur fournit des statuts terminaux et
+  refuse au point d'effet toute tentative qui ne possède plus le fencing actif ;
+- `no-retry` — toute issue non terminale ou ambiguë bloque définitivement la
+  réémission du même `effectId`.
+
+Une capacité absente, invérifiable ou différente de celle liée au plan refuse
+l'étape avant réservation. Orchestrator et Harness ne choisissent pas une
+politique de reprise dynamiquement à partir d'une erreur observée.
 
 Un effet externe suit la séquence conceptuelle :
 
@@ -119,12 +138,12 @@ StepAuthorized
 ```
 
 La réservation consomme conservativement le budget avant l'action. `effectId`
-lie le même effet logique, son digest de requête, sa destination,
-l'organisation, le plan, l'étape et la tentative d'origine. Une nouvelle
-tentative conserve ce `effectId`, le digest de requête et la destination, mais
-reçoit un nouvel `attemptId` et un nouveau `workerInvocationId`. Changer la
-requête ou la destination crée un autre effet et exige une autorisation
-compatible ; ce n'est pas un retry.
+identifie l'effet logique stable et lie son `effectRequestDigest`, sa
+destination, l'organisation, le plan et l'étape ; il n'identifie aucune
+tentative particulière. Chaque émission lie séparément son `attemptId` et son
+`workerInvocationId`. Une nouvelle tentative conserve `effectId`,
+`effectRequestDigest` et destination. Changer la requête ou la destination crée
+un autre effet et exige une autorisation compatible ; ce n'est pas un retry.
 
 Une seule tentative possède le droit actif d'appliquer l'effet. Harness et le
 broker d'effet refusent une invocation dupliquée ou obsolète avant application.
@@ -147,15 +166,22 @@ Une lecture de statut autoritative est interprétée ainsi :
 
 Hors garantie d'idempotence effective ou preuve terminale de non-commit avec
 fencing de l'ancienne tentative, aucun retry d'effet n'est admissible. Une
-réconciliation ultérieure exige une observation autoritative et une commande
-explicitement autorisée ; elle ne déduit rien d'une sortie worker.
+réconciliation ultérieure exige une observation terminale autoritative attestée
+par Harness ; elle ne déduit rien d'une sortie worker et ne reçoit aucune
+dérogation humaine à cette exigence.
 
-Harness atteste l'invocation, le fencing, les capacités effectivement appliquées
-et les observations reçues de l'exécuteur d'effet. Orchestrator valide ces
-éléments et reste seul à produire la transition canonique. Ni l'un ni l'autre
-ne transforme une absence d'erreur en preuve de commit. Un commit dupliqué
-identiquement est idempotent ; une divergence pour le même `effectId` met le run
-en quarantaine.
+L'exécuteur externe affirme seulement le statut qu'il possède. Harness atteste
+l'invocation, le fencing, les capacités effectivement appliquées et
+l'observation reçue. Orchestrator valide cette attestation et applique seul la
+transition canonique déterminée par le statut terminal sous l'autorisation du
+plan existant. Une intervention humaine via Missions peut demander une nouvelle
+observation, annuler ou déclencher une replanification ; elle ne peut jamais
+affirmer `committed`, `rejected-final` ou `not-committed-final`, ni remplacer une
+preuve absente.
+
+Ni Harness ni Orchestrator ne transforme une absence d'erreur en preuve de
+commit. Un commit dupliqué identiquement est idempotent ; une divergence pour le
+même `effectId` met le run en quarantaine.
 
 Une pause ou annulation interdit tout nouvel effet. Tant qu'un effet en vol
 n'est pas résolu en état autoritatif, le run reste bloqué et ne déclare pas de
@@ -243,8 +269,9 @@ n'est pas un critère d'admission.
 - Les refus et journaux utilisent des codes fermés sans message brut, prompt,
   choix libre, chemin, argument outil, sortie, secret ou PII.
 - Le contexte de décision et les observations d'effet sont minimisés, classés,
-  organization-private et adressés par références digérées lorsque leur
-  contenu doit devenir preuve.
+  privés à l'organisation et adressés par références digérées lorsque leur
+  contenu doit devenir preuve. Cette formulation ne crée aucun enum de
+  classification implicite.
 - Proof/Artifact applique accès au besoin d'en connaître, rétention, suppression
   et non-résurrection après restore. Un checkpoint worker n'est jamais inclus
   comme source canonique de reprise.
