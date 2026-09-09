@@ -93,6 +93,9 @@ La marque publique de chaque produit est « **Libre AI \<Produit\>** » ; le nom
 | Boussole Politique | Libre AI Boussole Politique | moteur boussole (contrats verrouillés)      | `boussole-scoring-v1/v2`, `boussole-*`               |
 | Spec Studio        | Libre AI Spec Studio        | à naître (vague 4b)                         | `spec-package.v1`                                    |
 | Model Policy       | Libre AI Model Policy       | policy-core (contrats verrouillés)          | `policy-core-v1/v2`, `policy-*`                      |
+| Carrière           | Libre AI Carrière           | à naître                                   | —                                                    |
+| Travel Agent       | Libre AI Travel Agent       | à naître                                   | —                                                    |
+| Website            | Libre AI Website            | site public                                | —                                                    |
 
 Le décompte des produits n'est pas gravé ici (I-14) : l'inventaire `ecosystem/repositories.v1.yaml` fait foi ; cette table fixe les **noms**, pas le portefeuille.
 
@@ -297,7 +300,7 @@ le repository).
 
 | Produit        | Repo                    | Marque publique                                                                           | Couche |
 | -------------- | ----------------------- | ----------------------------------------------------------------------------------------- | ------ |
-| `travel-agent` | `libre-ai/travel-agent` | Travel Agent (provisoire — marque publique définitive : décision propriétaire ultérieure) | 1      |
+| `travel-agent` | `libre-ai/travel-agent` | Libre AI Travel Agent (famille ratifiée par ADR-0033) | 1      |
 
 Le décompte de produits couche 1 passe de huit à neuf ; comme pour `carriere`
 (§ registre, décision du 2026-07-23), la constellation croît par décision

@@ -22,6 +22,12 @@ Prenez les clés.
 <!-- libre-ai:brand:secondary-cta -->
 Voir les preuves.
 
+<!-- libre-ai:brand:product-family:begin -->
+| Repository | Nom public |
+| --- | --- |
+| libre-ai/notebook | Libre AI Notebook |
+<!-- libre-ai:brand:product-family:end -->
+
 Sont interdits comme affirmations : « plus complet que tous les concurrents ».
 `;
 
@@ -62,6 +68,7 @@ function validDocuments(): BrandDocuments {
     authorityMap: "| Plateforme de marque | `brand/` |",
     invariants: "| I-29 | Brand system | ADR-0033 | 2026-09-09 |",
     decisions: "| D39 | Open verifiable brand system | ADR-0033 |",
+    repositoryIndex: "repositories:\n  - repository: libre-ai/notebook\n    product: Notebook\n",
   };
 }
 
@@ -82,6 +89,16 @@ describe("validateBrandPlatform", () => {
     expect(validateBrandPlatform({ ...documents, authorityMap: "" })).toContain(
       "brand.authority_map_missing:brand/",
     );
+  });
+
+  test("refuses a product inventory absent from the governed family", () => {
+    const documents = validDocuments();
+    expect(
+      validateBrandPlatform({
+        ...documents,
+        repositoryIndex: `${documents.repositoryIndex}  - repository: libre-ai/radar\n    product: Radar\n`,
+      }),
+    ).toContain("brand.product_family_inventory_drift:libre-ai/radar");
   });
 
   test("refuses publication policy without both independent asset controls", () => {
@@ -138,6 +155,20 @@ describe("validateBrandPlatform", () => {
     expect(validateBrandPlatform({ ...documents, french: publishedClaim })).toContain(
       "brand.forbidden_claim:plus complet que tous les concurrents",
     );
+
+    expect(
+      validateBrandPlatform({
+        ...documents,
+        english: `${documents.english}\nLibre AI is completely free.\n`,
+      }),
+    ).toContain("brand.forbidden_claim:completely free");
+
+    expect(
+      validateBrandPlatform({
+        ...documents,
+        english: `${documents.english}\nForbidden brand claim: “completely free”.\n`,
+      }),
+    ).not.toContain("brand.forbidden_claim:completely free");
   });
 
   test("surfaces projection parser failures as gate findings", () => {

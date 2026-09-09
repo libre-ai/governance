@@ -24,6 +24,12 @@ Prenez les clés.
 
 <!-- libre-ai:brand:secondary-cta -->
 Voir les preuves.
+
+<!-- libre-ai:brand:product-family:begin -->
+| Repository | Nom public |
+| --- | --- |
+| libre-ai/notebook | Libre AI Notebook |
+<!-- libre-ai:brand:product-family:end -->
 `;
 
 const english = `# Brand platform
@@ -74,6 +80,9 @@ describe("buildPublicBrandProjection", () => {
     );
     expect(projection.copy.fr.promise).toBe("Possédez la fabrique.");
     expect(projection.copy.fr.primaryCta).toBe("Prenez les clés.");
+    expect(projection.products).toEqual([
+      { repository: "libre-ai/notebook", publicName: "Libre AI Notebook" },
+    ]);
     expect(projection.proofs).toHaveLength(3);
     expect(projection.proofs.map(({ claim }) => claim)).toEqual([
       "Logiciels ouverts",
@@ -98,6 +107,21 @@ describe("buildPublicBrandProjection", () => {
 
     expect(() => buildPublicBrandProjection(duplicatedMarker, english, proofMatrix)).toThrow(
       "brand.public_copy_marker_duplicate:tension",
+    );
+  });
+
+  test("refuses duplicate or unbranded product-family entries", () => {
+    const duplicate = french.replace(
+      "| libre-ai/notebook | Libre AI Notebook |",
+      "| libre-ai/notebook | Libre AI Notebook |\n| libre-ai/notebook | Libre AI Notebook |",
+    );
+    const unbranded = french.replace("Libre AI Notebook", "Notebook");
+
+    expect(() => buildPublicBrandProjection(duplicate, english, proofMatrix)).toThrow(
+      "brand.product_family_duplicate:libre-ai/notebook",
+    );
+    expect(() => buildPublicBrandProjection(unbranded, english, proofMatrix)).toThrow(
+      "brand.product_family_name_invalid:libre-ai/notebook",
     );
   });
 

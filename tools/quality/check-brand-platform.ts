@@ -12,6 +12,7 @@ export interface BrandDocuments {
   readonly authorityMap: string;
   readonly invariants: string;
   readonly decisions: string;
+  readonly repositoryIndex: string;
 }
 
 interface ForbiddenClaim {
@@ -21,6 +22,7 @@ interface ForbiddenClaim {
 
 const forbiddenClaims: readonly ForbiddenClaim[] = [
   { label: "gratuit", pattern: /(?:^|[^\p{L}])gratuit(?:[^\p{L}]|$)/iu },
+  { label: "completely free", pattern: /\bcompletely\s+free\b/iu },
   {
     label: "plus complet que tous les concurrents",
     pattern: /plus complet que tous les concurrents/iu,
@@ -29,6 +31,14 @@ const forbiddenClaims: readonly ForbiddenClaim[] = [
   { label: "sécurité totale", pattern: /sécurité totale/iu },
   { label: "entièrement explicable", pattern: /entièrement explicable/iu },
   { label: "contrôle absolu", pattern: /contrôle absolu/iu },
+  {
+    label: "more complete than every competitor",
+    pattern: /more complete than every competitor/iu,
+  },
+  { label: "no dependencies", pattern: /\bno dependencies\b/iu },
+  { label: "total security", pattern: /\btotal security\b/iu },
+  { label: "fully explainable", pattern: /\bfully explainable\b/iu },
+  { label: "absolute control", pattern: /\babsolute control\b/iu },
 ];
 
 function forbiddenClaimFindings(markdown: string): string[] {
@@ -39,7 +49,8 @@ function forbiddenClaimFindings(markdown: string): string[] {
   const findings: string[] = [];
 
   for (const paragraph of paragraphs) {
-    const documentsProhibition = /\binterdit(?:e|es|s)?\b/iu.test(paragraph);
+    const documentsProhibition =
+      /\b(?:interdit(?:e|es|s)?|forbidden|prohibited|does not mean)\b/iu.test(paragraph);
     if (documentsProhibition) continue;
     for (const claim of forbiddenClaims) {
       if (claim.pattern.test(paragraph)) findings.push(`brand.forbidden_claim:${claim.label}`);
@@ -53,16 +64,38 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
   const findings: string[] = [];
 
   let expectedProjection: string | null = null;
+  let projectedProductRepositories = new Set<string>();
   try {
-    expectedProjection = renderPublicBrandProjection(
-      buildPublicBrandProjection(documents.french, documents.english, documents.proofMatrix),
+    const projection = buildPublicBrandProjection(
+      documents.french,
+      documents.english,
+      documents.proofMatrix,
     );
+    expectedProjection = renderPublicBrandProjection(projection);
+    projectedProductRepositories = new Set(projection.products.map(({ repository }) => repository));
   } catch (error) {
     const detail = error instanceof Error ? error.message : "unknown";
     findings.push(`brand.projection_invalid:${detail}`);
   }
   if (expectedProjection !== null && documents.projection !== expectedProjection) {
     findings.push("brand.public_projection_stale");
+  }
+
+  try {
+    const index = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML.parse(
+      documents.repositoryIndex,
+    ) as { readonly repositories?: readonly Record<string, unknown>[] };
+    if (!Array.isArray(index.repositories)) throw new Error("repositories_missing");
+    for (const entry of index.repositories) {
+      if (typeof entry.product !== "string") continue;
+      const repository = typeof entry.repository === "string" ? entry.repository : "";
+      if (!projectedProductRepositories.has(repository)) {
+        findings.push(`brand.product_family_inventory_drift:${repository || "invalid"}`);
+      }
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown";
+    findings.push(`brand.product_inventory_invalid:${detail}`);
   }
 
   if (!/\|\s*I-29\s*\|/u.test(documents.invariants)) {
@@ -84,8 +117,11 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
     findings.push("brand.asset_publication_guard_missing:similarity-review");
   }
 
-  findings.push(...forbiddenClaimFindings(documents.french));
-  return findings;
+  findings.push(
+    ...forbiddenClaimFindings(documents.french),
+    ...forbiddenClaimFindings(documents.english),
+  );
+  return [...new Set(findings)];
 }
 
 async function readBrandDocuments(): Promise<BrandDocuments> {
@@ -100,6 +136,7 @@ async function readBrandDocuments(): Promise<BrandDocuments> {
     authorityMap,
     invariants,
     decisions,
+    repositoryIndex,
   ] = await Promise.all([
     read("brand/README.md"),
     read("brand/README.en.md"),
@@ -109,6 +146,7 @@ async function readBrandDocuments(): Promise<BrandDocuments> {
     read("docs/README.md"),
     read("docs/decisions/INVARIANTS.md"),
     read("docs/decisions/DECISION-REGISTER.md"),
+    read("ecosystem/repositories.v1.yaml"),
   ]);
   return {
     french,
@@ -119,6 +157,7 @@ async function readBrandDocuments(): Promise<BrandDocuments> {
     authorityMap,
     invariants,
     decisions,
+    repositoryIndex,
   };
 }
 
@@ -130,6 +169,10 @@ if (import.meta.main) {
     ["public projection", ["brand.projection_invalid:", "brand.public_projection_stale"]],
     ["I-29 doctrine anchor", ["brand.invariant_missing:"]],
     ["D39 decision anchor", ["brand.decision_missing:"]],
+    [
+      "product family inventory",
+      ["brand.product_family_inventory_drift:", "brand.product_inventory_invalid:"],
+    ],
     ["brand authority map", ["brand.authority_map_missing:"]],
     ["asset publication license guard", ["brand.asset_publication_guard_missing:license-ref"]],
     [

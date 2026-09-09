@@ -116,6 +116,9 @@ merges aval et le déploiement sont quatre actions externes séparées.
 - `@libre-ai/ui` réalise la direction adoptée sans posséder sa sémantique.
 - Le site et le profil cessent de coder en dur un nombre de produits ou de
   reformuler la promesse.
+- La projection de marque porte le nom public de chaque produit recensé ;
+  `Libre AI Practices` conserve l'élision signée par le LEXICON, et les produits
+  Carrière, Travel Agent et Website rejoignent explicitement la famille commune.
 - Les claims absolus (« gratuit », supériorité totale, sécurité totale,
   explicabilité totale, absence de dépendance, contrôle absolu) restent
   interdits.

@@ -21,6 +21,48 @@
       "secondaryCta": "See the evidence."
     }
   },
+  "products": [
+    {
+      "repository": "libre-ai/feed-radar",
+      "publicName": "Libre AI Radar"
+    },
+    {
+      "repository": "libre-ai/notebook",
+      "publicName": "Libre AI Notebook"
+    },
+    {
+      "repository": "libre-ai/ai-practices",
+      "publicName": "Libre AI Practices"
+    },
+    {
+      "repository": "libre-ai/sessions",
+      "publicName": "Libre AI Sessions"
+    },
+    {
+      "repository": "libre-ai/boussole-politique",
+      "publicName": "Libre AI Boussole Politique"
+    },
+    {
+      "repository": "libre-ai/spec-studio",
+      "publicName": "Libre AI Spec Studio"
+    },
+    {
+      "repository": "libre-ai/policy",
+      "publicName": "Libre AI Model Policy"
+    },
+    {
+      "repository": "libre-ai/carriere",
+      "publicName": "Libre AI Carrière"
+    },
+    {
+      "repository": "libre-ai/travel-agent",
+      "publicName": "Libre AI Travel Agent"
+    },
+    {
+      "repository": "libre-ai/website",
+      "publicName": "Libre AI Website"
+    }
+  ],
   "proofs": [
     {
       "claim": "Logiciels ouverts",

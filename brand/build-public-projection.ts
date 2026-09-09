@@ -16,6 +16,11 @@ export interface PublicProof {
   readonly limitation: string;
 }
 
+export interface PublicProductName {
+  readonly repository: string;
+  readonly publicName: string;
+}
+
 export interface PublicBrandProjection {
   readonly schema_version: "libre-ai.public-brand.v1";
   readonly generated_from: readonly [
@@ -27,8 +32,12 @@ export interface PublicBrandProjection {
     readonly fr: PublicBrandCopy;
     readonly en: PublicBrandCopy;
   };
+  readonly products: readonly PublicProductName[];
   readonly proofs: readonly PublicProof[];
 }
+
+const PRODUCT_FAMILY_BEGIN = "<!-- libre-ai:brand:product-family:begin -->";
+const PRODUCT_FAMILY_END = "<!-- libre-ai:brand:product-family:end -->";
 
 const copyFields = [
   ["tension", "tension"],
@@ -145,6 +154,44 @@ function parseProofs(markdown: string): readonly PublicProof[] {
   return proofs;
 }
 
+function parseProductFamily(markdown: string): readonly PublicProductName[] {
+  const beginCount = markdown.split(PRODUCT_FAMILY_BEGIN).length - 1;
+  const endCount = markdown.split(PRODUCT_FAMILY_END).length - 1;
+  if (beginCount !== 1 || endCount !== 1) throw new Error("brand.product_family_sentinels_invalid");
+  const begin = markdown.indexOf(PRODUCT_FAMILY_BEGIN) + PRODUCT_FAMILY_BEGIN.length;
+  const end = markdown.indexOf(PRODUCT_FAMILY_END);
+  if (end <= begin) throw new Error("brand.product_family_sentinels_invalid");
+  const tableLines = markdown
+    .slice(begin, end)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|") && line.endsWith("|"));
+  if (tableLines.length < 3) throw new Error("brand.product_family_table_invalid");
+  if (tableLines[0] !== "| Repository | Nom public |") {
+    throw new Error("brand.product_family_header_invalid");
+  }
+  if (!/^\|\s*:?-{3,}:?\s*\|\s*:?-{3,}:?\s*\|$/.test(tableLines[1] ?? "")) {
+    throw new Error("brand.product_family_separator_invalid");
+  }
+  const repositories = new Set<string>();
+  return tableLines.slice(2).map((line): PublicProductName => {
+    const [repository = "", publicName = ""] = line
+      .slice(1, -1)
+      .split("|")
+      .map((cell) => cell.trim());
+    if (!/^libre-ai\/[a-z0-9-]+$/.test(repository)) {
+      throw new Error("brand.product_family_repository_invalid");
+    }
+    if (repositories.has(repository))
+      throw new Error(`brand.product_family_duplicate:${repository}`);
+    repositories.add(repository);
+    if (!publicName.startsWith("Libre AI ") || publicName.length <= "Libre AI ".length) {
+      throw new Error(`brand.product_family_name_invalid:${repository}`);
+    }
+    return { repository, publicName };
+  });
+}
+
 export function buildPublicBrandProjection(
   frenchMarkdown: string,
   englishMarkdown: string,
@@ -157,6 +204,7 @@ export function buildPublicBrandProjection(
       fr: readMarkedCopy(frenchMarkdown, canonicalFrench),
       en: readMarkedCopy(englishMarkdown, canonicalEnglish),
     },
+    products: parseProductFamily(frenchMarkdown),
     proofs: parseProofs(proofMatrixMarkdown),
   };
 }
