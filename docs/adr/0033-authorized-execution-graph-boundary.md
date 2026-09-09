@@ -75,15 +75,16 @@ worker reste un artefact sans effet tant qu'un nouveau plan n'est pas autorisé.
 
 Une replanification peut être préparée et revue pendant qu'un effet externe du
 plan précédent reste non terminal ou inconnu. Avant qu'elle puisse recevoir une
-autorisation d'exécution utilisable, une commande Missions ordonne un transfert
-de génération qu'Orchestrator applique atomiquement :
+autorisation d'exécution utilisable, une commande Missions one-shot lie le run,
+la génération et la révision canoniques courants puis ordonne un transfert de
+génération qu'Orchestrator applique atomiquement :
 
 1. il scelle irrévocablement le run prédécesseur contre toute nouvelle étape,
    tentative, réservation ou invocation d'effet ;
 2. il inventorie ses effets, y compris `EffectReserved`, `EffectStarted` et
    `EffectStateUnknown`, et exige pour chacun un état terminal autoritatif ;
-3. il attribue au seul run successeur une nouvelle génération monotone du droit
-   d'exécuter.
+3. il consomme la génération courante et attribue au seul run successeur une
+   nouvelle génération monotone du droit d'exécuter.
 
 Le scellement et toute réservation concurrente sont sérialisés sur la même
 révision canonique : soit la réservation précède le scellement et rejoint
@@ -92,6 +93,14 @@ refusée. L'autorisation du successeur lie le prédécesseur, la révision scell
 le digest de l'inventaire terminal et la nouvelle génération. Orchestrator la
 revalide au démarrage ; Harness et le broker revalident la même génération avant
 chaque effet. État absent, divergent ou périmé bloque.
+
+Seul le détenteur de la génération courante peut être prédécesseur. Deux
+transferts concurrents depuis la même génération sont sérialisés : le premier
+peut réussir, le second rencontre une génération consommée et est refusé. Un
+duplicat byte-identique du même identifiant de transfert est idempotent ; sa
+réutilisation divergente met la lignée en quarantaine. Un futur remplacement du
+successeur doit sceller ce successeur courant à son tour. Le branchement de deux
+runs successeurs depuis un même prédécesseur est invalide en v1.
 
 Un nouveau digest, une nouvelle révision, un nouveau `runId`, l'expiration ou
 l'annulation du run précédent ne lève pas cette barrière. Orchestrator possède
@@ -114,9 +123,10 @@ restent opaques, hostiles et supprimables sans migration du run.
 
 Le protocole candidat distingue au minimum `runId`, `stepId`, `attemptId`,
 `workerInvocationId`, `selectedEdgeId`, `effectId`, `effectEmissionId` et
-`decisionRequestId`. Chaque identité est opaque, bornée à une organisation et
-liée au digest du plan autorisé. Aucune n'est reconstruite à partir d'un nom
-worker, d'un ordre d'arrivée, d'un timestamp ou d'un checkpoint.
+`executionTransferId` et `decisionRequestId`. Chaque identité est opaque, bornée
+à une organisation et liée au digest du plan autorisé. Aucune n'est reconstruite
+à partir d'un nom worker, d'un ordre d'arrivée, d'un timestamp ou d'un
+checkpoint.
 
 Un événement canonique porte l'étape et la tentative concernées, sa cause, le
 digest de l'événement précédent et les compteurs monotones. Un duplicat
@@ -164,6 +174,13 @@ exécuteur incapable de consommer l'émission une seule fois. Une capacité
 absente, invérifiable ou différente de celle liée au plan refuse l'étape avant
 réservation. Orchestrator et Harness ne choisissent pas une politique de reprise
 dynamiquement à partir d'une erreur observée.
+
+Un nœud `external-effect` v1 décrit exactement un effet logique et chacune de
+ses tentatives peut réserver au plus un `effectEmissionId`. Un second identifiant
+d'émission sous le même `attemptId`, même avec le même digest, est une divergence
+et ne produit aucun effet. Une nouvelle émission admissible exige une nouvelle
+tentative selon la politique fermée ; plusieurs effets voulus sont représentés
+par plusieurs nœuds séquentiels, chacun avec ses propres bornes et budgets.
 
 Un effet externe suit la séquence conceptuelle :
 
@@ -296,8 +313,8 @@ canonique, leurs préimages, leurs vecteurs et leurs projections TypeScript/Rust
 appartiennent au plan de phase 3. Aucun document de cette liste n'existe comme
 autorité par le seul effet du présent ADR. Cette phase doit notamment rendre
 explicites la lignée des plans et runs successeurs, la barrière de continuité
-d'effet, la génération de transfert, l'identité one-shot d'émission et leurs
-cycles de vie canoniques.
+d'effet, l'identité one-shot du transfert, la génération, l'identité one-shot
+d'émission et leurs cycles de vie canoniques.
 
 `execution-plan-body.v1`, `orchestrator-event.v2`, Missions v1 et toutes les
 autres autorités existantes du Specification Lock restent byte-identiques et ne
@@ -342,6 +359,9 @@ n'est pas un critère d'admission.
 - Une réservation de l'ancien run concurrente au scellement rejoint
   l'inventaire bloquant ou est refusée par sa génération périmée ; elle ne peut
   jamais apparaître après activation du successeur.
+- Deux transferts depuis la même génération ou deux identités d'émission sous la
+  même tentative sont refusés ; un identifiant one-shot ne peut pas être
+  remplacé pour contourner sa consommation.
 - Une politique `no-retry` présentée comme substitut à la déduplication ou au
   fencing de l'émission initiale, ou un exécuteur qui applique deux fois le même
   `effectEmissionId`, est refusé avant réservation.
@@ -363,9 +383,10 @@ n'est pas un critère d'admission.
 
 Le corpus adverse de phase 3 couvre au minimum la double livraison d'une
 émission encore active, la réservation concurrente au scellement, l'ancien run
-rejoué après transfert, et l'effet définitivement inconnu suivi de
-expiration/suppression puis restore. Chacun doit échouer fermé sans conserver de
-contenu au-delà de son cycle de vie.
+rejoué après transfert, deux successeurs concurrents depuis la même génération,
+deux émissions distinctes sous la même tentative, et l'effet définitivement
+inconnu suivi d'une expiration ou suppression puis d'un restore. Chacun doit
+échouer fermé sans conserver de contenu au-delà de son cycle de vie.
 
 ## Compatibilité et rollback
 
