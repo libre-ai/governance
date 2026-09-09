@@ -1,4 +1,4 @@
-# ADR-0032 — Système de marque ouvert et vérifiable
+# ADR-0033 — Système de marque ouvert et vérifiable
 
 - **Statut :** proposed — plateforme et direction A approuvées par le propriétaire
   en session le 2026-09-09 ; le merge signé sous I-17 reste l'acte d'adoption
@@ -9,7 +9,9 @@
 - **Étend :** ADR-0008 (nom et marque), ADR-0009 (portefeuille et preuve),
   ADR-0020 (autorités multi-repository).
 - **Invariant candidat :** I-29.
-- **Décision :** D38.
+- **Décision :** D39.
+- **Numérotation :** renuméroté de 0032 à 0033 lors de l'intégration du
+  2026-09-09, après ratification de l'ADR-0032 LangGraph sur `main`.
 
 ## Contexte
 

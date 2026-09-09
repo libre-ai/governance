@@ -60,8 +60,8 @@ function validDocuments(): BrandDocuments {
     trademarks:
       "Publication requires LicenseRef-Libre-AI-Brand-1.0 and an archived contrôle de similarité visuelle.",
     authorityMap: "| Plateforme de marque | `brand/` |",
-    invariants: "| I-29 | Brand system | ADR-0032 | 2026-09-09 |",
-    decisions: "| D38 | Open verifiable brand system | ADR-0032 |",
+    invariants: "| I-29 | Brand system | ADR-0033 | 2026-09-09 |",
+    decisions: "| D39 | Open verifiable brand system | ADR-0033 |",
   };
 }
 
@@ -77,7 +77,7 @@ describe("validateBrandPlatform", () => {
       "brand.invariant_missing:I-29",
     );
     expect(validateBrandPlatform({ ...documents, decisions: "" })).toContain(
-      "brand.decision_missing:D38",
+      "brand.decision_missing:D39",
     );
     expect(validateBrandPlatform({ ...documents, authorityMap: "" })).toContain(
       "brand.authority_map_missing:brand/",

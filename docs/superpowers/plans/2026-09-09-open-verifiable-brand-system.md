@@ -110,7 +110,7 @@ git commit -s -m "chore: remove governance lint warnings"
 - Create: `brand/projections/public-brand.v1.json` (generated)
 - Create: `tools/quality/check-brand-platform.ts`
 - Create: `tools/quality/check-brand-platform.test.ts`
-- Create: `docs/adr/0032-open-verifiable-brand-system.md`
+- Create: `docs/adr/0033-open-verifiable-brand-system.md`
 - Modify: `docs/decisions/INVARIANTS.md`
 - Modify: `docs/decisions/DECISION-REGISTER.md`
 - Modify: `docs/README.md`
@@ -260,17 +260,17 @@ export interface BrandDocuments {
 export function validateBrandPlatform(documents: BrandDocuments): readonly string[];
 ```
 
-Test that validation refuses a missing I-29, missing D38, missing authority-map row, missing asset-publication guard, stale generated projection, or forbidden canonical phrase `plus complet que tous les concurrents`. Test that explanatory text quoting the forbidden claim as an explicit prohibition remains allowed.
+Test that validation refuses a missing I-29, missing D39, missing authority-map row, missing asset-publication guard, stale generated projection, or forbidden canonical phrase `plus complet que tous les concurrents`. Test that explanatory text quoting the forbidden claim as an explicit prohibition remains allowed.
 
 - [ ] **Step 6: Record the owner decision as doctrine**
 
-Create ADR-0032 with the session decisions: closed-factory dependency as adversary, `Possédez la fabrique` as promise, verifiable proof as credibility mechanism, `Libre AI <Product>` family, Envol constructif, constructed swift, repository ownership, and publication hard stops. Add:
+Create ADR-0033 with the session decisions: closed-factory dependency as adversary, `Possédez la fabrique` as promise, verifiable proof as credibility mechanism, `Libre AI <Product>` family, Envol constructif, constructed swift, repository ownership, and publication hard stops. Add:
 
 ```text
-I-29 | Brand system: Libre AI contrasts a rented proprietary product with ownership of the factory; canonical promise “Possédez la fabrique”; every public qualifier is adjacent to a mechanism, source, verification date and limitation; `governance` owns semantics, `ui` owns visual realization, public surfaces are projections. | ADR-0032 | 2026-09-09
+I-29 | Brand system: Libre AI contrasts a rented proprietary product with ownership of the factory; canonical promise “Possédez la fabrique”; every public qualifier is adjacent to a mechanism, source, verification date and limitation; `governance` owns semantics, `ui` owns visual realization, public surfaces are projections. | ADR-0033 | 2026-09-09
 ```
 
-Add D38 with the same bounded decision, add `Brand platform → brand/` to `docs/README.md`, and update `TRADEMARKS.md` so a figurative asset requires both a dedicated LicenseRef and an archived similarity review before publication.
+Add D39 with the same bounded decision, add `Brand platform → brand/` to `docs/README.md`, and update `TRADEMARKS.md` so a figurative asset requires both a dedicated LicenseRef and an archived similarity review before publication.
 
 - [ ] **Step 7: Make the authority gate green**
 
@@ -296,7 +296,7 @@ Expected: all brand tests and 913+ repository tests pass, zero Biome warning, no
 - [ ] **Step 8: Commit the immutable doctrine candidate**
 
 ```bash
-git add brand docs/adr/0032-open-verifiable-brand-system.md docs/decisions/INVARIANTS.md docs/decisions/DECISION-REGISTER.md docs/README.md TRADEMARKS.md package.json project.v1.yaml README.md docs/superpowers/specs/2026-09-09-open-verifiable-brand-system-design.md tools/quality/check-brand-platform.ts tools/quality/check-brand-platform.test.ts
+git add brand docs/adr/0033-open-verifiable-brand-system.md docs/decisions/INVARIANTS.md docs/decisions/DECISION-REGISTER.md docs/README.md TRADEMARKS.md package.json project.v1.yaml README.md docs/superpowers/specs/2026-09-09-open-verifiable-brand-system-design.md tools/quality/check-brand-platform.ts tools/quality/check-brand-platform.test.ts
 git commit -s -m "feat: establish the Libre AI brand authority"
 ```
 

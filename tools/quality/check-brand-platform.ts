@@ -68,8 +68,8 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
   if (!/\|\s*I-29\s*\|/u.test(documents.invariants)) {
     findings.push("brand.invariant_missing:I-29");
   }
-  if (!/\|\s*D38\s*\|/u.test(documents.decisions)) {
-    findings.push("brand.decision_missing:D38");
+  if (!/\|\s*D39\s*\|/u.test(documents.decisions)) {
+    findings.push("brand.decision_missing:D39");
   }
   if (
     !documents.authorityMap.includes("Plateforme de marque") ||
@@ -129,7 +129,7 @@ if (import.meta.main) {
   const checks = [
     ["public projection", ["brand.projection_invalid:", "brand.public_projection_stale"]],
     ["I-29 doctrine anchor", ["brand.invariant_missing:"]],
-    ["D38 decision anchor", ["brand.decision_missing:"]],
+    ["D39 decision anchor", ["brand.decision_missing:"]],
     ["brand authority map", ["brand.authority_map_missing:"]],
     ["asset publication license guard", ["brand.asset_publication_guard_missing:license-ref"]],
     [

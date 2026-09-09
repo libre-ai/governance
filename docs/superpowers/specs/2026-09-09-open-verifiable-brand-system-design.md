@@ -1,7 +1,7 @@
 # Design — Système de marque ouvert et vérifiable
 
 - **Date :** 2026-09-09
-- **Statut :** plateforme et plan d'implémentation approuvés par le propriétaire en session ; ADR-0032 reste un candidat jusqu'au merge signé sous I-17.
+- **Statut :** plateforme et plan d'implémentation approuvés par le propriétaire en session ; ADR-0033 reste un candidat jusqu'au merge signé sous I-17.
 - **Portée :** `governance` (plateforme de marque), `ui` (réalisation visuelle), `website` et `.github` (projections publiques).
 - **Références non normatives :** Trail pour la grammaire sémantique, Proton pour la cohérence de famille, Mullvad pour la preuve adjacente, Ink & Switch pour la forme de laboratoire, Mozilla et Oxide pour la voix et la matérialité.
 
@@ -207,9 +207,9 @@ Ce modèle sert à la composition et aux tests du site. Il ne devient pas un con
 
 `governance` possède la sémantique et les règles :
 
-- ADR-0032 d'adoption du système de marque ;
+- ADR-0033 d'adoption du système de marque ;
 - invariant I-29 : promesse, architecture de famille et principe de preuve adjacente ;
-- entrée D38 au registre des décisions ;
+- entrée D39 au registre des décisions ;
 - `brand/README.md` : plateforme verbale, voix, architecture, usages et interdits ;
 - `brand/proof-matrix.md` : qualificatifs autorisés, mécanismes requis et sources ;
 - `brand/references.md` : références externes datées, explicitement non normatives ;
