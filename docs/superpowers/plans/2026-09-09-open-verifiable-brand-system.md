@@ -330,6 +330,7 @@ Record the full commit SHA. The candidate requires role-separated doctrine revie
 - [ ] **Step 1: Create the isolated UI worktree and prove its baseline**
 
 ```bash
+set -euo pipefail
 git worktree add ../.worktrees/brand-ui -b brand/open-verifiable-factory main
 cd ../.worktrees/brand-ui
 bun install --frozen-lockfile
@@ -637,6 +638,7 @@ Expected: all three engines and no-JS/degraded variants pass; no remote request 
 - [ ] **Step 1: Create the isolated website worktree and baseline**
 
 ```bash
+set -euo pipefail
 git worktree add ../.worktrees/brand-website -b brand/open-verifiable-factory main
 cd ../.worktrees/brand-website
 bun install --frozen-lockfile
@@ -833,6 +835,7 @@ git commit -s -m "feat: generate the organization brand introduction"
 - [ ] **Step 4: Create the isolated `.github` worktree and update both profiles**
 
 ```bash
+set -euo pipefail
 git worktree add ../.worktrees/brand-dot-github -b brand/open-verifiable-factory main
 cd ../.worktrees/brand-dot-github
 ```
