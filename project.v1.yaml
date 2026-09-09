@@ -15,9 +15,10 @@ statement:
     - "aucun service tiers, aucune copie non vérifiée — consommation épinglée et gates de dérive"
 summary: "Autorité de doctrine : décisions, invariants, index d'écosystème, schéma de fiches, outillage de flotte."
 current_situation: >-
-  Née verte en γ 3.3 (375 commits d'histoire filtrée), autorité des décisions et de l'index ; ses gates de flotte surveillent inventaire, pins et dérive de migration en continu.
+  Née verte en γ 3.3 (375 commits d'histoire filtrée), autorité des décisions et de l'index ; ses gates de flotte surveillent inventaire, pins et dérive de migration en continu. La plateforme de marque ouverte et vérifiable est un candidat local : sa publication reste soumise au merge doctrinal et aux contrôles d'assets.
 scope:
   - "Autorité de doctrine : décisions, invariants, index d'écosystème, schéma de fiches, outillage de flotte."
+  - "Autorité de marque : plateforme verbale, exigences de preuve et projection publique générée."
 non_goals:
   - "aucune seconde implémentation durable de ce domaine ailleurs dans la constellation"
 dependencies:
@@ -28,7 +29,7 @@ maturity: usable
 confidence: medium
 exposure: usable-verifiable
 freshness:
-  last_verified_on: "2026-07-30"
+  last_verified_on: "2026-09-09"
 scope_stability: stable
 benchmark:
   none: "n/a (governance authority, no external parity target)"
@@ -45,5 +46,9 @@ phases:
           reference: "gate-acceptance-log 2026-07-29 (ligne 3.3), PR hub #277"
       - id: compat-policy
         text: "L'API est couverte par une politique de compatibilité déclarée et un versionnage de rupture outillé."
+        weight: 1
+        status: pending
+      - id: brand-authority-adoption
+        text: "La plateforme de marque est fusionnée sous signature propriétaire, ses projections aval épinglent des SHA revus et aucun asset figuratif n'est publié sans licence dédiée et contrôle de similarité archivé."
         weight: 1
         status: pending

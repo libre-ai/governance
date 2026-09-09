@@ -21,12 +21,12 @@ bun run check
 <!-- libre-ai:project-status:begin -->
 <!-- Section générée depuis project.v1.yaml — ne pas éditer à la main. -->
 
-- Situation actuelle : Née verte en γ 3.3 (375 commits d'histoire filtrée), autorité des décisions et de l'index ; ses gates de flotte surveillent inventaire, pins et dérive de migration en continu.
+- Situation actuelle : Née verte en γ 3.3 (375 commits d'histoire filtrée), autorité des décisions et de l'index ; ses gates de flotte surveillent inventaire, pins et dérive de migration en continu. La plateforme de marque ouverte et vérifiable est un candidat local : sa publication reste soumise au merge doctrinal et aux contrôles d'assets.
 - Maturité : usable
 - Exposition : usable-verifiable
 - Confiance : medium
-- Preuves vérifiées le : 2026-07-30
-- Avancement : 50 % du périmètre actuellement déclaré
+- Preuves vérifiées le : 2026-09-09
+- Avancement : 33 % du périmètre actuellement déclaré
 
 <!-- libre-ai:project-status:end -->
 

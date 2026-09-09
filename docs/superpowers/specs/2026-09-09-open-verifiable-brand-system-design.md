@@ -1,7 +1,7 @@
 # Design — Système de marque ouvert et vérifiable
 
 - **Date :** 2026-09-09
-- **Statut :** option A approuvée par le propriétaire en session ; cette forme écrite reste à relire avant le plan d'implémentation. Le merge de l'ADR d'adoption sera la signature doctrinale.
+- **Statut :** plateforme et plan d'implémentation approuvés par le propriétaire en session ; ADR-0032 reste un candidat jusqu'au merge signé sous I-17.
 - **Portée :** `governance` (plateforme de marque), `ui` (réalisation visuelle), `website` et `.github` (projections publiques).
 - **Références non normatives :** Trail pour la grammaire sémantique, Proton pour la cohérence de famille, Mullvad pour la preuve adjacente, Ink & Switch pour la forme de laboratoire, Mozilla et Oxide pour la voix et la matérialité.
 

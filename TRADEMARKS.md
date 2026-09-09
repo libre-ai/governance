@@ -35,8 +35,15 @@ not change the source-code licence obligations.
 ## Brand assets
 
 Brand assets are not covered by EUPL, Apache or Creative Commons merely because
-they appear next to licensed material. Each future asset must carry a dedicated
-`LicenseRef-...` SPDX notice defining its permitted uses before publication.
+they appear next to licensed material. A figurative asset must not be published
+until both independent controls are complete: its exact
+`LicenseRef-Libre-AI-Brand-1.0` text is accepted by the owner, and a dated visual
+similarity review is archived against EUIPO, INPI, WIPO and the named visual
+reference set. The review is visual screening, not legal clearance.
+
+Source code may contain an explicitly unpublished candidate so it can be
+reviewed. A public package, website, profile, release or download must fail
+closed while either control remains pending.
 
 This policy does not claim that every referenced mark is registered. Clearance,
 ownership and any INPI/EUIPO registration are managed separately from source
