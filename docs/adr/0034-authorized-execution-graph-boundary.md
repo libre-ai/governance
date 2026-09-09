@@ -1,4 +1,4 @@
-# ADR-0033 — Graphe d'exécution autorisé borné
+# ADR-0034 — Graphe d'exécution autorisé borné
 
 - **Statut :** proposed — proposition issue du design propriétaire du 2026-09-09 ; l'acceptation exige trois revues à rôles séparés puis un arbitrage propriétaire sur le SHA exact
 - **Date :** 2026-09-09

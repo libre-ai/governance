@@ -47,7 +47,7 @@ accepted on `main`, with DCO and remote CI green.
 
 **Files:**
 
-- Create: `docs/adr/0033-authorized-execution-graph-boundary.md`
+- Create: `docs/adr/0034-authorized-execution-graph-boundary.md`
 
 **Produces:** a proposed ADR, not an accepted decision, contract lock or runtime
 authorization.
@@ -106,7 +106,7 @@ Expected: exit 0; no warning names a changed file.
 - [ ] **Step 7: Commit the proposed ADR**
 
 ```bash
-git add docs/adr/0033-authorized-execution-graph-boundary.md
+git add docs/adr/0034-authorized-execution-graph-boundary.md
 git commit -s -m "docs: propose authorized execution graph boundary"
 ```
 
@@ -193,7 +193,7 @@ Only the owner's explicit selection of option 1 authorizes Task 4.
 
 **Files:**
 
-- Modify: `docs/adr/0033-authorized-execution-graph-boundary.md`
+- Modify: `docs/adr/0034-authorized-execution-graph-boundary.md`
 - Modify: `docs/rfcs/0001-agent-orchestration-option-b.md`
 - Modify:
   `docs/superpowers/specs/2026-09-09-langgraph-pattern-mining-design.md`
@@ -215,11 +215,11 @@ Do not alter the status or bytes of the existing 14 locked authorities.
 Record Phase 2 acceptance while preserving Phase 3's independent contract and
 lock gates.
 
-- [ ] **Step 4: Add decision-register entry D39**
+- [ ] **Step 4: Add decision-register entry D40**
 
 Record the bounded authorized graph, single-ready-step v1, closed retry/effect
 and typed-decision rules, explicit exclusions and separate future lock gate.
-Do not create a new invariant unless a role review proves D39 is not carried by
+Do not create a new invariant unless a role review proves D40 is not carried by
 I-03, I-18, I-19 and ADR-0032.
 
 - [ ] **Step 5: Verify and commit ratification**
