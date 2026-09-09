@@ -26,7 +26,7 @@ bun run check
 - Exposition : usable-verifiable
 - Confiance : medium
 - Preuves vérifiées le : 2026-09-09
-- Avancement : 33 % du périmètre actuellement déclaré
+- Avancement : 33,3 % du périmètre actuellement déclaré
 
 <!-- libre-ai:project-status:end -->
 
