@@ -73,6 +73,16 @@ nouveau digest de graphe et de plan. Elle invalide reviews et autorisation et
 exige le quorum Missions prévu par RFC-0001. Une proposition de replanification
 worker reste un artefact sans effet tant qu'un nouveau plan n'est pas autorisé.
 
+Une replanification peut être préparée et revue pendant qu'un effet externe du
+plan précédent reste non terminal ou inconnu. Elle ne peut toutefois recevoir
+une autorisation d'exécution utilisable, et Orchestrator ne peut démarrer son run
+successeur, avant que chaque effet externe de la lignée précédente possède un
+état terminal autoritatif. Un nouveau digest, une nouvelle révision, un nouveau
+`runId`, l'expiration ou l'annulation du run précédent ne lève pas cette
+barrière. Le lien au plan et au run prédécesseurs ainsi que l'état de la barrière
+appartiennent à l'état canonique d'Orchestrator et doivent être vérifiés de
+nouveau par Missions avant autorisation.
+
 Les autorités restent uniques :
 
 1. Missions possède workflow, quorum, autorisation et décisions humaines ;
@@ -113,18 +123,23 @@ classe `calculation` ou `external-effect`. Chaque retry crée un nouvel
 `attemptId`; il ne remet aucun budget à zéro et ne change ni `stepId`, ni plan,
 ni capacité. Atteindre une limite interdit toute nouvelle invocation.
 
-Une étape `external-effect` choisit exactement une politique de reprise fermée,
-liée au digest du profil de l'exécuteur :
+Une étape `external-effect` choisit exactement une politique de réémission
+fermée, liée au digest du profil de l'exécuteur :
 
-- `executor-idempotent` — l'exécuteur déduplique atomiquement le même
+- `retry-with-executor-idempotency` — l'exécuteur déduplique atomiquement le même
   `effectId` et le même digest de requête avant tout effet irréversible ;
-- `terminal-status-with-fencing` — l'exécuteur fournit des statuts terminaux et
-  refuse au point d'effet toute tentative qui ne possède plus le fencing actif ;
+- `retry-after-terminal-status-with-fencing` — l'exécuteur fournit des statuts
+  terminaux et refuse au point d'effet toute tentative qui ne possède plus le
+  fencing actif ;
 - `no-retry` — toute issue non terminale ou ambiguë bloque définitivement la
   réémission du même `effectId`.
 
-Une capacité absente, invérifiable ou différente de celle liée au plan refuse
-l'étape avant réservation. Orchestrator et Harness ne choisissent pas une
+Ces valeurs gouvernent uniquement le droit de réémettre après une issue ; elles
+ne remplacent jamais la protection de chaque émission contre une invocation
+dupliquée ou obsolète. `no-retry` n'autorise ni livraison transport dupliquée,
+ni exécuteur incapable de dédupliquer ou d'appliquer un fencing au point
+d'effet. Une capacité absente, invérifiable ou différente de celle liée au plan
+refuse l'étape avant réservation. Orchestrator et Harness ne choisissent pas une
 politique de reprise dynamiquement à partir d'une erreur observée.
 
 Un effet externe suit la séquence conceptuelle :
@@ -187,6 +202,14 @@ Une pause ou annulation interdit tout nouvel effet. Tant qu'un effet en vol
 n'est pas résolu en état autoritatif, le run reste bloqué et ne déclare pas de
 terminaison mensongère.
 
+`EffectStateUnknown` crée aussi une barrière de continuité attachée à la mission
+et à la lignée de ses plans et runs. Cette barrière survit à l'annulation, à la
+replanification, au changement d'identifiants et au restore. Elle interdit à
+Missions d'autoriser l'exécution d'un plan successeur et à Orchestrator de
+démarrer son run jusqu'à observation terminale autoritative de tous les effets
+antérieurs. Une décision humaine, un nouvel `effectId` ou un nouveau quorum ne
+peut ni effacer ni contourner cette barrière.
+
 ### D5 — La décision humaine est une mutation typée de Missions
 
 Une étape de décision référence un schéma de demande préautorisé ; elle
@@ -227,7 +250,9 @@ La phase contractuelle suivante peut proposer, sans garantie de promotion :
 Leur nom final, leurs champs, leurs codes, leurs limites, leur sérialisation
 canonique, leurs préimages, leurs vecteurs et leurs projections TypeScript/Rust
 appartiennent au plan de phase 3. Aucun document de cette liste n'existe comme
-autorité par le seul effet du présent ADR.
+autorité par le seul effet du présent ADR. Cette phase doit notamment rendre
+explicites la lignée des plans et runs successeurs, la barrière de continuité
+d'effet et sa persistance canonique.
 
 `execution-plan-body.v1`, `orchestrator-event.v2`, Missions v1 et toutes les
 autres autorités existantes du Specification Lock restent byte-identiques et ne
@@ -266,6 +291,11 @@ n'est pas un critère d'admission.
 
 - Toute topologie, sortie worker, attestation et décision reçue est une entrée
   hostile validée strictement avant transition.
+- Un plan ou run successeur présenté pendant un effet antérieur inconnu est
+  refusé à l'activation, même avec un nouveau digest, un nouveau quorum ou un
+  nouvel `effectId`.
+- Une politique `no-retry` présentée comme substitut à la déduplication ou au
+  fencing de l'émission initiale est refusée avant réservation.
 - Les refus et journaux utilisent des codes fermés sans message brut, prompt,
   choix libre, chemin, argument outil, sortie, secret ou PII.
 - Le contexte de décision et les observations d'effet sont minimisés, classés,
@@ -324,6 +354,9 @@ du système. Elle contredit ADR-0004 et ADR-0032.
   worker ne peut plus inventer la prochaine étape.
 - Les retries de calcul restent possibles ; les retries d'effet ambigus
   deviennent explicitement bloquants.
+- La disponibilité est volontairement sacrifiée lorsqu'un effet reste inconnu :
+  même un plan successeur autorisé fonctionnellement ne peut s'exécuter avant
+  résolution terminale de la lignée d'effets.
 - La décision humaine devient une autorité Missions liée au run et non un texte
   injecté dans une conversation worker.
 - Le coût conceptuel est l'introduction de nouveaux majors et identités. Ce coût
