@@ -1,7 +1,12 @@
 # ADR-0034 — Graphe d'exécution autorisé borné
 
-- **Statut :** proposed — proposition issue du design propriétaire du 2026-09-09 ; l'acceptation exige trois revues à rôles séparés puis un arbitrage propriétaire sur le SHA exact
+- **Statut :** accepted — D1–D6 et D40 sont en vigueur ; cette acceptation
+  autorise la conception de contrats candidats, pas leur Specification Lock ni
+  une capacité runtime
 - **Date :** 2026-09-09
+- **Arbitrage :** option A retenue explicitement par le propriétaire en session
+  le 2026-09-09. Owner-arbitration: 2026-09-09
+- **Proposition revue :** `7112cb797f686d70fc055449d781d634eeaa2517`
 - **Portée :** architecture du graphe d'exécution autorisé, autorités, retry, décision humaine typée, fenêtre critique des effets et frontière du premier incrément contractuel.
 - **Étend :** RFC-0001, ADR-0004, ADR-0018, ADR-0032 D2/D3/D5, I-03, I-18 et I-19.
 - **N'amende aucun Specification Lock, ne crée aucun contrat et n'ouvre aucune capacité runtime.**
@@ -452,16 +457,16 @@ du système. Elle contredit ADR-0004 et ADR-0032.
 
 ## Gate de ratification
 
-Avant tout arbitrage propriétaire :
+La gate a été satisfaite sur la proposition exacte
+`7112cb797f686d70fc055449d781d634eeaa2517` :
 
-- revue architecture séparée sur autorités, déterminisme, compatibilité,
-  versionnement, retrait et portée du graphe séquentiel ;
-- revue sécurité séparée sur substitution, replay, effets ambigus, budgets,
-  décisions périmées, cross-organisation, injection et logs ;
-- revue vie privée/souveraineté séparée sur minimisation, identifiants,
-  rétention, restore, checkpoints et services exclus ;
-- `bun run check` vert sur le commit proposé exact ;
-- restitution propriétaire inline du SHA, des décisions et des verdicts.
+- revue architecture séparée : `approve`, aucun finding ;
+- revue sécurité séparée : `approve`, aucun finding ;
+- revue vie privée/souveraineté séparée : `approve`, aucun finding ;
+- `git diff --check` et `bun run check` verts sur le commit proposé exact :
+  913 tests, zéro échec et 1 598 assertions ;
+- restitution inline du SHA, des décisions et des verdicts, suivie du choix
+  propriétaire explicite A le 2026-09-09.
 
 L'acceptation propriétaire autorise uniquement les amendements documentaires de
 ratification puis la conception de contrats candidats sous un nouveau plan.

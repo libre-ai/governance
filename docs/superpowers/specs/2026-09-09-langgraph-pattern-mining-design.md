@@ -1,9 +1,14 @@
 # Design — LangGraph comme oracle de questions et de scénarios de panne
 
 - **Date :** 2026-09-09
-- **Statut :** design approuvé par le propriétaire en session le 2026-09-09 ; l'ADR et toute évolution contractuelle restent soumis à leurs propres revues et gates
+- **Statut :** design approuvé ; phase 2 ratifiée par ADR-0034/D40 après revues
+  et arbitrage propriétaire du 2026-09-09 sur
+  `7112cb797f686d70fc055449d781d634eeaa2517` ; phase 3 non ouverte
 - **Portée :** méthode d'étude de LangGraph, lacunes de l'orchestration Libre AI et frontières d'une éventuelle réalisation
 - **Décision de session :** option C — LangGraph nourrit un catalogue de questions et de scénarios de panne ; il ne devient jamais une autorité ni une spécification implicite
+- **Autorité aval :** ADR-0034/D40 borne le premier incrément ; en cas de
+  divergence avec les explorations ci-dessous, sa topologie séquentielle sans
+  parallélisme, jointure, sous-graphe ni cycle prévaut
 
 ## 1. Résultat recherché
 
@@ -370,7 +375,15 @@ Le travail est cross-repo et architectural ; il exige un plan écrit séparé av
 
 **Gate :** revues architecture, sécurité et vie privée séparées ; jalon propriétaire explicite.
 
+**Statut :** franchie le 2026-09-09 par ADR-0034/D40. Cette ratification fixe
+la frontière architecturale et autorise seulement la conception ultérieure de
+contrats candidats.
+
 ### Phase 3 — Contrats candidats, tests d'abord
+
+**Statut :** non ouverte. Un nouveau plan cross-repository doit définir les
+contrats, fixtures et revues ; leur promotion reste soumise à une review de
+lock et à un jalon propriétaire distincts.
 
 - écrire fixtures positives et négatives ;
 - proposer `execution-graph.v1`, plan v2, événement v3, décision, invocation et attestation d'effet ;
@@ -382,7 +395,7 @@ Le travail est cross-repo et architectural ; il exige un plan écrit séparé av
 ### Phase 4 — Cœur natif de l'Orchestrateur
 
 - implémenter des fonctions pures de validation et de transition ;
-- prouver replay déterministe, fan-in, budgets monotones, stale decisions et refus cross-tenant ;
+- prouver replay déterministe, routage fermé, budgets monotones, stale decisions et refus cross-tenant ;
 - injecter les crashes aux cinq frontières du protocole d'effet.
 
 **Gate :** tests unitaires, property-based si approprié, intégration avec stores indisponibles et E2E contre faux harness ; zéro capacité runtime supplémentaire.
@@ -414,7 +427,8 @@ Le programme est complet lorsque :
 - le digest autorisé couvre la topologie complète ;
 - décisions, steps, attempts, invocations et effets ont des identités non ambiguës ;
 - les pannes avant/après effet ne provoquent ni retry aveugle ni faux succès ;
-- fan-in et budgets enfants sont déterministes et bornés ;
+- le graphe v1 reste séquentiel et `single-ready-step`, avec routage fermé et
+  budgets monotones ;
 - les projections de streaming contiennent zéro donnée interdite ;
 - les suites TypeScript/Rust et E2E vérifient explicitement chaque scénario de panne admis ;
 - un second worker passe les mêmes invariants puis peut être retiré sans changer Missions ;
@@ -445,7 +459,7 @@ Les sources ci-dessous servent uniquement à découvrir des questions et des mod
 
 - **Sécurité :** le framework ne reçoit aucune autorité ; checkpoints et streaming sont traités comme données hostiles ; les fenêtres d'effet, cross-tenant, replay et fuites sont couvertes.
 - **Qualité :** les contrats candidats sont versionnés au lieu d'amender les locks ; chaque notion possède une autorité unique et une sémantique testable.
-- **Performance :** aucune dépendance ni allocation n'entre dans un path chaud à ce stade ; le fan-in et le replay devront être benchmarkés avant promotion du runtime.
+- **Performance :** aucune dépendance ni allocation n'entre dans un path chaud à ce stade ; le replay, les réservations d'effet et les transferts de génération devront être benchmarkés avant promotion du runtime.
 - **Complétude :** recherche, ADR, contrats, projections, cœur, intégration, E2E, audit et preuve de retrait sont inclus dans la DoD du scope demandé.
 - **Anti-gold-plating :** mémoire longue, time travel, UI de graphe, service de traces et parité fonctionnelle complète sont explicitement exclus.
 - **Réversibilité :** les types de framework restent derrière l'adaptateur worker ; aucune migration d'autorité n'est requise pour son retrait.

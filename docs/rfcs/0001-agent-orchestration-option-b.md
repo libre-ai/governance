@@ -40,6 +40,34 @@ Missions (Bun/TypeScript, autorité workflow + quorum)
 
 Pi ne devient pas une dépendance métier des applications et aucun objet HTTP, session navigateur ou accès DB produit n’entre dans le harness.
 
+## Extension prospective ratifiée : graphe autorisé borné
+
+ADR-0034 et D40 complètent cette direction sans réinterpréter le Specification
+Lock existant. Le premier graphe candidat est fini, déterministe, acyclique et
+`single-ready-step` : ses résultats et transitions sont fermés, ses retries sont
+des tentatives explicites et toute ambiguïté d'effet bloque la lignée.
+
+La carte d'autorité devient explicite pour ce futur incrément :
+
+1. **Missions** autorise le digest du plan et du graphe complets, possède les
+   décisions humaines typées et ordonne les transferts one-shot entre runs ;
+2. **Agent Orchestrator** possède l'état canonique du graphe, les transitions,
+   la causalité, les budgets et la génération d'exécution ;
+3. **Agent Harness** revalide chaque invocation et génération, applique les
+   capacités et atteste les observations d'effet sans choisir de transition ;
+4. **Proof/Artifact** possède les preuves et artefacts classifiés et digérés ;
+5. le worker ne possède aucun état canonique, aucune arête et aucune vérité
+   d'effet.
+
+La phase contractuelle suivante peut proposer `execution-graph.v1`,
+`execution-plan-body.v2`, `orchestrator-event.v3`, des demandes et réponses de
+décision typées, `step-invocation.v1` et `effect-attestation.v1`. Ces familles
+ne sont ni spécifiées ni verrouillées par la présente extension. Leur
+sérialisation, leurs préimages, leurs codes, leurs vecteurs et leurs projections
+relèvent d'un plan contractuel et d'un jalon propriétaire séparés. Les 14
+entrées déjà verrouillées conservent leur statut, leurs octets et leur
+sémantique ; aucune capacité runtime supplémentaire n'est ouverte.
+
 ## Invariants normatifs à verrouiller
 
 ### Corps de plan et autorisation d’exécution
