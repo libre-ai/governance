@@ -118,24 +118,44 @@ StepAuthorized
   -> StepResultRecorded
 ```
 
-La réservation consomme conservativement le budget avant l'action. Un retry
-d'effet n'est admissible que si l'autorité qui applique l'effet garantit une
-clé d'idempotence liée à `effectId`, ou fournit une lecture de statut
-autoritative. Une nouvelle tentative conserve le même `effectId` pour le même
-effet logique et reçoit un nouvel `attemptId` et un nouveau
-`workerInvocationId`.
+La réservation consomme conservativement le budget avant l'action. `effectId`
+lie le même effet logique, son digest de requête, sa destination,
+l'organisation, le plan, l'étape et la tentative d'origine. Une nouvelle
+tentative conserve ce `effectId`, le digest de requête et la destination, mais
+reçoit un nouvel `attemptId` et un nouveau `workerInvocationId`. Changer la
+requête ou la destination crée un autre effet et exige une autorisation
+compatible ; ce n'est pas un retry.
+
+Une seule tentative possède le droit actif d'appliquer l'effet. Harness et le
+broker d'effet refusent une invocation dupliquée ou obsolète avant application.
+Le futur protocole doit porter un fencing monotone ou une garantie équivalente,
+revalidée au point d'effet ; une simple lease locale, un timeout ou l'état en
+mémoire d'Orchestrator ne suffit pas. Si l'exécuteur externe ne sait pas
+appliquer ce fencing, il doit garantir l'idempotence sur `effectId` avant le
+premier effet irréversible.
 
 Après crash, l'absence de `EffectCommitted` ne prouve jamais l'absence d'effet.
-Sans statut autoritatif ni idempotence prouvée, Orchestrator produit
-`EffectStateUnknown`, bloque le run et interdit le retry automatique. Une
+Une lecture de statut autoritative est interprétée ainsi :
+
+- `committed` réconcilie le résultat sans réémettre l'effet ;
+- `rejected-final` ou `not-committed-final` n'autorise une nouvelle émission
+  non idempotente que si l'exécuteur garantit aussi que l'ancienne invocation
+  ne peut plus commettre ;
+- `pending`, `started`, une absence non terminale, une réponse inconnue,
+  divergente ou indisponible produit `EffectStateUnknown`, bloque le run et
+  interdit toute réémission.
+
+Hors garantie d'idempotence effective ou preuve terminale de non-commit avec
+fencing de l'ancienne tentative, aucun retry d'effet n'est admissible. Une
 réconciliation ultérieure exige une observation autoritative et une commande
 explicitement autorisée ; elle ne déduit rien d'une sortie worker.
 
-Harness atteste l'invocation, les capacités effectivement appliquées et les
-observations reçues de l'exécuteur d'effet. Orchestrator valide ces éléments et
-reste seul à produire la transition canonique. Ni l'un ni l'autre ne transforme
-une absence d'erreur en preuve de commit. Un commit dupliqué identiquement est
-idempotent ; une divergence pour le même `effectId` met le run en quarantaine.
+Harness atteste l'invocation, le fencing, les capacités effectivement appliquées
+et les observations reçues de l'exécuteur d'effet. Orchestrator valide ces
+éléments et reste seul à produire la transition canonique. Ni l'un ni l'autre
+ne transforme une absence d'erreur en preuve de commit. Un commit dupliqué
+identiquement est idempotent ; une divergence pour le même `effectId` met le run
+en quarantaine.
 
 Une pause ou annulation interdit tout nouvel effet. Tant qu'un effet en vol
 n'est pas résolu en état autoritatif, le run reste bloqué et ne déclare pas de
