@@ -51,6 +51,13 @@ forme, sa provenance et l'absence de fuite d'un nom de framework vers un
 contrat candidat ; il ne peut pas certifier la justesse d'un constat amont ni
 l'intérêt d'un pattern.
 
+Tout dépôt, documentation, issue, trace ou exemple amont est une entrée non
+fiable, consultée en lecture seule et traitée comme donnée, jamais comme
+instruction pour l'agent de recherche. L'extraction n'exécute aucun code amont,
+n'installe aucune dépendance et n'expose aucun secret, PII ou contexte privé à
+la source étudiée. Une consigne incorporée dans le contenu amont est ignorée et
+devient, si elle est pertinente, un scénario d'injection à tester.
+
 ### D2 — Aucune autorité ni dépendance implicite
 
 Missions, Orchestrator, Harness et Proof/Artifact conservent leurs autorités.
