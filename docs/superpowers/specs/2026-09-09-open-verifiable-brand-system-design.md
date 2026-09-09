@@ -7,7 +7,11 @@
 
 ## 1. Résultat recherché
 
-Libre AI doit être compris en un premier écran par une personne qui ne connaît ni la constellation ni sa doctrine :
+Libre AI doit interrompre le langage convenu du secteur dès le premier écran, puis permettre à une personne qui ne connaît ni la constellation ni sa doctrine de vérifier la réponse :
+
+> Une promesse d'IA sans preuve ne vaut rien.
+
+La provocation désigne une pratique — l'affirmation invérifiable — et jamais une entreprise, une communauté ou une origine géographique. Elle ouvre sur une proposition positive :
 
 > Des logiciels d'IA qui vous appartiennent.
 
@@ -15,11 +19,11 @@ Cette promesse est soutenue, jamais remplacée, par la manière de construire :
 
 > Conçus dans une fabrique ouverte où la preuve fait partie du produit.
 
-Le système de marque rend cette relation visible à toutes les échelles : marque mère, famille de produits, pages publiques, composants d'interface et preuves techniques. Il ne fabrique aucune preuve et ne transforme aucun état interne en affirmation commerciale.
+Le système de marque rend cette relation visible à toutes les échelles : marque mère, famille de produits, pages publiques, composants d'interface et preuves techniques. Il ne demande pas d'être cru : il montre ce qui permet de vérifier. Il ne fabrique aucune preuve et ne transforme aucun état interne en affirmation commerciale.
 
 ### 1.1 Objectifs
 
-1. Donner à Libre AI une promesse publique stable, compréhensible sans vocabulaire d'architecture.
+1. Donner à Libre AI une tension publique stable et mémorable contre les promesses invérifiables, compréhensible sans vocabulaire d'architecture.
 2. Faire reconnaître tous les produits comme une famille `Libre AI <Product>` sans créer de micro-marques indépendantes.
 3. Placer la source, la date, le statut et les limites au même niveau visuel que la promesse concernée.
 4. Adopter un système visuel propre : éditorial technique, chaleureux, européen, réparable et sans folklore IA.
@@ -41,23 +45,27 @@ Le système de marque rend cette relation visible à toutes les échelles : marq
 
 | Rôle | Formulation canonique | Usage |
 | --- | --- | --- |
+| Tension | **Une promesse d'IA sans preuve ne vaut rien.** | Première phrase de la home et ouverture des prises de parole de marque |
 | Promesse | **Des logiciels d'IA qui vous appartiennent.** | Titre principal de la home et présentation courte de la marque |
 | Qualification | **Ouverts, souverains et explicables.** | Sous-titre ; jamais employé sans mécanisme ou preuve à proximité |
 | Raison de croire | **Conçus dans une fabrique ouverte où la preuve fait partie du produit.** | Présentation de la méthode |
 | Principe | **La preuve fait partie du produit.** | Guide de marque, modules de preuve, communication technique |
-| Invitation | **Comprendre. Vérifier. Contribuer.** | Navigation et appels à l'action non commerciaux |
+| Invitation | **Ne nous croyez pas. Vérifiez.** | Appel principal vers les preuves |
+| Parcours | **Comprendre. Vérifier. Contribuer.** | Navigation et appels à l'action non commerciaux |
 
 La phrase longue actuelle — « Pour les personnes qui veulent… » — reste une explication éditoriale possible, mais ne sert plus de hero. Elle demande trop de mémoire avant d'énoncer le bénéfice.
 
 ### 2.2 Voix
 
-La voix est directe, calme et falsifiable :
+La voix est incisive, calme et falsifiable. La tension vient de la phrase, jamais de l'agitation visuelle :
 
+- elle met en cause les conventions invérifiables du secteur sans nommer ni caricaturer un concurrent ;
 - elle commence par le résultat pour la personne, puis expose le mécanisme ;
 - elle préfère un nom ou un verbe concret à une qualité abstraite ;
 - elle donne une limite dans la même unité de lecture que la capacité ;
 - elle distingue toujours `prévu`, `construit`, `utilisable`, `vérifié` et `éprouvé` ;
 - elle n'emploie pas « révolutionnaire », « intelligent », « magique », « de confiance », « sécurisé », « conforme » ou « souverain » sans préciser pourquoi ;
+- elle peut employer une phrase négative forte si la ligne suivante apporte un mécanisme vérifiable ;
 - elle ne personnifie pas les agents et ne cache pas l'assistance générative.
 
 Exemples :
@@ -68,6 +76,15 @@ Exemples :
 | Une plateforme révolutionnaire | Une méthode qui relie chaque décision à sa preuve |
 | Sécurité de niveau entreprise | Menaces couvertes, audit daté et limites connues |
 | Notre écosystème complet | Les projets actuellement exposés, avec leur état calculé |
+
+Formules de tension autorisées, à condition que leur preuve soit immédiatement adjacente :
+
+- **Ne nous croyez pas. Vérifiez.** — suivi des sources, dates et limites ;
+- **Souverain n'est pas une couleur de logo.** — suivi des dépendances, lieux d'hébergement et mécanismes de réversibilité ;
+- **Un dépôt public ne suffit pas à rendre un système ouvert.** — suivi des licences, instructions reproductibles et possibilités d'export ;
+- **Une limite cachée est une promesse fausse.** — suivi de la limite publiée au même niveau que la capacité.
+
+Les formules absolues non démontrables restent interdites. La marque ne dit jamais « aucune dépendance », « sécurité totale », « entièrement explicable » ou « contrôle absolu ».
 
 ### 2.3 Architecture de marque
 
@@ -87,7 +104,7 @@ Un produit reçoit :
 
 Le principe générateur est **l'assemblage ouvert** : une pièce n'est jamais présentée comme un bloc magique. Ses joints, ses entrées, ses sorties et ses points de contrôle restent visibles.
 
-Cette idée remplace les métaphores dominantes du secteur — halo, cerveau, étincelle, orbite et gradient — et traduit directement les propriétés de Libre AI : construction, inspection, réparation, réversibilité et publication de la preuve.
+Cette idée remplace les métaphores dominantes du secteur — halo, cerveau, étincelle, orbite et gradient — et traduit directement les propriétés de Libre AI : construction, inspection, réparation, réversibilité et publication de la preuve. Le contraste de marque est volontaire : le texte provoque, le système visuel apporte les pièces du dossier.
 
 ### 3.1 Grammaire graphique
 
@@ -246,16 +263,17 @@ Ordre obligatoire :
 
 1. mot-symbole Libre AI ;
 2. eyebrow « Fabrique ouverte de logiciels d'IA » ;
-3. promesse principale ;
-4. qualification et raison de croire ;
-5. actions « Voir les produits » et « Vérifier nos engagements » ;
-6. bande de provenance : source de l'état, dernière vérification, absence de tracking.
+3. tension « Une promesse d'IA sans preuve ne vaut rien. » ;
+4. promesse « Des logiciels d'IA qui vous appartiennent. » ;
+5. qualification et raison de croire ;
+6. actions « Voir les produits » et « Ne nous croyez pas. Vérifiez. » ;
+7. bande de provenance : source de l'état, dernière vérification, absence de tracking.
 
 Le premier écran ne montre ni nombre codé en dur, ni pourcentage global, ni architecture en couches.
 
 ### 7.3 Séquence de la home
 
-1. **Promesse** — bénéfice, qualification et provenance.
+1. **Tension et promesse** — rejet de l'invérifiable, bénéfice, qualification et provenance.
 2. **Engagements vérifiables** — ouvert, souverain, explicable ; chacun avec mécanisme, source, date et limite.
 3. **Produits** — cartes accessibles, groupées par public ou usage ; leur statut vient du fleet status.
 4. **Fabrique ouverte** — quatre verbes : décider, construire, vérifier, publier ; liens vers les preuves réelles.
@@ -370,7 +388,7 @@ Une implémentation parallèle n'est sûre qu'après merge et épinglage de l'in
 
 La refonte est terminée seulement si :
 
-1. une personne comprend la promesse, la différence et le moyen de vérifier depuis le premier écran ;
+1. une personne comprend l'adversaire désigné, la promesse positive et le moyen de vérifier depuis le premier écran ;
 2. tout qualificatif de la home renvoie à un mécanisme, une source, une date et une limite explicite ;
 3. tous les noms suivent le LEXICON et aucun produit ne devient une marque autonome ;
 4. les tokens, SVG et composants n'ont qu'une réalisation durable dans `ui` ;
@@ -384,6 +402,9 @@ La refonte est terminée seulement si :
 ## 14. Arbitrages explicitement fermés
 
 - Le territoire est la fabrique ouverte ; la constellation reste une architecture d'information.
+- L'adversaire est la promesse invérifiable ; aucun concurrent ou territoire géographique ne sert de cible.
+- La formule de tension canonique est « Une promesse d'IA sans preuve ne vaut rien. »
+- La provocation reste verbale et démontrable ; l'expression visuelle demeure calme et précise.
 - La promesse utilisateur précède la méthode.
 - Le martinet construit assure la continuité figurative ; il n'est ni mascotte ni illustration narrative.
 - Envol constructif est la base chromatique ; jade et iris ne forment jamais de dégradé.
