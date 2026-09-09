@@ -331,6 +331,7 @@ Record the full commit SHA. The candidate requires role-separated doctrine revie
 
 ```bash
 git worktree add ../.worktrees/brand-ui -b brand/open-verifiable-factory main
+cd ../.worktrees/brand-ui
 bun install --frozen-lockfile
 bun run check
 ```
@@ -637,6 +638,7 @@ Expected: all three engines and no-JS/degraded variants pass; no remote request 
 
 ```bash
 git worktree add ../.worktrees/brand-website -b brand/open-verifiable-factory main
+cd ../.worktrees/brand-website
 bun install --frozen-lockfile
 bun run check
 ```
@@ -832,6 +834,7 @@ git commit -s -m "feat: generate the organization brand introduction"
 
 ```bash
 git worktree add ../.worktrees/brand-dot-github -b brand/open-verifiable-factory main
+cd ../.worktrees/brand-dot-github
 ```
 
 Generate the two intro blocks with the Governance command. Preserve the status section byte-for-byte. Remove the obsolete hand-authored hero and fixed product-count language, but keep product descriptions only where they still match current cards.
