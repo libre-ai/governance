@@ -86,3 +86,9 @@ generations:
       #86 loop alerting + #87 fast-uri 4.1.4 + #88 canonical Dependabot —
       fleet convergence wave 2026-09-07/08 ; declared while the wave is in
       flight, the fleet-pins gate names the repositories not yet converged
+  - sha: 28ff7935955caab6baf42c6f8045221edde3defe
+    added_on: 2026-09-10
+    note: >-
+      mixed-package licence declarations become verifiable without weakening
+      file-level REUSE attribution; libre-ai/ui is the first consumer because
+      its reserved figurative asset and Apache software ship together
