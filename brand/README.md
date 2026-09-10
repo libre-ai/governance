@@ -108,10 +108,10 @@ d'état réservées à leur sens. Jade et iris ne forment jamais un dégradé. H
 cerveaux, étincelles, orbites, chatbots, réseaux décoratifs, chemins sinueux et
 contours topographiques sont exclus.
 
-Le signe candidat est un martinet construit en trois pièces sur une grille de
-24 unités. Il reste monochrome et lisible à 16 px. Aucun asset figuratif n'est
-publié avant acceptation de sa licence dédiée et archivage du contrôle de
-similarité visuelle exigé par la politique de marque.
+Le signe candidat est le **Portique d'atelier**, construit en trois pièces sur
+une grille de 24 unités. Il reste monochrome et lisible à 16 px. Aucun asset
+figuratif n'est publié avant acceptation de sa licence dédiée et archivage du
+contrôle de similarité visuelle exigé par la politique de marque.
 
 ## Preuve et projections
 

@@ -84,8 +84,8 @@ exclus.
 
 La palette **Envol constructif** est adoptée : graphite chaud, jade minéral,
 iris ardoise, états réservés à leur fonction. Le signe figuratif candidat est
-un martinet construit en trois pièces orthogonales sur une grille de 24 unités,
-monochrome et lisible à 16 px.
+le **Portique d'atelier** (`Workshop Gantry` en anglais), construit en trois
+pièces orthogonales sur une grille de 24 unités, monochrome et lisible à 16 px.
 
 ### D5 — Les autorités restent unidirectionnelles
 
