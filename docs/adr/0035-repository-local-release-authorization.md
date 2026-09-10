@@ -40,8 +40,8 @@ nommée, seulement lorsque l'autorité locale fournit ensemble :
 2. les gates du repository et les gates de dérive applicables verts ;
 3. une sélection explicite de l'environnement par le propriétaire ;
 4. un smoke test post-déploiement automatisé ;
-5. une révision précédente récupérable ou une autre procédure de rollback
-   démontrée avant la mutation.
+5. une révision précédente récupérable ou, pour une première release, une
+   procédure d'arrêt démontrée sans domaine canonique attaché.
 
 L'autorisation vaut pour le périmètre prouvé par ces éléments, jamais pour un
 autre repository, environnement, service ou add-on.
@@ -70,6 +70,10 @@ Le merge de cet ADR est l'acte propriétaire qui répare la doctrine. Il ne
 constitue pas à lui seul une autorisation d'environnement. Chaque release garde
 son propre point de contrôle explicite, après preuve verte sur le commit exact.
 
+Une première release est fumée sur l'URL technique Clever Cloud avant toute
+bascule du domaine canonique ; un échec arrête l'application. Les releases
+suivantes conservent la révision immuable précédente comme cible de rollback.
+
 ## Conséquences
 
 - I-07 devient applicable dans la topologie multi-repository actuelle.
@@ -78,7 +82,8 @@ son propre point de contrôle explicite, après preuve verte sur le commit exact
   partagent pas artificiellement le même gate ;
 - aucun provisioning global, compte, base de données, fournisseur OIDC ou
   secret n'est autorisé par cet ADR ;
-- l'état réel d'une release reste porté par le repository qui la produit.
+- l'état réel d'une release reste porté par le repository qui la produit ;
+- un domaine canonique ne pointe jamais vers une première release non fumée.
 
 ## Rejeté
 

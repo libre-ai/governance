@@ -92,6 +92,8 @@ not guessed by the repository.
 
 ## Rollback
 
-Before deployment, reverting the Website merge restores the historical public build. After
-deployment, Clever Cloud's immutable previous revision is the rollback target. The doctrine amendment
-is not silently reverted by an application rollback; changing it requires a new owner-signed ADR.
+Before deployment, reverting the Website merge restores the historical public build. A first Clever
+release is smoked on its technical URL with no canonical domain attached; failure stops the
+application. For later releases, Clever Cloud's immutable previous revision is the rollback target.
+The doctrine amendment is not silently reverted by an application rollback; changing it requires a
+new owner-signed ADR.
