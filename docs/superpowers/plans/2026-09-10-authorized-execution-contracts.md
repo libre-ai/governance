@@ -627,3 +627,12 @@ Only after post-merge green proof, remove the four task worktrees, delete fully 
 - [ ] **Step 7: Stop at the Specification Lock gate**
 
 Report the eleven candidates as merged but not locked. Restitute exact SHAs, role verdicts, tests and remaining owner decision. Do not infer promotion from the present `go all`.
+
+#### Post-merge DCO evidence
+
+Governance PR #99 merged as `9651c07931199490c144eff730095f03282b90a2`.
+Its content and context gates passed, but the push-only DCO gate rejected the
+forge-generated merge commit because GitHub cannot add the maintainer's
+`Signed-off-by` trailer. The corrective commit carrying this record is signed
+and must be rebased onto `main`; subsequent repositories must use rebase or an
+explicitly signed local merge commit so the same failure cannot recur.
