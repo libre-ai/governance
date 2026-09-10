@@ -103,10 +103,13 @@ runtime in Paris.
    applications before creating anything.
 2. Link the exact target application, or create a `static` application in `par` only if no matching
    application exists and creation is explicitly within the selected target.
-3. Record the currently deployed revision and public URL as rollback evidence.
+3. Record the currently deployed revision and public URL as rollback evidence. If this is the first
+   release, keep the canonical domain detached and prove that the application can be stopped.
 4. Configure frozen Bun build and `/dist` web root without secrets or add-ons.
 5. Deploy the merged Website `main` SHA.
 6. Smoke `index.html`, `comparaisons.html`, `marque.html`, CSS assets, CSP, zero executable markup,
    zero remote assets and absent `libre-ai-mark.svg`.
-7. On smoke failure, restore the recorded previous revision and re-run smoke. On success, record the
-   URL, commit SHA and smoke output in Website evidence through a new reviewed PR.
+7. On smoke failure, restore the recorded previous revision or stop a first-release application, then
+   re-run the applicable smoke. Only after a first-release smoke is green may canonical routing be
+   attached. On success, record the URL, commit SHA and smoke output in Website evidence through a
+   new reviewed PR.
