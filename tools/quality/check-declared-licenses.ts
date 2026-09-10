@@ -17,10 +17,17 @@
  * cannot make one. A mismatch is therefore always a defect in the manifest's
  * claim, and this gate treats the REUSE resolution as the reference.
  *
+ * A package that intentionally carries several file-level grants uses npm's
+ * `SEE LICENSE IN <file>` form. The referenced tracked regular file must list
+ * the exact REUSE-resolved union as unique level-two SPDX headings. This keeps
+ * mixed distributions honest without pretending every grant applies to every
+ * file.
+ *
  * Three states, reported distinctly, because "found nothing" and "could not
  * look" must never read the same:
  *
- *   conforming    — every compared file carries exactly the declared licence;
+ *   conforming    — every compared file carries the direct declaration, or a
+ *                   mixed package's licence file inventories the exact union;
  *   divergent     — at least one file does not (FAIL);
  *   indeterminate — the comparison could not be established (FAIL): no declared
  *                   licence, an SPDX expression this gate does not model, or no
@@ -42,7 +49,8 @@
  */
 
 import { execSync } from "node:child_process";
-import { dirname } from "node:path";
+import { lstat } from "node:fs/promises";
+import { dirname, posix } from "node:path";
 
 /** Licence identifiers `reuse spdx` resolved for one file. */
 export interface SpdxFileAttribution {
@@ -68,7 +76,11 @@ export type Verdict =
       readonly state: "divergent";
       readonly compared: number;
       readonly editorialSkipped: number;
-      readonly divergences: readonly { readonly path: string; readonly effective: string }[];
+      readonly divergences: readonly {
+        readonly path: string;
+        readonly effective: string;
+        readonly detail?: string;
+      }[];
     }
   | { readonly state: "indeterminate"; readonly reason: string };
 
@@ -81,6 +93,12 @@ const EDITORIAL_LICENSE = "CC-BY-4.0";
 
 // SPDX short-form identifiers: letters, digits, dot, plus, hyphen.
 const LICENSE_IDENTIFIER = /^[A-Za-z0-9.+-]+$/;
+const LICENSE_FILE_PREFIX = "SEE LICENSE IN ";
+
+export type ParsedLicenseDeclaration =
+  | { readonly kind: "spdx"; readonly identifiers: readonly string[] }
+  | { readonly kind: "file"; readonly relativePath: string }
+  | { readonly kind: "invalid"; readonly reason: string };
 
 /**
  * Parses the tag-value document produced by `reuse spdx`.
@@ -137,6 +155,57 @@ export function parseDeclaredExpression(expression: string): readonly string[] |
   const identifiers = parts.map((part) => part.trim());
   if (identifiers.some((identifier) => !LICENSE_IDENTIFIER.test(identifier))) return null;
   return [...new Set(identifiers)];
+}
+
+/**
+ * Parses npm's licence declaration forms without resolving a path yet.
+ * Licence-file paths are deliberately portable repository paths: accepting
+ * traversal, absolute paths, empty segments, or platform-specific separators
+ * would let a manifest make a claim that CI and a packed artifact resolve
+ * differently.
+ */
+export function parseLicenseDeclaration(expression: string): ParsedLicenseDeclaration {
+  const trimmed = expression.trim();
+  if (trimmed.startsWith(LICENSE_FILE_PREFIX)) {
+    const relativePath = trimmed.slice(LICENSE_FILE_PREFIX.length);
+    const segments = relativePath.split("/");
+    if (
+      trimmed !== expression ||
+      !/^[A-Za-z0-9._/-]+$/.test(relativePath) ||
+      relativePath.startsWith("/") ||
+      segments.some((segment) => segment.length === 0 || segment === "." || segment === "..")
+    ) {
+      return { kind: "invalid", reason: "licence-file path is not a safe portable relative path" };
+    }
+    return { kind: "file", relativePath };
+  }
+
+  const identifiers = parseDeclaredExpression(trimmed);
+  if (identifiers === null) {
+    return { kind: "invalid", reason: `declared expression "${expression}" is not modelled` };
+  }
+  return { kind: "spdx", identifiers };
+}
+
+/**
+ * A mixed-package licence document has one exact level-two heading per
+ * effective SPDX identifier. Keeping the inventory structural makes drift
+ * machine-detectable while leaving the prose beneath each heading human-owned.
+ */
+export function parseLicenseDocumentIdentifiers(document: string): readonly string[] | null {
+  const headings = document
+    .split("\n")
+    .filter((line) => line.startsWith("## "))
+    .map((line) => /^## `([A-Za-z0-9.+-]+)`$/.exec(line)?.[1] ?? null);
+  if (headings.length === 0 || headings.some((heading) => heading === null)) return null;
+
+  const identifiers = headings.filter((heading): heading is string => heading !== null);
+  if (new Set(identifiers).size !== identifiers.length) return null;
+  return identifiers;
+}
+
+function licenseDocumentPath(target: PublishableTarget, relativePath: string): string {
+  return target.directory === "." ? relativePath : posix.join(target.directory, relativePath);
 }
 
 /** Doctrine-conformant editorial prose: Markdown resolved to the documentation licence. */
@@ -259,15 +328,16 @@ export function filesOwnedBy(
 export function evaluateTarget(
   target: PublishableTarget,
   ownedFiles: readonly SpdxFileAttribution[],
+  licenseDocuments: ReadonlyMap<string, string> = new Map(),
 ): Verdict {
   if (target.declared === null) {
     return { state: "indeterminate", reason: "manifest declares no licence" };
   }
-  const declaredIdentifiers = parseDeclaredExpression(target.declared);
-  if (declaredIdentifiers === null) {
+  const declaration = parseLicenseDeclaration(target.declared);
+  if (declaration.kind === "invalid") {
     return {
       state: "indeterminate",
-      reason: `declared expression "${target.declared}" is not modelled by this gate`,
+      reason: declaration.reason,
     };
   }
 
@@ -283,8 +353,64 @@ export function evaluateTarget(
     };
   }
 
+  if (declaration.kind === "file") {
+    const unresolved = compared
+      .filter((file) => file.licenses.length === 0)
+      .map((file) => ({ path: file.path, effective: "no licence resolved" }));
+    if (unresolved.length > 0) {
+      return {
+        state: "divergent",
+        compared: compared.length,
+        editorialSkipped,
+        divergences: unresolved,
+      };
+    }
+
+    const documentPath = licenseDocumentPath(target, declaration.relativePath);
+    const document = licenseDocuments.get(documentPath);
+    if (document === undefined) {
+      return {
+        state: "indeterminate",
+        reason: `licence file ${documentPath} is not tracked or unreadable`,
+      };
+    }
+    const documentedIdentifiers = parseLicenseDocumentIdentifiers(document);
+    if (documentedIdentifiers === null) {
+      return {
+        state: "indeterminate",
+        reason: `licence file ${documentPath} has no unique exact level-two SPDX inventory`,
+      };
+    }
+
+    const effectiveIdentifiers = [
+      ...new Set(compared.flatMap((file) => [...file.licenses])),
+    ].sort();
+    if (effectiveIdentifiers.length < 2) {
+      return {
+        state: "indeterminate",
+        reason: "SEE LICENSE IN requires at least two distinct effective licences",
+      };
+    }
+    const documented = [...documentedIdentifiers].sort();
+    if (!sameLicenseSet(documented, effectiveIdentifiers)) {
+      return {
+        state: "divergent",
+        compared: compared.length,
+        editorialSkipped,
+        divergences: [
+          {
+            path: documentPath,
+            effective: effectiveIdentifiers.join(" AND "),
+            detail: `${target.name} licence file lists ${documented.join(" AND ")} but REUSE resolves ${effectiveIdentifiers.join(" AND ")}`,
+          },
+        ],
+      };
+    }
+    return { state: "conforming", compared: compared.length, editorialSkipped };
+  }
+
   const divergences = compared
-    .filter((file) => !sameLicenseSet(file.licenses, declaredIdentifiers))
+    .filter((file) => !sameLicenseSet(file.licenses, declaration.identifiers))
     .map((file) => ({
       path: file.path,
       effective: file.licenses.length > 0 ? file.licenses.join(" OR ") : "no licence resolved",
@@ -300,12 +426,14 @@ export function evaluateTargets(
   targets: readonly PublishableTarget[],
   manifestDirectories: readonly string[],
   attributions: readonly SpdxFileAttribution[],
+  licenseDocuments: ReadonlyMap<string, string> = new Map(),
 ): PackageReport[] {
   return targets.map((target) => ({
     target,
     verdict: evaluateTarget(
       target,
       filesOwnedBy(target.directory, manifestDirectories, attributions),
+      licenseDocuments,
     ),
   }));
 }
@@ -395,7 +523,24 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  const reports = evaluateTargets(targets, manifestDirectories, attributions);
+  const trackedSet = new Set(tracked);
+  const licenseDocuments = new Map<string, string>();
+  for (const target of targets) {
+    if (target.declared === null) continue;
+    const declaration = parseLicenseDeclaration(target.declared);
+    if (declaration.kind !== "file") continue;
+    const path = licenseDocumentPath(target, declaration.relativePath);
+    if (!trackedSet.has(path)) continue;
+    try {
+      const absolutePath = `${root}/${path}`;
+      if (!(await lstat(absolutePath)).isFile()) continue;
+      licenseDocuments.set(path, await Bun.file(absolutePath).text());
+    } catch {
+      // evaluateTarget reports the unreadable document as indeterminate.
+    }
+  }
+
+  const reports = evaluateTargets(targets, manifestDirectories, attributions, licenseDocuments);
 
   console.log("Declared-vs-effective licence gate");
   console.log(
@@ -435,7 +580,8 @@ if (import.meta.main) {
     if (verdict.state === "divergent") {
       for (const divergence of verdict.divergences) {
         failures.push(
-          `${target.name} declares ${target.declared} but REUSE attributes ${divergence.effective} to ${divergence.path}`,
+          divergence.detail ??
+            `${target.name} declares ${target.declared} but REUSE attributes ${divergence.effective} to ${divergence.path}`,
         );
       }
     } else if (verdict.state === "indeterminate") {

@@ -7,6 +7,8 @@ import {
   isEditorialProse,
   type PublishableTarget,
   parseDeclaredExpression,
+  parseLicenseDeclaration,
+  parseLicenseDocumentIdentifiers,
   parseSpdxDocument,
   type SpdxFileAttribution,
 } from "./check-declared-licenses";
@@ -80,6 +82,41 @@ describe("parseDeclaredExpression", () => {
     expect(parseDeclaredExpression("Apache-2.0 WITH LLVM-exception")).toBeNull();
     expect(parseDeclaredExpression("(MIT OR Apache-2.0) AND CC0-1.0")).toBeNull();
     expect(parseDeclaredExpression("   ")).toBeNull();
+  });
+});
+
+describe("parseLicenseDeclaration", () => {
+  test("recognises an npm licence-file declaration", () => {
+    expect(parseLicenseDeclaration("SEE LICENSE IN LICENSING.md")).toEqual({
+      kind: "file",
+      relativePath: "LICENSING.md",
+    });
+  });
+
+  test("refuses paths that can escape or vary across platforms", () => {
+    for (const declaration of [
+      "SEE LICENSE IN ../LICENSING.md",
+      "SEE LICENSE IN /LICENSING.md",
+      "SEE LICENSE IN docs\\LICENSING.md",
+      "SEE LICENSE IN docs//LICENSING.md",
+    ]) {
+      expect(parseLicenseDeclaration(declaration).kind).toBe("invalid");
+    }
+  });
+});
+
+describe("parseLicenseDocumentIdentifiers", () => {
+  test("reads exact level-two SPDX headings", () => {
+    expect(
+      parseLicenseDocumentIdentifiers(
+        "# Distribution licences\n\n## `Apache-2.0`\n\nCode.\n\n## `LicenseRef-Brand-1.0`\n\nMark.\n",
+      ),
+    ).toEqual(["Apache-2.0", "LicenseRef-Brand-1.0"]);
+  });
+
+  test("refuses duplicate or malformed licence headings", () => {
+    expect(parseLicenseDocumentIdentifiers("## `Apache-2.0`\n\n## `Apache-2.0`\n")).toBeNull();
+    expect(parseLicenseDocumentIdentifiers("## Apache-2.0\n")).toBeNull();
   });
 });
 
@@ -281,5 +318,87 @@ describe("evaluateTarget", () => {
     expect(verdict.state).toBe("divergent");
     if (verdict.state !== "divergent") return;
     expect(verdict.divergences[0]?.effective).toBe("no licence resolved");
+  });
+
+  test("accepts a mixed package only when its licence file lists the exact REUSE union", () => {
+    const verdict = evaluateTarget(
+      target("SEE LICENSE IN LICENSING.md"),
+      [
+        { path: "packages/x/LICENSING.md", licenses: ["Apache-2.0"] },
+        { path: "packages/x/src/a.ts", licenses: ["Apache-2.0"] },
+        { path: "packages/x/assets/mark.svg", licenses: ["LicenseRef-Brand-1.0"] },
+      ],
+      new Map([
+        [
+          "packages/x/LICENSING.md",
+          "# Distribution licences\n\n## `Apache-2.0`\n\nCode.\n\n## `LicenseRef-Brand-1.0`\n\nMark.\n",
+        ],
+      ]),
+    );
+    expect(verdict.state).toBe("conforming");
+    if (verdict.state !== "conforming") return;
+    expect(verdict.compared).toBe(3);
+  });
+
+  test("refuses a missing licence file", () => {
+    const verdict = evaluateTarget(target("SEE LICENSE IN LICENSING.md"), [
+      { path: "packages/x/src/a.ts", licenses: ["Apache-2.0"] },
+      { path: "packages/x/assets/mark.svg", licenses: ["LicenseRef-Brand-1.0"] },
+    ]);
+    expect(verdict.state).toBe("indeterminate");
+    if (verdict.state !== "indeterminate") return;
+    expect(verdict.reason).toContain("not tracked or unreadable");
+  });
+
+  test("rejects an incomplete or extraneous licence-file inventory", () => {
+    const ownedFiles: SpdxFileAttribution[] = [
+      { path: "packages/x/LICENSING.md", licenses: ["Apache-2.0"] },
+      { path: "packages/x/src/a.ts", licenses: ["Apache-2.0"] },
+      { path: "packages/x/assets/mark.svg", licenses: ["LicenseRef-Brand-1.0"] },
+    ];
+
+    for (const document of [
+      "## `Apache-2.0`\n",
+      "## `Apache-2.0`\n\n## `LicenseRef-Brand-1.0`\n\n## `MIT`\n",
+    ]) {
+      const verdict = evaluateTarget(
+        target("SEE LICENSE IN LICENSING.md"),
+        ownedFiles,
+        new Map([["packages/x/LICENSING.md", document]]),
+      );
+      expect(verdict.state).toBe("divergent");
+    }
+  });
+
+  test("does not let a licence file hide unresolved REUSE attribution", () => {
+    const verdict = evaluateTarget(
+      target("SEE LICENSE IN LICENSING.md"),
+      [
+        { path: "packages/x/LICENSING.md", licenses: ["Apache-2.0"] },
+        { path: "packages/x/src/a.ts", licenses: [] },
+        { path: "packages/x/assets/mark.svg", licenses: ["LicenseRef-Brand-1.0"] },
+      ],
+      new Map([["packages/x/LICENSING.md", "## `Apache-2.0`\n\n## `LicenseRef-Brand-1.0`\n"]]),
+    );
+    expect(verdict.state).toBe("divergent");
+    if (verdict.state !== "divergent") return;
+    expect(verdict.divergences).toContainEqual({
+      path: "packages/x/src/a.ts",
+      effective: "no licence resolved",
+    });
+  });
+
+  test("keeps direct SPDX declarations mandatory for single-licence packages", () => {
+    const verdict = evaluateTarget(
+      target("SEE LICENSE IN LICENSING.md"),
+      [
+        { path: "packages/x/LICENSING.md", licenses: ["Apache-2.0"] },
+        { path: "packages/x/src/a.ts", licenses: ["Apache-2.0"] },
+      ],
+      new Map([["packages/x/LICENSING.md", "## `Apache-2.0`\n"]]),
+    );
+    expect(verdict.state).toBe("indeterminate");
+    if (verdict.state !== "indeterminate") return;
+    expect(verdict.reason).toContain("distinct effective licences");
   });
 });
