@@ -95,6 +95,12 @@ G2 (identité → données → harness qualité) s'achève avant la vague 1. Gat
 
 Tous les repositories du portefeuille sont **publics** (pour `model-policy` : après le re-audit du §8). Aucun élément privé personnel n'appartient au périmètre de ce portefeuille ni à ses inventaires.
 
+Amendement ADR-0038 (2026-09-10) : un distant privé temporaire utilisé pour prouver
+la première publication n'est pas encore un repository du portefeuille, n'entre dans
+aucun inventaire ou état d'exposition, et ne peut contenir que le candidat destiné à
+devenir public. Il rejoint le portefeuille uniquement après l'attestation privée
+fusionnée et la bascule publique séparée prescrites par ADR-0038/I-30.
+
 ## Conséquences
 
 - L'ancien séquencement « neuf apps en parallèle » est re-séquencé (les apps sont la vague 4) ; `docs/transformation/EXECUTION-SEQUENCING.md` mappera vagues ↔ work-packages.

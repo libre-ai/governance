@@ -1,0 +1,76 @@
+{
+  "schema_version": "libre-ai.naming-collision-search.v1",
+  "captured_at": "2026-09-10T15:47:11+02:00",
+  "candidate": {
+    "public_name": "Libre AI Signalement",
+    "repository": "libre-ai/signalement",
+    "bare_name": "Signalement"
+  },
+  "classes_reviewed": [
+    "browser incident and improvement reporting",
+    "software testing and fix verification",
+    "work-management synchronization",
+    "AI-assisted qualification",
+    "private security vulnerability reporting"
+  ],
+  "searches": [
+    {
+      "surface": "GitHub repository search API",
+      "query": "\"Libre AI Signalement\"",
+      "source": "https://api.github.com/search/repositories?q=%22Libre%20AI%20Signalement%22",
+      "result": "0 repositories; incomplete_results=false"
+    },
+    {
+      "surface": "GitHub repository URL",
+      "query": "libre-ai/signalement",
+      "source": "https://github.com/libre-ai/signalement",
+      "result": "HTTP 404 before owner signature"
+    },
+    {
+      "surface": "npm package registry",
+      "query": "@libre-ai/signalement",
+      "source": "https://registry.npmjs.org/%40libre-ai%2Fsignalement",
+      "result": "HTTP 404"
+    },
+    {
+      "surface": "OpenAI web search",
+      "query": "\"Libre AI Signalement\"",
+      "source": "https://www.trackforce.com/fr/products/tracktik/reportpro-ai/",
+      "result": "no exact-name result; adjacent incident-reporting product retained for semantic review"
+    },
+    {
+      "surface": "OpenAI web search",
+      "query": "\"AI Signalement\" logiciel OR software",
+      "source": "https://civicspot.io/fr/",
+      "result": "no exact-name result; adjacent civic-reporting product retained for semantic review"
+    }
+  ],
+  "known_semantic_risk": {
+    "risk": "In French, signalement is also strongly associated with whistleblowing, HSE, civic reporting and security vulnerability reporting.",
+    "decision_effect": "The first public description must say web application incident or improvement request; anonymous wrongdoing reporting is not implied, and suspected vulnerabilities, exposed secrets or exploit details are routed to the fleet SECURITY.md private channel."
+  },
+  "rejected_candidate_collisions": [
+    {
+      "candidate": "Libre AI Dossier",
+      "sources": [
+        "https://www.dossier.work/",
+        "https://github.com/rwliebs/Dossier",
+        "https://github.com/imboard-ai/ai-dossier",
+        "https://askdossier.ai/about/"
+      ]
+    },
+    {
+      "candidate": "Libre AI ReproRelay",
+      "sources": ["https://www.npmjs.com/package/@reprorelay/browser-sdk"]
+    },
+    {
+      "candidate": "Libre AI Constat",
+      "sources": ["https://healthai.com/"]
+    }
+  ],
+  "limits": [
+    "Search results are time-dependent and this file records only normalized decision-relevant results.",
+    "This is a product and technical collision screen, not trademark clearance or legal advice.",
+    "No absence result grants exclusivity over the bare descriptive word."
+  ]
+}

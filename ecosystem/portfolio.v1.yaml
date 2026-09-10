@@ -8,7 +8,7 @@ authority: >
   2026-07-19 state; the portfolio grows by owner decision. Repository creation and
   product activation are on the human-touch surface (ADR-0009 §5).
 exposure_scale: [idea, spec-published, usable-verifiable, proven]
-updated_on: 2026-07-23
+updated_on: 2026-09-10
 
 families:
   couche-1-apps:
@@ -20,6 +20,17 @@ families:
         8th couche-1 product (owner decision 2026-07-23, ADR-0008 multi-repo).
         Sovereign, explainable job-search assistant for cadres.
       benchmark: TBD (owner to set)
+    - name: Signalement
+      exposure: idea
+      repo: libre-ai/signalement # planned; ADR-0038/I-30 private-first publication
+      note: >
+        Enrolled by owner decision on 2026-09-10. The LEXICON reserves the public
+        family name; private repository creation and later public exposure remain
+        separate human-touch actions under ADR-0038/I-30.
+      function: >
+        capture and qualify incidents or improvement requests, preserve approved
+        evidence, produce executable verification scenarios, and synchronize
+        projections with external work-management systems without becoming one
 
   transverse:
     - name: Website
@@ -94,6 +105,7 @@ enrollment:
   # Owner decision 2026-07-23. Enrolled = committed to the pipeline; not the same as
   # having a repository (an item earns a repo when verifiable, §4).
   enrolled_candidates: [rgpd-kit, transcription, model-routing, embedded-db, api-workbench]
+  enrolled_products: [signalement]
   accepted_suggestions: [agent-identity, agentic-research, patterns-skills, desktop-shells]
 
 production_order:

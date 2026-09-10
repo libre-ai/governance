@@ -1,7 +1,7 @@
 # LEXICON — carte de noms cible et glossaire produit (Phase 0, Lexicon Lock)
 
 - **Statut :** signé — signature propriétaire prononcée le 2026-07-20, journalisée dans [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md) (PR #130, merge = signature). Cette carte est en vigueur : elle est l'autorité unique des noms cibles, et tout nom hors carte est un défaut bloquant (garde-fou classe 4).
-- **Date :** 2026-07-20. **Amendé :** 2026-07-28 par ADR-0020 (activation générale), 2026-07-30 (§9, carte des couches complétée), 2026-08-18 (§10, harness créé — domaine F chantier A), même procédure que la signature — production → revue K4 → arrêt dur → merge = signature propriétaire. Le §8 porte le premier amendement ; les corrections ciblées dans le corps sont marquées « (ADR-0020) ».
+- **Date :** 2026-07-20. **Amendé :** 2026-07-28 par ADR-0020 (activation générale), 2026-07-30 (§9, carte des couches complétée), 2026-08-18 (§10, harness créé — domaine F chantier A et §11, neuvième produit), 2026-09-10 (§12, dixième produit candidat), même procédure que la signature — production → revue K4 → arrêt dur → merge = signature propriétaire. Le §8 porte le premier amendement ; les corrections ciblées dans le corps sont marquées « (ADR-0020) ».
 - **Arbitrage :** accompli — la signature propriétaire de cette carte est l'acte de clôture de la Phase 0 (Lexicon Lock). Procédure suivie : production solo → revue K4 (relecteurs indépendants : cohérence, collisions, doctrine) → arrêt dur → signature propriétaire → renommage et écriture des noms cibles comme acquis.
 - **Portée :** tous les noms cibles de la constellation — repositories, produits, briques, packages npm, crates, familles — et le glossaire produit. Le glossaire de **méthode** (socle, control plane, satellite, vague, gate, WP, traceur…) est déjà fixé et ne relève pas de cette carte.
 - **Règle d'anti-hallucination :** tant que cette carte n'est pas signée, aucun agent n'écrit un nom cible comme acquis dans un artefact ; après signature, tout nom hors carte est un défaut bloquant (garde-fou classe 4).
@@ -313,3 +313,55 @@ Le repository est né après la sortie prouvée de sa phase `sealed-repo`
 (gate d'isolation démontré dans les deux sens, index initial audité sans
 instance de voyage, fiche valide, double licence Apache-2.0/ODbL) — preuves
 dans `travel-agent/docs/evidence/2026-08-18-sealed-repo.md`.
+
+## 12. Amendement du 2026-09-10 — produit couche 1 pré-repository : `signalement`
+
+Décision propriétaire du 2026-09-10, issue d'une qualification structurée :
+`signalement` est un produit Libre AI de couche 1. Il permet de capturer et
+qualifier un incident ou une demande d'amélioration, de produire un scénario
+de reproduction et des verdicts vérifiables, puis de synchroniser des
+projections vers plusieurs systèmes de travail sans devenir lui-même un
+nouveau ticketing.
+
+### 12.1 Nom canonique
+
+| Produit       | Repo                    | Marque publique      | Couche |
+| ------------- | ----------------------- | -------------------- | ------ |
+| `signalement` | `libre-ai/signalement` | Libre AI Signalement | 1      |
+
+Le produit reste centré sur l'acte utilisateur de signaler un problème ou une
+amélioration. Son objet métier canonique s'appelle `Dossier` : il rassemble
+déclarations, faits observés, preuves approuvées, scénario et résultats. Les
+tickets externes restent des projections indépendantes. Comme tout produit de
+la famille, Signalement ne reçoit ni promesse ni identité de marque autonome :
+seule l'ombrelle Libre AI porte la promesse publique (`brand/README.md`,
+architecture de famille).
+
+L'inscription correspondante dans `ecosystem/portfolio.v1.yaml` est l'autorité
+de son état pré-repository. Elle l'enrôle à l'exposition `idea` ; elle ne prouve
+ni repository, ni implémentation, ni connecteur qualifié.
+
+### 12.2 Collision et limite sémantique
+
+Le contrôle du 2026-09-10 n'a identifié aucun produit homonyme exact **Libre AI
+Signalement** sur les surfaces interrogées. Le mot nu reste un générique français
+non revendiqué et porte une limite réelle : il est aussi associé au lancement
+d'alerte, au HSE et au signalement civique. Le premier emploi public doit donc
+préciser « incident ou demande d'amélioration dans une application web » et ne
+jamais suggérer un canal anonyme de dénonciation. Une vulnérabilité suspectée, un
+secret exposé ou un détail d'exploitation est explicitement hors de ce parcours :
+le `SECURITY.md` de flotte impose son canal privé. Les moteurs, requêtes, classes,
+résultats normalisés, sources et limites sont archivés avec digest dans le dossier
+de décision ; ce contrôle n'est ni une recherche d'antériorité ni un avis juridique.
+
+### 12.3 Condition de publication
+
+Le repository public ne naît qu'après la signature de cet amendement et le
+protocole privé-first d'ADR-0038/I-30. Cette autorité sépare la création d'un
+distant vide privé, le push des OID attestés vers des refs complètes exactes, la
+preuve reproduite depuis un clone privé complet et l'exposition publique. Le
+manifeste canonique refs/objets et son attestation restent archivés dans
+Governance ; une simple CI post-publication ne protège pas la première
+divulgation. L'inscription dans l'inventaire topologique intervient seulement
+après que le repository est observable, afin que le truth-drift ne transforme
+jamais une intention en état du monde.
