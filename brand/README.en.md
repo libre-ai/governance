@@ -53,6 +53,8 @@ independent logos, promises, or permanent status-like colours.
 
 The visual concept is the **open factory**, expressed through open assembly:
 visible pieces, joints, inputs, outputs, and controls. `@libre-ai/ui` owns the
-visual implementation. It uses the Envol constructif palette and never forms a
-gradient between jade and iris. No figurative asset is published before its
-dedicated licence and visual-similarity review are accepted and archived.
+visual implementation. The candidate mark is the **Workshop Gantry** (`Portique
+d'atelier` in French), constructed from three orthogonal pieces on a 24-unit
+grid. It uses the Envol constructif palette and never forms a gradient between
+jade and iris. No figurative asset is published before its dedicated licence
+and visual-similarity review are accepted and archived.
