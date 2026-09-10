@@ -10,6 +10,8 @@
   `cb865613039c78e344bcbb51f4dbdfd469f634b9`, tree contrats
   `8015ead233c805a30f2bb1e74c5feedaaafdb7ce`
 - **Étend :** ADR-0034 D6 et D40.
+- **Étendu par :** ADR-0037/D43 ouvre uniquement le cœur natif pur de Phase 4A
+  et conserve toutes les absences de preuve runtime de D2.
 - **Applique :** I-08 (autorité du Specification Lock) et I-17 (acte
   propriétaire requis pour un amendement de lock).
 - **N'autorise :** ni runtime, ni service, ni déploiement, ni mission réelle,
