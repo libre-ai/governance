@@ -397,6 +397,13 @@ review de lock et son jalon propriétaire restent distincts.
 
 ### Phase 4 — Cœur natif de l'Orchestrateur
 
+**Statut :** Phase 4A pure ouverte par ADR-0037/D43 et `WP-G3-O02` après
+l'acte propriétaire du 2026-09-10. Cette ouverture rend exécutables les
+décisions déterministes verrouillées ; elle n'ouvre ni la sérialisation
+transactionnelle, ni l'idempotence/fencing d'un exécuteur réel, ni les logs
+runtime sans PII, ni la rétention/suppression/restore. Ces quatre preuves
+restent bloquantes et séparées sous la future frontière de run `WP-G3-O01`.
+
 - implémenter des fonctions pures de validation et de transition ;
 - prouver replay déterministe, routage fermé, budgets monotones, stale decisions et refus cross-tenant ;
 - injecter les crashes aux cinq frontières du protocole d'effet.

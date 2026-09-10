@@ -1,6 +1,6 @@
 # Authorized Execution Native Core — Phase 4A Design
 
-- **Status:** approved for specification authoring — owner, 2026-09-10
+- **Status:** approved for implementation — owner, 2026-09-10; authority ADR-0037/D43
 - **Date:** 2026-09-10
 - **Programme authority:** ADR-0032, ADR-0034 and ADR-0036
 - **Scope:** effect-free Rust validation, transition and replay of the locked
