@@ -774,6 +774,53 @@
       "definitionStatus": "locked"
     },
     {
+      "id": "WP-G3-O02",
+      "phase": "G3",
+      "name": "Orchestrator native authorized-execution core",
+      "objective": "Execute the locked graph, causal replay, human-decision, generation-transfer and effect-attestation semantics as deterministic pure Rust decisions without opening a runtime capability.",
+      "owners": ["platform", "security"],
+      "integrator": "platform",
+      "writePaths": [
+        "src/authorized_execution/**",
+        "tests/authorized_execution_*.rs",
+        "tests/support/**",
+        "benches/authorized_execution_replay.rs",
+        "Cargo.toml",
+        "Cargo.lock",
+        "package.json",
+        "bun.lock",
+        "README.md",
+        "docs/apps/orchestrator.md",
+        "docs/compat/**",
+        "docs/reviews/authorized-execution-native-core/**",
+        "project.v1.yaml",
+        "tools/quality/authorized-execution-authority.test.ts",
+        "tests/compat_surface.rs",
+        "tests/compat/**",
+        "src/lib.rs"
+      ],
+      "readAuthorities": [
+        "docs/adr/0032-langgraph-pattern-mining-boundary.md",
+        "docs/adr/0034-authorized-execution-graph-boundary.md",
+        "docs/adr/0036-authorized-execution-specification-lock.md",
+        "contracts/fixtures/authorized-execution-v1/semantic-vectors.v1.json",
+        "contracts/fixtures/schema-fixtures.v1.json"
+      ],
+      "dependsOn": ["WP-G2-C01"],
+      "parallelGroup": "g3-1",
+      "risk": "critical",
+      "humanGates": ["authorized-execution-native-core-security-merge"],
+      "acceptance": [
+        "The exact SDK Rust and Contracts lock-authority commits are pinned and verified directly from the checkout.",
+        "All 54 locked semantic vectors execute independently in Rust with their literal outcomes and exact domain inventory.",
+        "Replay is deterministic, routing is closed and declaration-order independent, budgets are monotone, and unavailable observations refuse closed.",
+        "Five fake-harness crash cut points prove no blind retry, no false success and at most one fake external commit.",
+        "The source capability gate proves no I/O, clock, secret, persistence, provider or framework capability entered the crate.",
+        "Rust tests, clippy, benchmark, Bun gates, license/reuse gates, role-separated review and feature/post-merge CI are green."
+      ],
+      "definitionStatus": "locked"
+    },
+    {
       "id": "WP-G4-I01",
       "phase": "G4",
       "name": "Clever Cloud EU integration environment",
