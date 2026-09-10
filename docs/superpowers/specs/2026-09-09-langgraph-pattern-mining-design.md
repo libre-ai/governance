@@ -381,9 +381,12 @@ contrats candidats.
 
 ### Phase 3 — Contrats candidats, tests d'abord
 
-**Statut :** non ouverte. Un nouveau plan cross-repository doit définir les
-contrats, fixtures et revues ; leur promotion reste soumise à une review de
-lock et à un jalon propriétaire distincts.
+**Statut :** ouverte par choix propriétaire explicite le 2026-09-09 pour la
+rédaction des onze candidats définis dans
+`2026-09-09-authorized-execution-contracts-design.md`, selon le plan
+`../plans/2026-09-10-authorized-execution-contracts.md`. Cette ouverture
+n'autorise ni leur promotion, ni un producteur, ni une capacité runtime ; la
+review de lock et son jalon propriétaire restent distincts.
 
 - écrire fixtures positives et négatives ;
 - proposer `execution-graph.v1`, plan v2, événement v3, décision, invocation et attestation d'effet ;
