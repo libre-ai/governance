@@ -9,6 +9,8 @@
 - **Proposition revue :** `7112cb797f686d70fc055449d781d634eeaa2517`
 - **Portée :** architecture du graphe d'exécution autorisé, autorités, retry, décision humaine typée, fenêtre critique des effets et frontière du premier incrément contractuel.
 - **Étend :** RFC-0001, ADR-0004, ADR-0018, ADR-0032 D2/D3/D5, I-03, I-18 et I-19.
+- **Étendu par :** ADR-0036, qui autorise séparément le Specification Lock des
+  onze autorités revues sans ouvrir de capacité runtime.
 - **N'amende aucun Specification Lock, ne crée aucun contrat et n'ouvre aucune capacité runtime.**
 
 ## Contexte
