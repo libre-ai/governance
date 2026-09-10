@@ -486,6 +486,23 @@ git commit -s -m "docs: authorize native execution core"
 
 Expected: a signed commit containing only Governance authority and its direct test.
 
+- [ ] **Step 8: Review the immutable Governance branch**
+
+Run the `review` skill against the exact Governance HEAD. Verify, in the four mandatory axes, that the work package cannot authorize I/O or real effects, that D43 reproduces ADR-0037 without widening it, that `WP-G3-O01` remains separate, that no PII or session identity entered tracked files, and that the red/green authority test plus full gate are reproducible. Any Blocking or Major finding returns to Step 1 with a regression test where applicable.
+
+- [ ] **Step 9: Publish and merge Governance before implementation**
+
+First verify the authenticated GitHub account owns the personal Libre AI identity approved for the session. Push the Governance branch, open its PR, review base/head and exact changed paths, then wait for all required checks:
+
+```bash
+git push -u origin docs/authorized-execution-native-core-design
+gh pr create --fill
+GOVERNANCE_PR_NUMBER=$(gh pr view --json number --jq .number)
+gh pr checks "$GOVERNANCE_PR_NUMBER" --watch
+```
+
+Merge without force only when review and CI are green. Fetch and verify the exact Governance `origin/main` merge SHA. Orchestrator Task 2 is blocked until that SHA contains ADR-0037, D43 and `WP-G3-O02` and its post-merge checks are green.
+
 ---
 
 ### Task 2: Pin immutable authorities and create the Orchestrator worktree gate
@@ -1523,11 +1540,7 @@ git commit -s -m "docs: record native execution review"
 
 Run the complete proof again because the evidence commit changes HEAD; the evidence must state that the reviewed implementation parent SHA is immutable and that the evidence-only child changes no implementation.
 
-- [ ] **Step 5: Push Governance first and verify its feature CI**
-
-Push the Governance authority branch, open a PR, verify exact checks, merge only if green, then record the merged Governance `main` SHA. Do not merge Orchestrator while ADR-0037/D43/WP-G3-O02 is absent from Governance main.
-
-- [ ] **Step 6: Push Orchestrator, verify feature CI and review the address**
+- [ ] **Step 5: Push Orchestrator, verify feature CI and review the address**
 
 ```bash
 git push -u origin feat/authorized-execution-native-core
@@ -1538,7 +1551,7 @@ gh pr checks "$PR_NUMBER" --watch
 
 Expected: all required checks green. Review the PR base/head, exact commit list, changed paths and merge method; ensure no unrelated Harness or Governance WIP entered the branch.
 
-- [ ] **Step 7: Merge without force and verify post-merge main**
+- [ ] **Step 6: Merge without force and verify post-merge main**
 
 Merge using the repository-required method only after green review. Then:
 
@@ -1559,7 +1572,7 @@ cargo clippy --locked --all-targets --all-features -- -D warnings
 
 Expected: post-merge SHA green; no deployment is performed because Phase 4A exposes no service.
 
-- [ ] **Step 8: Remove only the completed clean worktrees**
+- [ ] **Step 7: Remove only the completed clean worktrees**
 
 Verify both feature worktrees are clean and their branches are merged before running:
 
