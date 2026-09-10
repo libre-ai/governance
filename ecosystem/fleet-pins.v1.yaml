@@ -92,3 +92,9 @@ generations:
       mixed-package licence declarations become verifiable without weakening
       file-level REUSE attribution; libre-ai/ui is the first consumer because
       its reserved figurative asset and Apache software ship together
+  - sha: 9ac334cdf86cf05d126091f394d07c01d7745930
+    added_on: 2026-09-10
+    note: >-
+      repository-local release authorization and Portique d'atelier terminology
+      are merged and reviewable; libre-ai/website is the first consumer because
+      its production brand projection requires the resulting authority SHA
