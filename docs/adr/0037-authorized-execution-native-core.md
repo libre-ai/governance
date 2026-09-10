@@ -4,6 +4,9 @@
 - **Arbitrage :** recommandation A approuvée par le propriétaire en session par
   « oui ». Owner-arbitration: 2026-09-10
 - **Étend :** ADR-0032 D38, ADR-0034 D40 et ADR-0036 D42
+- **Applique :** I-08 (phases, critères et preuves), I-17 (acte propriétaire
+  pour une surface à touche humaine) et I-21 (frontière code/données et zéro
+  donnée personnelle dans le repository)
 - **Autorise :** `WP-G3-O02` dans le crate pur
   `libre-ai-agent-orchestrator`
 - **N'autorise pas :** persistance, horloge, logs, secrets, réseau, processus,

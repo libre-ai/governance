@@ -302,6 +302,8 @@ test "$(git config --get user.email)" = "$LIBRE_AI_GIT_EMAIL"
 
 Before every push, verify the branch commits use the configured personal identity for author, committer and `Signed-off-by`. Stop if any commit uses another identity; repair unpublished local metadata before publishing. Do not record either address or the comparison output in repository evidence.
 
+The coordinator also supplies two non-sensitive, machine-local session roots without committing them: `LIBRE_AI_REPOSITORY_ROOT` contains the checked-out Libre AI repositories and `LIBRE_AI_WORKTREE_ROOT` receives isolated worktrees. Verify both directories exist before using them. All commands below derive repository and worktree locations from these inputs so the plan carries no private machine path.
+
 - [ ] **Step 1: Add a failing Governance integrity test for the new authority**
 
 Create `tools/quality/check-authorized-execution-native-core-authority.test.ts`:
@@ -520,11 +522,15 @@ Merge without force only when review and CI are green. Fetch and verify the exac
 
 - [ ] **Step 1: Create an isolated Orchestrator worktree and prove its baseline**
 
-From `/Users/ifi6567/Documents/libre-ai/orchestrator`:
+From the session workspace:
 
 ```bash
-git fetch origin
-git worktree add /Users/ifi6567/Documents/libre-ai-worktrees/orchestrator-authorized-execution-native-core -b feat/authorized-execution-native-core origin/main
+test -d "$LIBRE_AI_REPOSITORY_ROOT/orchestrator/.git"
+test -d "$LIBRE_AI_WORKTREE_ROOT"
+ORCHESTRATOR_REPO="$LIBRE_AI_REPOSITORY_ROOT/orchestrator"
+ORCHESTRATOR_WORKTREE="$LIBRE_AI_WORKTREE_ROOT/orchestrator-authorized-execution-native-core"
+git -C "$ORCHESTRATOR_REPO" fetch origin
+git -C "$ORCHESTRATOR_REPO" worktree add "$ORCHESTRATOR_WORKTREE" -b feat/authorized-execution-native-core origin/main
 ```
 
 Then run in the new worktree:
@@ -1577,8 +1583,12 @@ Expected: post-merge SHA green; no deployment is performed because Phase 4A expo
 Verify both feature worktrees are clean and their branches are merged before running:
 
 ```bash
-git -C /Users/ifi6567/Documents/libre-ai/governance worktree remove /Users/ifi6567/Documents/libre-ai-worktrees/governance-authorized-execution-native-core-design
-git -C /Users/ifi6567/Documents/libre-ai/orchestrator worktree remove /Users/ifi6567/Documents/libre-ai-worktrees/orchestrator-authorized-execution-native-core
+GOVERNANCE_REPO="$LIBRE_AI_REPOSITORY_ROOT/governance"
+GOVERNANCE_WORKTREE="$LIBRE_AI_WORKTREE_ROOT/governance-authorized-execution-native-core-design"
+ORCHESTRATOR_REPO="$LIBRE_AI_REPOSITORY_ROOT/orchestrator"
+ORCHESTRATOR_WORKTREE="$LIBRE_AI_WORKTREE_ROOT/orchestrator-authorized-execution-native-core"
+git -C "$GOVERNANCE_REPO" worktree remove "$GOVERNANCE_WORKTREE"
+git -C "$ORCHESTRATOR_REPO" worktree remove "$ORCHESTRATOR_WORKTREE"
 ```
 
 Preserve the existing user work in Governance `docs/square-control-design` and Harness `feat/wp-g3-h01-redelivery`; never clean, reset or remove those trees.
