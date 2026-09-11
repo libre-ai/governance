@@ -220,9 +220,16 @@ forking, wiki, discussions et GitHub Pages. Les issues restent désactivées
 tant qu'aucun besoin distinct du registre n'est démontré.
 
 L'accès initial est limité aux propriétaires nécessaires. La règle de merge
-sur `main` interdit suppression et force push, exige une pull request, une
-revue propriétaire et le gate `quality`. Les administrateurs ne contournent
-pas la règle en fonctionnement normal.
+sur `main` interdit suppression et force push, exige une pull request et le
+gate `quality`. L'organisation ne comptant qu'un membre à la conception, une
+approbation GitHub obligatoire rendrait chaque pull request impossible à
+fusionner : l'auteur ne peut pas s'auto-approuver. Jusqu'à l'arrivée d'un
+relecteur indépendant, la revue est matérialisée dans la pull request par un
+artefact de revue ou un marqueur `Owner-arbitration: YYYY-MM-DD`, sur le même
+patron que `governance`. Le nombre d'approbations requises reste donc à zéro ;
+il passe à un uniquement lorsque deux identités humaines indépendantes sont
+effectivement disponibles. Les administrateurs ne contournent pas les autres
+règles en fonctionnement normal.
 
 Le workflow `quality.yml` :
 
