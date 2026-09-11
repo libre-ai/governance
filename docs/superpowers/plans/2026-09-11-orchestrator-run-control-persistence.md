@@ -145,7 +145,7 @@ expect(wp?.definitionStatus).toBe("locked");
 expect(findRunControlOwners(plan).map((entry) => entry.id)).toEqual(["WP-G3-O01"]);
 ```
 
-The owner finder uses `Bun.Glob` plus explicit child-prefix detection so the canonical root, a recursive parent such as `crates/**`, a wildcard parent such as `crates/agent-*/**`, the global `**` pattern and every child path overlap. Synthetic negative cases must identify each competing owner while excluding a sibling crate.
+The owner finder uses `Bun.Glob`, explicit child-prefix detection and a fail-closed static-prefix check for globs that can descend into the target. The canonical root, recursive parent `crates/**`, wildcard patterns such as `crates/agent-*/Cargo.toml`, `crates/*/src/**` and `**/*.rs`, global `**` and every child path therefore overlap. Synthetic negative cases must identify each competing owner while excluding a sibling crate.
 
 Run `bun test tools/quality/check-orchestrator-run-control-persistence-authority.test.ts` and require failure because ADR-0039/D45 are absent.
 
@@ -210,9 +210,11 @@ Restate that merge creates persistence authority but no service/effect/deploymen
 - [ ] **Step 1: Create the worktree only after authority merge**
 
 ```bash
+set -euo pipefail
 git fetch origin main
-git worktree add /Users/ifi6567/Documents/libre-ai-worktrees/orchestrator-run-control-persistence \
+git worktree add ../../libre-ai-worktrees/orchestrator-run-control-persistence \
   -b feat/orchestrator-run-control-persistence origin/main
+cd ../../libre-ai-worktrees/orchestrator-run-control-persistence
 ```
 
 Verify clean status and personal GitHub identity.

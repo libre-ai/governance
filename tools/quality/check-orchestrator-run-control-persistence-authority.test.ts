@@ -20,7 +20,18 @@ function overlapsRunControlBoundary(writePath: string): boolean {
   }
 
   const glob = new Bun.Glob(writePath);
-  return glob.match(runControlRoot) || glob.match(`${runControlRoot}/__authority_probe__`);
+  if (glob.match(runControlRoot) || glob.match(`${runControlRoot}/__authority_probe__`)) {
+    return true;
+  }
+
+  const wildcardIndexes = ["*", "?", "[", "{"].map((marker) => writePath.indexOf(marker));
+  const firstWildcard = Math.min(
+    ...wildcardIndexes.filter((index) => index >= 0),
+    writePath.length,
+  );
+  const staticPrefix = writePath.slice(0, firstWildcard);
+
+  return staticPrefix.length === 0 || runControlRoot.startsWith(staticPrefix);
 }
 
 function findRunControlOwners(plan: WorkPackagePlan): readonly WorkPackage[] {
@@ -66,6 +77,30 @@ describe("orchestrator run-control persistence authority", () => {
           writePaths: ["**"],
         },
         {
+          id: "nested-wildcard-owner",
+          definitionStatus: "locked",
+          humanGates: [],
+          writePaths: ["crates/*/src/**"],
+        },
+        {
+          id: "wildcard-file-owner",
+          definitionStatus: "locked",
+          humanGates: [],
+          writePaths: ["crates/agent-*/Cargo.toml"],
+        },
+        {
+          id: "suffix-owner",
+          definitionStatus: "locked",
+          humanGates: [],
+          writePaths: ["**/*.rs"],
+        },
+        {
+          id: "brace-owner",
+          definitionStatus: "locked",
+          humanGates: [],
+          writePaths: ["crates/{agent-orchestrator-run,agent-harness}/**"],
+        },
+        {
           id: "sibling-owner",
           definitionStatus: "locked",
           humanGates: [],
@@ -79,6 +114,10 @@ describe("orchestrator run-control persistence authority", () => {
       "child-owner",
       "wildcard-owner",
       "global-owner",
+      "nested-wildcard-owner",
+      "wildcard-file-owner",
+      "suffix-owner",
+      "brace-owner",
     ]);
   });
 

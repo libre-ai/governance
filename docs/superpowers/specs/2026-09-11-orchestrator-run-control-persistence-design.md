@@ -202,8 +202,9 @@ do not create cluster-global roles. Deployment/bootstrap authority provisions:
 - `libre_ai_app`, with only the operations required for run persistence;
 - `libre_ai_retention`, with the additional lifecycle operations required for
   expiry and explicit deletion;
-- a `NOLOGIN` tombstone-guard role that owns only the anti-resurrection trigger
-  function and receives only the tombstone lookup policy it requires;
+- a `NOLOGIN` tombstone-guard role that owns only the closed record/compare and
+  anti-resurrection functions, and receives only their required tombstone
+  `SELECT`/`INSERT` policies;
 - `libre_ai_restore`, a `NOLOGIN` pre-open recovery role with bounded
   cross-organization `SELECT`/`DELETE` policies and no insert, update, schema
   or application capability.
