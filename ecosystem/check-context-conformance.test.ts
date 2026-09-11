@@ -6,6 +6,7 @@ import {
   claudeAdapterIssue,
   countLines,
   extractSections,
+  fetchPublicFleetContext,
   hasAuthorityPointer,
   hasUsableGraphQLData,
   lastLifecycleTransition,
@@ -467,6 +468,33 @@ describe("reviewContext", () => {
     expect(outcome.failures).toEqual([]);
     expect(outcome.notes.length).toBeGreaterThan(0);
   });
+});
+
+test("context transport never receives a private repository target", async () => {
+  const received: string[][] = [];
+  await fetchPublicFleetContext(
+    [
+      {
+        repository: "libre-ai/public",
+        role: "satellite",
+        layer: "couche-4",
+        visibility: "public",
+        lifecycle: "active",
+      },
+      {
+        repository: "libre-ai/product-research",
+        role: "administrative-private",
+        layer: "transverse",
+        visibility: "private",
+        lifecycle: "active",
+      },
+    ],
+    async (repositories) => {
+      received.push([...repositories]);
+      return new Map();
+    },
+  );
+  expect(received).toEqual([["libre-ai/public"]]);
 });
 
 describe("buildBatchQuery", () => {

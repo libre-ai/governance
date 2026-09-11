@@ -644,6 +644,19 @@ async function fetchFleetContext(
   return (await fetchFleetViaGraphQL(repositories)) ?? (await fetchFleetViaRest(repositories));
 }
 
+export type FleetContextTransport = (
+  repositories: readonly string[],
+) => Promise<Map<string, FleetRepoResult>>;
+
+export async function fetchPublicFleetContext(
+  registry: readonly RegistryEntry[],
+  transport: FleetContextTransport = fetchFleetContext,
+): Promise<Map<string, FleetRepoResult>> {
+  return transport(
+    registry.filter((entry) => entry.visibility !== "private").map((entry) => entry.repository),
+  );
+}
+
 function sh(argv: string[]): string | null {
   const result = Bun.spawnSync(argv, { stdout: "pipe", stderr: "pipe" });
   if (result.exitCode !== 0) return null;
@@ -685,9 +698,6 @@ function buildLifecycleHistory(): Map<string, LifecycleSample[]> {
       // Historical snapshots predate today's closed lifecycle/role model.
       // Only repository+lifecycle are evidence for transition chronology;
       // applying today's validator would discard the whole old snapshot.
-      // Historical snapshots predate today's closed lifecycle/role model.
-      // Only repository+lifecycle are evidence for transition chronology;
-      // applying today's validator would discard the whole old snapshot.
       entries = parseHistoricalRegistry(text);
     } catch {
       continue;
@@ -707,8 +717,7 @@ if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const registry = parseRegistry(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const lifecycleHistory = buildLifecycleHistory();
-  const publicRegistry = registry.filter((entry) => entry.visibility !== "private");
-  const fleetContext = await fetchFleetContext(publicRegistry.map((entry) => entry.repository));
+  const fleetContext = await fetchPublicFleetContext(registry);
 
   const report = new GateReport();
   for (const entry of registry) {

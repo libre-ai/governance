@@ -406,12 +406,24 @@ async function fetchFleetDependabot(
   return (await fetchFleetViaGraphQL(repositories)) ?? (await fetchFleetViaRest(repositories));
 }
 
+export type FleetDependabotTransport = (
+  repositories: readonly string[],
+) => Promise<Map<string, RepoDependabotState>>;
+
+export async function fetchPublicFleetDependabot(
+  registry: readonly RegistryEntry[],
+  transport: FleetDependabotTransport = fetchFleetDependabot,
+): Promise<Map<string, RepoDependabotState>> {
+  return transport(
+    registry.filter((entry) => entry.visibility !== "private").map((entry) => entry.repository),
+  );
+}
+
 if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const registry = parseRegistry(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const templates = await loadTemplates();
-  const publicRegistry = registry.filter((entry) => entry.visibility !== "private");
-  const fleet = await fetchFleetDependabot(publicRegistry.map((entry) => entry.repository));
+  const fleet = await fetchPublicFleetDependabot(registry);
 
   const report = new GateReport();
   for (const entry of registry) {

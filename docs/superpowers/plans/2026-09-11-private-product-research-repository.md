@@ -411,7 +411,9 @@ Run `bun test tests/check-research.test.ts`, `bun scripts/check-research.ts` and
 
 - `scanContent(path, text): readonly Finding[]`.
 - `verifyAuthority(ref, fetcher): Promise<readonly Finding[]>`.
-- Fetcher result: `"found" | "missing" | "unreachable"`.
+- Fetcher separately proves the path exists at the exact SHA and compares that
+  SHA to the authority repository's `main`; missing, unmerged/diverged and
+  unreachable are distinct fail-closed outcomes.
 
 - [ ] **Step 1: Write hostile synthetic tests**
 
@@ -429,7 +431,7 @@ Scan tracked `.md .json .yaml .yml .toml .ts .sh`. Exclude only encoded invalid 
 
 - [ ] **Step 4: Implement exact authority checks**
 
-Only `governance` and `contracts` are accepted. The live checker queries the GitHub contents API at exact SHA/path, discards response bodies, maps 404 to `AUTHORITY_MISSING` and all reachability/auth failures to `AUTHORITY_UNREACHABLE`.
+Only `governance` and `contracts` are accepted. The live checker queries the GitHub contents API at exact SHA/path, then the compare API for `<sha>...main`. It accepts only a path that exists and a SHA whose merge base is that exact SHA with comparison status `ahead` or `identical` (therefore reachable from the authority's merged `main`); `behind`, `diverged`, an unexpected merge base, malformed response or API failure is fail-closed. Tests include an existing path at an unmerged branch SHA. Response bodies are discarded, 404 maps to `AUTHORITY_MISSING`, an unmerged SHA to `AUTHORITY_UNMERGED`, and reachability/auth failures to `AUTHORITY_UNREACHABLE`.
 
 - [ ] **Step 5: Wire and verify**
 
@@ -495,6 +497,7 @@ A real acceptance run uses two independently mounted owner-selected destinations
 - Create: `.github/workflows/context-hygiene.yml`
 - Create: `.github/dependabot.yml`, `.github/CODEOWNERS`
 - Create: `scripts/audit-github-settings.ts`
+- Create: `scripts/configure-github-settings.ts`
 - Create: `tests/audit-github-settings.test.ts`
 
 **Interfaces:**
@@ -521,7 +524,7 @@ Commit `ci: enforce private research quality gates`, push a feature branch and c
 
 - [ ] **Step 5: Protect main from observed check-runs**
 
-Wait for PR head checks. Use governance `tools/security/check-branch-protection.ts --repo libre-ai/product-research --ref` with the exact head SHA and `--fix`. Require PRs and strict observed statuses; forbid deletion and force push; enforce admins. Required approving reviews remain zero while the org has one human member.
+Wait for both local workflow runs on the exact PR head SHA. Run the private repository's dedicated `scripts/configure-github-settings.ts --ref <full-head-sha>` with an owner-controlled token scoped to this private repository: it derives required names only from successful `quality.yml` and `licensing.yml` jobs whose workflow run, check suite, GitHub Actions app identity and head SHA are API-proven, then configures strict required statuses, required PRs, admin enforcement, zero approving reviews while the organization has one human member, and forbids deletion and force push. It patches only `libre-ai/product-research`; never call the public fleet `check-branch-protection` tool and never widen a public governance token to read private content. Re-read every mutated endpoint with the same private administrative channel, persist only redacted setting names/booleans as evidence, and run `audit-github-settings.ts --live --ref <full-head-sha>` before merge.
 
 - [ ] **Step 6: Audit and merge**
 
