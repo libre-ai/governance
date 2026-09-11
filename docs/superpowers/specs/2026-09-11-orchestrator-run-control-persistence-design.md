@@ -278,12 +278,21 @@ model.
 
 The non-secret attestation report must query `pg_roles.rolcanlogin`,
 `pg_roles.rolsuper`, `pg_roles.rolbypassrls` and the other reviewed role
-attributes; `pg_auth_members` for exact memberships;
-`information_schema.table_privileges` and
-`information_schema.routine_privileges` for grants; and `pg_extension` for
-`pgcrypto`. It fails on missing or additional privilege, records no login
-secret or provider account identifier, and binds the provider-authorized
-provisioning reference plus target configuration revision.
+attributes; `pg_auth_members` for exact memberships; ownership and raw ACLs
+through `pg_namespace.nspowner`/`nspacl`, `pg_class.relowner`/`relacl`,
+`pg_attribute.attacl`, `pg_proc.proowner`/`proacl`, `pg_database.datacl` and
+`pg_default_acl`; and `pg_extension` for `pgcrypto`. It cross-checks table,
+column and routine grants through `information_schema.table_privileges`,
+`information_schema.column_privileges` and
+`information_schema.routine_privileges`, after first proving that the audit
+identity can see the complete relevant ACL set. Effective positive and
+negative checks include `has_table_privilege`, `has_column_privilege`,
+`has_function_privilege`, `has_schema_privilege` and database privileges for
+every application identity and assumable role. The report fails closed when
+ACL visibility is incomplete, ownership is unexpected, or any privilege is
+missing or additional. It records no login secret or provider account
+identifier and binds the provider-authorized provisioning reference plus
+target configuration revision.
 
 These choices preserve a standard, replaceable PostgreSQL/JCS boundary and add
 no US hyperscaler or proprietary control plane.

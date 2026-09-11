@@ -397,8 +397,16 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("provider attestation");
     expect(design).toContain("pg_roles.rolcanlogin");
     expect(design).toContain("pg_auth_members");
+    expect(design).toContain("information_schema.column_privileges");
     expect(design).toContain("information_schema.routine_privileges");
+    expect(design).toContain("pg_attribute.attacl");
+    expect(design).toContain("pg_class.relowner");
+    expect(design).toContain("has_column_privilege");
     expect(design).toContain("pg_extension");
+    expect(implementationPlan).toContain("forbidden extra column grant");
+    expect(implementationPlan).toContain(
+      "current local review does not require provider attestation",
+    );
     expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");
