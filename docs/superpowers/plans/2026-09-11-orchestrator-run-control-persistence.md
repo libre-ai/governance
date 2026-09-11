@@ -31,7 +31,8 @@
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
 - The library reads no environment, ordinary file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`. This proof is Unix-domain socket only: construction refuses unless `get_socket()` is `Some`, rejects caller startup `options`, replaces password, application name and every file/inline certificate/key value with fixed non-secret values, forces `PgSslMode::Disable` and never calls `to_url_lossy`. Caller-side construction remains outside this boundary; no TCP or TLS transport is admitted.
 - Pin every dependency exactly. SQLx uses only `runtime-tokio`, `postgres`, `json` and `chrono`; no TLS implementation, macros, `ipnet`, embedded migrations, SQLite or MySQL.
-- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is one of three production blockers alongside whole-chain `O(n)` replay and absent remote TLS transport; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is one of four production blockers alongside whole-chain `O(n)` replay, absent remote TLS transport and unproven target role-provisioning compatibility; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- Clever Cloud Paris/EU remains a production candidate, not a proven target. Before any production adapter or deployment, an immutable provider attestation executed on the selected target must prove all four global `NOLOGIN` roles, three separate login identities, exact memberships/grants, RLS and guard-function privileges, and `pgcrypto` after provider-authorized provisioning. A local bootstrap or unrecorded support assurance is insufficient; failure to obtain this proof requires separately selecting and authorizing a compatible EU PostgreSQL provider without weakening the role model.
 - Every live app/retention writer explicitly begins at `READ COMMITTED` before
   role/context setup. Guard functions and the anti-resurrection trigger are
   `VOLATILE` and refuse unless `current_setting('transaction_isolation')` is
@@ -241,7 +242,7 @@ git commit -s -m "Authorize orchestrator run-control persistence"
 
 Review exact authority uniqueness, unchanged pure-core code/API, the
 non-overlapping prospective O02→O01 support-path transfer, persistence-only
-capability, the narrow H01 dependency split, all three production blocks,
+capability, the narrow H01 dependency split, all four production blocks,
 UDS-only SQLx graph, honest restore complexity, closed deletion function,
 least-privilege restore and absent framework checkpoint. Any Blocking/Major
 finding invalidates the SHA and returns to Task 1 with a regression assertion.
@@ -901,8 +902,11 @@ test to require test/coverage commands are wrapped by `with-postgres.sh --`,
 PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds
 remain. The structural workflow assertion also requires the exact quiet rustdoc
 command, both debug and release PostgreSQL workspace test commands and both
-coverage commands with `-- --test-threads=1`; removing `--quiet`, either test
-mode or serialization is red. Add synthetic parsed-summary fixtures
+coverage commands with `-- --test-threads=1`, the package report command
+without the parser-invalid `--all-features` report option, and pipeline failure
+propagation through `set -euo pipefail` before its `tee`; removing `--quiet`,
+either test mode, serialization, the valid report shape or failure propagation
+is red. Add synthetic parsed-summary fixtures
 proving that workspace coverage passes while the run-store package coverage fails;
 the gate must reject that state, and must pass only when both
 independently meet 87/90. Run focused tests and require failure against the old
@@ -953,6 +957,7 @@ Use:
   run: verification/agent-orchestrator/with-postgres.sh -- verification/agent-orchestrator/benchmark-memory.sh
 - name: Rust coverage (blocking)
   run: |
+    set -euo pipefail
     verification/agent-orchestrator/with-postgres.sh -- \
       cargo llvm-cov --locked --workspace --all-features --lcov \
       --output-path coverage/lcov.info \
@@ -961,8 +966,7 @@ Use:
       cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
       --output-path coverage/run-store.lcov.info \
       --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
-    cargo llvm-cov report -p libre-ai-agent-orchestrator-run \
-      --all-features --summary-only | tee -a "$GITHUB_STEP_SUMMARY"
+    cargo llvm-cov report -p libre-ai-agent-orchestrator-run --summary-only | tee -a "$GITHUB_STEP_SUMMARY"
 ```
 
 Use runner-provided PostgreSQL binaries; do not download a container or package during the job.
@@ -995,6 +999,7 @@ verification/agent-orchestrator/with-postgres.sh -- \
   cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
   --output-path coverage/run-store.lcov.info \
   --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
+cargo llvm-cov report -p libre-ai-agent-orchestrator-run --summary-only
 verification/agent-orchestrator/with-postgres.sh -- \
   verification/agent-orchestrator/benchmark-memory.sh
 ```
@@ -1011,7 +1016,7 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and all three production blocks: `O(n)` replay, globally disabled unified diagnostics and absent remote TLS. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes.
+Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and all four production blockers: `O(n)` replay, globally disabled unified diagnostics, absent remote TLS and unproven target role provisioning. Require the target-side provider attestation or a separately authorized compatible EU provider. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes.
 
 The same gate gets red content fixtures before implementation. It must scan every tracked UTF-8 byte of the dossier, without inheriting the repository secret scanner's `docs/reviews` exclusion. Put distinct synthetic credential, personal-data and POSIX and Windows absolute machine paths into `benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`; each case must fail. JSON/JCS fixtures additionally encode the canaries with Unicode escapes and nested arrays/objects. Add nested duplicate properties, escape-equivalent property names and an overwritten first value containing a fully escaped path canary; each must fail in the temporary-directory, staged-blob and historical-`E` adapters of the same validator. Invalid UTF-8, an unknown extension or a file outside the exact allow-list also fails. Run the Bun tests and require failure against current docs/missing gate.
 
@@ -1089,7 +1094,7 @@ do not rely on a working-tree scan. Both passes cover `benchmark.csv`, every rev
 
 - [ ] **Step 2: Run four independent review roles**
 
-Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and all three production blocks. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, compile-time `log`/`tracing` `OFF` in the exact debug/release/`log-always` graph, direct SQLx collector/stdout bypasses, PostgreSQL INFO/NOTICE/WARNING, mandatory Unix socket, TCP refusal, forced TLS disablement, inert password/certificate inputs without URL serialization, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, no TLS/native-store/certificate dependency in this local-only proof, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and future EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
+Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and all four production blocks. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, compile-time `log`/`tracing` `OFF` in the exact debug/release/`log-always` graph, direct SQLx collector/stdout bypasses, PostgreSQL INFO/NOTICE/WARNING, mandatory Unix socket, TCP refusal, forced TLS disablement, inert password/certificate inputs without URL serialization, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, no TLS/native-store/certificate dependency in this local-only proof, content-free tombstones, authenticated independent registry precondition, retention/order, licenses, candidate EU residency and target-side provider attestation for the exact role/extension model. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
 
 - [ ] **Step 3: Remediate without carrying stale approval**
 
@@ -1109,7 +1114,7 @@ After all roles approve the same implementation SHA `I`, add only the exact doss
 
 - [ ] **Step 1: Push exact branch, create PR and verify head/CI**
 
-The PR names ADR-0040/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, all three production blockers and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
+The PR names ADR-0040/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, all four production blockers and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
 
 - [ ] **Step 2: Restate and stop at ADR-0011 D4**
 
@@ -1126,8 +1131,12 @@ invalidates the proof. No production consumer may remove that block until an
 upstream option or driver preserves safe downstream diagnostics without SQLx
 leakage.
 The store is Unix-domain socket only and has no TLS implementation. Remote
-transport to the declared EU target requires a separately proven WebPKI
-`verify-full` connection and secret boundary before production use.
+transport to the candidate EU target requires a separately proven WebPKI
+`verify-full` connection and secret boundary before production use. The
+candidate provider's ability to provision the exact four NOLOGIN roles, three
+login identities, memberships, grants and required extensions is also
+unproven. Production requires an immutable target-side provider attestation or
+a separately authorized compatible EU PostgreSQL provider.
 ADR-0011 D4 requires the owner's bootstrap pronouncement naming I and E before merge.
 ```
 

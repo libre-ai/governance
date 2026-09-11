@@ -253,16 +253,37 @@ emissions. The no-emission claim applies only to the exact feature graph.
 SQLx 0.9.0 is MIT OR Apache-2.0 and supports the repository's Rust toolchain.
 PostgreSQL is the only storage engine in scope. Tests use an ordinary
 PostgreSQL 14-or-newer server through the mode-0700 private Unix-domain socket
-and never require a Docker Hub image. Clever Cloud PostgreSQL in Paris/EU
-remains the future production target, but this local-only package cannot reach
-it: remote WebPKI `verify-full`, secret ownership and transport verification
-must be authorized and proved separately.
+and never require a Docker Hub image. Clever Cloud PostgreSQL in Paris/EU is a
+future production candidate, not a proven target. This local-only package
+cannot reach it: remote WebPKI `verify-full`, secret ownership and transport
+verification must be authorized and proved separately.
 
 The schema uses PostgreSQL's `pgcrypto` extension only for the database-side
 SHA-256 deletion-subject check. The migration preflight must prove the
 extension is present before changing schema; it may not attempt an unreviewed
-fallback. Clever Cloud documents `pgcrypto` among its default PostgreSQL
-extensions: <https://www.clever-cloud.com/developers/doc/addons/postgresql/>.
+fallback. Clever Cloud documents PostgreSQL extensions and its restricted user
+administration model here:
+<https://www.clever.cloud/developers/doc/deploy/databases/postgresql/>.
+
+Role-provisioning compatibility is a separate production blocker. Before any
+production adapter or deployment, an immutable provider attestation executed
+on the selected target must prove the four global `NOLOGIN NOSUPERUSER
+NOBYPASSRLS` roles, three separate login identities, exact memberships and
+grants, RLS/guard-function privileges, and required `pgcrypto` extension in the
+target catalog after provider-authorized provisioning. A local superuser
+bootstrap or an unrecorded support assurance is not target evidence. If Clever
+Cloud cannot produce that proof, a compatible EU PostgreSQL provider must be
+selected and authorized separately; changing provider does not weaken the role
+model.
+
+The non-secret attestation report must query `pg_roles.rolcanlogin`,
+`pg_roles.rolsuper`, `pg_roles.rolbypassrls` and the other reviewed role
+attributes; `pg_auth_members` for exact memberships;
+`information_schema.table_privileges` and
+`information_schema.routine_privileges` for grants; and `pg_extension` for
+`pgcrypto`. It fails on missing or additional privilege, records no login
+secret or provider account identifier, and binds the provider-authorized
+provisioning reference plus target configuration revision.
 
 These choices preserve a standard, replaceable PostgreSQL/JCS boundary and add
 no US hyperscaler or proprietary control plane.
@@ -1028,12 +1049,12 @@ the barrier is absent.
 ### PASS
 
 - Rust, SQLx, `log`, `tracing`, PostgreSQL, `pgcrypto`, RFC 8785 and SHA-256 are
-  open, portable building blocks with acceptable licenses; `pgcrypto` is
-  available on the declared Clever Cloud target.
+  open, portable building blocks with acceptable licenses; the selected
+  production target must attest `pgcrypto` before schema change.
 - The local-only proof has no TLS/native-certificate-store dependency and uses
   only the harness's mode-0700 Unix-domain socket with TCP disabled.
-- Future production residency remains on Clever Cloud in the declared EU
-  region; this local-only proof does not connect to it.
+- Clever Cloud in the declared EU region remains a future candidate; this
+  local-only proof neither connects to it nor proves its role provisioning.
 - RLS, forced least privilege, content-free storage, bounded exports,
   retention, deletion and restore are designed as blocking proofs.
 - The pure authority remains independent of the persistence library and any
@@ -1047,7 +1068,11 @@ incremental-state boundary are not yet implemented. In the exact graph, the
 proof's static-off dependency features also disable safe diagnostics globally
 for every consumer of the unified package instances. The store is also
 Unix-domain socket only and deliberately has no remote TLS implementation.
-Remote TLS transport is therefore a separate production blocker.
+Remote TLS transport is therefore a separate production blocker. Current
+provider documentation does not prove that the required global roles, login
+identities, memberships and grants can be provisioned on the Clever Cloud
+candidate; target-side role-provisioning compatibility is a fourth production
+blocker.
 Consequently this crate cannot be wired to a production request or open a real
 run. Treating injected construction of a deletion command as production
 authorization, treating the `O(n)` proof append as an unmeasured production hot
@@ -1154,7 +1179,10 @@ The design is satisfied only when the exact reviewed implementation proves:
 12. the pure crate API/capability and locked Contracts authority remain
     unchanged;
 13. no service, effect, worker or framework capability has entered scope;
-14. all repository, coverage, dependency and real-PostgreSQL gates are green.
+14. absent target-side provider attestation for the exact production roles,
+    identities, memberships, grants and required extensions remains an
+    explicit production blocker;
+15. all repository, coverage, dependency and real-PostgreSQL gates are green.
 
 After all verdicts accept implementation commit `I` and its mechanically
 restricted direct evidence child `E` is green, work stops before merge for the

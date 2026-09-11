@@ -377,11 +377,29 @@ describe("orchestrator run-control persistence authority", () => {
         /--fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1/g,
       ) ?? [],
     ).toHaveLength(4);
+    expect(implementationPlan).toContain(
+      'cargo llvm-cov report -p libre-ai-agent-orchestrator-run --summary-only | tee -a "$GITHUB_STEP_SUMMARY"',
+    );
+    expect(implementationPlan).not.toContain(
+      "cargo llvm-cov report -p libre-ai-agent-orchestrator-run \\\n      --all-features",
+    );
+    expect(implementationPlan.replace(/\s+/g, " ")).toContain(
+      "run: | set -euo pipefail verification/agent-orchestrator/with-postgres.sh --",
+    );
     expect(implementationPlan.replace(/\s+/g, " ")).toContain(
       "The release test graph includes the dev dependency that activates `tracing/log-always`",
     );
     expect(implementationPlan).toContain("global downstream effect");
     expect(implementationPlan).toContain("driver that preserves safe downstream diagnostics");
+    expect(adr.replace(/\s+/g, " ")).toContain("quatrième blocage production");
+    expect(design).toContain("role-provisioning compatibility");
+    expect(implementationPlan).toContain("four production blockers");
+    expect(implementationPlan).toContain("provider attestation");
+    expect(design).toContain("pg_roles.rolcanlogin");
+    expect(design).toContain("pg_auth_members");
+    expect(design).toContain("information_schema.routine_privileges");
+    expect(design).toContain("pg_extension");
+    expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");
     expect(implementationPlan).toContain("interval '840 hours'");

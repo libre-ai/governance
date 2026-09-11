@@ -218,9 +218,25 @@ ou un driver séparément prouvé doit préserver des diagnostics aval sûrs san
 réintroduire les émissions SQLx de requête, notice, pool ou erreur.
 
 L'absence volontaire de transport TCP/TLS est le troisième blocage production.
-La cible future Clever Cloud Paris/UE requiert une autorisation séparée avec
-WebPKI `verify-full`, propriété/zeroization des secrets et preuve de transport ;
-elle n'est pas joignable par cette tranche locale.
+Clever Cloud Paris/UE reste un candidat de résidence future qui requiert une
+autorisation séparée avec WebPKI `verify-full`, propriété/zeroization des
+secrets et preuve de transport ; il n'est pas joignable par cette tranche
+locale.
+
+La compatibilité non démontrée du provisionnement des rôles est le quatrième
+blocage production. La documentation Clever Cloud consultée le 2026-09-11
+indique que l'administration directe des utilisateurs PostgreSQL n'est pas
+disponible au-delà des identités owner/read-only du control plane et renvoie
+les opérations restreintes au support :
+<https://www.clever.cloud/developers/doc/deploy/databases/postgresql/>. Une
+résidence UE ne prouve donc pas la capacité à créer les quatre rôles globaux
+`NOLOGIN`, les trois identités de connexion séparées, leurs memberships et
+grants, ni à activer `pgcrypto`. Avant tout branchement production, une preuve
+immuable exécutée sur la cible doit attester le catalogue exact des rôles,
+attributs, appartenances, privilèges et extensions après provisionnement
+autorisé par le fournisseur. À défaut, un fournisseur PostgreSQL UE compatible
+doit être sélectionné et autorisé séparément. Un bootstrap superuser local ou
+un échange de support non reproduit ne satisfait pas ce gate.
 
 ### D6 — Arrêter avant merge sur dossier indépendant
 
@@ -276,8 +292,8 @@ pas masquer une régression locale.
 SQLx 0.9, Tokio, `log` et `tracing` sont épinglés avec leurs seules features
 nécessaires, sous licences MIT/Apache-2.0 compatibles. SQLx n'active aucune
 feature TLS ni découverte de certificat. PostgreSQL 14+ avec `pgcrypto` est la
-cible portable locale de la preuve ; Clever Cloud PostgreSQL reste la cible UE
-future déclarée, sans compatibilité réseau revendiquée ni provisionnement ou
+cible portable locale de la preuve ; Clever Cloud PostgreSQL reste un candidat
+UE futur, sans compatibilité réseau ou de provisionnement revendiquée ni
 déploiement autorisé ici.
 
 ## Compatibilité et rollback
@@ -352,7 +368,8 @@ prouve :
    `O(tombstones + runs * log(tombstones))`, restauration totale
    `O(tombstones + runs * log(tombstones) + purged_rows)` et blocage
    production, auxquels s'ajoutent les blocages diagnostics globaux et
-   transport distant ;
+   transport distant ainsi que l'absence de preuve du provisionnement exact
+   des rôles sur le fournisseur cible ;
 8. la compatibilité, couverture, documentation, rollback et tous les gates ;
 9. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
 10. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
