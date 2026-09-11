@@ -38,6 +38,13 @@
  * repository: an unpinned `@main` beside it was invisible.
  */
 
+import {
+  buildIndex,
+  type InventoryEntry,
+  isPublicCrossRepositoryTarget,
+  PRIVATE_CROSS_REPOSITORY_NOTE,
+} from "./build-index";
+
 export interface RepositorySources {
   /** Workflow file name -> file text, for every file under .github/workflows. */
   readonly workflows: ReadonlyMap<string, string>;
@@ -420,6 +427,14 @@ async function fetchFleetPinSources(
   );
 }
 
+export function selectFleetPinTargets(
+  repositories: readonly Pick<InventoryEntry, "repository" | "visibility" | "lifecycle" | "card">[],
+): FleetPinTarget[] {
+  return repositories
+    .filter((repo) => repo.lifecycle !== "archived" && isPublicCrossRepositoryTarget(repo))
+    .map((repo) => ({ repository: repo.repository, card: repo.card ?? "project.v1.yaml" }));
+}
+
 if (import.meta.main) {
   const register = Bun.YAML.parse(
     await Bun.file(new URL("fleet-pins.v1.yaml", import.meta.url)).text(),
@@ -427,24 +442,16 @@ if (import.meta.main) {
   // Oldest first, as declared — auditRepository measures age against this order.
   const generationShas = register.generations.map((generation) => generation.sha);
 
-  const inventory = Bun.YAML.parse(
+  const inventory = buildIndex(
     await Bun.file(new URL("repositories.v1.yaml", import.meta.url)).text(),
-  ) as {
-    readonly repositories: readonly {
-      repository: string;
-      lifecycle: string;
-      card?: string;
-    }[];
-  };
+  );
   // Every non-archived repository is a target, not only satellite/authority:
   // a reserved-product-home or active-application repo that wires the
   // templates is exactly as exposed to an unpinned tooling checkout as a
   // satellite is. Repositories that declare no pin surface are skipped below
   // by construction (sightings.length === 0), so widening this filter costs
   // nothing on a repository that consumes no template.
-  const targets = inventory.repositories
-    .filter((repo) => repo.lifecycle !== "archived")
-    .map((repo) => ({ repository: repo.repository, card: repo.card ?? "project.v1.yaml" }));
+  const targets = selectFleetPinTargets(inventory.repositories);
 
   interface Failure {
     readonly repository: string;
@@ -499,6 +506,9 @@ if (import.meta.main) {
   // compose instead of one overwriting the other.
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const report = new GateReport();
+  for (const entry of inventory.repositories.filter((repo) => repo.visibility === "private")) {
+    report.check(entry.repository, true, PRIVATE_CROSS_REPOSITORY_NOTE);
+  }
   for (const failure of failures) {
     report.check(
       failure.repository,

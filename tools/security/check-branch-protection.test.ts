@@ -5,7 +5,22 @@ import {
   computeFix,
   type ProtectionSnapshot,
   planFix,
+  selectActivePublicRepositories,
 } from "./check-branch-protection";
+
+test("branch-protection fleet targets exclude private repositories before remote reads", () => {
+  expect(
+    selectActivePublicRepositories([
+      { repository: "libre-ai/public", lifecycle: "active", visibility: "public" },
+      {
+        repository: "libre-ai/product-research",
+        lifecycle: "active",
+        visibility: "private",
+      },
+      { repository: "libre-ai/archive", lifecycle: "archived", visibility: "public" },
+    ]),
+  ).toEqual(["libre-ai/public"]);
+});
 
 const protection = (required: readonly string[]): ProtectionSnapshot => ({ required });
 const ci = (observed: readonly string[]): CiSnapshot => ({ observed });

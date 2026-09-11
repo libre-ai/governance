@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildIndex, renderIndex } from "./build-index";
+import { buildIndex, isPublicCrossRepositoryTarget, renderIndex } from "./build-index";
 
 // The index is a published machine artefact: its exact byte format is locked
 // by a golden fixture, and the committed real index must always match a fresh
@@ -20,7 +20,7 @@ describe("buildIndex", () => {
     const index = buildIndex(await Bun.file(fixtureUrl).text());
     expect(index.repositories.map((entry) => entry.repository)).toEqual([
       "libre-ai/alpha-hub",
-      "libre-ai/midden-secret",
+      "libre-ai/product-research",
       "libre-ai/zeta-product",
     ]);
   });
@@ -80,8 +80,62 @@ describe("buildIndex", () => {
     expect(() => buildIndex(yaml)).toThrow('expected "active" or "archived"');
   });
 
+  test("accepts only the exact private administrative repository shape", () => {
+    const exact = privateEntry();
+    expect(buildIndex(inventoryWith(exact)).repositories[0]).toEqual({
+      repository: "libre-ai/product-research",
+      name: "product-research",
+      role: "administrative-private",
+      layer: "transverse",
+      visibility: "private",
+      lifecycle: "active",
+    });
+
+    const invalidEntries = [
+      exact.replace("administrative-private", "unknown-role"),
+      exact.replace("administrative-private", "satellite"),
+      exact.replace("libre-ai/product-research", "libre-ai/other-private"),
+      exact.replace("visibility: private", "visibility: public"),
+      exact.replace("layer: transverse", "layer: couche-1"),
+      exact.replace("lifecycle: active", "lifecycle: archived"),
+      `${exact}\n    card: project.v1.yaml`,
+    ];
+    for (const entry of invalidEntries) {
+      expect(() => buildIndex(inventoryWith(entry))).toThrow();
+    }
+  });
+
+  test("rejects an unknown public role", () => {
+    expect(() =>
+      buildIndex(
+        inventoryWith(
+          "  - { repository: libre-ai/x, role: invented, layer: couche-4, visibility: public, lifecycle: active }",
+        ),
+      ),
+    ).toThrow("expected one of the closed roles");
+  });
+
+  test("classifies only public entries as cross-repository targets", () => {
+    expect(isPublicCrossRepositoryTarget({ visibility: "public" })).toBe(true);
+    expect(isPublicCrossRepositoryTarget({ visibility: "private" })).toBe(false);
+  });
+
   test("the committed index matches a fresh regeneration from the inventory", async () => {
     const regenerated = renderIndex(buildIndex(await Bun.file(inventoryUrl).text()));
     expect(regenerated).toBe(await Bun.file(committedIndexUrl).text());
   });
 });
+
+function privateEntry(): string {
+  return [
+    "  - repository: libre-ai/product-research",
+    "    role: administrative-private",
+    "    layer: transverse",
+    "    visibility: private",
+    "    lifecycle: active",
+  ].join("\n");
+}
+
+function inventoryWith(entry: string): string {
+  return ["schema_version: v", "updated_on: 2026-09-11", "repositories:", entry].join("\n");
+}

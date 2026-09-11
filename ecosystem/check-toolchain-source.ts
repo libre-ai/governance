@@ -42,6 +42,13 @@ export interface DeclaredSource {
   readonly sha256: string | null;
 }
 
+import {
+  buildIndex,
+  type InventoryEntry,
+  isPublicCrossRepositoryTarget,
+  PRIVATE_CROSS_REPOSITORY_NOTE,
+} from "./build-index";
+
 export interface CanonicalToolchain {
   readonly assetUrl: string;
   readonly assetSha256: string;
@@ -395,6 +402,15 @@ async function fetchWorkflowsForFleet(
   return result;
 }
 
+export function selectToolchainTargets(
+  repositories: readonly Pick<InventoryEntry, "repository" | "visibility">[],
+): string[] {
+  return repositories
+    .filter(isPublicCrossRepositoryTarget)
+    .map((entry) => entry.repository)
+    .filter((repository) => !ARCHIVED_EXCLUSIONS.has(repository));
+}
+
 if (import.meta.main) {
   const policy = await readCanonical();
   const canonicalFailures = verifyCanonical(policy);
@@ -408,13 +424,14 @@ if (import.meta.main) {
     assetSha256: policy.assets["linux-x64"].sha256,
   };
 
-  const inventory = Bun.YAML.parse(await Bun.file("ecosystem/repositories.v1.yaml").text()) as {
-    readonly repositories: readonly { readonly repository: string }[];
-  };
-
-  const targets = inventory.repositories
-    .map((entry) => entry.repository)
-    .filter((repository) => !ARCHIVED_EXCLUSIONS.has(repository));
+  const inventory = buildIndex(await Bun.file("ecosystem/repositories.v1.yaml").text());
+  const targets = selectToolchainTargets(inventory.repositories);
+  const privateRepositories = inventory.repositories.filter(
+    (entry) => entry.visibility === "private",
+  );
+  for (const entry of privateRepositories) {
+    console.log(`${entry.repository}: ${PRIVATE_CROSS_REPOSITORY_NOTE}`);
+  }
   const fetched = await fetchWorkflowsForFleet(targets);
 
   const sources: DeclaredSource[] = [];

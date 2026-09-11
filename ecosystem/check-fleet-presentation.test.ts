@@ -125,6 +125,40 @@ describe("reviewRepository", () => {
     expect(review.failures).toEqual([]);
   });
 
+  test("accepts the strictly validated cardless private administrative entry", () => {
+    const fleet = parseFleet(`schema_version: v
+updated_on: 2026-09-11
+repositories:
+  - repository: libre-ai/product-research
+    role: administrative-private
+    layer: transverse
+    visibility: private
+    lifecycle: active
+`);
+    expect(fleet).toHaveLength(1);
+    const entry = fleet[0];
+    expect(entry).toBeDefined();
+    if (entry === undefined) throw new Error("expected one parsed fleet entry");
+    expect(reviewRepository(entry, () => found(null))).toEqual({
+      failures: [],
+      skipped: true,
+    });
+  });
+
+  test("rejects a permissive private presentation entry during inventory parsing", () => {
+    expect(() =>
+      parseFleet(`schema_version: v
+updated_on: 2026-09-11
+repositories:
+  - repository: libre-ai/other-private
+    role: satellite
+    layer: couche-4
+    visibility: private
+    lifecycle: active
+`),
+    ).toThrow();
+  });
+
   test("hub role validates the card but exempts the README check", () => {
     const entry = { repository: "libre-ai/libre-ai", role: "hub", card: "ecosystem/cards/x.yaml" };
     const review = reviewRepository(entry, (_r, p) =>
@@ -138,7 +172,7 @@ describe("reviewRepository", () => {
 describe("parseFleet", () => {
   test("keeps the card pointer only when declared", () => {
     const fleet = parseFleet(
-      "repositories:\n  - repository: libre-ai/a\n    role: satellite\n    card: project.v1.yaml\n  - repository: libre-ai/b\n    role: org-profile\n",
+      "schema_version: v\nupdated_on: 2026-09-11\nrepositories:\n  - repository: libre-ai/a\n    role: satellite\n    layer: couche-4\n    visibility: public\n    lifecycle: active\n    card: project.v1.yaml\n  - repository: libre-ai/b\n    role: org-profile\n    layer: transverse\n    visibility: public\n    lifecycle: active\n",
     );
     expect(fleet[0]?.card).toBe("project.v1.yaml");
     expect(fleet[1]?.card).toBeUndefined();

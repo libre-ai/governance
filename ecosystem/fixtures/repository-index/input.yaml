@@ -27,12 +27,11 @@ repositories:
     owns:
       - fixture hub
     consumes: []
-  - repository: libre-ai/midden-secret
-    role: reserved-product-home
-    layer: couche-1
-    product: Midden
+  - repository: libre-ai/product-research
+    role: administrative-private
+    layer: transverse
     visibility: private
     lifecycle: active
     owns:
-      - fixture private product
+      - fixture private administration
     consumes: []

@@ -167,6 +167,25 @@ describe("firstDifference", () => {
 });
 
 describe("reviewDependabot", () => {
+  test("exempts a private repository before inspecting fetched state", () => {
+    const outcome = reviewDependabot(
+      { ...active("libre-ai/product-research"), visibility: "private" },
+      {
+        config: { text: null, error: "must not be observed" },
+        manifests: null,
+        fetchError: "must not be observed",
+      },
+      templates,
+    );
+    expect(outcome).toEqual({
+      failures: [],
+      notes: [
+        "private repository — content gates run in-repository; no cross-repository read token granted",
+      ],
+      exempt: true,
+    });
+  });
+
   test("archived entries are exempt, asserted rather than skipped", () => {
     const outcome = reviewDependabot(
       { ...active("libre-ai/libre-ai"), lifecycle: "archived" },

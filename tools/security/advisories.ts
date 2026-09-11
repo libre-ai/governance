@@ -5,6 +5,20 @@
 
 const GHSA_PATTERN = /GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}/g;
 
+export interface AdvisoryRepositoryEntry {
+  readonly repository: string;
+  readonly lifecycle: "active" | "archived";
+  readonly visibility: "public" | "private";
+}
+
+export function selectPublicAdvisoryRepositories(
+  repositories: readonly AdvisoryRepositoryEntry[],
+): string[] {
+  return repositories
+    .filter((entry) => entry.lifecycle === "active" && entry.visibility === "public")
+    .map((entry) => entry.repository);
+}
+
 /** Unique, sorted GHSA identifiers found in a `bun audit` output. */
 export function extractAdvisoryIds(output: string): string[] {
   return [...new Set(output.match(GHSA_PATTERN) ?? [])].sort();

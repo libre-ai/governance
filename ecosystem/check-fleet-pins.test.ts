@@ -7,7 +7,21 @@ import {
   parseFleetPinsBatchResponse,
   parseFleetPinsRepoNode,
   type RepositorySources,
+  selectFleetPinTargets,
 } from "./check-fleet-pins";
+
+test("selectFleetPinTargets excludes private repositories before remote fetch", () => {
+  expect(
+    selectFleetPinTargets([
+      { repository: "libre-ai/public", visibility: "public", lifecycle: "active" },
+      {
+        repository: "libre-ai/product-research",
+        visibility: "private",
+        lifecycle: "active",
+      },
+    ]),
+  ).toEqual([{ repository: "libre-ai/public", card: "project.v1.yaml" }]);
+});
 
 // The gate's promise is that no governance revision reaches a consumer's
 // required checks without passing through a declared generation. Its previous

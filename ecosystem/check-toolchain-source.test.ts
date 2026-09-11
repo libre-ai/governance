@@ -9,9 +9,19 @@ import {
   parseWorkflowsTreeBatchResponse,
   parseWorkflowsTreeNode,
   readCanonical,
+  selectToolchainTargets,
   verifyCanonical,
   verifySources,
 } from "./check-toolchain-source";
+
+test("selectToolchainTargets excludes private repositories before remote fetch", () => {
+  expect(
+    selectToolchainTargets([
+      { repository: "libre-ai/public", visibility: "public" },
+      { repository: "libre-ai/product-research", visibility: "private" },
+    ]),
+  ).toEqual(["libre-ai/public"]);
+});
 
 const canonical: CanonicalToolchain = {
   assetUrl:
