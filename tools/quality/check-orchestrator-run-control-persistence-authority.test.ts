@@ -403,8 +403,13 @@ describe("orchestrator run-control persistence authority", () => {
     expect(design).toContain("pg_class.relowner");
     expect(design).toContain("pg_database.datdba");
     expect(design).toContain("pg_extension.extowner");
+    expect(design).toContain("pg_parameter_acl");
     expect(design).toContain("has_column_privilege");
     expect(design).toContain("has_database_privilege");
+    expect(design).toContain("has_parameter_privilege");
+    expect(design).toContain("session_replication_role");
+    expect(design).toContain("inherit_option");
+    expect(design).toContain("set_option");
     expect(design).toContain("rolcreaterole");
     expect(design).toContain("rolcreatedb");
     expect(design).toContain("rolreplication");
@@ -415,6 +420,8 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("forbidden extra column grant");
     expect(implementationPlan).toContain("forbidden database owner");
     expect(implementationPlan).toContain("forbidden extension owner");
+    expect(implementationPlan).toContain("forbidden parameter grant");
+    expect(implementationPlan).toContain("membership option mismatch");
     expect(implementationPlan).toContain("CREATEROLE");
     expect(implementationPlan).toContain(
       "current local review does not require provider attestation",
@@ -424,6 +431,11 @@ describe("orchestrator run-control persistence authority", () => {
       "bun test verification/agent-orchestrator/review-evidence.test.ts",
     );
     expect(implementationPlan).toContain("run-review-evidence");
+    expect(implementationPlan).not.toContain("receipt_digest: Digest, deleted_at: DateTime<Utc>");
+    expect(design).toContain("caller supplies no deletion timestamp");
+    expect(implementationPlan).toContain("clock_timestamp()` after acquiring");
+    expect(implementationPlan).toContain("delayed authenticated receipt");
+    expect(implementationPlan).toContain("concurrent lock wait");
     expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");

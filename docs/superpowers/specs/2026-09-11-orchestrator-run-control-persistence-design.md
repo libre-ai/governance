@@ -196,14 +196,16 @@ It may not:
 - open TCP or negotiate TLS;
 - expose its pool or a raw SQLx transaction;
 - call an HTTP, RPC, worker, Missions, Harness or effect endpoint;
-- read the wall clock implicitly;
+- read the host wall clock; the closed PostgreSQL deletion guard is the sole
+  clock owner for its post-lock effective deletion instant;
 - emit logs, traces, metrics labels or raw database errors;
 - authorize a run, actor, deletion or retention policy;
 - accept a preclassified semantic verdict from an adapter.
 
-The caller injects connection options, authoritative time and already
-established authority facts. It resolves the local endpoint outside this
-crate and must not place a real secret in the proof-only options. Before SQLx
+The caller injects connection options, explicit lifecycle/expiry observation
+times and already established authority facts, but never the effective
+deletion instant. It resolves the local endpoint outside this crate and must
+not place a real secret in the proof-only options. Before SQLx
 I/O, the crate requires `PgConnectOptions::get_socket()` to be `Some`, refuses
 caller startup `options`, then replaces password, application name and all
 file/inline certificate and key fields with fixed non-secret values. It forces
@@ -281,13 +283,18 @@ The non-secret attestation report must query the explicit role matrix below:
 `pg_roles.rolcreaterole`, `pg_roles.rolcreatedb`,
 `pg_roles.rolreplication`, `pg_roles.rolbypassrls`,
 `pg_roles.rolconnlimit`, `pg_roles.rolvaliduntil` and `pg_roles.rolconfig`. It
-reads `pg_auth_members` for exact inbound
-and outbound memberships and absence of an admin option. Ownership and raw ACLs
+reads `pg_auth_members` for exact inbound and outbound memberships. On
+PostgreSQL 14/15, `admin_option` must be false and the member identity's
+`NOINHERIT` attribute carries the inheritance barrier. On PostgreSQL 16 or
+newer, `admin_option = false`, `inherit_option = false` and `set_option = true`
+are all mandatory. Ownership and raw ACLs
 come from `pg_namespace.nspowner`/`nspacl`,
 `pg_class.relowner`/`relacl`, `pg_attribute.attacl`,
 `pg_proc.proowner`/`proacl`, `pg_database.datdba`/`datacl`,
 `pg_extension.extowner` and `pg_default_acl`; `pg_extension` also proves
-`pgcrypto` presence. It cross-checks table, column and routine grants through
+`pgcrypto` presence. On PostgreSQL 15 or newer, the report additionally reads
+every relevant `pg_parameter_acl` entry and refuses any parameter grant to the
+seven restricted principals or `PUBLIC`. It cross-checks table, column and routine grants through
 `information_schema.table_privileges`,
 `information_schema.column_privileges` and
 `information_schema.routine_privileges`, after first proving that the audit
@@ -295,6 +302,14 @@ identity can see the complete relevant ACL set. Effective positive and
 negative checks include `has_table_privilege`, `has_column_privilege`,
 `has_function_privilege`, `has_schema_privilege` and
 `has_database_privilege` for every application identity and assumable role.
+On PostgreSQL 15 or newer, `has_parameter_privilege` must prove that none can
+`SET` or `ALTER SYSTEM` for `session_replication_role`; the raw parameter ACL
+check remains authoritative for every other explicit parameter grant. Version
+branches use `server_version_num` and refuse an absent catalog or column rather
+than treating it as an older server. Each connection identity must also prove
+in a rollback-only transaction that its exact `SET LOCAL ROLE` succeeds, that
+no capability privilege is effective before it, and that no other capability
+role can be selected.
 The report fails closed when ACL visibility is incomplete, ownership is
 unexpected, or any attribute, membership or privilege is missing or
 additional. It records no login secret or provider account identifier and
@@ -312,7 +327,8 @@ The exact principal matrix is:
   NOBYPASSRLS`, an explicit positive `rolconnlimit` no greater than their
   reviewed pool limit, the exact `rolvaliduntil` fixed by the separately
   authorized credential policy, empty `rolconfig`, and exactly one membership
-  in their matching capability role without admin option;
+  in their matching capability role with `admin_option = false`; PostgreSQL
+  16+ additionally requires `inherit_option = false` and `set_option = true`;
 - no connection identity owns any database, extension, schema, relation,
   column, sequence or routine. None receives a direct object grant beyond the
   exact database connection boundary. The schema owner/migrator owns the
@@ -510,11 +526,16 @@ this projection and remain organization-scoped.
 ### 7.7 `execution_deletion_tombstones`
 
 A tombstone contains only a content-free subject digest, deletion receipt
-digest, deletion instant and expiry instant. `P35D` is represented in
+digest, effective database deletion instant and expiry instant. `P35D` is represented in
 PostgreSQL as exact elapsed `interval '840 hours'`, never calendar
 `interval '35 days'`, so a poisoned session timezone or DST boundary cannot
 shorten the barrier. Mission-retention years remain a distinct UTC calendar
-calculation. It deliberately has no foreign
+calculation. The caller supplies no deletion timestamp. After acquiring every
+lineage lock, the guard captures `clock_timestamp()` immediately before the
+first tombstone insert and derives expiry from that stored effective instant;
+an old authorization receipt therefore still creates a full new `P35D`
+barrier. An existing same-receipt tombstone is idempotent and keeps its original
+effective instant and expiry rather than extending them. It deliberately has no foreign
 key to a run: deleting the run cannot delete the evidence that prevents its
 restore. The application role cannot read, insert, update or delete this
 table. The retention role has no raw insert, select, update or delete grant: it
@@ -631,8 +652,9 @@ pub async fn expire_tombstones(
 Budget and attestation-reference queries follow the same organization-scoped,
 cursor-bounded shape. Lifecycle methods accept explicit authoritative time and
 an explicit deletion command whose authorization has already been verified by
-a future caller. They do not expose a public bypass flag or reuse the
-application pool.
+a future caller. That deletion command contains organization, run and receipt
+digest only; it cannot inject the effective deletion or expiry time. The
+methods do not expose a public bypass flag or reuse the application pool.
 
 `RunSnapshot` exposes only `run_id`, `head_sequence`, `head_event_digest` and
 the joined `retention_until`. It cannot expose phase, ready step, completion,
@@ -818,7 +840,9 @@ Expiry uses a two-stage, bounded sweep:
 
 Explicit deletion uses that same closed guard function. Retention has no raw
 `DELETE` path around it. A tombstone is committed before or with run deletion,
-never afterward. The subject digest is derived from the closed
+never afterward. Its effective deletion time is captured inside the guard only
+after the advisory and lifecycle locks; neither public API nor direct function
+call accepts a time argument. The subject digest is derived from the closed
 organization/run lineage; raw identifiers do not enter the tombstone. Deletion
 is idempotent for the same receipt and refuses a divergent receipt before any
 lineage removal.
@@ -955,6 +979,11 @@ All non-trivial behavior is test-first. The implementation must provide:
   observes the committed tombstone after waiting, while direct app/retention
   writes at `REPEATABLE READ` or `SERIALIZABLE` refuse before mutation;
 - the app role cannot update/delete events, access tombstones or alter schema;
+- all seven restricted principals match the exact role attributes and
+  memberships; PostgreSQL 16+ proves membership options
+  `admin/inherit/set = false/false/true`, PostgreSQL 15+ proves no parameter
+  ACL and no effective `session_replication_role` privilege, and every login
+  can select only its intended role;
 - the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update a
   tombstone, has only the tombstone access, lifecycle lock and
   organization-scoped run deletion its closed owned functions require, and
@@ -975,6 +1004,9 @@ All non-trivial behavior is test-first. The implementation must provide:
   lineage, while exact duplicates remain idempotent;
 - a concurrent deletion and first append of the same absent lineage always
   leaves an active tombstone and no live run, in both lock-acquisition orders;
+- a delayed deletion receipt and a deletion resumed after a lock wait each
+  receive a fresh database-owned effective instant and a full 840-hour barrier;
+  same-receipt retry does not extend it and direct SQL cannot backdate it;
 - injected failure at each SQL boundary leaves no partial event, ledger,
   reference or projection write.
 
@@ -1001,7 +1033,8 @@ synthetic and checked for forbidden content.
   repeats are idempotent;
 - lifecycle rebuild from the immutable observation journal is byte-identical
   to the live lifecycle projection;
-- deletion and tombstone creation are atomic;
+- deletion and tombstone creation are atomic, and tombstone expiry is exactly
+  `P35D` after the effective database time captured after every lineage lock;
 - tombstones are content-free and inaccessible to the app role;
 - fixed vectors prove Rust/PostgreSQL deletion-subject digest equality;
 - restore applies tombstones first and cannot resurrect deleted lineage;

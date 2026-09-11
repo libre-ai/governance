@@ -30,7 +30,9 @@ Orchestrator ajoute `crates/agent-orchestrator-run/`. Le crate racine pur reste
 sans I/O et sa surface publique demeure inchangée. Le nouveau crate reçoit des
 `PgConnectOptions`, possède ses pools privés et n'expose ni connexion, ni SQL
 brut, ni migration, ni constructeur lisant l'environnement, le système de
-fichiers, l'horloge ou un secret.
+fichiers, l'horloge hôte ou un secret. Seul le guard PostgreSQL fermé capture
+son instant effectif de suppression après les verrous ; aucun appelant ne le
+fournit.
 
 Cette preuve est Unix-domain socket only. Avant tout pool ou I/O, le crate
 exige `PgConnectOptions::get_socket() == Some`, refuse les startup options de
@@ -101,9 +103,13 @@ NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0`, sans
 configuration de rôle ni membership sortant. Les migrations produit vérifient
 leur présence mais ne les créent pas. Les trois identités de connexion sont
 `LOGIN NOSUPERUSER NOINHERIT NOCREATEROLE NOCREATEDB NOREPLICATION
-NOBYPASSRLS`, chacune membre sans admin option de son seul rôle nécessaire,
-avec une limite de connexion positive bornée et sans ownership applicatif.
-Elles utilisent des pools physiquement séparés.
+NOBYPASSRLS`, chacune membre sans admin option de son seul rôle nécessaire ;
+PostgreSQL 16+ impose en plus `inherit_option = false` et `set_option = true`,
+avec preuve transactionnelle du `SET LOCAL ROLE`. À partir de PostgreSQL 15,
+aucun des sept principals ni `PUBLIC` ne reçoit de `pg_parameter_acl`, et
+`session_replication_role` reste effectivement interdit. Les identités ont une
+limite de connexion positive bornée et aucun ownership applicatif. Elles
+utilisent des pools physiquement séparés.
 
 Toute transaction organization-scoped exécute un `SET LOCAL ROLE` littéral et
 un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par
@@ -148,9 +154,13 @@ rétention.
 ### D4 — Rendre suppression et restauration anti-résurrection
 
 Une suppression autorisée inscrit et conserve atomiquement un tombstone
-content-free avant de retirer la lignée. Son sujet est un SHA-256 versionné et
-encadré par longueurs de l'organization et du run ; des vecteurs fixes prouvent
-l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
+content-free avant de retirer la lignée. La commande ne fournit aucun instant
+de suppression : après tous les verrous de lignée, le guard capture
+`clock_timestamp()` comme instant effectif et fixe l'expiration exactement 840
+heures plus tard. Un reçu retardé ne peut donc créer une barrière déjà expirée,
+et un retry au même reçu conserve l'instant et l'expiration initiaux. Son sujet
+est un SHA-256 versionné et encadré par longueurs de l'organization et du run ;
+des vecteurs fixes prouvent l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
 d'insertion, lecture ou suppression : la fonction guard
 `delete_lineage_with_tombstone` dérive le sujet du contexte transactionnel,
 verrouille la lignée, inscrit ou compare le reçu puis supprime le run cascade
@@ -174,7 +184,8 @@ page bornée, triées par valeur signée immuable, avant le premier row lock. So
 ordre de curseur par deadline reste séparé et ne peut donc créer un cycle quand
 deux sweeps ont observé des ordres de deadlines différents.
 
-Les tombstones expirent exactement après `P35D`, plafond déclaré des
+Les tombstones expirent exactement `P35D` après leur suppression effective,
+plafond déclaré des
 sauvegardes ; PostgreSQL l'exprime comme `interval '840 hours'` et jamais
 comme 35 jours calendaires, afin qu'un fuseau de session empoisonné ou un
 passage DST ne raccourcisse pas la barrière. La rétention en années reste un
