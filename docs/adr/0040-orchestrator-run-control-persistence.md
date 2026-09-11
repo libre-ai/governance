@@ -107,7 +107,12 @@ NOBYPASSRLS`, chacune membre sans admin option de son seul rôle nécessaire ;
 PostgreSQL 16+ impose en plus `inherit_option = false` et `set_option = true`,
 avec preuve transactionnelle du `SET LOCAL ROLE`. À partir de PostgreSQL 15,
 aucun des sept principals ni `PUBLIC` ne reçoit de `pg_parameter_acl`, et
-`session_replication_role` reste effectivement interdit. Les identités ont une
+`session_replication_role` reste effectivement interdit. L'attestation lit
+directement `pg_db_role_setting` pour exclure tout default rôle+base ou
+database-wide caché par `rolconfig`. Chaque connexion initiale, remplacée,
+rendue au pool ou empruntée prouve en outre
+`session_replication_role = 'origin'` avant tout SQL métier, sans tenter de
+corriger une valeur différente. Les identités ont une
 limite de connexion positive bornée et aucun ownership applicatif. Elles
 utilisent des pools physiquement séparés.
 
@@ -156,9 +161,9 @@ rétention.
 Une suppression autorisée inscrit et conserve atomiquement un tombstone
 content-free avant de retirer la lignée. La commande ne fournit aucun instant
 de suppression : après tous les verrous de lignée, le guard capture
-`clock_timestamp()` comme instant effectif et fixe l'expiration exactement 840
-heures plus tard. Un reçu retardé ne peut donc créer une barrière déjà expirée,
-et un retry au même reçu conserve l'instant et l'expiration initiaux. Son sujet
+`clock_timestamp()` comme instant effectif et fixe l'éligibilité temporelle 840
+heures plus tard. Un reçu retardé ne peut donc créer une barrière déjà éligible,
+et un retry au même reçu conserve l'instant et l'éligibilité initiaux. Son sujet
 est un SHA-256 versionné et encadré par longueurs de l'organization et du run ;
 des vecteurs fixes prouvent l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
 d'insertion, lecture ou suppression : la fonction guard
@@ -168,7 +173,8 @@ dans la même transaction. Un reçu divergent refuse avant le `DELETE`. Le guard
 reçoit uniquement les privilèges RLS tombstone, verrou lifecycle et `DELETE`
 organization-scoped sur `runs` nécessaires à ses fonctions fermées ; il ne
 peut mettre à jour un tombstone ni lire une autre relation. Sa fonction
-d'expiration impose en plus l'ordre, la taille et les deux bornes temporelles.
+d'expiration impose en plus l'ordre, la taille, les deux bornes temporelles et
+un `SnapshotRetirementFact` exact issu de l'autorité indépendante de backup.
 Aucune identité de connexion ne peut assumer ce rôle, et rétention n'a aucun
 `DELETE` brut sur la lignée ou ses dépendances.
 
@@ -184,26 +190,32 @@ page bornée, triées par valeur signée immuable, avant le premier row lock. So
 ordre de curseur par deadline reste séparé et ne peut donc créer un cycle quand
 deux sweeps ont observé des ordres de deadlines différents.
 
-Les tombstones expirent exactement `P35D` après leur suppression effective,
-plafond déclaré des
-sauvegardes ; PostgreSQL l'exprime comme `interval '840 hours'` et jamais
+Les tombstones deviennent éligibles après exactement `P35D` suivant leur
+suppression effective, plafond déclaré des sauvegardes ; PostgreSQL l'exprime
+comme `interval '840 hours'` et jamais
 comme 35 jours calendaires, afin qu'un fuseau de session empoisonné ou un
 passage DST ne raccourcisse pas la barrière. La rétention en années reste un
-calcul calendaire UTC séparé. Une suppression anticipée est bloquée en base. Une opération
-globale bornée du rôle rétention les expire sans retourner leurs lignes, selon
+calcul calendaire UTC séparé. Le temps seul ne suffit jamais : une preuve
+authentifiée doit lier un catalogue immuable de snapshots et l'ensemble exact
+des sujets/reçus, et affirmer qu'aucun snapshot d'exécution encore admissible
+ne peut contenir ces lignées. Sans cette preuve, le tombstone content-free
+reste actif au-delà de `P35D`. Une suppression anticipée ou non prouvée est
+bloquée en base. Une opération globale bornée du rôle rétention les expire sans retourner leurs lignes, selon
 l'ordre `(expires_at, subject_digest)` et sous une double borne de temps injecté
-et d'horloge PostgreSQL. Lors d'une restauration, le rôle restore charge d'abord
-un registre de suppressions
+et d'horloge PostgreSQL, plus cette preuve exacte de retrait. Lors d'une
+restauration, le rôle restore charge d'abord un registre de suppressions
 indépendamment protégé et accompagné d'un manifeste autoritatif. Le store
 recalcule son compte et son digest, exige une couverture au moins égale au
 gel des writers et refuse un snapshot d'exécution plus ancien que `P35D`.
 Manifeste absent, incomplet, périmé ou incohérent refuse la pré-ouverture.
-Seulement après cette preuve, restore rejoue les tombstones non expirés contre
-les lignées restaurées, les supprime par pages bornées, puis exige un compte
-résiduel nul. Ce zéro est nécessaire mais jamais suffisant sans preuve de
-complétude et de fraîcheur du registre. Le crate vérifie ces faits mais ne les
-authentifie pas et ne contrôle aucun gel de writers ni démarrage de service ;
-ces autorités restent séparément fermées.
+Seulement après cette preuve, restore rejoue chaque tombstone retenu contre les
+lignées restaurées. Un tombstone purgé ne peut être omis que si la preuve de
+retrait lie le snapshot sélectionné et exclut cette lignée ; son âge seul ne
+suffit pas. Restore supprime par pages bornées, puis exige un compte résiduel
+nul. Ce zéro est nécessaire mais jamais suffisant sans preuve de complétude et
+de fraîcheur du registre. Le crate vérifie ces faits mais ne les authentifie
+pas et ne contrôle aucun gel de writers ni démarrage de service ; ces autorités
+restent séparément fermées.
 
 ### D5 — Mesurer le coût O(n) et interdire le branchement production
 

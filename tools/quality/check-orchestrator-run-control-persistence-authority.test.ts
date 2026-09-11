@@ -404,12 +404,14 @@ describe("orchestrator run-control persistence authority", () => {
     expect(design).toContain("pg_database.datdba");
     expect(design).toContain("pg_extension.extowner");
     expect(design).toContain("pg_parameter_acl");
+    expect(design).toContain("pg_db_role_setting");
     expect(design).toContain("has_column_privilege");
     expect(design).toContain("has_database_privilege");
     expect(design).toContain("has_parameter_privilege");
     expect(design).toContain("session_replication_role");
     expect(design).toContain("inherit_option");
     expect(design).toContain("set_option");
+    expect(design).toContain("session_replication_role = 'origin'");
     expect(design).toContain("rolcreaterole");
     expect(design).toContain("rolcreatedb");
     expect(design).toContain("rolreplication");
@@ -422,6 +424,8 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("forbidden extension owner");
     expect(implementationPlan).toContain("forbidden parameter grant");
     expect(implementationPlan).toContain("membership option mismatch");
+    expect(implementationPlan).toContain("role-and-database default");
+    expect(implementationPlan).toContain("database-wide default");
     expect(implementationPlan).toContain("CREATEROLE");
     expect(implementationPlan).toContain(
       "current local review does not require provider attestation",
@@ -436,6 +440,12 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("clock_timestamp()` after acquiring");
     expect(implementationPlan).toContain("delayed authenticated receipt");
     expect(implementationPlan).toContain("concurrent lock wait");
+    expect(design).toContain("SnapshotRetirementFact");
+    expect(adr).toContain("SnapshotRetirementFact");
+    expect(design).toContain("libre-ai.snapshot-retirement.v1\\0");
+    expect(implementationPlan).toContain("execution_snapshot_digest");
+    expect(design.replace(/\s+/g, " ")).toContain("no admissible execution snapshot can contain");
+    expect(implementationPlan).toContain("snapshot between tombstone capture and deletion commit");
     expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");

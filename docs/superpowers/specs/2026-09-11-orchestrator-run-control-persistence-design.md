@@ -90,8 +90,10 @@ The authoritative retention facts are:
 
 - an orchestrator execution record defaults to `P1Y`, may be configured up to
   `P6Y`, and equals the owning mission retention;
-- a content-free execution-deletion tombstone is retained for `P35D`;
-- restore applies deletion tombstones before execution records.
+- a content-free execution-deletion tombstone is retained for at least `P35D`
+  and until independent snapshot-retirement evidence permits its removal;
+- restore applies deletion tombstones and snapshot-retirement evidence before
+  execution records.
 
 `MissionRetentionFact` is a bounded native input carrying the mission id,
 retention years and a UTC observation instant exactly representable at
@@ -310,6 +312,11 @@ than treating it as an older server. Each connection identity must also prove
 in a rollback-only transaction that its exact `SET LOCAL ROLE` succeeds, that
 no capability privilege is effective before it, and that no other capability
 role can be selected.
+Because `pg_roles.rolconfig` omits role-and-database defaults, the report also
+enumerates raw `pg_db_role_setting`: it refuses every row for any of the seven
+principals across all databases and every database-wide default for the
+selected database. The effective session probe below covers server-wide
+defaults. Missing catalog visibility is a failure, never an empty result.
 The report fails closed when ACL visibility is incomplete, ownership is
 unexpected, or any attribute, membership or privilege is missing or
 additional. It records no login secret or provider account identifier and
@@ -388,6 +395,13 @@ pooled session, exercise rollback and cancellation paths, reuse the same bound
 query across a scrub, inject each scrub failure, and prove that neither cached
 statement, role, organization context nor SQL text survives or reaches any
 collector.
+
+Every initial or replacement connection, every checkout before the first
+business statement, and every connection after `DISCARD ALL` must prove
+`session_replication_role = 'origin'`. Each transaction helper repeats the
+effective check after `BEGIN`, literal `SET LOCAL ROLE` and tenant setup, but
+before reading or mutating a product relation. Any other value destroys or
+refuses the connection; the crate never attempts a privileged correction.
 
 All pool constructors first require an explicit Unix-domain socket, reject
 caller startup options, overwrite secret-capable option fields with fixed
@@ -526,7 +540,8 @@ this projection and remain organization-scoped.
 ### 7.7 `execution_deletion_tombstones`
 
 A tombstone contains only a content-free subject digest, deletion receipt
-digest, effective database deletion instant and expiry instant. `P35D` is represented in
+digest, effective database deletion instant and earliest expiry-eligibility
+instant. `P35D` is represented in
 PostgreSQL as exact elapsed `interval '840 hours'`, never calendar
 `interval '35 days'`, so a poisoned session timezone or DST boundary cannot
 shorten the barrier. Mission-retention years remain a distinct UTC calendar
@@ -542,8 +557,10 @@ table. The retention role has no raw insert, select, update or delete grant: it
 invokes guard-owned functions that derive the subject from its
 transaction-local organization context, insert or compare one tombstone and
 return only a closed outcome. Its separate bounded expiration function returns
-only a count; an RLS policy and database trigger both block deletion before the
-`P35D` backup ceiling.
+only a count. An RLS policy and database trigger both block deletion before
+`P35D`; the closed function additionally refuses without an exact independently
+authenticated `SnapshotRetirementFact`. Elapsed wall time is necessary but
+never sufficient.
 
 The deletion-subject digest has one versioned internal preimage:
 
@@ -559,7 +576,7 @@ Length framing prevents concatenation ambiguity. Rust and PostgreSQL
 implementations must match fixed cross-language vectors. The schema owner
 installs tombstone-guard-owned `SECURITY DEFINER` functions and trigger with a
 fixed safe `search_path`. The insertion trigger recomputes this digest for every
-attempted `runs` insertion and rejects an unexpired matching tombstone without
+attempted `runs` insertion and rejects any retained matching tombstone without
 disclosing its presence to the application role.
 
 The guard-owned `SECURITY DEFINER VOLATILE lock_lineage` function derives the
@@ -588,7 +605,8 @@ execution of every guard function is revoked; app receives only
 `delete_lineage_with_tombstone` and the bounded tombstone-expiry function.
 The retention role has no raw `DELETE` on runs, dependent projections or
 tombstones.
-Expiration binds injected time, total index order and batch size. The restore
+Expiration binds injected time, a bounded exact snapshot-retirement fact,
+total index order and batch size. The restore
 role receives the separate content-free lookup and pre-open lineage deletion
 policies required for recovery.
 
@@ -601,6 +619,7 @@ pub struct RunStore { /* private PgPool + embedded ContractRegistry */ }
 pub struct LifecycleStore { /* separate private PgPool */ }
 pub struct RestoreStore { /* separate pre-open-only PgPool */ }
 pub struct DeletionRegistryFact { /* private validated fields */ }
+pub struct SnapshotRetirementFact { /* private validated backup-authority fields */ }
 pub struct RestoreBatchSize(NonZeroU16);
 pub struct TombstoneExpiryBatchSize(NonZeroU16);
 pub struct EventPageRequest { /* private event cursor + limit */ }
@@ -644,6 +663,7 @@ pub async fn replay_tombstones(
 
 pub async fn expire_tombstones(
     &self,
+    retirement: &SnapshotRetirementFact,
     observed_at: DateTime<Utc>,
     batch_size: TombstoneExpiryBatchSize,
 ) -> Result<TombstoneExpiryOutcome, StoreError>;
@@ -683,18 +703,41 @@ replay and its blocking proof query; it has no event, export or append method.
 
 `DeletionRegistryFact` binds the execution-snapshot instant, the instant at
 which all writers were authoritatively fenced, the independently protected
-deletion registry's coverage-through instant, tombstone count and
-set digest. The digest preimage is `libre-ai.execution-deletion-registry.v1\0`,
-followed by the big-endian `u64` row count and, for every row ordered
-lexicographically by subject digest, the fixed 32-byte subject digest, fixed
-32-byte receipt digest and big-endian `i64` Unix-microsecond deletion and expiry
-instants. Restore methods recompute count and digest over every locally restored
+deletion registry's coverage-through instant, the exact execution-snapshot
+reference, tombstone count and set digest, plus the snapshot-catalog revision
+and retirement-proof digest governing any omitted tombstone. The digest
+preimage is `libre-ai.execution-deletion-registry.v1\0`, followed by the
+big-endian `i64` execution-snapshot instant, fixed 32-byte execution-snapshot
+digest, big-endian `i64` writer-fence and coverage instants, fixed 32-byte
+snapshot-catalog and retirement-proof digests, big-endian `u64` row count and,
+for every row ordered lexicographically by subject digest, the fixed 32-byte
+subject digest, fixed 32-byte receipt digest and big-endian `i64`
+Unix-microsecond deletion and expiry instants. Restore methods recompute count and digest over every locally restored
 tombstone in cursor-bounded pages inside one repeatable-read transaction, require
 `snapshot_at <= writers_fenced_at <= observed_at`, require registry coverage
-through the writer fence and refuse a snapshot older than `P35D`. They do not
-accept a caller-classified “registry complete” boolean. A future caller must
+through the writer fence and refuse a snapshot older than `P35D`. They replay
+every retained tombstone regardless of temporal eligibility. A registry may
+omit a purged tombstone only when its authenticated retirement proof binds the
+selected execution snapshot and proves that no admissible execution snapshot
+can contain that subject's lineage. The package verifies the exact snapshot,
+catalog-revision and proof-digest binding; the future caller authenticates the
+catalog membership and retirement semantics. They do not accept a
+caller-classified “registry complete” boolean. A future caller must
 authenticate the fact and prove the writer fence; this package opens neither
 capability.
+
+`SnapshotRetirementFact` is a bounded, content-free fact from the independent
+backup authority. It binds an immutable snapshot-catalog revision, an exact
+sorted set of subject/receipt digests, its count and set digest, and the
+observation instant. Its semantics are stronger than age: no admissible
+execution snapshot can contain any listed lineage. Tombstone expiry recomputes
+the exact selected set and refuses an absent, stale, partial or mismatched
+fact. Its set digest is SHA-256 over
+`libre-ai.snapshot-retirement.v1\0`, the fixed snapshot-catalog digest,
+big-endian `i64` observation instant, big-endian `u16` count, then every sorted
+fixed subject/receipt digest pair. If the external fact is unavailable, the content-free tombstone remains
+active beyond `P35D`; this fail-closed over-retention is visible and cannot be
+reclassified as successful expiry.
 
 Construction builds the fail-closed `ContractRegistry` once from SDK Rust's
 embedded canonical schemas. Each append validates the supplied graph and
@@ -861,23 +904,27 @@ Fixed cross-language vectors bind that preimage. Explicit deletion continues
 to require its caller-authenticated receipt digest; the two receipt sources are
 not interchangeable.
 
-While that tombstone is active, the tombstone-guard insertion trigger refuses
+While that tombstone is retained, the tombstone-guard insertion trigger refuses
 recreation of the deleted organization/run lineage. This closes both the live
 append path and restore races even though the application role cannot query
-tombstones. Run identifiers remain non-reusable authority identifiers; the
-future authorization layer must enforce that invariant after the `P35D`
-tombstone has legitimately expired.
+tombstones. Temporal eligibility alone never deactivates the barrier. Run
+identifiers remain non-reusable authority identifiers; the future authorization
+layer must enforce that invariant after authenticated snapshot retirement has
+permitted physical purge.
 
 Restore has a mandatory pre-open phase under the dedicated restore authority:
 
 1. fence every role that can mutate runs or tombstones outside this package,
    including retention expiry;
-2. restore the tombstone relation first from an independently protected
-   deletion registry, not from the execution snapshot alone;
+2. restore the tombstone relation and snapshot-retirement evidence first from
+   an independently protected deletion registry, not from the execution
+   snapshot alone;
 3. verify its authoritative manifest: row count and deterministic set
    digest match, coverage reaches the writer fence, and the execution snapshot
    is no older than the `P35D` backup ceiling;
-4. replay all unexpired tombstones against restored execution records;
+4. replay every retained tombstone against restored execution records and
+   accept an omitted tombstone only through the exact retirement proof bound to
+   the selected execution snapshot;
 5. delete every matching restored lineage and its projections;
 6. verify that no suppressed lineage remains;
 7. only then permit the application role or service traffic.
@@ -898,16 +945,19 @@ not authenticate that fact, fence writers or control service startup. Future
 deployment tooling must make writer fencing, authoritative registry restore,
 manifest authentication and successful replay a blocking startup gate, and
 must not retain restore-role membership in the application identity.
-Once a tombstone expires, the policy asserts that no backup capable of
-resurrecting that lineage remains; expiry is therefore a retention-authority
-operation, not a normal application sweep.
+Once a tombstone is physically purged, an authenticated snapshot-retirement
+fact has proved that no admissible backup can contain that lineage. Purge is
+therefore a retention-authority operation, not a normal application sweep.
 
 `expire_tombstones` is a separate global, content-free retention operation. It
-accepts injected time and a validated batch size of 1 through 100, deletes in
+accepts injected time, an exact `SnapshotRetirementFact` and a validated batch
+size of 1 through 100, deletes in
 the total order `(expires_at, subject_digest)` without `RETURNING`, and exposes
 only the deleted count. The SQL predicate requires both `expires_at <=
 observed_at` and `expires_at <= transaction_timestamp()`; the database trigger
-also refuses any deletion before exact elapsed `P35D`, expressed as 840 hours.
+also refuses any deletion before exact elapsed `P35D`, expressed as 840 hours,
+or outside the exact retired subject/receipt set. The anti-resurrection barrier
+remains active while the row exists, even after temporal eligibility.
 Fixed Rust/PostgreSQL vectors straddle Europe/Paris spring and autumn DST
 transitions and are repeated after poisoning the session timezone. The `(expires_at,
 subject_digest)` index bounds selection. App and restore cannot call the method
@@ -982,7 +1032,10 @@ All non-trivial behavior is test-first. The implementation must provide:
 - all seven restricted principals match the exact role attributes and
   memberships; PostgreSQL 16+ proves membership options
   `admin/inherit/set = false/false/true`, PostgreSQL 15+ proves no parameter
-  ACL and no effective `session_replication_role` privilege, and every login
+  ACL and no effective `session_replication_role` privilege, raw
+  `pg_db_role_setting` has no role-and-database or target database-wide default,
+  every initial/replacement/checked-out/reset session proves
+  `session_replication_role = 'origin'`, and every login
   can select only its intended role;
 - the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update a
   tombstone, has only the tombstone access, lifecycle lock and
@@ -1007,6 +1060,10 @@ All non-trivial behavior is test-first. The implementation must provide:
 - a delayed deletion receipt and a deletion resumed after a lock wait each
   receive a fresh database-owned effective instant and a full 840-hour barrier;
   same-receipt retry does not extend it and direct SQL cannot backdate it;
+- a snapshot taken between tombstone capture and deletion commit keeps the
+  tombstone active past `P35D` until an exact retirement fact proves that
+  snapshot inadmissible; restore cannot ignore or omit the tombstone on age
+  alone;
 - injected failure at each SQL boundary leaves no partial event, ledger,
   reference or projection write.
 
@@ -1033,8 +1090,9 @@ synthetic and checked for forbidden content.
   repeats are idempotent;
 - lifecycle rebuild from the immutable observation journal is byte-identical
   to the live lifecycle projection;
-- deletion and tombstone creation are atomic, and tombstone expiry is exactly
-  `P35D` after the effective database time captured after every lineage lock;
+- deletion and tombstone creation are atomic; `P35D` after the effective
+  database time is only the earliest expiry eligibility, while authenticated
+  snapshot retirement is also mandatory;
 - tombstones are content-free and inaccessible to the app role;
 - fixed vectors prove Rust/PostgreSQL deletion-subject digest equality;
 - restore applies tombstones first and cannot resurrect deleted lineage;
@@ -1044,7 +1102,8 @@ synthetic and checked for forbidden content.
   later deletion refuses pre-open rather than reporting a misleading zero;
 - restore-role credentials cannot be used through `RunStore` or
   `LifecycleStore` constructors without their role/grant probes failing;
-- tombstones cannot expire before `P35D`;
+- tombstones cannot expire before `P35D` or without exact snapshot-retirement
+  evidence;
 - automatic run expiry uses the versioned deterministic receipt and tombstone
   expiry processes at most its validated batch in total index order;
 - the proof query blocks service opening while any restored lineage survives.
