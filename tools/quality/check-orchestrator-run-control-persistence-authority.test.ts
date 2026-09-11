@@ -467,6 +467,16 @@ describe("orchestrator run-control persistence authority", () => {
       "capability-forbidden:examples/uds_persistence.rs:url-formatting",
     );
     expect(implementationPlan).toContain("unexpected-example:examples/other.rs");
+    expect(implementationPlan).toContain("caller-injected `PgConnectOptions`");
+    expect(implementationPlan).toContain(
+      "capability-forbidden:src/pool.rs:ambient-connect-options",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:ambient-connect-options",
+    );
+    expect(implementationPlan).toContain("new_without_pgpass");
+    expect(implementationPlan).toContain("Default::default");
+    expect(implementationPlan).toContain("FromStr::from_str");
     expect(implementationPlan).not.toContain("receipt_digest: Digest, deleted_at: DateTime<Utc>");
     expect(design).toContain("caller supplies no deletion timestamp");
     expect(implementationPlan).toContain("clock_timestamp()` after acquiring");

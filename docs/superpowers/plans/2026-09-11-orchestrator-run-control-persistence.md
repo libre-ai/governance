@@ -317,8 +317,15 @@ constructors, runtime log/tracing emission, direct logger/event APIs,
 names. The example additionally forbids password and certificate/key setters,
 startup `options` and every connection URL formatter; the crate-owned
 sanitizer may use the corresponding setters only to replace caller inputs with
-fixed inert values. The scanner's sole logging-related production allow-list is
-the exact compile-time `STATIC_MAX_LEVEL` assertions; imports or executable
+fixed inert values. Both sets also reject every ambient SQLx connection-options
+constructor and parser: `new`, `new_without_pgpass`, `Default::default`,
+`FromStr::from_str`, `ConnectOptions::from_url`, string `parse` into
+`PgConnectOptions`, their fully qualified forms and import aliases. SQLx 0.9.0
+may read PostgreSQL environment variables, system identity, default socket
+paths or pgpass during those calls; later sanitation cannot undo that access.
+Only caller-injected `PgConnectOptions` may cross the public store boundary.
+The scanner's sole logging-related production allow-list is the exact
+compile-time `STATIC_MAX_LEVEL` assertions; imports or executable
 instrumentation remain forbidden. It also loads the merged machine
 work-package map and compares every changed path against the exact WP-G3-O01
 writePaths; any O02-owned or unlisted path fails. Run the test and require
@@ -1098,27 +1105,48 @@ expect(runSourceFailures("examples/uds_persistence.rs", ".options([(\"search_pat
 expect(runSourceFailures("examples/uds_persistence.rs", ".to_url_lossy()")).toContain("capability-forbidden:examples/uds_persistence.rs:url-formatting");
 expect(runSourceFailures("examples/other.rs", "fn main() {}"))
   .toContain("unexpected-example:examples/other.rs");
+expect(runSourceFailures("src/pool.rs", "PgConnectOptions::new()"))
+  .toContain("capability-forbidden:src/pool.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "PgConnectOptions::new_without_pgpass()"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "let _: PgConnectOptions = Default::default();"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "FromStr::from_str(\"postgresql:///synthetic\")"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "ConnectOptions::from_url(&url)"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "value.parse::<PgConnectOptions>()"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
+expect(runSourceFailures("examples/uds_persistence.rs", "use sqlx::postgres::PgConnectOptions as Options; Options::new()"))
+  .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
 ```
 
 Add an independently red fixture for every password, root/client certificate
 and client-key setter supported by the pinned SQLx API, including file and
-inline variants. The eventual valid example must pass this same scanner before
-its package-scoped compilation. Compilation without capability scanning is
-red.
+inline variants. Add equivalent constructor/parser fixtures for `src/**/*.rs`,
+the example, fully qualified trait calls and an import alias; the scanner must
+not rely on the literal `PgConnectOptions` receiver spelling. The eventual
+valid example must pass this same scanner before its package-scoped
+compilation. Compilation without capability scanning is red.
 
 The same gate gets red content fixtures before implementation. It must scan every tracked UTF-8 byte of the dossier, without inheriting the repository secret scanner's `docs/reviews` exclusion. Put distinct synthetic credential, personal-data and POSIX and Windows absolute machine paths into `benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`; each case must fail. JSON/JCS fixtures additionally encode the canaries with Unicode escapes and nested arrays/objects. Add nested duplicate properties, escape-equivalent property names and an overwritten first value containing a fully escaped path canary; each must fail in the temporary-directory, staged-blob and historical-`E` adapters of the same validator. Invalid UTF-8, an unknown extension or a file outside the exact allow-list also fails. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
 Create the exact package-owned example
-`crates/agent-orchestrator-run/examples/uds_persistence.rs`. It constructs
-no-secret `PgConnectOptions` outside the crate with an explicit Unix-domain
-socket, creates bounded pool limits, appends a synthetic content-free event and
-reads a page. Keep the README prose free of a root-crate doctest and link to the
-example instead. State that the library cannot load secrets, use TCP/TLS,
-authorize, execute or serve. Wire the exact package-scoped `cargo check` command
-above as a separate blocking CI step; this proof must not depend implicitly on
-Clippy's current target discovery.
+`crates/agent-orchestrator-run/examples/uds_persistence.rs`. Its public async
+demonstration function receives caller-injected `PgConnectOptions` and an
+injected observation instant; it constructs or parses neither. It first
+requires the explicit Unix-domain socket accessor to be present, then creates
+bounded pool limits, appends a synthetic content-free event and reads a page.
+Its `main` is inert and never calls the demonstration function, constructs
+options or opens I/O. The options must have been constructed by an external
+caller outside this proof boundary; the example demonstrates only the store's
+validated handoff. Keep the README prose free of a root-crate doctest and link
+to the example instead. State that the library cannot load secrets, use
+TCP/TLS, authorize, execute or serve. Wire the exact package-scoped `cargo
+check` command above as a separate blocking CI step; this proof must not depend
+implicitly on Clippy's current target discovery.
 
 Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` with one `immutable-role-review` criterion at schema-valid `status: pending`, without `evidence`, and a note that implementation exists but independent review is not yet accepted. Explicitly leave whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
 
