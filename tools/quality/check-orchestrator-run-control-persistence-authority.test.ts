@@ -298,6 +298,14 @@ describe("orchestrator run-control persistence authority", () => {
       "| D45 | Run-control persistence is isolated and non-executing",
     );
     expect(design).toContain("authority ADR-0040/D45");
+    expect(adr).toContain("max_level_off");
+    expect(adr).toContain("sslrootcert");
+    expect(design).toContain("tracing::level_filters::STATIC_MAX_LEVEL");
+    expect(design).toContain("log::STATIC_MAX_LEVEL");
+    expect(design).toContain("global downstream effect");
+    expect(design).toContain("WebPKI roots");
+    expect(decisionRegister).toContain("diagnostics globally off");
+    expect(decisionRegister).toContain("file-backed TLS options before I/O");
     expect(adr).toContain("faits de rétention immuables");
     expect(design).toContain("### 7.2 `run_retention_facts`");
     expect(design.replace(/\s+/g, " ")).toContain(
@@ -327,9 +335,23 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("purged_rows");
     expect(implementationPlan).toContain("clear_cached_statements");
     expect(implementationPlan).toContain("disable_statement_logging");
+    expect(implementationPlan).toContain('log = { version = "=0.4.33"');
+    expect(implementationPlan).toContain('tracing = { version = "=0.1.44"');
+    expect(implementationPlan).toContain('features = ["max_level_off", "release_max_level_off"]');
+    expect(implementationPlan).toContain("tracing::level_filters::STATIC_MAX_LEVEL");
+    expect(implementationPlan).toContain("log::STATIC_MAX_LEVEL");
+    expect(implementationPlan).toContain("tls-rustls-ring-webpki");
+    expect(implementationPlan).not.toContain("tls-rustls-ring-native-roots");
     expect(implementationPlan).toContain("tracing-subscriber =");
     expect(implementationPlan).toContain("positive control");
-    expect(implementationPlan).toContain("synthetic `sqlx::query`-target event");
+    expect(implementationPlan).toContain("direct collector APIs");
+    expect(implementationPlan).toContain("RAISE INFO");
+    expect(implementationPlan).toContain("sqlx::postgres::notice");
+    expect(implementationPlan).toContain("debug and release");
+    expect(implementationPlan).toContain("log-always");
+    expect(implementationPlan).toContain("global downstream effect");
+    expect(implementationPlan).toContain("driver that preserves safe downstream diagnostics");
+    expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");
     expect(implementationPlan).toContain("interval '840 hours'");
     expect(implementationPlan).not.toContain(

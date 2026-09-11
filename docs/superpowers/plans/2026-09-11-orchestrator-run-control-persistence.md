@@ -29,9 +29,9 @@
   budget counters; `budget_ledger` mechanically copies validated event fields
   and never becomes a second reducer.
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
-- The library reads no environment, file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`.
-- Pin every dependency exactly. SQLx uses only `runtime-tokio`, `tls-rustls-ring-native-roots`, `postgres`, `json` and `chrono`; no macros, embedded migrations, SQLite or MySQL.
-- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()`. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- The library reads no environment, file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`. Before connection, it inspects a short-lived, never-formatted `to_url_lossy()` value and rejects `sslrootcert`, `sslcert` or `sslkey` query keys with constant `InvalidInput`, so SQLx cannot read caller-selected certificate paths. Caller-side construction remains outside this boundary; WebPKI roots and inline certificate material are the only admitted TLS inputs.
+- Pin every dependency exactly. SQLx uses only `runtime-tokio`, `tls-rustls-ring-webpki`, `postgres`, `json` and `chrono`; no macros, native-root filesystem discovery, `ipnet`, embedded migrations, SQLite or MySQL.
+- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is an additional production blocker; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
 - Every live app/retention writer explicitly begins at `READ COMMITTED` before
   role/context setup. Guard functions and the anti-resurrection trigger are
   `VOLATILE` and refuse unless `current_setting('transaction_isolation')` is
@@ -304,7 +304,15 @@ expect(runSourceFailures("src/lib.rs", "std::fs::read(\"x\")")).toContain("capab
 expect(runSourceFailures("src/lib.rs", "std::env::var(\"DATABASE_URL\")")).toContain("capability-forbidden:src/lib.rs:environment");
 ```
 
-The scanner covers only production `src/**/*.rs` and forbids filesystem, process, arbitrary network, environment, wall-clock constructors, logs/tracing, HTTP/RPC, unsafe/FFI and framework names. It also loads the merged machine work-package map and compares every changed path against the exact WP-G3-O01 writePaths; any O02-owned or unlisted path fails. Run the test and require failure because the crate/checker are absent.
+The scanner covers only production `src/**/*.rs` and forbids filesystem,
+process, arbitrary network, environment, wall-clock constructors, runtime
+log/tracing emission, direct logger/event APIs, `print!`/`println!`/`eprint!`/
+`eprintln!`, HTTP/RPC, unsafe/FFI and framework names. Its sole logging-related
+production allow-list is the exact compile-time `STATIC_MAX_LEVEL` assertions;
+imports or executable instrumentation remain forbidden. It also loads the
+merged machine work-package map and compares every changed path against the
+exact WP-G3-O01 writePaths; any O02-owned or unlisted path fails. Run the test
+and require failure because the crate/checker are absent.
 
 - [ ] **Step 3: Add workspace and exact manifest**
 
@@ -336,22 +344,42 @@ libre-ai-contract-types = { version = "=0.1.0", git = "https://github.com/libre-
 serde_jcs = "=0.2.0"
 serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
 sha2 = { version = "=0.11.0", default-features = false }
-sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "json", "chrono"] }
+log = { version = "=0.4.33", default-features = false, features = ["max_level_off", "release_max_level_off"] }
+sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "json", "chrono"] }
+tracing = { version = "=0.1.44", default-features = false, features = ["std", "max_level_off", "release_max_level_off"] }
 
 [dev-dependencies]
 tokio = { version = "=1.53.1", default-features = false, features = ["macros", "rt-multi-thread", "sync", "time"] }
-tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
+tracing = { version = "=0.1.44", default-features = false, features = ["log-always"] }
 tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 ```
 
-The selected Tokio 1.53.1 release is MIT, requires Rust 1.71 and is compatible with Rust 1.97. The two MIT tracing crates are dev-only and exist solely to install a scoped `sqlx::query` capture proving that caller-enabled statement logging is disabled; production scanning still forbids tracing. If the locked dependency graph cannot unify on these exact releases, stop with resolver evidence rather than introducing duplicate versions.
+The selected Tokio 1.53.1 release is MIT, requires Rust 1.71 and is compatible
+with Rust 1.97. `log` is MIT OR Apache-2.0; `tracing` and
+`tracing-subscriber` are MIT. The normal `log`/`tracing` dependencies impose
+static `OFF`; the repeated dev dependency deliberately unifies `log-always`
+into test builds so that variant is proven too. `tracing-subscriber` exists
+only to install the serialized test collector. If the locked dependency graph
+cannot unify on these exact releases, stop with resolver evidence rather than
+introducing duplicate versions.
 
 - [ ] **Step 4: Implement/wire the gate and prove green**
 
-The checker compares exact production/dev dependency sets and SQLx features, and rejects `build.rs`, `src/main.rs`, `src/bin` and alternate production dependency sections. Add `check:run-capabilities` to `package.json` immediately after the pure capability gate. Generate and inspect the lock once, then run:
+The checker compares exact production/dev dependency sets and SQLx features,
+rejects every extra SQLx feature (notably `ipnet`, whose optional decoder has a
+raw `println!` path), and rejects `build.rs`, `src/main.rs`, `src/bin` and
+alternate production dependency sections. It verifies the resolved Cargo
+feature graph, not merely the direct manifest, and audits the active SQLx
+source graph for direct logger/event/stdout bypasses. Add normal-build const
+assertions that `tracing::level_filters::STATIC_MAX_LEVEL` is `OFF` and
+`log::STATIC_MAX_LEVEL` is `Off`; the capability gate accepts only those exact
+assertions. Add `check:run-capabilities` to `package.json` immediately after
+the pure capability gate. Generate and inspect the lock once, then run both
+debug and release checks:
 
 ```bash
 cargo check --locked --workspace
+cargo check --locked --workspace --release
 bun install --frozen-lockfile
 bun test verification/agent-orchestrator/run-capability-boundary.test.ts
 bun run check:capabilities
@@ -541,11 +569,41 @@ git commit -s -m "Add run-control PostgreSQL schema"
 
 - [ ] **Step 1: Write and run red pool tests**
 
-Use `max_connections=1`. Poison the sole session with a session-level GUC/role; cover success, callback error, task cancellation and backend termination during scrub. The next borrower receives a clean/new connection, never poison. Execute the same bound prepared query before and after checkout to catch a stale SQLx client-cache entry after server discard. Inject cache-clear and discard failures separately and prove each connection is destroyed. Build caller options with statement and slow-statement logging deliberately enabled and install a serialized test capture for the `sqlx::query` target. As a positive control, emit a synthetic `sqlx::query`-target event containing a secret-free sentinel and first assert that the capture records it; then clear the capture, exercise all three stores and assert that no `db.statement`, sentinel or SQL text is emitted after the store takes ownership. Prove every wrong identity/store pair returns only `run-store.unavailable`.
+Use `max_connections=1`. Poison the sole session with a session-level GUC/role;
+cover success, callback error, task cancellation and backend termination during
+scrub. The next borrower receives a clean/new connection, never poison.
+Execute the same bound prepared query before and after checkout to catch a
+stale SQLx client-cache entry after server discard. Inject cache-clear and
+discard failures separately and prove each connection is destroyed.
+
+Install serialized permissive tracing and log collectors. Their positive control
+must inject a secret-free sentinel through their direct collector APIs,
+not through macros already compiled out, then clear capture. Build caller
+options with statement and slow-statement logging deliberately enabled;
+exercise all three stores, connection/query/error/cancellation/backend-
+termination/scrub/ping/maintenance paths and PostgreSQL `RAISE INFO`, `NOTICE`
+and `WARNING`. Wait for background pool cleanup, then assert zero log/tracing
+events, including target `sqlx::postgres::notice`, zero SQL text and zero
+evaluation of a sensitive `Display` formatter guarded by an atomic counter.
+Run this proof in debug and release and with the dev-unified `log-always`
+feature. Separately prove the exact resolved feature graph, the normal-build
+static `OFF` assertions and absence of direct bypasses in every active SQLx
+crate. The claim is limited to that exact allow-listed graph; any feature
+addition invalidates it.
+
+Construct synthetic file-backed `sslrootcert`, `sslcert` and `sslkey` options.
+Before any pool or socket action, inspect only the keys of a tightly scoped
+`options.to_url_lossy().query_pairs()` value, never format, store or return its
+password-bearing representation, and return constant `InvalidInput`. Prove
+rejection with nonexistent paths and a closed database endpoint so success
+cannot depend on filesystem or SQL I/O. Inline certificate material and
+WebPKI roots remain admitted. Prove every wrong identity/store pair returns
+only `run-store.unavailable`.
 
 - [ ] **Step 2: Construct private scrubbed pools**
 
 ```rust
+reject_file_backed_tls_without_formatting(&options)?;
 let options = options.disable_statement_logging();
 
 PgPoolOptions::new()
@@ -959,7 +1017,7 @@ Run Task 12 commands, require clean status, then record full implementation SHA 
 
 - [ ] **Step 2: Run four independent review roles**
 
-Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and the production block. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, forced statement-log disabling, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
+Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and both production blocks. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, compile-time `log`/`tracing` `OFF` in the exact debug/release/`log-always` graph, direct SQLx collector/stdout bypasses, PostgreSQL INFO/NOTICE/WARNING, file-backed TLS rejection before I/O, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, WebPKI without native-root filesystem discovery, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
 
 - [ ] **Step 3: Remediate without carrying stale approval**
 
@@ -990,6 +1048,11 @@ This merge establishes the first layer-2 PostgreSQL persistence barrier:
 canonical events, forced RLS, separated lifecycle/restore roles and
 tombstone-first recovery are proven. It still cannot authorize, execute,
 serve or deploy a run, and O(n) replay explicitly blocks production use.
+The exact graph also compiles all diagnostics from its unified log/tracing
+package instances out globally; a duplicate-version or feature-graph change
+invalidates the proof. No production consumer may remove that block until an
+upstream option or driver preserves safe downstream diagnostics without SQLx
+leakage.
 ADR-0011 D4 requires the owner's bootstrap pronouncement naming I and E before merge.
 ```
 

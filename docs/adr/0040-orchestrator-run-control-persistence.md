@@ -32,6 +32,14 @@ sans I/O et sa surface publique demeure inchangée. Le nouveau crate reçoit des
 brut, ni migration, ni constructeur lisant l'environnement, le système de
 fichiers, l'horloge ou un secret.
 
+Avant toute connexion, le crate inspecte uniquement les clés de requête d'une
+représentation `to_url_lossy()` à durée de vie minimale et refuse
+`sslrootcert`, `sslcert` ou `sslkey` par `InvalidInput` constant. Cette
+représentation peut contenir un mot de passe : elle n'est jamais formatée,
+loguée, stockée ou retournée. Les racines WebPKI et le matériel certificat
+inline restent admis ; la construction des options par l'appelant reste hors
+de cette frontière.
+
 Cette tranche consomme les schémas embarqués par SDK Rust et le replay du cœur
 pur. Elle ne crée pas de package concurrent : le `WP-G3-O01` verrouillé reste
 le seul propriétaire de `crates/agent-orchestrator-run/**` et demeure incomplet
@@ -95,11 +103,24 @@ des pools physiquement séparés.
 
 Toute transaction organization-scoped exécute un `SET LOCAL ROLE` littéral et
 un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par
-`ENABLE ROW LEVEL SECURITY` et `FORCE ROW LEVEL SECURITY`. La construction des
-pools impose `disable_statement_logging()`. Chaque retour au pool vide d'abord
-le cache client de prepared statements SQLx puis exécute `DISCARD ALL` sans
-préparation persistante ; l'échec de l'une des deux étapes détruit la
-connexion.
+`ENABLE ROW LEVEL SECURITY` et `FORCE ROW LEVEL SECURITY`. Dans le graphe Cargo
+exact, les dépendances normales `log` et `tracing` activent
+`max_level_off` et `release_max_level_off` ; des assertions de compilation
+imposent `log::STATIC_MAX_LEVEL == Off` et
+`tracing::level_filters::STATIC_MAX_LEVEL == OFF`. Les macros de façade de
+SQLx sont donc compilées hors du binaire en debug, release et sous la variante
+de test `tracing/log-always`. `disable_statement_logging()` reste imposé en
+défense en profondeur, mais ne porte pas seul la garantie. Le gate refuse tout
+appel direct à un logger/événement/stdout et toute feature SQLx hors liste,
+notamment `ipnet` et son chemin optionnel `println!`.
+
+Ce contrôle a un effet global aval assumé sur les instances de packages
+unifiées : tout consommateur du même graphe perd aussi les diagnostics de ces
+instances `log`/`tracing`. Une version dupliquée ou toute autre modification du
+graphe invalide la preuve. Ce coût n'est acceptable que pour cette preuve non
+productive. Chaque retour au pool vide d'abord le cache client de prepared
+statements SQLx puis exécute `DISCARD ALL` sans préparation persistante ;
+l'échec de l'une des deux étapes détruit la connexion.
 Les writers live commencent explicitement en `READ COMMITTED`. Les fonctions
 guard et le trigger anti-résurrection sont `VOLATILE`, vérifient
 `current_setting('transaction_isolation')` et refusent `REPEATABLE READ` ou
@@ -185,6 +206,11 @@ autorisation distincte d'état incrémental ou une borne autoritative démontré
 par les mesures. Un checkpoint de framework n'est pas une solution admise par
 implication.
 
+L'extinction globale des diagnostics constitue un deuxième blocage production.
+Elle ne peut pas être retirée pour « réactiver les logs » : une option upstream
+ou un driver séparément prouvé doit préserver des diagnostics aval sûrs sans
+réintroduire les émissions SQLx de requête, notice, pool ou erreur.
+
 ### D6 — Arrêter avant merge sur dossier indépendant
 
 Le candidat d'implémentation immuable `I` reçoit des revues
@@ -212,7 +238,11 @@ Les APIs publiques utilisent des types validés et des erreurs à cinq codes
 constants. `Display` et `Debug` n'exposent jamais SQL, détail de connexion,
 organization, run, digest, document, chemin ou valeur rejetée. La bibliothèque
 ne logue rien ; les fixtures sont synthétiques et un gate recherche les
-contenus interdits.
+contenus interdits. Des collecteurs permissifs reçoivent d'abord un contrôle
+positif par leurs APIs directes, puis les tests exigent zéro événement et zéro
+évaluation d'un formateur sensible sur tous les chemins SQLx, y compris
+erreur/cancellation/nettoyage et PostgreSQL `RAISE INFO`, `NOTICE` et
+`WARNING`. Cette preuve vaut uniquement pour le graphe exact vérifié.
 
 Les tests PostgreSQL réels prouvent l'absence de lecture, mutation, inférence
 ou collision cross-organization par toute méthode publique. Ils empoisonnent
@@ -229,10 +259,12 @@ du workspace et celle du nouveau crate atteignent chacune indépendamment au
 minimum 87 % des lignes et 90 % des fonctions ; l'agrégat du workspace ne peut
 pas masquer une régression locale.
 
-SQLx 0.9 et Tokio sont épinglés avec leurs seules features nécessaires, sous
-licences MIT/Apache-2.0 compatibles. PostgreSQL 14+ avec `pgcrypto` est la cible
-portable ; Clever Cloud PostgreSQL reste la cible UE déclarée, sans autoriser
-ici un provisionnement ou déploiement.
+SQLx 0.9, Tokio, `log` et `tracing` sont épinglés avec leurs seules features
+nécessaires, sous licences MIT/Apache-2.0 compatibles. SQLx utilise Rustls avec
+racines WebPKI, sans découverte du magasin natif ni certificat choisi par
+chemin. PostgreSQL 14+ avec `pgcrypto` est la cible portable ; Clever Cloud
+PostgreSQL reste la cible UE déclarée, sans autoriser ici un provisionnement ou
+déploiement.
 
 ## Compatibilité et rollback
 
@@ -266,6 +298,20 @@ Rejeté : LangGraph deviendrait une spécification implicite et une dépendance 
 restauration. Il reste un oracle non normatif de questions et scénarios de
 panne, supprimable sans modifier Missions ni Orchestrator.
 
+### Filtrer SQLx avec un subscriber scoped
+
+Rejeté : la portée d'un poll n'est pas une frontière Drop, ne couvre pas les
+tâches de fond du pool et modifie des états globaux de dispatcher/fallback. Elle
+ne prouve pas le confinement des notices PostgreSQL ni des erreurs asynchrones.
+
+### Maintenir un fork local de SQLx
+
+Rejeté pour cette tranche non productive : il pourrait retirer chaque site
+d'émission, mais créerait une surface durable d'audit upstream et de supply
+chain disproportionnée. La preuve static-off sur graphe exact est plus étroite
+et réversible ; la production devra choisir un contrôle upstream ou un driver
+à diagnostics sûrs séparément prouvé.
+
 ## Gate d'acceptation
 
 La tranche de persistance n'est mergeable que si une même révision immuable
@@ -275,18 +321,21 @@ prouve :
    rétention et reconstruction séparée des deux projections ;
 2. l'atomicité sous concurrence et échec injecté dans PostgreSQL réel ;
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
-4. la rétention mission bornée, la suppression atomique et la restauration
+4. le refus pré-I/O des certificats TLS par chemin, puis zéro émission et zéro
+   évaluation sensible dans les graphes exacts debug, release et
+   `tracing/log-always`, sans bypass direct ;
+5. la rétention mission bornée, la suppression atomique et la restauration
    tombstone-first sans résurrection, avec registre complet et frais ;
-5. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
+6. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
    `O(tombstones + runs * log(tombstones))`, restauration totale
    `O(tombstones + runs * log(tombstones) + purged_rows)` et blocage
-   production ;
-6. la compatibilité, couverture, documentation, rollback et tous les gates ;
-7. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
-8. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
+   production, auquel s'ajoute le blocage des diagnostics globaux ;
+7. la compatibilité, couverture, documentation, rollback et tous les gates ;
+8. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
+9. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
    evidence-only mécaniquement vérifié de `I`, et `I` puis `E` restent ancêtres
    de la branche principale après un merge commit non-squashé et non-rebasé ;
-9. le prononcé propriétaire ADR-0011 D4 nomme `I` et `E` après ces preuves et
+10. le prononcé propriétaire ADR-0011 D4 nomme `I` et `E` après ces preuves et
    avant merge.
 
 Tout finding Blocking ou Major invalide les preuves de la révision. La fusion
