@@ -308,15 +308,21 @@ expect(runSourceFailures("src/lib.rs", "std::fs::read(\"x\")")).toContain("capab
 expect(runSourceFailures("src/lib.rs", "std::env::var(\"DATABASE_URL\")")).toContain("capability-forbidden:src/lib.rs:environment");
 ```
 
-The scanner covers only production `src/**/*.rs` and forbids filesystem,
-process, arbitrary network, environment, wall-clock constructors, runtime
-log/tracing emission, direct logger/event APIs, `print!`/`println!`/`eprint!`/
-`eprintln!`, HTTP/RPC, unsafe/FFI and framework names. Its sole logging-related
-production allow-list is the exact compile-time `STATIC_MAX_LEVEL` assertions;
-imports or executable instrumentation remain forbidden. It also loads the
-merged machine work-package map and compares every changed path against the
-exact WP-G3-O01 writePaths; any O02-owned or unlisted path fails. Run the test
-and require failure because the crate/checker are absent.
+The scanner covers production `src/**/*.rs` and the exact package-owned `examples/uds_persistence.rs`.
+It rejects every other `examples/**` path rather
+than silently creating another executable surface. Both admitted source sets
+forbid filesystem, process, arbitrary network, environment, wall-clock
+constructors, runtime log/tracing emission, direct logger/event APIs,
+`print!`/`println!`/`eprint!`/`eprintln!`, HTTP/RPC, unsafe/FFI and framework
+names. The example additionally forbids password and certificate/key setters,
+startup `options` and every connection URL formatter; the crate-owned
+sanitizer may use the corresponding setters only to replace caller inputs with
+fixed inert values. The scanner's sole logging-related production allow-list is
+the exact compile-time `STATIC_MAX_LEVEL` assertions; imports or executable
+instrumentation remain forbidden. It also loads the merged machine
+work-package map and compares every changed path against the exact WP-G3-O01
+writePaths; any O02-owned or unlisted path fails. Run the test and require
+failure because the crate/checker are absent.
 
 - [ ] **Step 3: Add workspace and exact manifest**
 
@@ -1076,6 +1082,29 @@ It also requires the package-owned source
 alone or a README doctest compiled through the pure root crate is not accepted
 as proof. Remove the example path or the workflow command in separate fixtures
 and require both cases to fail.
+
+Extend the capability scanner's red fixtures before creating the example:
+
+```ts
+expect(runSourceFailures("examples/uds_persistence.rs", "std::env::var(\"DATABASE_URL\")")).toContain("capability-forbidden:examples/uds_persistence.rs:environment");
+expect(runSourceFailures("examples/uds_persistence.rs", "std::fs::read(\"fixture\")")).toContain("capability-forbidden:examples/uds_persistence.rs:filesystem");
+expect(runSourceFailures("examples/uds_persistence.rs", "std::net::TcpStream::connect((\"127.0.0.1\", 1))")).toContain("capability-forbidden:examples/uds_persistence.rs:network");
+expect(runSourceFailures("examples/uds_persistence.rs", "println!(\"synthetic\")")).toContain("capability-forbidden:examples/uds_persistence.rs:emission");
+expect(runSourceFailures("examples/uds_persistence.rs", "eprintln!(\"synthetic\")")).toContain("capability-forbidden:examples/uds_persistence.rs:emission");
+expect(runSourceFailures("examples/uds_persistence.rs", ".password(\"SYNTHETIC\")")).toContain("capability-forbidden:examples/uds_persistence.rs:connection-secret");
+expect(runSourceFailures("examples/uds_persistence.rs", ".ssl_client_cert(\"SYNTHETIC\")")).toContain("capability-forbidden:examples/uds_persistence.rs:connection-secret");
+expect(runSourceFailures("examples/uds_persistence.rs", ".ssl_client_key(\"SYNTHETIC\")")).toContain("capability-forbidden:examples/uds_persistence.rs:connection-secret");
+expect(runSourceFailures("examples/uds_persistence.rs", ".options([(\"search_path\", \"public\")])")).toContain("capability-forbidden:examples/uds_persistence.rs:startup-options");
+expect(runSourceFailures("examples/uds_persistence.rs", ".to_url_lossy()")).toContain("capability-forbidden:examples/uds_persistence.rs:url-formatting");
+expect(runSourceFailures("examples/other.rs", "fn main() {}"))
+  .toContain("unexpected-example:examples/other.rs");
+```
+
+Add an independently red fixture for every password, root/client certificate
+and client-key setter supported by the pinned SQLx API, including file and
+inline variants. The eventual valid example must pass this same scanner before
+its package-scoped compilation. Compilation without capability scanning is
+red.
 
 The same gate gets red content fixtures before implementation. It must scan every tracked UTF-8 byte of the dossier, without inheriting the repository secret scanner's `docs/reviews` exclusion. Put distinct synthetic credential, personal-data and POSIX and Windows absolute machine paths into `benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`; each case must fail. JSON/JCS fixtures additionally encode the canaries with Unicode escapes and nested arrays/objects. Add nested duplicate properties, escape-equivalent property names and an overwritten first value containing a fully escaped path canary; each must fail in the temporary-directory, staged-blob and historical-`E` adapters of the same validator. Invalid UTF-8, an unknown extension or a file outside the exact allow-list also fails. Run the Bun tests and require failure against current docs/missing gate.
 

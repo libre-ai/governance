@@ -442,6 +442,31 @@ describe("orchestrator run-control persistence authority", () => {
       "cargo check --locked -p libre-ai-agent-orchestrator-run --example uds_persistence",
     );
     expect(implementationPlan).toContain("run-example-check");
+    expect(implementationPlan).toContain(
+      "production `src/**/*.rs` and the exact package-owned `examples/uds_persistence.rs`",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:environment",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:filesystem",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:network",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:emission",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:connection-secret",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:startup-options",
+    );
+    expect(implementationPlan).toContain(
+      "capability-forbidden:examples/uds_persistence.rs:url-formatting",
+    );
+    expect(implementationPlan).toContain("unexpected-example:examples/other.rs");
     expect(implementationPlan).not.toContain("receipt_digest: Digest, deleted_at: DateTime<Utc>");
     expect(design).toContain("caller supplies no deletion timestamp");
     expect(implementationPlan).toContain("clock_timestamp()` after acquiring");
