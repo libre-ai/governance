@@ -1,7 +1,6 @@
 # Orchestrator Run-Control Persistence — Phase 4B Design
 
-- **Status:** approved for planning — owner, 2026-09-11; governance
-  authorization pending under ADR-0039/D45
+- **Status:** approved for implementation — owner, 2026-09-11; authority ADR-0039/D45
 - **Date:** 2026-09-11
 - **Programme authority:** ADR-0011, ADR-0018, ADR-0034, ADR-0036 and
   ADR-0037
