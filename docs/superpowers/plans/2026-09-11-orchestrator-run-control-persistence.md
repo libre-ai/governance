@@ -900,8 +900,9 @@ Snapshot every public re-export and five error codes. Extend the Bun coverage
 test to require test/coverage commands are wrapped by `with-postgres.sh --`,
 PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds
 remain. The structural workflow assertion also requires the exact quiet rustdoc
-command and both debug and release PostgreSQL workspace test commands; removing
-`--quiet` or either test mode is red. Add synthetic parsed-summary fixtures
+command, both debug and release PostgreSQL workspace test commands and both
+coverage commands with `-- --test-threads=1`; removing `--quiet`, either test
+mode or serialization is red. Add synthetic parsed-summary fixtures
 proving that workspace coverage passes while the run-store package coverage fails;
 the gate must reject that state, and must pass only when both
 independently meet 87/90. Run focused tests and require failure against the old
@@ -946,8 +947,8 @@ Use:
 - run: cargo fmt --all --check
 - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 - run: RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps
-- run: verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
-- run: verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features
+- run: verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features -- --test-threads=1
+- run: verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features -- --test-threads=1
 - name: Structural memory and RSS evidence
   run: verification/agent-orchestrator/with-postgres.sh -- verification/agent-orchestrator/benchmark-memory.sh
 - name: Rust coverage (blocking)
@@ -955,11 +956,11 @@ Use:
     verification/agent-orchestrator/with-postgres.sh -- \
       cargo llvm-cov --locked --workspace --all-features --lcov \
       --output-path coverage/lcov.info \
-      --fail-under-lines 87 --fail-under-functions 90
+      --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
     verification/agent-orchestrator/with-postgres.sh -- \
       cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
       --output-path coverage/run-store.lcov.info \
-      --fail-under-lines 87 --fail-under-functions 90
+      --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
     cargo llvm-cov report -p libre-ai-agent-orchestrator-run \
       --all-features --summary-only | tee -a "$GITHUB_STEP_SUMMARY"
 ```
@@ -967,11 +968,13 @@ Use:
 Use runner-provided PostgreSQL binaries; do not download a container or package during the job.
 The release test graph includes the dev dependency that activates
 `tracing/log-always`; consequently this command reruns the no-emission tests
-with release optimizations and that unified feature, rather than merely
-checking that the release graph compiles. The quiet rustdoc command must
+single-threaded with release optimizations and that unified feature, rather
+than merely checking that the release graph compiles. Debug, release and both
+coverage runs serialize every test in the shared PostgreSQL binary; a single
+test binary does not itself disable libtest parallelism. The quiet rustdoc command must
 produce an empty combined stream on success. Its stable evidence id is
 `cargo-doc-quiet`; any output, including a machine path, fails evidence capture
-instead of being rewritten. The release test command uses stable id
+instead of being rewritten. The serial release test command uses stable id
 `postgres-tests-release`.
 
 - [ ] **Step 4: Run all gates and commit**
@@ -980,18 +983,18 @@ instead of being rewritten. The release test command uses stable id
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps
-verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
-verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features
+verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features -- --test-threads=1
+verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features -- --test-threads=1
 cargo deny check --show-stats bans licenses sources
 bun run check
 verification/agent-orchestrator/with-postgres.sh -- \
   cargo llvm-cov --locked --workspace --all-features --lcov \
   --output-path coverage/lcov.info \
-  --fail-under-lines 87 --fail-under-functions 90
+  --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
 verification/agent-orchestrator/with-postgres.sh -- \
   cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
   --output-path coverage/run-store.lcov.info \
-  --fail-under-lines 87 --fail-under-functions 90
+  --fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1
 verification/agent-orchestrator/with-postgres.sh -- \
   verification/agent-orchestrator/benchmark-memory.sh
 ```
@@ -1043,7 +1046,9 @@ For every JSON/JCS file, it parses the document, emits its byte-for-byte RFC 878
 
 - [ ] **Step 3: Prove green and commit**
 
-Run the documentation assertion, `bun run check` and full PostgreSQL workspace tests. Commit as `Document bounded run-control persistence`.
+Run the documentation assertion, `bun run check`, and the exact serial debug
+and release PostgreSQL workspace commands from Task 12. Commit as `Document
+bounded run-control persistence`.
 
 ### Task 14: Build the immutable review dossier
 
@@ -1055,8 +1060,8 @@ Run the documentation assertion, `bun run check` and full PostgreSQL workspace t
 
 - [ ] **Step 1: Freeze candidate and rerun every gate**
 
-Run every Task 12 command, explicitly including both PostgreSQL debug and
-release workspace tests, require clean status, then record full implementation
+Run every Task 12 command, explicitly including both serial PostgreSQL debug
+and release workspace tests, require clean status, then record full implementation
 SHA `I`, parents, tree, message and a boolean DCO-valid result without copying
 author or committer identity into evidence. Capture outputs in a validated
 temporary directory outside the worktree; no untracked dossier may dirty the

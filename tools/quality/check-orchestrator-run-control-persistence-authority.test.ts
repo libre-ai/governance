@@ -367,8 +367,16 @@ describe("orchestrator run-control persistence authority", () => {
       'RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps',
     );
     expect(implementationPlan).toContain(
-      "cargo test --release --locked --workspace --all-features",
+      "cargo test --locked --workspace --all-features -- --test-threads=1",
     );
+    expect(implementationPlan).toContain(
+      "cargo test --release --locked --workspace --all-features -- --test-threads=1",
+    );
+    expect(
+      implementationPlan.match(
+        /--fail-under-lines 87 --fail-under-functions 90 -- --test-threads=1/g,
+      ) ?? [],
+    ).toHaveLength(4);
     expect(implementationPlan.replace(/\s+/g, " ")).toContain(
       "The release test graph includes the dev dependency that activates `tracing/log-always`",
     );
