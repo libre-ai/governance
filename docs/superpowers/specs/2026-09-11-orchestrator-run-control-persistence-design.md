@@ -84,6 +84,14 @@ The authoritative retention facts are:
 - a content-free execution-deletion tombstone is retained for `P35D`;
 - restore applies deletion tombstones before execution records.
 
+`MissionRetentionFact` is a bounded native input carrying the mission id,
+retention years and a UTC observation instant exactly representable at
+PostgreSQL microsecond precision. A future caller must authenticate the Missions
+fact before constructing it; this slice does not authenticate Missions or
+define a wire contract. The store derives a versioned digest from those three
+fields only to identify and replay the local observation. That digest is not
+policy authority.
+
 ### 3.3 Orchestrator
 
 `libre-ai/orchestrator` owns both crates but keeps their capabilities separate:
@@ -234,24 +242,33 @@ organization-scoped table. Policies require both a non-empty local setting and
 exact equality with `tenant_id` for read and write. The restricted roles have
 no ability to disable RLS, change policies or mutate schema.
 
+Every app and retention writer acquires the same `run_lifecycle` row lock
+before touching a run. This common lock serializes append, policy observation,
+explicit deletion and expiry without giving retention `UPDATE` on `runs`.
+No role receives table-wide `UPDATE` on `runs`: app receives column grants only
+for the mutable execution projection, while app and retention receive column
+grants only for the mutable lifecycle projection. Row locking remains possible
+because each writer has `UPDATE` on the columns it is permitted to maintain.
+
 ## 7. Persisted model
 
-All identifiers and digests have length and format checks matching the locked
-contracts. Timestamps are UTC instants. No prompt, tool argument, observation,
-path, destination, comment, free-form error or personal identity is stored.
+All contract identifiers and digests have matching length and format checks;
+internal storage digests use the versioned preimages defined here. Timestamps
+are UTC instants. No prompt, tool argument, tool-observation payload, path,
+destination, comment, free-form error or personal identity is stored.
 
 ### 7.1 `runs`
 
 One row is the current query projection for a run. Its composite primary key is
 `(tenant_id, run_id)`. It stores only bounded identifiers, contract digests,
 orchestrator identity, active generation, head sequence, head event digest,
-closed phase code, creation/last-event/closure instants and lifecycle
-deadlines.
+closed phase code and creation/last-event/closure instants. Lifecycle deadlines
+are deliberately absent.
 
 The row is not replay authority. It is updated in the same transaction as each
 event and can be rebuilt from the immutable event chain. A database trigger
-rejects mutation of a closed run except for lifecycle deletion by the
-retention role.
+rejects every update of a closed run. Retention never updates this relation;
+deletion removes it and its dependent projections atomically.
 
 Deferred coherence triggers require, at commit, that the run head and every
 budget total match the immutable head event and ledger row. This permits a
@@ -259,7 +276,50 @@ tentative first projection during atomic append but prevents the application
 role from committing a projection mutation or event without its corresponding
 evidence.
 
-### 7.2 `run_events`
+### 7.2 `run_retention_facts`
+
+This append-only relation records each already-authenticated retention
+observation applied to a run: organization/run/mission identifiers, validated
+years, observation instant and a versioned internal fact digest. It stores no
+Missions payload, actor, comment or policy rationale. Its key makes an exact
+repeat idempotent and rejects a different value at the same observation
+instant: the primary key is `(tenant_id, run_id, observed_at)`, followed by an
+explicit digest comparison on conflict. An observation older than the latest
+stored instant is rejected, so
+concurrent or delayed delivery cannot roll policy backward.
+
+The digest preimage is internal storage framing, not a wire contract:
+
+```text
+SHA-256(
+  "libre-ai.mission-retention-observation.v1\0" ||
+  u32be(byte_length(mission_id_utf8)) || mission_id_utf8 ||
+  u8(retention_years) || i64be(observed_at_unix_microseconds)
+)
+```
+
+The relation is the durable local replay evidence for lifecycle state, not an
+authority for choosing retention. Inserts and reads remain organization-scoped
+under forced RLS; updates and deletes are denied except for cascade deletion of
+the whole authorized lineage. Insert triggers recompute the internal digest,
+bind the stored mission, acquire the lifecycle row lock themselves and reject
+observations older than the newest immutable fact. A caller cannot make a stale
+insert pass by temporarily rewinding the mutable projection.
+
+### 7.3 `run_lifecycle`
+
+One row per run stores the current retention years, deadline, latest fact
+instant and fact digest. It is a disposable projection rebuilt deterministically
+from `run_retention_facts` ordered by observation instant. Both app append and
+live retention may update only these lifecycle columns after acquiring this
+row `FOR UPDATE`; neither receives table-wide `UPDATE`. Identity and mission
+binding columns are immutable by grants and trigger. The deadline index lives
+on `(tenant_id, retention_until, run_id)`. Deferred coherence triggers require
+at commit that its latest instant/digest/years/deadline equal the newest
+immutable retention observation; neither a fact nor a lifecycle update can be
+committed alone.
+
+### 7.4 `run_events`
 
 One row stores one authoritative canonical event with:
 
@@ -274,14 +334,14 @@ delete events. A trigger rejects updates even if a future grant is widened by
 mistake. Extracted columns are mechanically compared with the parsed canonical
 bytes before insert and never override them.
 
-### 7.3 `budget_ledger`
+### 7.5 `budget_ledger`
 
 The ledger is append-only and keyed by event sequence. It stores the bounded,
 checked budget deltas and resulting counters required for independent audit.
 The current budget projection in `runs` is derived from the same application.
 No caller supplies a “budget accepted” verdict.
 
-### 7.4 `attestation_refs`
+### 7.6 `attestation_refs`
 
 This append-only relation stores only opaque contract references, digests,
 profile identifiers and their binding sequence. It never stores an
@@ -289,7 +349,7 @@ attestation payload, signature private material, artifact contents, effect
 destination or actor identity. Need-to-know queries must explicitly request
 this projection and remain organization-scoped.
 
-### 7.5 `execution_deletion_tombstones`
+### 7.7 `execution_deletion_tombstones`
 
 A tombstone contains only a content-free subject digest, deletion receipt
 digest, deletion instant and expiry instant. It deliberately has no foreign
@@ -380,11 +440,14 @@ application pool.
 
 `MissionRetentionFact` binds the owning mission identifier, a validated
 `P1Y` through `P6Y` duration and its observation time. Every append compares
-that mission with the event/run and computes retention from run creation, not
-from the latest append. `LifecycleStore::apply_mission_retention` permits the
-same fact to update a closed run when Missions changes its policy; it performs
-the same binding and bounds checks. Neither method accepts a caller-classified
-“policy valid” boolean.
+that mission with the event/run, derives the internal observation digest and
+computes retention from run creation, not from the latest append.
+`LifecycleStore::apply_mission_retention` records the same bounded fact and may
+update `run_lifecycle` after execution closure when Missions changes its
+policy; it never updates `runs`. Both paths reject a stale observation, treat
+an exact repeated observation as idempotent and refuse a divergent value at
+the same instant. Neither method accepts a caller-classified “policy valid”
+boolean.
 
 `PoolLimits` has closed minimum/maximum bounds for connection count and
 acquisition timeout. All store constructors install the same `after_release`
@@ -436,10 +499,12 @@ methods rather than N+1 loading.
    existing pure core, prove their graph digests match, bind the explicit
    mission-retention fact, canonicalize the event with RFC 8785 and recompute
    its event digest;
-3. create the first `runs` key with `INSERT ... ON CONFLICT DO NOTHING` when
-   absent, then lock the `(tenant_id, run_id)` projection with
-   `SELECT ... FOR UPDATE`; the speculative first row remains inside the same
-   transaction and cannot survive a refusal;
+3. create the first `runs` and `run_lifecycle` keys with
+   `INSERT ... ON CONFLICT DO NOTHING` when absent, lock `run_lifecycle` first
+   and then lock the `(tenant_id, run_id)` execution projection with
+   `SELECT ... FOR UPDATE`; every writer locks lifecycle first, only append
+   explicitly locks `runs`, and the speculative rows remain inside the same
+   transaction;
 4. classify an existing event identity as exact only when identity, sequence,
    digest and canonical bytes all match, but do not return yet; a divergent
    collision aborts;
@@ -448,11 +513,14 @@ methods rather than N+1 loading.
 6. call the existing pure whole-chain replay with the validated graph, adding
    the candidate in memory only when it is new; any integrity, causal, phase,
    routing, generation or budget refusal aborts the append;
-7. return idempotent success without writes only after the exact duplicate's
-   complete stored chain has passed replay; otherwise insert the immutable
-   event, budget row and allowed opaque references, then update the `runs`
-   projection from the accepted replay state;
-8. commit once.
+7. after an exact duplicate's complete stored chain passes replay, return
+   idempotent success without writes only if its retention observation is
+   already current; refuse a new observation on this retry path so standalone
+   policy changes use `LifecycleStore` rather than event idempotency;
+8. for a new event, append its retention observation when needed, update
+   `run_lifecycle`, insert the immutable event, budget row and allowed opaque
+   references, then update `runs` from the accepted replay state;
+9. commit once.
 
 Any divergent identity/sequence collision returns a closed conflict and writes
 nothing. Any validation, serialization, constraint, RLS, timeout or connection
@@ -484,11 +552,14 @@ The store reparses JCS bytes through the locked registry before replay. Invalid
 stored bytes, a digest mismatch or disagreement with extracted columns fails
 closed as integrity corruption; it is never repaired in place.
 
-The `runs`, ledger and reference relations are disposable projections. A
-deterministic rebuild into an empty schema must reproduce them exactly from
-the event rows. Rebuild never overwrites the source event bytes. An
-independent test compares the resulting native state byte-for-byte through the
-same private deterministic proof encoder already used by Phase 4A.
+The `runs`, ledger, reference and `run_lifecycle` relations are disposable
+projections. A deterministic rebuild into an empty projection schema rebuilds
+the execution projections from `run_events` and the lifecycle projection from `run_retention_facts`,
+first deriving and verifying run creation from the event replay, then applying
+retention observations in ascending instant order against that origin and
+refusing equal-instant divergence. Rebuild never overwrites either immutable
+source. An independent test compares the resulting native execution and
+lifecycle state byte-for-byte through a private deterministic proof encoder.
 
 ## 11. Retention, deletion and restore
 
@@ -501,9 +572,10 @@ outside the locked bounds or unequal execution/mission retention.
 Expiry uses a two-stage, bounded sweep:
 
 1. select candidate keys with a cursor and no payload export;
-2. for each bounded batch, open a retention transaction, lock and recheck the
-   deadline against injected authoritative time, write the tombstone, then
-   delete projections and events atomically.
+2. for each bounded batch, open a retention transaction, lock the shared
+   lifecycle row and recheck its deadline against injected authoritative time,
+   write the tombstone, then delete projections, observations and events
+   atomically.
 
 Explicit deletion follows the same transaction order. A tombstone is committed
 before or with run deletion, never afterward. The subject digest is derived
@@ -595,9 +667,13 @@ All non-trivial behavior is test-first. The implementation must provide:
 - the restore role is `NOLOGIN`, lacks `BYPASSRLS`, cannot insert/update or
   access application methods, and its cross-organization policies cover only
   bounded tombstone replay;
+- app and retention have only column-scoped lifecycle `UPDATE`; retention has
+  no `UPDATE` on `runs`, and neither role can mutate lifecycle identity or
+  mission binding;
 - application attempts to recreate a tombstoned run fail without revealing
   whether the tombstone exists;
-- a closed run cannot be mutated;
+- a closed execution projection cannot be updated, while a later authenticated
+  retention observation changes only the lifecycle projection;
 - concurrent first append and concurrent next append commit exactly one
   lineage, while exact duplicates remain idempotent;
 - injected failure at each SQL boundary leaves no partial event, ledger,
@@ -620,6 +696,12 @@ synthetic and checked for forbidden content.
 - a value greater than `P6Y` is refused;
 - selection followed by a concurrent retention change is rechecked under
   lock;
+- retention after execution closure changes only `run_lifecycle`; all `runs`
+  columns remain byte-identical;
+- stale and equal-instant divergent observations are refused, while exact
+  repeats are idempotent;
+- lifecycle rebuild from the immutable observation journal is byte-identical
+  to the live lifecycle projection;
 - deletion and tombstone creation are atomic;
 - tombstones are content-free and inaccessible to the app role;
 - fixed vectors prove Rust/PostgreSQL deletion-subject digest equality;

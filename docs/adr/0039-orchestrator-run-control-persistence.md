@@ -40,10 +40,19 @@ après cette réalisation.
 ### D2 — Conserver les octets JCS comme autorité et rejouer toute la chaîne
 
 Chaque événement accepté est validé contre Contracts, canonisé RFC 8785 et
-stocké avec son digest SHA-256. Ces octets JCS sont l'autorité de replay ; les
-tables de tête, budget et références d'attestation sont des projections
-reconstructibles. À chaque append, le store recharge et revalide toute la
-chaîne verrouillée avant de calculer la transition suivante.
+stocké avec son digest SHA-256. Ces octets JCS sont l'autorité de replay de
+l'exécution ; les tables de tête, budget et références d'attestation sont des
+projections reconstructibles. À chaque append, le store recharge et revalide
+toute la chaîne verrouillée avant de calculer la transition suivante.
+
+La rétention n'est pas déductible des événements quand Missions change sa
+politique après la fermeture d'un run. Le store conserve donc séparément les
+faits de rétention immuables déjà authentifiés par un futur appelant. Ils sont
+la preuve locale de ce qui a été appliqué, jamais une autorité de politique ni
+un nouveau contrat wire. La projection lifecycle se reconstruit uniquement de
+ce journal borné après que la date de création a été reconstruite et vérifiée
+depuis les événements ; la projection d'exécution reste reconstruite uniquement
+des événements.
 
 Une transaction verrouille la tête du run, puis écrit événement, ledger,
 références et projection de façon atomique. Des contraintes différées refusent
@@ -65,6 +74,11 @@ un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par
 pool exécute `DISCARD ALL` ; une connexion impossible à nettoyer est détruite.
 Le rôle restore est limité à la récupération pré-ouverture et ne peut ni
 append, ni exporter, ni modifier un schéma, ni accéder aux méthodes applicatives.
+Le rôle rétention ne modifie jamais une ligne `runs` fermée : tous les writers
+se synchronisent sur une projection lifecycle séparée. Aucun rôle ne reçoit
+un `UPDATE` global sur `runs` ; les grants applicatifs restent limités aux
+colonnes de projection d'exécution, et les grants lifecycle aux seules colonnes
+de rétention.
 
 ### D4 — Rendre suppression et restauration anti-résurrection
 
@@ -181,7 +195,8 @@ panne, supprimable sans modifier Missions ni Orchestrator.
 La tranche de persistance n'est mergeable que si une même révision immuable
 prouve :
 
-1. les octets JCS, digests, replay complet et projections cohérentes ;
+1. les octets JCS, digests, replay complet de l'exécution, journal de faits de
+   rétention et reconstruction séparée des deux projections ;
 2. l'atomicité sous concurrence et échec injecté dans PostgreSQL réel ;
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
 4. la rétention mission bornée, la suppression atomique et la restauration

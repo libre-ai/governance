@@ -149,6 +149,12 @@ describe("orchestrator run-control persistence authority", () => {
       "| D45 | Run-control persistence is isolated and non-executing",
     );
     expect(design).toContain("authority ADR-0039/D45");
+    expect(adr).toContain("faits de rétention immuables");
+    expect(design).toContain("### 7.2 `run_retention_facts`");
+    expect(design).toContain(
+      "execution projections from `run_events` and the lifecycle projection from `run_retention_facts`",
+    );
+    expect(design).toContain("No role receives table-wide `UPDATE` on `runs`");
     expect(workPackage?.definitionStatus).toBe("locked");
     expect(workPackage?.humanGates).toEqual(["layer-2-bootstrap-security-merge"]);
     expect(workPackage?.writePaths).toEqual([runControlWritePath]);

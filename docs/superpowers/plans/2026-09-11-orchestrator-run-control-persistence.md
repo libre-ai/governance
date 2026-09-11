@@ -4,7 +4,7 @@
 
 **Goal:** Prove atomic, organization-isolated and lifecycle-safe persistence of locked authorized-execution events in a separate Rust crate without opening a production service or external effect.
 
-**Architecture:** Governance first authorizes only the persistence slice of the existing locked `WP-G3-O01` under ADR-0039/D45. Orchestrator then adds `crates/agent-orchestrator-run`, whose private SQLx pools enforce role separation, transaction-local organization context and connection scrubbing; append operations store RFC 8785 bytes and replay the complete locked event chain through the unchanged pure core. A dedicated pre-open restore role removes tombstoned lineages across organizations without widening application or live-retention identities.
+**Architecture:** Governance first authorizes only the persistence slice of the existing locked `WP-G3-O01` under ADR-0039/D45. Orchestrator then adds `crates/agent-orchestrator-run`, whose private SQLx pools enforce role separation, transaction-local organization context and connection scrubbing; append operations store RFC 8785 bytes and replay the complete locked event chain through the unchanged pure core. Immutable bounded retention observations separately rebuild a mutable lifecycle projection without making the database a policy authority. A dedicated pre-open restore role removes tombstoned lineages across organizations without widening application or live-retention identities.
 
 **Tech Stack:** Rust 1.97 / edition 2024, SQLx 0.9.0, Tokio, PostgreSQL 14+, `pgcrypto`, RFC 8785 JCS, SHA-256, Bun 1.4 gates and GitHub Actions.
 
@@ -16,7 +16,7 @@
 - Governance ADR-0039/D45 must be merged and verified on `main` before the Orchestrator implementation worktree is created.
 - This is a bounded first slice of existing `WP-G3-O01`; do not create an overlapping work package or claim the complete runtime package.
 - The root `libre-ai-agent-orchestrator` crate and its public API remain unchanged; the new crate consumes its existing parsing and whole-chain replay functions.
-- Contracts remains sole wire/retention authority. Store RFC 8785 event bytes as replay authority; relational rows are disposable projections.
+- Contracts remains sole wire/retention authority. Store RFC 8785 event bytes as execution replay authority and bounded immutable retention observations as local lifecycle replay evidence; neither relational projection nor the observation journal selects policy.
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
 - The library reads no environment, file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`.
 - Pin every dependency exactly. SQLx uses only `runtime-tokio`, `tls-rustls-ring-native-roots`, `postgres`, `json` and `chrono`; no macros, embedded migrations, SQLite or MySQL.
@@ -356,7 +356,7 @@ git commit -s -m "Add bounded run-store domain types"
 
 - [ ] **Step 1: Write the red schema test**
 
-Assert exact five tables; `relrowsecurity && relforcerowsecurity` for all four organization tables and for the content-free tombstone table; every role has login/superuser/bypass flags false; and grants match the design. Also prove migration refusal when a role or `pgcrypto` is absent.
+Assert exactly seven tables; `relrowsecurity && relforcerowsecurity` for the six organization tables and for the content-free tombstone table; every role has login/superuser/bypass flags false; and grants match the design. Include `run_retention_facts` and `run_lifecycle` in exact RLS, trigger and privilege assertions. Also prove migration refusal when a role or `pgcrypto` is absent.
 
 - [ ] **Step 2: Build the local PostgreSQL wrapper**
 
@@ -390,7 +390,7 @@ Require failure because `orchestrator_run.runs` is absent.
 
 - [ ] **Step 4: Implement the run-control migration**
 
-Create `runs`, `run_events`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns, 32-byte digest checks, sequence/generation range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. Index `(tenant_id,run_id,sequence,event_digest)` and `(tenant_id,retention_until,run_id)`.
+Create `runs`, `run_events`, `run_retention_facts`, `run_lifecycle`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns, 32-byte digest checks, sequence/generation range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. `run_retention_facts` is append-only with primary key `(tenant_id,run_id,observed_at)` and an explicit digest comparison for idempotency/conflict; `run_lifecycle` is its disposable current projection. Index `(tenant_id,run_id,sequence,event_digest)` and `run_lifecycle(tenant_id,retention_until,run_id)`.
 
 Every organization table uses:
 
@@ -402,9 +402,11 @@ CREATE POLICY runs_organization ON orchestrator_run.runs
   WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''));
 ```
 
-Grant app `SELECT,INSERT,UPDATE` on runs, `SELECT,INSERT` on append-only projections, and no tombstone/schema privilege. Retention receives only per-organization lifecycle reads/deletes on run relations. The `runs` projection stores all seven checked budget totals. A closed-run trigger blocks non-lifecycle mutation.
+Grant app only column-scoped `UPDATE` on the mutable execution fields of `runs`, plus the exact organization-scoped reads/inserts needed for append. Grant app and retention `UPDATE` only on the retention years, deadline, latest observation instant and fact digest in `run_lifecycle`; grant the exact `SELECT`/`INSERT` needed on `run_retention_facts`. Retention receives per-organization lifecycle reads/deletes and no `UPDATE` on `runs`; no role receives table-wide `UPDATE` on either projection. All app/retention writers lock `run_lifecycle` before touching a lineage. The `runs` projection stores all seven checked budget totals, excludes lifecycle fields and rejects every update after closure. Lifecycle identity/mission columns are immutable by grants and trigger.
 
 Add deferred constraint triggers on run insert/update and event/ledger insert. At commit they require the run head sequence/digest and all seven totals to match the immutable head event/ledger row. This permits the store's tentative first row inside one transaction but rejects direct projection mutation or an event committed without its ledger.
+
+Add append-only triggers to `run_retention_facts` that acquire the referenced `run_lifecycle` row lock, recompute the versioned mission-id/years/Unix-microseconds digest, bind the mission to the run and reject an observation older than the newest immutable fact. Add deferred triggers on fact insert and lifecycle insert/update requiring the latest fact and projection instant/digest/years/deadline to agree at commit. Prove direct fact-only, lifecycle-only, stale, digest-divergent and identity-changing writes all fail, including a multi-statement attempt that temporarily rewinds then restores the lifecycle projection around a stale insert.
 
 - [ ] **Step 5: Implement the deletion migration**
 
@@ -489,10 +491,12 @@ assert_eq!((run_head_sequence, event_count, ledger_count), (2, 2, 2));
 ```
 
 Independently parse all stored JCS and replay through the pure core.
+Independently replay the immutable retention observations and assert the joined
+execution/lifecycle snapshot is byte-identical to the live projection.
 
 - [ ] **Step 2: Add red refusals/idempotency tests**
 
-Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Corrupt a different stored event through the admin test identity and prove that an otherwise exact duplicate refuses integrity failure rather than bypassing whole-chain replay. Every refusal compares all five table counts and previous head before/after.
+Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Corrupt a different stored event through the admin test identity and prove that an otherwise exact duplicate refuses integrity failure rather than bypassing whole-chain replay. Every refusal compares all relation counts, the previous execution head and the previous lifecycle projection before/after. Also prove an older retention observation refuses, an exact equal-instant observation is idempotent and an equal-instant divergent observation conflicts. On a closed run, an exact event duplicate carrying a new retention observation must not reinsert the event or mutate lifecycle; it refuses, while the same authenticated observation succeeds through `LifecycleStore` only.
 
 - [ ] **Step 3: Run red**
 
@@ -529,7 +533,7 @@ Extract references only from `graphRef`, `authorizationRef`, `invocationRef`, `r
 
 - [ ] **Step 5: Implement one-transaction append**
 
-Validate graph/candidate, compare explicit organization and mission-retention fact, canonicalize and size-check; begin app transaction; insert the complete tentative first projection with `ON CONFLICT DO NOTHING`; lock `(tenant_id,run_id)`; classify exact idempotency without returning; load all JCS ordered by sequence and revalidate/parse all. Replay the stored chain for an exact duplicate, or append the new candidate in memory and replay it. Only then return idempotent without writes or insert event/ledger/references and update projection from accepted replay and retention from creation; commit. Every value is bound. Projection phase is never fed into replay.
+Validate graph/candidate, compare explicit organization and mission-retention fact, derive its versioned internal digest, canonicalize and size-check; begin app transaction; insert tentative `runs` and `run_lifecycle` rows with `ON CONFLICT DO NOTHING`; lock `run_lifecycle` first and then `runs`; classify exact event idempotency without returning; load all JCS ordered by sequence and revalidate/parse all. Replay the stored chain for an exact duplicate, or append the new candidate in memory and replay it. For an exact event duplicate, require the retention observation already current and return without writes; a different observation refuses and must use `LifecycleStore`. For a new event, reject stale/equal-instant divergent retention, append the fact if new, update `run_lifecycle` from run creation, insert event/ledger/references and update the execution projection. Commit once. Every value is bound. Neither projection phase nor lifecycle policy is fed into execution replay.
 
 - [ ] **Step 6: Inject database failures without production hooks**
 
@@ -551,7 +555,7 @@ Run append and domain tests plus Clippy. Commit store/event/test files as `Persi
 
 Create one run per organization. Through every public method, A observes no B data and cannot alter B. Direct SQL under app role with missing, empty, A and B context proves select/insert/update/delete. Public results never distinguish foreign row from absent.
 
-Also attempt direct app-role mutation of the open `runs` head/totals and direct event insertion without its ledger. The deferred coherence triggers must reject both at commit without exposing constraint names through public errors.
+Also attempt direct app-role mutation of the open `runs` head/totals and direct event insertion without its ledger. The deferred coherence triggers must reject both at commit without exposing constraint names through public errors. Prove retention has no `UPDATE` privilege on `runs`, app and retention lack table-wide `UPDATE`, lifecycle identity/mission columns cannot change, and a closed execution row rejects every update while an authorized lifecycle-only update still succeeds.
 
 - [ ] **Step 2: Write red concurrency tests**
 
@@ -559,7 +563,7 @@ Release 16 Tokio tasks with a barrier against the same absent run: eight exact a
 
 - [ ] **Step 3: Fix only database serialization and prove green**
 
-Run focused cases through the PostgreSQL wrapper. Fix first-row `INSERT ... ON CONFLICT`/`SELECT ... FOR UPDATE` order or transaction isolation only; do not add an application mutex or hidden retry. Run the entire `postgres` binary, then commit as `Serialize concurrent run event appends`.
+Run focused cases through the PostgreSQL wrapper. Fix the common first-row `run_lifecycle` lock order, `INSERT ... ON CONFLICT` behavior or transaction isolation only; do not add an application mutex or hidden retry. Run the entire `postgres` binary, then commit as `Serialize concurrent run event appends`.
 
 ### Task 9: Add cursor-bounded need-to-know queries
 
@@ -585,6 +589,9 @@ LIMIT $5
 ```
 
 Drop the extra row and encode only `meta.next_cursor`. No offset, unbounded limit or N+1 reference query.
+`get_run` performs one organization-scoped join from `runs` to
+`run_lifecycle`; it never treats mutable lifecycle columns as execution replay
+input.
 
 - [ ] **Step 3: Prove query plans and commit**
 
@@ -600,15 +607,15 @@ Assert `EXPLAIN (FORMAT JSON)` uses the organization/run/sequence index on repre
 
 - [ ] **Step 1: Write red retention and digest vectors**
 
-Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. Validate `DeletionRegistryFact` ordering and bounds without accepting a caller-supplied completeness boolean. For three synthetic organization/run pairs, assert Rust and PostgreSQL framed SHA-256 equality and preimage separation of `("ab","c")` from `("a","bc")`.
+Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month, a sub-microsecond observation instant and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. Validate `DeletionRegistryFact` ordering and bounds without accepting a caller-supplied completeness boolean. For synthetic retention observations, assert Rust and PostgreSQL equality of the versioned mission-id/years/Unix-microseconds digest. For three synthetic organization/run pairs, assert Rust and PostgreSQL deletion-subject digest equality and preimage separation of `("ab","c")` from `("a","bc")`.
 
 - [ ] **Step 2: Write red lifecycle transactions**
 
-Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Prove `apply_mission_retention` binds the stored mission and recomputes from creation. For sweep, select an expired key then concurrently extend retention through that method; under-lock recheck must preserve it.
+Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after execution closure without changing any `runs` column. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare byte-exact state. For sweep, select an expired key then concurrently extend retention through that method; the shared lifecycle-row lock and under-lock recheck must preserve it.
 
 - [ ] **Step 3: Implement bounded retention/deletion**
 
-`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission and compute from run creation. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` recomputes subject digest in SQL, locks run, inserts/compares tombstone and deletes the run cascade atomically. Sweep selects only `(run_id,retention_until)` keys and rechecks each locked row against injected time before invoking the same private deletion primitive.
+`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. In one transaction they lock `run_lifecycle`, reject time rollback/equal-instant divergence, append the fact if new and update only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` recomputes subject digest in SQL, locks `run_lifecycle`, inserts/compares the tombstone and deletes the run cascade atomically. Sweep selects only `(run_id,retention_until)` keys from `run_lifecycle` and rechecks each locked lifecycle row against injected time before invoking the same private deletion primitive. Retention never updates `runs`.
 
 - [ ] **Step 4: Implement pre-open restore**
 
