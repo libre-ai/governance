@@ -1,7 +1,7 @@
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 
-import { DecodingMode, decodeHTML } from "entities";
+import { DecodingMode, EntityDecoder, htmlDecodeTree } from "entities/decode";
 
 const credentialMarker =
   /(?:sk_live_[A-Za-z0-9_-]{8,}|sk-(?:proj|svcacct)-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (?:(?:(?:RSA|DSA|EC|OPENSSH|ENCRYPTED) )?PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----)/;
@@ -93,43 +93,170 @@ const emailContextLabels = new Set([
   "to",
 ]);
 
-function decodePercentRuns(value: string): string {
-  return value.replace(/(?:%[0-9a-f]{2})+/gi, (run) => {
+interface SourceProjection {
+  readonly origins: Int32Array;
+  readonly raw: string;
+  readonly text: string;
+}
+
+function rawSourceProjection(raw: string): SourceProjection {
+  return {
+    origins: Int32Array.from({ length: raw.length }, (_unused, index) => index),
+    raw,
+    text: raw,
+  };
+}
+
+function appendProjectionSlice(
+  parts: string[],
+  origins: number[],
+  source: SourceProjection,
+  start: number,
+  end: number,
+): void {
+  parts.push(source.text.slice(start, end));
+  for (let index = start; index < end; index += 1) origins.push(source.origins[index] ?? -1);
+}
+
+function appendTransformed(parts: string[], origins: number[], transformed: string): void {
+  parts.push(transformed);
+  for (let index = 0; index < transformed.length; index += 1) origins.push(-1);
+}
+
+function finishProjection(
+  parts: readonly string[],
+  origins: readonly number[],
+  raw: string,
+): SourceProjection {
+  return { origins: Int32Array.from(origins), raw, text: parts.join("") };
+}
+
+export function decodeSensitiveMarkers(input: string): string {
+  return decodeSensitiveProjection(rawSourceProjection(input)).text;
+}
+
+function replaceProjection(
+  source: SourceProjection,
+  pattern: RegExp,
+  replacement: (match: RegExpExecArray) => string,
+): SourceProjection {
+  const parts: string[] = [];
+  const origins: number[] = [];
+  let copiedUntil = 0;
+  pattern.lastIndex = 0;
+  for (let match = pattern.exec(source.text); match !== null; match = pattern.exec(source.text)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    appendProjectionSlice(parts, origins, source, copiedUntil, start);
+    const transformed = replacement(match);
+    if (transformed === match[0]) appendProjectionSlice(parts, origins, source, start, end);
+    else appendTransformed(parts, origins, transformed);
+    copiedUntil = end;
+  }
+  appendProjectionSlice(parts, origins, source, copiedUntil, source.text.length);
+  return finishProjection(parts, origins, source.raw);
+}
+
+function decodePercentProjection(source: SourceProjection): SourceProjection {
+  return replaceProjection(source, /(?:%[0-9a-f]{2})+/gi, (match) => {
     try {
-      return decodeURIComponent(run);
+      return decodeURIComponent(match[0]);
     } catch {
-      return run.replace(/%([0-9a-f]{2})/gi, (_match, hex: string) =>
+      return match[0].replace(/%([0-9a-f]{2})/gi, (_encoded, hex: string) =>
         String.fromCharCode(Number.parseInt(hex, 16)),
       );
     }
   });
 }
 
-function collapseSensitiveEncodingNesting(input: string): string {
-  return input
-    .replace(/%(?:25)+/gi, "%")
-    .replace(/&(?:(?:amp(?:;|(?=#))|#0*38;?|#[xX]0*26;?))+(?=(?:#|[A-Za-z]))/gi, "&");
+function collapseSensitiveEncodingProjection(source: SourceProjection): SourceProjection {
+  const percent = replaceProjection(source, /%(?:25)+/gi, () => "%");
+  return replaceProjection(
+    percent,
+    /&(?:(?:amp(?:;|(?=#))|#0*38;?|#[xX]0*26;?))+(?=(?:#|[A-Za-z]))/gi,
+    () => "&",
+  );
 }
 
-export function decodeSensitiveMarkers(input: string): string {
-  let current = input;
+function decodeUnicodeEscapeProjection(source: SourceProjection): SourceProjection {
+  return replaceProjection(source, /%u([0-9A-Fa-f]{4})|%U([0-9A-Fa-f]{8})/g, (match) => {
+    const hexadecimal = match[1] ?? match[2] ?? "";
+    const codePoint = Number.parseInt(hexadecimal, 16);
+    return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : match[0];
+  });
+}
+
+function decodeHtmlProjection(source: SourceProjection): SourceProjection {
+  const parts: string[] = [];
+  const origins: number[] = [];
+  let emitted = "";
+  const decoder = new EntityDecoder(htmlDecodeTree, (codePoint) => {
+    emitted += String.fromCodePoint(codePoint);
+  });
+  let copiedUntil = 0;
+  let searchFrom = 0;
+  for (let ampersand = source.text.indexOf("&", searchFrom); ampersand >= 0; ) {
+    appendProjectionSlice(parts, origins, source, copiedUntil, ampersand);
+    emitted = "";
+    decoder.startEntity(DecodingMode.Legacy);
+    let consumed = decoder.write(source.text, ampersand + 1);
+    if (consumed < 0) {
+      consumed = decoder.end();
+      if (consumed > 0) appendTransformed(parts, origins, emitted);
+      copiedUntil = ampersand + consumed;
+      break;
+    }
+    if (consumed > 0) appendTransformed(parts, origins, emitted);
+    copiedUntil = ampersand + consumed;
+    searchFrom = consumed === 0 ? copiedUntil + 1 : copiedUntil;
+    ampersand = source.text.indexOf("&", searchFrom);
+  }
+  appendProjectionSlice(parts, origins, source, copiedUntil, source.text.length);
+  return finishProjection(parts, origins, source.raw);
+}
+
+function decodeSensitiveProjection(source: SourceProjection): SourceProjection {
+  let current = source;
   for (let pass = 0; pass < 4; pass += 1) {
-    const decoded = decodeHTML(
-      decodePercentRuns(collapseSensitiveEncodingNesting(current))
-        .replace(/%u([0-9A-Fa-f]{4})/g, (encoded, hexadecimal: string) => {
-          const codePoint = Number.parseInt(hexadecimal, 16);
-          return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : encoded;
-        })
-        .replace(/%U([0-9A-Fa-f]{8})/g, (encoded, hexadecimal: string) => {
-          const codePoint = Number.parseInt(hexadecimal, 16);
-          return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : encoded;
-        }),
-      DecodingMode.Legacy,
+    const decoded = decodeHtmlProjection(
+      decodeUnicodeEscapeProjection(
+        decodePercentProjection(collapseSensitiveEncodingProjection(current)),
+      ),
     );
-    if (decoded === current) break;
+    if (decoded.text === current.text) return current;
     current = decoded;
   }
   return current;
+}
+
+function normalizeProjection(source: SourceProjection): SourceProjection {
+  const parts: string[] = [];
+  const origins: number[] = [];
+  for (let cursor = 0; cursor < source.text.length; ) {
+    const end = nextCodePointEnd(source.text, cursor);
+    const character = source.text.slice(cursor, end);
+    const normalized = character.normalize("NFKC");
+    const replacement =
+      (character.codePointAt(0) ?? 0) >= 0x80 && /^[\t\n\r ]+$/.test(normalized)
+        ? character
+        : normalized;
+    if (replacement === character) appendProjectionSlice(parts, origins, source, cursor, end);
+    else appendTransformed(parts, origins, replacement);
+    cursor = end;
+  }
+  return finishProjection(parts, origins, source.raw);
+}
+
+function removeDefaultIgnorablesProjection(source: SourceProjection): SourceProjection {
+  const parts: string[] = [];
+  const origins: number[] = [];
+  for (let cursor = 0; cursor < source.text.length; ) {
+    const end = nextCodePointEnd(source.text, cursor);
+    if (!/^\p{Default_Ignorable_Code_Point}$/u.test(source.text.slice(cursor, end)))
+      appendProjectionSlice(parts, origins, source, cursor, end);
+    cursor = end;
+  }
+  return finishProjection(parts, origins, source.raw);
 }
 
 function previousCodePointStart(value: string, end: number): number {
@@ -161,8 +288,34 @@ function isAtextAt(value: string, start: number, end: number): boolean {
   return asciiAtext.test(character) || (codePoint !== undefined && codePoint >= 0x80);
 }
 
-function removeEmailComments(value: string): string {
-  const output: string[] = [];
+function isHardLineBoundaryAt(value: string, start: number): boolean {
+  if (value.charCodeAt(start) === 0x0d)
+    return (
+      value.charCodeAt(start + 1) !== 0x0a || !horizontalWhitespace.test(value[start + 2] ?? "")
+    );
+  if (value.charCodeAt(start) === 0x0a)
+    return (
+      value.charCodeAt(start - 1) !== 0x0d || !horizontalWhitespace.test(value[start + 1] ?? "")
+    );
+  return false;
+}
+
+function appendKeptOrHardBoundary(
+  parts: string[],
+  origins: number[],
+  source: SourceProjection,
+  start: number,
+  end: number,
+  kept: boolean,
+): void {
+  if (kept || isHardLineBoundaryAt(source.text, start))
+    appendProjectionSlice(parts, origins, source, start, end);
+}
+
+function removeEmailComments(source: SourceProjection): SourceProjection {
+  const parts: string[] = [];
+  const origins: number[] = [];
+  const value = source.text;
   let commentDepth = 0;
   let quoted = false;
   let escaped = false;
@@ -170,6 +323,7 @@ function removeEmailComments(value: string): string {
     const end = nextCodePointEnd(value, cursor);
     const character = value.slice(cursor, end);
     if (commentDepth > 0) {
+      appendKeptOrHardBoundary(parts, origins, source, cursor, end, false);
       if (escaped) escaped = false;
       else if (character === "\\") escaped = true;
       else if (character === "(") commentDepth += 1;
@@ -178,7 +332,7 @@ function removeEmailComments(value: string): string {
       continue;
     }
     if (quoted) {
-      output.push(character);
+      appendProjectionSlice(parts, origins, source, cursor, end);
       if (escaped) escaped = false;
       else if (character === "\\") escaped = true;
       else if (character === '"') quoted = false;
@@ -187,15 +341,16 @@ function removeEmailComments(value: string): string {
     }
     if (character === "(") commentDepth = 1;
     else {
-      output.push(character);
+      appendProjectionSlice(parts, origins, source, cursor, end);
       if (character === '"') quoted = true;
     }
     cursor = end;
   }
-  return output.join("");
+  return finishProjection(parts, origins, source.raw);
 }
 
-function projectEmailContextWithoutComments(value: string): string {
+function projectEmailContextWithoutComments(source: SourceProjection): SourceProjection {
+  const value = source.text;
   const removalDeltas = new Int32Array(value.length + 1);
   const removedDelimiters = new Uint8Array(value.length);
   const frames: Array<{ start: number; containsAt: boolean }> = [];
@@ -242,19 +397,27 @@ function projectEmailContextWithoutComments(value: string): string {
     } else removeRange(frame.start, value.length);
   }
 
-  const output: string[] = [];
+  const parts: string[] = [];
+  const origins: number[] = [];
   let removalDepth = 0;
   for (let cursor = 0; cursor < value.length; ) {
     removalDepth += removalDeltas[cursor] ?? 0;
     const end = nextCodePointEnd(value, cursor);
-    if (removalDepth === 0 && removedDelimiters[cursor] !== 1)
-      output.push(value.slice(cursor, end));
+    appendKeptOrHardBoundary(
+      parts,
+      origins,
+      source,
+      cursor,
+      end,
+      removalDepth === 0 && removedDelimiters[cursor] !== 1,
+    );
     cursor = end;
   }
-  return output.join("");
+  return finishProjection(parts, origins, source.raw);
 }
 
-function projectEmailContextByDirectAt(value: string): string {
+function projectEmailContextByDirectAt(source: SourceProjection): SourceProjection {
+  const value = source.text;
   type Group = {
     start: number;
     closing: number | undefined;
@@ -330,16 +493,23 @@ function projectEmailContextByDirectAt(value: string): string {
     }
   }
 
-  const output: string[] = [];
+  const parts: string[] = [];
+  const origins: number[] = [];
   let removalDepth = 0;
   for (let cursor = 0; cursor < value.length; ) {
     removalDepth += removalDeltas[cursor] ?? 0;
     const end = nextCodePointEnd(value, cursor);
-    if (removalDepth === 0 && removedDelimiters[cursor] !== 1 && unmatchedClosings[cursor] !== 1)
-      output.push(value.slice(cursor, end));
+    appendKeptOrHardBoundary(
+      parts,
+      origins,
+      source,
+      cursor,
+      end,
+      removalDepth === 0 && removedDelimiters[cursor] !== 1 && unmatchedClosings[cursor] !== 1,
+    );
     cursor = end;
   }
-  return output.join("");
+  return finishProjection(parts, origins, source.raw);
 }
 
 /**
@@ -543,9 +713,15 @@ interface EmailDomainCandidate {
 }
 
 function parseDomainLiteral(value: string, start: number): EmailDomainCandidate | null {
-  const closing = value.indexOf("]", start + 1);
+  let closing = -1;
+  const closingLimit = Math.min(value.length - 1, start + 72);
+  for (let cursor = start + 1; cursor <= closingLimit; cursor += 1) {
+    if (value.charCodeAt(cursor) !== 0x5d) continue;
+    closing = cursor;
+    break;
+  }
   const boundary = closing < 0 ? closing : skipTrailingDomainDots(value, closing + 1);
-  if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, boundary)) return null;
+  if (closing < 0 || !hasValidDomainBoundary(value, boundary)) return null;
   const literal = value.slice(start + 1, closing);
   const valid = /^IPv6:/i.test(literal) ? isIP(literal.slice(5)) === 6 : isIP(literal) === 4;
   return valid ? { ascii: null, end: closing + 1, kind: "literal", start } : null;
@@ -590,8 +766,7 @@ interface EmailCandidate {
   readonly local: EmailLocalCandidate;
 }
 
-type EmailCandidatePolicy = (candidate: EmailCandidate, value: string) => boolean;
-type EmailCandidatePolicyFactory = () => EmailCandidatePolicy;
+type EmailCandidatePolicy = (candidate: EmailCandidate, source: SourceProjection) => boolean;
 
 function isRfc2606ExampleDomain(domain: string): boolean {
   return (
@@ -622,14 +797,21 @@ function hasMalformedReservedDomain(value: string, start: number): boolean {
   while (end < value.length && apparentReservedDomainCodePoint.test(value[end] ?? "")) end += 1;
   while (end > start && value[end - 1] === ".") end -= 1;
   if (end === start) return false;
-  return isRfc2606ExampleDomain(value.slice(start, end).toLowerCase());
+  const domain = value.slice(start, end).toLowerCase();
+  if (isRfc2606ExampleDomain(domain)) return true;
+  if (exactRfc2606ExampleDomains.has(domain.replace(/\.{2,}/g, "."))) return true;
+  const labels = domain.split(".");
+  if (labels.length !== 2) return false;
+  const base = (labels[0] ?? "").replace(/^-+|-+$/g, "");
+  return base === "example" && ["com", "net", "org"].includes(labels[1] ?? "");
 }
 
 function containsEmailCandidate(
-  value: string,
+  source: SourceProjection,
   policy: EmailCandidatePolicy,
   malformedReservedIsSensitive: boolean,
 ): boolean {
+  const value = source.text;
   const openingQuotes = findOpeningQuoteBoundaries(value);
   let previousCandidateEnd: number | null = null;
   for (let at = value.indexOf("@"); at >= 0; at = value.indexOf("@", at + 1)) {
@@ -656,42 +838,42 @@ function containsEmailCandidate(
       local,
     } satisfies EmailCandidate;
     previousCandidateEnd = domain.end;
-    if (policy(candidate, value)) return true;
+    if (policy(candidate, source)) return true;
   }
   return false;
 }
 
 function containsEmailIdentifierAcrossCommentProjections(
-  input: string,
-  directPolicy: EmailCandidatePolicy,
-  projectedPolicy: EmailCandidatePolicyFactory,
+  input: SourceProjection,
+  policy: EmailCandidatePolicy,
   malformedReservedIsSensitive: boolean,
 ): boolean {
-  if (containsEmailCandidate(input, directPolicy, malformedReservedIsSensitive)) return true;
+  if (containsEmailCandidate(input, policy, malformedReservedIsSensitive)) return true;
   const withoutComments = removeEmailComments(input);
   if (
-    withoutComments !== input &&
-    containsEmailCandidate(withoutComments, projectedPolicy(), malformedReservedIsSensitive)
+    withoutComments.text !== input.text &&
+    containsEmailCandidate(withoutComments, policy, malformedReservedIsSensitive)
   )
     return true;
   const projectedContext = projectEmailContextWithoutComments(input);
   if (
-    projectedContext !== input &&
-    containsEmailCandidate(projectedContext, projectedPolicy(), malformedReservedIsSensitive)
+    projectedContext.text !== input.text &&
+    containsEmailCandidate(projectedContext, policy, malformedReservedIsSensitive)
   )
     return true;
   const directContext = projectEmailContextByDirectAt(input);
   return (
-    directContext !== input &&
-    containsEmailCandidate(directContext, projectedPolicy(), malformedReservedIsSensitive)
+    directContext.text !== input.text &&
+    containsEmailCandidate(directContext, policy, malformedReservedIsSensitive)
   );
 }
 
 const everyEmailCandidateIsSensitive: EmailCandidatePolicy = () => true;
-const everyEmailCandidateIsSensitiveFactory: EmailCandidatePolicyFactory = () =>
-  everyEmailCandidateIsSensitive;
 
-function isNonRfc2606ExampleCandidate(candidate: EmailCandidate, value: string): boolean {
+function isCanonicalRfc2606ExampleCandidate(
+  candidate: EmailCandidate,
+  source: SourceProjection,
+): boolean {
   if (
     candidate.local.kind !== "dot-atom" ||
     candidate.domain.kind !== "dns" ||
@@ -700,56 +882,42 @@ function isNonRfc2606ExampleCandidate(candidate: EmailCandidate, value: string):
     candidate.local.end !== candidate.at ||
     candidate.domain.start !== candidate.at + 1
   )
-    return true;
-  const local = value.slice(candidate.local.start, candidate.local.end);
-  const rawDomain = value.slice(candidate.domain.start, candidate.domain.end);
-  return !(
+    return false;
+  const local = source.text.slice(candidate.local.start, candidate.local.end);
+  const rawDomain = source.text.slice(candidate.domain.start, candidate.domain.end);
+  return (
     canonicalAsciiDotAtom.test(local) &&
     /^[A-Za-z0-9.-]+$/.test(rawDomain) &&
     isRfc2606ExampleDomain(candidate.domain.ascii)
   );
 }
 
-function canonicalExampleFingerprint(candidate: EmailCandidate, value: string): string {
-  return value.slice(candidate.local.start, candidate.domain.end);
-}
-
-function collectCanonicalRfc2606Examples(value: string): ReadonlyMap<string, number> {
-  const examples = new Map<string, number>();
-  containsEmailCandidate(
-    value,
-    (candidate, candidateValue) => {
-      if (!isNonRfc2606ExampleCandidate(candidate, candidateValue)) {
-        const fingerprint = canonicalExampleFingerprint(candidate, candidateValue);
-        examples.set(fingerprint, (examples.get(fingerprint) ?? 0) + 1);
-      }
+function hasUnchangedContiguousRawOrigin(
+  candidate: EmailCandidate,
+  source: SourceProjection,
+): boolean {
+  const start = candidate.local.start;
+  const rawStart = source.origins[start] ?? -1;
+  if (rawStart < 0) return false;
+  for (let index = start; index < candidate.domain.end; index += 1) {
+    const rawIndex = rawStart + index - start;
+    if (
+      source.origins[index] !== rawIndex ||
+      source.text.charCodeAt(index) !== source.raw.charCodeAt(rawIndex)
+    )
       return false;
-    },
-    false,
-  );
-  return examples;
+  }
+  return true;
 }
 
-function createSourceProvenancePolicy(
-  sourceExamples: ReadonlyMap<string, number>,
-): EmailCandidatePolicy {
-  const remaining = new Map(sourceExamples);
-  return (candidate, value) => {
-    if (isNonRfc2606ExampleCandidate(candidate, value)) return true;
-    const fingerprint = canonicalExampleFingerprint(candidate, value);
-    const count = remaining.get(fingerprint) ?? 0;
-    if (count === 0) return true;
-    if (count === 1) remaining.delete(fingerprint);
-    else remaining.set(fingerprint, count - 1);
-    return false;
-  };
-}
+const nonRfc2606ExampleIsSensitive: EmailCandidatePolicy = (candidate, source) =>
+  !isCanonicalRfc2606ExampleCandidate(candidate, source) ||
+  !hasUnchangedContiguousRawOrigin(candidate, source);
 
 export function containsEmailIdentifier(input: string): boolean {
   return containsEmailIdentifierAcrossCommentProjections(
-    input,
+    rawSourceProjection(input),
     everyEmailCandidateIsSensitive,
-    everyEmailCandidateIsSensitiveFactory,
     false,
   );
 }
@@ -762,30 +930,22 @@ export function containsEmailIdentifier(input: string): boolean {
  */
 export function containsEmailIdentifierExcludingRfc2606Examples(input: string): boolean {
   if (exceedsDecodedCodePointLimit(input)) return true;
-  const sourceExamples = collectCanonicalRfc2606Examples(input);
-  const sourceProvenancePolicy = (): EmailCandidatePolicy =>
-    createSourceProvenancePolicy(sourceExamples);
-  if (
-    containsEmailIdentifierAcrossCommentProjections(
-      input,
-      isNonRfc2606ExampleCandidate,
-      sourceProvenancePolicy,
-      true,
-    )
-  )
+  const raw = rawSourceProjection(input);
+  if (containsEmailIdentifierAcrossCommentProjections(raw, nonRfc2606ExampleIsSensitive, true))
     return true;
 
-  const { variants, overLimit } = sensitiveVariants(input);
-  if (overLimit) return true;
+  const decoded = decodeSensitiveProjection(raw);
+  const normalized = normalizeProjection(decoded);
+  const variants = [
+    decoded,
+    normalized,
+    removeDefaultIgnorablesProjection(decoded),
+    removeDefaultIgnorablesProjection(normalized),
+  ];
   for (const variant of variants) {
     if (
-      variant !== input &&
-      containsEmailIdentifierAcrossCommentProjections(
-        variant,
-        sourceProvenancePolicy(),
-        sourceProvenancePolicy,
-        true,
-      )
+      variant.text !== input &&
+      containsEmailIdentifierAcrossCommentProjections(variant, nonRfc2606ExampleIsSensitive, true)
     )
       return true;
   }

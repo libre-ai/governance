@@ -46,6 +46,37 @@ describe("email identifier line boundaries", () => {
       containsEmailIdentifierExcludingRfc2606Examples("alice%0D%0A%20%40customer%2Ecompany"),
     ).toBe(true);
   });
+
+  test.each([
+    ["comment before at-sign with LF", "alice(\n)@customer.company"],
+    ["comment before at-sign with CR", "alice(\r)@customer.company"],
+    ["comment before at-sign with non-folded CRLF", "alice(\r\n)@customer.company"],
+    ["comment after at-sign with LF", "alice@(\n)customer.company"],
+    ["nested comment with LF", "alice(outer(\n)tail)@customer.company"],
+  ])("preserves a hard line boundary removed with a comment: %s", (_label, value) => {
+    expect(containsEmailIdentifier(value)).toBe(false);
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+  });
+
+  test("preserves a decoded hard boundary inside a comment", () => {
+    const value = "alice%28%0A%29%40customer%2Ecompany";
+
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+    expect(containsSensitivePublicMarker(value)).toBe(false);
+  });
+
+  test("still recognizes a comment carrying valid CRLF plus WSP folding", () => {
+    const value = "alice(\r\n )@customer.company";
+
+    expect(containsEmailIdentifier(value)).toBe(true);
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(true);
+  });
+
+  test("still recognizes decoded valid folding inside a comment", () => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples("alice%28%0D%0A%20%29%40customer%2Ecompany"),
+    ).toBe(true);
+  });
 });
 
 describe("RFC 2606 example-aware email identifiers", () => {
@@ -68,7 +99,11 @@ describe("RFC 2606 example-aware email identifiers", () => {
     ["SMTPUTF8", "😀@example.org"],
     ["domain literal", "alice@[192.0.2.1]"],
     ["malformed label", "alice@bad_name.example"],
+    ["leading-hyphen exact example", "alice@-example.org"],
+    ["trailing-hyphen exact example", "alice@example-.org"],
+    ["empty-label exact example", "alice@example..org"],
     ["percent-encoded", "alice%40example.org"],
+    ["eight-digit Unicode escape", "alice%U00000040example.org"],
     ["HTML-encoded", "alice&commat;example&period;org"],
     ["NFKC at-sign", "alice＠example.org"],
     ["default-ignorable", "ali\u200bce@example.org"],
@@ -122,6 +157,18 @@ describe("RFC 2606 example-aware email identifiers", () => {
   });
 
   test.each([
+    "alice@example.org%5F alice%40example.org",
+    "alice@example.org%5F alice&commat;example&period;org",
+    "alice@example.org(note)_ alice(comment)@example.org",
+    "alice@example.org(note)_ alice@(comment)example.org",
+    "alice%40example.org alice@example.org%5F",
+    "alice(comment)@example.org alice@example.org(note)_",
+    "alice@example.org%5F alice@example.org%5F alice%40example.org alice%40example.org",
+  ])("does not transfer an exemption between source occurrences: %s", (value) => {
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(true);
+  });
+
+  test.each([
     "alice@example.org documentation%2Fguide",
     "alice@example.org documentation (note)",
   ])("does not taint a raw canonical example when unrelated text is projected: %s", (value) => {
@@ -142,6 +189,28 @@ describe("RFC 2606 example-aware email identifiers", () => {
 
     expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
     expect((Bun.nanoseconds() - started) / 1e6).toBeLessThan(2_000);
+  });
+
+  test("scales near-linearly across repeated unmatched domain literals", () => {
+    const small = "a@[".repeat(2_730);
+    const large = "a@[".repeat(21_845);
+    const medianElapsedPerRun = (value: string, runs: number): number => {
+      const samples: number[] = [];
+      containsEmailIdentifierExcludingRfc2606Examples(value);
+      for (let sample = 0; sample < 5; sample += 1) {
+        const started = Bun.nanoseconds();
+        for (let run = 0; run < runs; run += 1)
+          containsEmailIdentifierExcludingRfc2606Examples(value);
+        samples.push((Bun.nanoseconds() - started) / runs);
+      }
+      samples.sort((left, right) => left - right);
+      return samples[2] ?? Number.POSITIVE_INFINITY;
+    };
+
+    const smallElapsed = medianElapsedPerRun(small, 16);
+    const largeElapsed = medianElapsedPerRun(large, 2);
+
+    expect(largeElapsed / smallElapsed).toBeLessThan(14);
   });
 });
 
