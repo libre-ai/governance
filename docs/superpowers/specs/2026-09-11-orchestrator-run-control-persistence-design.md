@@ -2,6 +2,8 @@
 
 - **Status:** approved for implementation — owner, 2026-09-11; authority ADR-0040/D45
 - **Date:** 2026-09-11
+- **Dependency amendment:** owner choice C, 2026-09-11 — direct unmodified
+  `sqlx-core`/`sqlx-postgres` 0.9.0 profile, still pending Governance merge
 - **Programme authority:** ADR-0011, ADR-0018, ADR-0034, ADR-0036 and
   ADR-0037
 - **Scope:** the first bounded persistence slice of `WP-G3-O01`, implemented
@@ -34,6 +36,25 @@ This design therefore reserves the next free ADR identifier with the existing
 free decision identifier, `ADR-0040/D45`, subject to the normal mechanical
 registry checks. This correction is bookkeeping, not a new architecture
 choice.
+
+The dependency-profile diagnostic then corrected one premise without changing
+that architecture. SQLx 0.9.0's facade dependency unconditionally selects
+`sqlx-core/migrate` even with facade default features disabled; `migrate`
+selects `sqlx_core::testing`, which has two direct `eprintln!` sites. This
+source fact does not prove an observed API leak, but it contradicts the
+original selected-source refusal. The owner therefore selected option C on
+2026-09-11: use the unmodified registry components directly and retain the
+same strict no-emission boundary. This amendment remains candidate Governance
+authority until merge, exactly like the initial declaration.
+
+The isolated diagnostic proved compile availability and known module exclusion
+only; it is not an end-to-end or complete dependency-source proof. Its
+compile-only success did not open PostgreSQL, exercise errors or collectors,
+or close any production blocker. The authoritative upstream inputs are pinned
+to SQLx v0.9.0:
+[facade manifest](https://docs.rs/crate/sqlx/0.9.0/source/Cargo.toml),
+[core module selection](https://docs.rs/crate/sqlx-core/0.9.0/source/src/lib.rs)
+and [testing module](https://docs.rs/crate/sqlx-core/0.9.0/source/src/testing/mod.rs).
 
 This document authorizes no implementation by itself. Governance must first
 merge ADR-0040/D45 to bind this bounded slice of the existing locked
@@ -229,18 +250,42 @@ filesystem and schema-owner capabilities out of the application process.
 
 ## 5. Dependencies and portability
 
-The persistence crate uses Rust and pins SQLx exactly at `0.9.0` with default
-features disabled. Only PostgreSQL, Tokio runtime, Chrono and JSON are enabled.
-Every TLS implementation, `ipnet`, the embedded-migration macro and SQLite/
-MySQL drivers stay disabled. Direct dependencies already used for
-canonicalization, digests and time values are pinned consistently with the
-pure crate.
+The persistence crate uses Rust and directly pins the unmodified registry
+components `sqlx-core` and `sqlx-postgres` exactly at `0.9.0`, with default
+features disabled. Core enables only `_rt-tokio`, `json` and `chrono`;
+Postgres enables only `json` and `chrono`. The `sqlx` facade is absent. Every
+selected final consumer graph forbids `migrate`, `offline`, `any`, macros,
+other drivers, TLS, `ipnet` and every extra component feature. Direct
+dependencies already used for canonicalization, digests and time values are
+pinned consistently with the pure crate.
+Every TLS implementation and certificate-discovery feature remains absent.
+
+```toml
+sqlx-core = { version = "=0.9.0", default-features = false, features = ["_rt-tokio", "json", "chrono"] }
+sqlx-postgres = { version = "=0.9.0", default-features = false, features = ["json", "chrono"] }
+```
+
+The implementation imports component APIs rather than facade re-exports:
+
+```rust
+use sqlx_core::connection::ConnectOptions;
+use sqlx_core::connection::Connection;
+use sqlx_core::query_scalar::query_scalar;
+use sqlx_core::raw_sql::raw_sql;
+use sqlx_postgres::{PgConnectOptions, PgConnection, PgPool, PgPoolOptions, PgSslMode, Postgres};
+```
+
+`sqlx-core` explicitly describes its API as semver-exempt, and `_rt-tokio` is
+a private implementation feature. This proof accepts both only because the
+two component versions and their effective features are exact; it requires
+complete requalification on every component update. This is a quality and
+maintenance cost, not a performance or production-readiness claim.
 
 Exact normal dependencies on `log` 0.4.33 and `tracing` 0.1.44 enable
 `max_level_off` and `release_max_level_off`; normal-build const assertions
 require `log::STATIC_MAX_LEVEL == Off` and
 `tracing::level_filters::STATIC_MAX_LEVEL == OFF`. Cargo feature unification
-therefore compiles facade macro callsites out of the exact active graph in
+therefore compiles logging-facade macro callsites out of the exact active graph in
 debug and release, including a test graph that additionally enables
 `tracing/log-always`. `disable_statement_logging()` remains a second barrier,
 not the primary claim.
@@ -254,7 +299,21 @@ features until a separately proven upstream option or driver preserves safe
 downstream diagnostics while suppressing SQLx query, notice, pool and error
 emissions. The no-emission claim applies only to the exact feature graph.
 
-SQLx 0.9.0 is MIT OR Apache-2.0 and supports the repository's Rust toolchain.
+Graph qualification distinguishes resolution inventory from selected build
+inputs: the Cargo metadata package superset is not the selected build graph,
+and lockfile-only packages are not selected-graph failures. The gate derives
+the effective component versions, features and source files separately for
+debug, release and dev `tracing/log-always`. It fails closed if a separate
+same-graph consumer reintroduces the facade or activates core/postgres
+`migrate`, if component versions duplicate, or if TLS or any extra feature is
+selected. `sqlx-postgres` may make `sqlx-core/default` appear in that effective
+closure; it is empty in 0.9.0 and is accepted only with that concrete meaning.
+The gate compares complete effective feature closures, not isolated feature
+names. Source audit may exclude truly unselected `cfg` branches, but not a
+directory merely named `testing` and not a call path asserted unreachable.
+
+`sqlx-core` and `sqlx-postgres` 0.9.0 are MIT OR Apache-2.0 and support the
+repository's Rust toolchain.
 PostgreSQL is the only storage engine in scope. Tests use an ordinary
 PostgreSQL 14-or-newer server through the mode-0700 private Unix-domain socket
 and never require a Docker Hub image. Clever Cloud PostgreSQL in Paris/EU is a
@@ -382,8 +441,8 @@ Lifecycle methods use physically separate, store-owned pools and set either
 `REPEATABLE READ`, but only after its external writer fence; live writers never
 use a transaction-wide stale snapshot. Pool release executes `DISCARD ALL`;
 before that server reset it calls `clear_cached_statements`, and the reset uses
-`raw_sql` so it creates no new persistent prepared entry. A connection that
-cannot complete either step is discarded. Store construction overrides any
+`sqlx_core::raw_sql::raw_sql` so it creates no new persistent prepared entry.
+A connection that cannot complete either step is discarded. Store construction overrides any
 caller statement/slow-statement logging level with
 `disable_statement_logging()`. The exact unified dependency graph also
 compiles all `log`/`tracing` facade macros to `OFF`; this covers SQLx query,
@@ -1015,7 +1074,11 @@ All non-trivial behavior is test-first. The implementation must provide:
 - the same no-emission proof passes in debug, release and the dev-unified
   `tracing/log-always` graph, while normal-build assertions keep both
   `STATIC_MAX_LEVEL` values at `OFF` and an exact-graph audit rejects direct
-  logger/event/stdout bypasses or any extra SQLx feature;
+  logger/event/stdout bypasses or any extra SQLx feature; independent negative
+  selected-graph fixtures introduce the `sqlx` facade through another
+  consumer, activate direct `sqlx-core/migrate` or
+  `sqlx-postgres/migrate`, duplicate either component version, or add TLS or
+  another feature, and every case fails closed;
 - absent socket, TCP-only options and caller startup options return constant
   `InvalidInput` before pool, socket or SQL I/O;
 - an explicit private socket combined with `host("[")`, password and distinct
@@ -1177,9 +1240,12 @@ the barrier is absent.
 
 ### PASS
 
-- Rust, SQLx, `log`, `tracing`, PostgreSQL, `pgcrypto`, RFC 8785 and SHA-256 are
-  open, portable building blocks with acceptable licenses; the selected
-  production target must attest `pgcrypto` before schema change.
+- Rust, direct unmodified `sqlx-core`/`sqlx-postgres`, `log`, `tracing`,
+  PostgreSQL, `pgcrypto`, RFC 8785 and SHA-256 are open building blocks with
+  acceptable licenses; the semver-exempt core API and private `_rt-tokio`
+  coupling are accepted only under exact 0.9.0 pins and full requalification,
+  and the selected production target must attest `pgcrypto` before schema
+  change.
 - The local-only proof has no TLS/native-certificate-store dependency and uses
   only the harness's mode-0700 Unix-domain socket with TCP disabled.
 - Clever Cloud in the declared EU region remains a future candidate; this
@@ -1202,6 +1268,7 @@ provider documentation does not prove that the required global roles, login
 identities, memberships and grants can be provisioned on the Clever Cloud
 candidate; target-side role-provisioning compatibility is a fourth production
 blocker.
+These four production blockers remain unchanged by the dependency amendment.
 Consequently this crate cannot be wired to a production request or open a real
 run. Treating injected construction of a deletion command as production
 authorization, treating the `O(n)` proof append as an unmeasured production hot
@@ -1276,6 +1343,15 @@ audit and supply-chain surface. The exact-graph static-off proof is narrower
 and reversible; production must choose a proven upstream control or a driver
 with safe diagnostics rather than silently inheriting this compromise.
 
+### Keep the `sqlx` facade and waive known unreachable sources
+
+Rejected on security. In 0.9.0 the facade's non-optional core dependency
+selects `migrate`, which selects the `testing` module and its two direct
+`eprintln!` sites. Neither a testing-directory exemption nor a call-graph
+waiver preserves the existing fail-closed source rule. Direct components
+remove that known selection while leaving reactivation by another final
+consumer explicitly testable.
+
 ### Infer certificate variants through serialized connection options
 
 Rejected on security and quality. SQLx serializes file and inline material
@@ -1300,9 +1376,11 @@ The design is satisfied only when the exact reviewed implementation proves:
 9. every store is Unix-domain socket only, forces TLS disabled, sanitizes
    secret-capable option fields without formatting them, and the exact graph
    contains no TLS implementation;
-10. the exact debug, release and `tracing/log-always` dependency graphs compile
-   all facade logging out, expose no direct bypass and evaluate no sensitive
-   formatter;
+10. the exact selected debug, release and dev `tracing/log-always` dependency
+   graphs use only the pinned direct SQLx components and allowed features,
+   refuse facade or feature reactivation by any final consumer, compile all
+   logging-facade emissions out, expose no direct bypass and evaluate no
+   sensitive formatter;
 11. public diagnostics contain only closed codes, while the global static-off
     effect remains an explicit production blocker;
 12. the pure crate API/capability and locked Contracts authority remain
