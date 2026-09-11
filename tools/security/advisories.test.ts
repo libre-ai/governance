@@ -1,5 +1,25 @@
 import { describe, expect, test } from "bun:test";
-import { auditScope, diffAdvisories, extractAdvisoryIds, readAudit } from "./advisories";
+import {
+  auditScope,
+  diffAdvisories,
+  extractAdvisoryIds,
+  readAudit,
+  selectPublicAdvisoryRepositories,
+} from "./advisories";
+
+test("fleet advisory targets exclude private repositories before content reads", () => {
+  expect(
+    selectPublicAdvisoryRepositories([
+      { repository: "libre-ai/public", lifecycle: "active", visibility: "public" },
+      {
+        repository: "libre-ai/product-research",
+        lifecycle: "active",
+        visibility: "private",
+      },
+      { repository: "libre-ai/archive", lifecycle: "archived", visibility: "public" },
+    ]),
+  ).toEqual(["libre-ai/public"]);
+});
 
 // The 2026-08-04 incident these helpers descend from: GHSA-7p8r-x3mc-p8w7 on
 // fast-uri, pinned inside the advisory range by the fleet override.

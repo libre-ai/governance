@@ -50,6 +50,7 @@
  * other governance workflow and was exhausted live on 2026-08-19.
  */
 
+import { PRIVATE_CROSS_REPOSITORY_NOTE } from "./build-index";
 import {
   delay,
   fetchFile,
@@ -185,6 +186,9 @@ export function reviewDependabot(
   state: RepoDependabotState,
   templates: DependabotTemplates,
 ): ReviewOutcome {
+  if (entry.visibility === "private") {
+    return { failures: [], notes: [PRIVATE_CROSS_REPOSITORY_NOTE], exempt: true };
+  }
   if (entry.lifecycle === "archived") {
     return {
       failures: [],
@@ -402,11 +406,24 @@ async function fetchFleetDependabot(
   return (await fetchFleetViaGraphQL(repositories)) ?? (await fetchFleetViaRest(repositories));
 }
 
+export type FleetDependabotTransport = (
+  repositories: readonly string[],
+) => Promise<Map<string, RepoDependabotState>>;
+
+export async function fetchPublicFleetDependabot(
+  registry: readonly RegistryEntry[],
+  transport: FleetDependabotTransport = fetchFleetDependabot,
+): Promise<Map<string, RepoDependabotState>> {
+  return transport(
+    registry.filter((entry) => entry.visibility !== "private").map((entry) => entry.repository),
+  );
+}
+
 if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const registry = parseRegistry(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const templates = await loadTemplates();
-  const fleet = await fetchFleetDependabot(registry.map((entry) => entry.repository));
+  const fleet = await fetchPublicFleetDependabot(registry);
 
   const report = new GateReport();
   for (const entry of registry) {

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   buildBatchQuery,
+  fetchPublicFleetDependabot,
   firstDifference,
   loadTemplates,
   parseBatchResponse,
@@ -167,6 +168,25 @@ describe("firstDifference", () => {
 });
 
 describe("reviewDependabot", () => {
+  test("exempts a private repository before inspecting fetched state", () => {
+    const outcome = reviewDependabot(
+      { ...active("libre-ai/product-research"), visibility: "private" },
+      {
+        config: { text: null, error: "must not be observed" },
+        manifests: null,
+        fetchError: "must not be observed",
+      },
+      templates,
+    );
+    expect(outcome).toEqual({
+      failures: [],
+      notes: [
+        "private repository — content gates run in-repository; no cross-repository read token granted",
+      ],
+      exempt: true,
+    });
+  });
+
   test("archived entries are exempt, asserted rather than skipped", () => {
     const outcome = reviewDependabot(
       { ...active("libre-ai/libre-ai"), lifecycle: "archived" },
@@ -284,6 +304,21 @@ describe("reviewDependabot", () => {
     expect(outcome.failures.length).toBe(1);
     expect(outcome.failures[0]).toContain("no template variant published for manifest set");
   });
+});
+
+test("dependabot transport never receives a private repository target", async () => {
+  const received: string[][] = [];
+  await fetchPublicFleetDependabot(
+    [
+      { ...active("libre-ai/public"), visibility: "public" },
+      { ...active("libre-ai/product-research"), visibility: "private" },
+    ],
+    async (repositories) => {
+      received.push([...repositories]);
+      return new Map();
+    },
+  );
+  expect(received).toEqual([["libre-ai/public"]]);
 });
 
 describe("GraphQL fleet batch", () => {

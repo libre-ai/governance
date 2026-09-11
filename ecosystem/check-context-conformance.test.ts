@@ -6,12 +6,14 @@ import {
   claudeAdapterIssue,
   countLines,
   extractSections,
+  fetchPublicFleetContext,
   hasAuthorityPointer,
   hasUsableGraphQLData,
   lastLifecycleTransition,
   layerMarkerOk,
   missingSections,
   parseBatchResponse,
+  parseHistoricalRegistry,
   parseRegistry,
   resolveLayerSpec,
   reviewContext,
@@ -236,10 +238,31 @@ describe("checkFreshness", () => {
 describe("parseRegistry", () => {
   test("extracts repository, role, layer and lifecycle", () => {
     const entries = parseRegistry(
-      "repositories:\n  - repository: libre-ai/a\n    role: satellite\n    layer: couche-4\n    lifecycle: active\n",
+      "schema_version: v\nupdated_on: 2026-09-11\nrepositories:\n  - repository: libre-ai/a\n    role: satellite\n    layer: couche-4\n    visibility: public\n    lifecycle: active\n",
     );
     expect(entries).toEqual([
-      { repository: "libre-ai/a", role: "satellite", layer: "couche-4", lifecycle: "active" },
+      {
+        repository: "libre-ai/a",
+        role: "satellite",
+        layer: "couche-4",
+        visibility: "public",
+        lifecycle: "active",
+      },
+    ]);
+  });
+
+  test("historical parsing preserves retired lifecycle values for transition chronology", () => {
+    expect(
+      parseHistoricalRegistry(
+        "repositories:\n  - repository: libre-ai/legacy\n    lifecycle: frozen-until-wave-4\n",
+      ),
+    ).toEqual([
+      {
+        repository: "libre-ai/legacy",
+        role: "historical-unknown",
+        layer: "historical-unknown",
+        lifecycle: "frozen-until-wave-4",
+      },
     ]);
   });
 });
@@ -250,8 +273,30 @@ describe("reviewContext", () => {
     role: "satellite",
     layer: "couche-4",
     lifecycle: "active",
+    visibility: "public" as const,
   };
   const freshness = { transitionedOn: null, agentsLastModifiedOn: null };
+
+  test("exempts a private repository before inspecting fetched documents", () => {
+    const outcome = reviewContext(
+      {
+        repository: "libre-ai/product-research",
+        role: "administrative-private",
+        layer: "transverse",
+        visibility: "private",
+        lifecycle: "active",
+      },
+      { agents: null, claude: null, agentsFetchError: "must not be observed" },
+      freshness,
+    );
+    expect(outcome).toEqual({
+      failures: [],
+      notes: [
+        "private repository — content gates run in-repository; no cross-repository read token granted",
+      ],
+      exempt: true,
+    });
+  });
 
   test("exempts libre-ai/.github explicitly, without silence", () => {
     const outcome = reviewContext(
@@ -423,6 +468,33 @@ describe("reviewContext", () => {
     expect(outcome.failures).toEqual([]);
     expect(outcome.notes.length).toBeGreaterThan(0);
   });
+});
+
+test("context transport never receives a private repository target", async () => {
+  const received: string[][] = [];
+  await fetchPublicFleetContext(
+    [
+      {
+        repository: "libre-ai/public",
+        role: "satellite",
+        layer: "couche-4",
+        visibility: "public",
+        lifecycle: "active",
+      },
+      {
+        repository: "libre-ai/product-research",
+        role: "administrative-private",
+        layer: "transverse",
+        visibility: "private",
+        lifecycle: "active",
+      },
+    ],
+    async (repositories) => {
+      received.push([...repositories]);
+      return new Map();
+    },
+  );
+  expect(received).toEqual([["libre-ai/public"]]);
 });
 
 describe("buildBatchQuery", () => {

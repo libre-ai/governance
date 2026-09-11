@@ -1,8 +1,9 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { buildIndex, PRIVATE_CROSS_REPOSITORY_NOTE } from "../../ecosystem/build-index";
 import { concludeGate, GateReport } from "../quality/gate-report";
-import { auditScope, readAudit } from "./advisories";
+import { auditScope, readAudit, selectPublicAdvisoryRepositories } from "./advisories";
 
 // ADR-0021 D1 — the periodic fleet control that owns the state of the world.
 //
@@ -27,53 +28,30 @@ function gh(args: string[]): { ok: boolean; stdout: string } {
   return { ok: result.exitCode === 0, stdout: new TextDecoder().decode(result.stdout) };
 }
 
-const org = "libre-ai";
 const report = new GateReport();
-
-const listing = gh([
-  "api",
-  `orgs/${org}/repos`,
-  "--paginate",
-  "--jq",
-  ".[] | [.name, .archived] | @tsv",
-]);
-if (!listing.ok) {
-  report.check(
-    "organization listing",
-    false,
-    "could not enumerate the organization's repositories",
-  );
-  concludeGate("Fleet advisories", report);
+const inventory = buildIndex(
+  await Bun.file(new URL("../../ecosystem/repositories.v1.yaml", import.meta.url)).text(),
+);
+const repositories = selectPublicAdvisoryRepositories(inventory.repositories).sort();
+for (const entry of inventory.repositories.filter(
+  (candidate) => candidate.visibility === "private",
+)) {
+  report.check(entry.repository, true, PRIVATE_CROSS_REPOSITORY_NOTE);
 }
 
-const repositories = listing.stdout
-  .split("\n")
-  .filter((line) => line.trim().length > 0)
-  .map((line) => {
-    const [name, archived] = line.split("\t");
-    return { name: name ?? "", archived: archived === "true" };
-  })
-  .filter((repo) => repo.name.length > 0 && !repo.archived)
-  .sort((a, b) => a.name.localeCompare(b.name));
-
-for (const repo of repositories) {
+for (const repository of repositories) {
   const raw = (path: string) =>
-    gh([
-      "api",
-      `repos/${org}/${repo.name}/contents/${path}`,
-      "-H",
-      "Accept: application/vnd.github.raw",
-    ]);
+    gh(["api", `repos/${repository}/contents/${path}`, "-H", "Accept: application/vnd.github.raw"]);
   const manifest = raw("package.json");
   if (!manifest.ok) {
     // Asserted, not skipped: "this repository has no JS dependency surface"
     // is a statement about the repository, and it counts as an inspection.
-    report.check(repo.name, true, "no package.json — no JS dependency surface to audit");
+    report.check(repository, true, "no package.json — no JS dependency surface to audit");
     continue;
   }
   const scope = auditScope(manifest.stdout);
   if (scope.kind === "unparseable") {
-    report.check(repo.name, false, `package.json unparseable — ${scope.detail}`);
+    report.check(repository, false, `package.json unparseable — ${scope.detail}`);
     continue;
   }
   if (scope.kind === "nothing-to-audit") {
@@ -82,7 +60,7 @@ for (const repo of repositories) {
     // for bun.lock here asked for an artifact that cannot exist (carriere,
     // 2026-09-07). Asserted out loud, never skipped in silence.
     report.check(
-      repo.name,
+      repository,
       true,
       "package.json declares no dependency — nothing to audit (Bun persists no empty lockfile)",
     );
@@ -92,11 +70,12 @@ for (const repo of repositories) {
   if (!lockfile.ok) {
     // A manifest without a lockfile cannot be audited AND breaks the fleet's
     // pinning discipline — red on both counts.
-    report.check(repo.name, false, "package.json without bun.lock — unpinned, unauditable");
+    report.check(repository, false, "package.json without bun.lock — unpinned, unauditable");
     continue;
   }
 
-  const dir = mkdtempSync(join(tmpdir(), `fleet-audit-${repo.name}-`));
+  const name = repository.split("/").at(-1) ?? "repository";
+  const dir = mkdtempSync(join(tmpdir(), `fleet-audit-${name}-`));
   writeFileSync(join(dir, "package.json"), manifest.stdout);
   writeFileSync(join(dir, "bun.lock"), lockfile.stdout);
   const audit = Bun.spawnSync(["bun", "audit"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
@@ -104,11 +83,11 @@ for (const repo of repositories) {
   const reading = readAudit(audit.exitCode, output);
 
   if (!reading.ran) {
-    report.check(repo.name, false, reading.detail);
+    report.check(repository, false, reading.detail);
   } else if (reading.advisories.length > 0) {
-    report.check(repo.name, false, `lockfile carries ${reading.advisories.join(", ")}`);
+    report.check(repository, false, `lockfile carries ${reading.advisories.join(", ")}`);
   } else {
-    report.check(repo.name, true, "lockfile audited, no advisory");
+    report.check(repository, true, "lockfile audited, no advisory");
   }
 }
 

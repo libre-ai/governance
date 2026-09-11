@@ -38,6 +38,12 @@
  * Analysis (`auditProtection`, `computeFix`) is pure and unit-tested; only
  * the CLI touches the network.
  */
+import {
+  buildIndex,
+  type InventoryEntry,
+  isPublicCrossRepositoryTarget,
+  PRIVATE_CROSS_REPOSITORY_NOTE,
+} from "../../ecosystem/build-index";
 
 export interface ProtectionSnapshot {
   /** Required status check contexts, exactly as declared by branch protection. */
@@ -135,18 +141,18 @@ function ghApi(path: string, method: "GET" | "PATCH" = "GET", body?: unknown): G
   return { text: null, error: stderr === "" ? `gh api ${path} failed` : stderr };
 }
 
-interface RepositoryEntry {
-  readonly repository: string;
-  readonly lifecycle: string;
+export function selectActivePublicRepositories(
+  repositories: readonly Pick<InventoryEntry, "repository" | "lifecycle" | "visibility">[],
+): string[] {
+  return repositories
+    .filter((repo) => repo.lifecycle === "active" && isPublicCrossRepositoryTarget(repo))
+    .map((repo) => repo.repository);
 }
 
-async function loadActiveRepositories(): Promise<string[]> {
-  const inventory = Bun.YAML.parse(
+async function loadInventory(): Promise<InventoryEntry[]> {
+  return buildIndex(
     await Bun.file(new URL("../../ecosystem/repositories.v1.yaml", import.meta.url)).text(),
-  ) as { readonly repositories: readonly RepositoryEntry[] };
-  return inventory.repositories
-    .filter((repo) => repo.lifecycle === "active")
-    .map((repo) => repo.repository);
+  ).repositories;
 }
 
 interface FetchedState {
@@ -230,10 +236,26 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  const targets = onlyRepo !== null ? [onlyRepo] : await loadActiveRepositories();
-
   const { concludeGate, GateReport } = await import("../quality/gate-report");
   const report = new GateReport();
+  const inventory = await loadInventory();
+  const privateRepositories = inventory.filter((entry) => entry.visibility === "private");
+  const requestedEntry =
+    onlyRepo === null ? undefined : inventory.find((entry) => entry.repository === onlyRepo);
+  const targets =
+    onlyRepo === null
+      ? selectActivePublicRepositories(inventory)
+      : requestedEntry?.visibility === "public"
+        ? [onlyRepo]
+        : [];
+  if (onlyRepo !== null && requestedEntry === undefined) {
+    report.check(onlyRepo, false, "repository is absent from the strict governance inventory");
+  }
+  for (const entry of privateRepositories) {
+    if (onlyRepo === null || onlyRepo === entry.repository) {
+      report.check(entry.repository, true, PRIVATE_CROSS_REPOSITORY_NOTE);
+    }
+  }
 
   for (const repository of targets) {
     const state = fetchRepositoryState(repository, ref);

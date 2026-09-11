@@ -13,10 +13,10 @@
       "lifecycle": "active"
     },
     {
-      "repository": "libre-ai/midden-secret",
-      "name": "Midden",
-      "layer": "couche-1",
-      "role": "reserved-product-home",
+      "repository": "libre-ai/product-research",
+      "name": "product-research",
+      "layer": "transverse",
+      "role": "administrative-private",
       "visibility": "private",
       "lifecycle": "active"
     },

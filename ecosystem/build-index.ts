@@ -19,8 +19,24 @@
 
 export const INDEX_SCHEMA_VERSION = "libre-ai.repository-index.v2";
 export const INVENTORY_SOURCE = "ecosystem/repositories.v1.yaml";
+export const PRIVATE_CROSS_REPOSITORY_NOTE =
+  "private repository — content gates run in-repository; no cross-repository read token granted";
 
 export type Visibility = "public" | "private";
+
+export const ROLES = [
+  "active-application",
+  "administrative-private",
+  "authority",
+  "hub",
+  "org-profile",
+  "reserved-application-home",
+  "reserved-product-home",
+  "satellite",
+  "standalone-tool",
+] as const;
+
+export type Role = (typeof ROLES)[number];
 
 /**
  * Closed enum (Domain A re-ratification, 2026-08-18, ADR-0023): a repository
@@ -36,11 +52,15 @@ export interface InventoryEntry {
   repository: string;
   name: string;
   layer: string;
-  role: string;
+  role: Role;
   visibility: Visibility;
   lifecycle: Lifecycle;
   card?: string;
   canonical_paths?: string[];
+}
+
+export function isPublicCrossRepositoryTarget(entry: Pick<InventoryEntry, "visibility">): boolean {
+  return entry.visibility === "public";
 }
 
 export interface RepositoryIndex {
@@ -88,6 +108,14 @@ function asVisibility(value: unknown, path: string): Visibility {
   return text;
 }
 
+function asRole(value: unknown, path: string): Role {
+  const text = asString(value, path);
+  if (!(ROLES as readonly string[]).includes(text)) {
+    fail(path, "one of the closed roles", value);
+  }
+  return text as Role;
+}
+
 function asLifecycle(value: unknown, path: string): Lifecycle {
   const text = asString(value, path);
   if (text !== "active" && text !== "archived") {
@@ -129,7 +157,7 @@ function toEntry(value: unknown, index: number): InventoryEntry {
     repository,
     name: publicName(record, repository, path),
     layer: asString(record.layer, `${path}.layer`),
-    role: asString(record.role, `${path}.role`),
+    role: asRole(record.role, `${path}.role`),
     visibility: asVisibility(record.visibility, `${path}.visibility`),
     lifecycle: asLifecycle(record.lifecycle, `${path}.lifecycle`),
   };
@@ -137,6 +165,19 @@ function toEntry(value: unknown, index: number): InventoryEntry {
   if (card !== undefined) entry.card = card;
   if (record.canonical_paths !== undefined) {
     entry.canonical_paths = asStringArray(record.canonical_paths, `${path}.canonical_paths`);
+  }
+  if (entry.visibility === "private") {
+    const exactPrivateShape =
+      entry.repository === "libre-ai/product-research" &&
+      entry.role === "administrative-private" &&
+      entry.layer === "transverse" &&
+      entry.lifecycle === "active" &&
+      entry.card === undefined;
+    if (!exactPrivateShape) {
+      fail(path, "the exact private administrative repository shape", record);
+    }
+  } else if (entry.role === "administrative-private") {
+    fail(path, 'visibility "private" for role "administrative-private"', entry.visibility);
   }
   return entry;
 }

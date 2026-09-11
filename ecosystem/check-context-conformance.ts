@@ -42,11 +42,14 @@
  *      that specific case is blocking.
  */
 
+import { buildIndex, PRIVATE_CROSS_REPOSITORY_NOTE, type Visibility } from "./build-index";
+
 export interface RegistryEntry {
   readonly repository: string;
   readonly role: string;
   readonly layer: string;
   readonly lifecycle: string;
+  readonly visibility?: Visibility;
 }
 
 export interface LayerSpec {
@@ -195,15 +198,31 @@ export function checkFreshness(
 }
 
 export function parseRegistry(yamlText: string): RegistryEntry[] {
-  const document = Bun.YAML.parse(yamlText) as {
-    readonly repositories: readonly Record<string, unknown>[];
-  };
-  return document.repositories.map((record) => ({
-    repository: String(record.repository),
-    role: String(record.role),
-    layer: String(record.layer),
-    lifecycle: String(record.lifecycle),
+  return buildIndex(yamlText).repositories.map((entry) => ({
+    repository: entry.repository,
+    role: entry.role,
+    layer: entry.layer,
+    lifecycle: entry.lifecycle,
+    visibility: entry.visibility,
   }));
+}
+
+export function parseHistoricalRegistry(yamlText: string): RegistryEntry[] {
+  const document = Bun.YAML.parse(yamlText) as {
+    readonly repositories?: readonly Record<string, unknown>[];
+  };
+  if (!Array.isArray(document.repositories)) return [];
+  return document.repositories.flatMap((record) => {
+    if (typeof record.repository !== "string" || typeof record.lifecycle !== "string") return [];
+    return [
+      {
+        repository: record.repository,
+        role: typeof record.role === "string" ? record.role : "historical-unknown",
+        layer: typeof record.layer === "string" ? record.layer : "historical-unknown",
+        lifecycle: record.lifecycle,
+      },
+    ];
+  });
 }
 
 export interface RepoDocuments {
@@ -240,6 +259,9 @@ export function reviewContext(
   docs: RepoDocuments,
   freshness: FreshnessInputs,
 ): ReviewOutcome {
+  if (entry.visibility === "private") {
+    return { failures: [], notes: [PRIVATE_CROSS_REPOSITORY_NOTE], exempt: true };
+  }
   if (entry.repository === ORG_PROFILE_EXEMPTION) {
     return {
       failures: [],
@@ -622,6 +644,19 @@ async function fetchFleetContext(
   return (await fetchFleetViaGraphQL(repositories)) ?? (await fetchFleetViaRest(repositories));
 }
 
+export type FleetContextTransport = (
+  repositories: readonly string[],
+) => Promise<Map<string, FleetRepoResult>>;
+
+export async function fetchPublicFleetContext(
+  registry: readonly RegistryEntry[],
+  transport: FleetContextTransport = fetchFleetContext,
+): Promise<Map<string, FleetRepoResult>> {
+  return transport(
+    registry.filter((entry) => entry.visibility !== "private").map((entry) => entry.repository),
+  );
+}
+
 function sh(argv: string[]): string | null {
   const result = Bun.spawnSync(argv, { stdout: "pipe", stderr: "pipe" });
   if (result.exitCode !== 0) return null;
@@ -660,7 +695,10 @@ function buildLifecycleHistory(): Map<string, LifecycleSample[]> {
     if (text === null) continue;
     let entries: RegistryEntry[];
     try {
-      entries = parseRegistry(text);
+      // Historical snapshots predate today's closed lifecycle/role model.
+      // Only repository+lifecycle are evidence for transition chronology;
+      // applying today's validator would discard the whole old snapshot.
+      entries = parseHistoricalRegistry(text);
     } catch {
       continue;
     }
@@ -679,7 +717,7 @@ if (import.meta.main) {
   const { concludeGate, GateReport } = await import("../tools/quality/gate-report");
   const registry = parseRegistry(await Bun.file("ecosystem/repositories.v1.yaml").text());
   const lifecycleHistory = buildLifecycleHistory();
-  const fleetContext = await fetchFleetContext(registry.map((entry) => entry.repository));
+  const fleetContext = await fetchPublicFleetContext(registry);
 
   const report = new GateReport();
   for (const entry of registry) {

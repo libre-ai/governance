@@ -27,6 +27,11 @@ Un sujet = une autorité unique (vague 0, ADR-0009 ; maintenu par ADR-0020). Tou
 
 Règle de lecture pour agents : charger d'abord `INVARIANTS.md`, classer ensuite tout le reste. Un document daté, bannerisé ou rangé sous « preuves » ne définit jamais l'état courant.
 
+Recherche produit non normative : `libre-ai/product-research` est un dépôt privé
+administratif hors portfolio (ADR-0039/I-31). Il conserve seulement des hypothèses
+et synthèses assainies ; la promotion référence un chemin et un SHA de l'autorité
+concernée. Il ne constitue jamais une troisième autorité.
+
 Dépendance d'autorité amont hors organisation (documentée par ADR-0020) : I-08 est historiquement co-sourcé par le control-plane ADR 0047 (`constantin-jais/constantin-jais`, `ecosystem/specs/shared/adrs/`).
 
 ```

@@ -14,11 +14,13 @@
  * the repository empties. Entries without a `card` field (the org profile)
  * are reported and skipped, never silently ignored.
  */
+import { buildIndex, type Visibility } from "./build-index";
 import { checkStatusSection, validateCard } from "./project-cards";
 
 export interface FleetEntry {
   readonly repository: string;
   readonly role: string;
+  readonly visibility?: Visibility;
   readonly card?: string;
 }
 
@@ -97,17 +99,7 @@ export function reviewRepository(
 }
 
 export function parseFleet(yamlText: string): FleetEntry[] {
-  const document = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML.parse(
-    yamlText,
-  ) as { repositories: readonly Record<string, unknown>[] };
-  return document.repositories.map((record) => {
-    const entry: FleetEntry = {
-      repository: String(record.repository),
-      role: String(record.role),
-      ...(typeof record.card === "string" ? { card: record.card } : {}),
-    };
-    return entry;
-  });
+  return buildIndex(yamlText).repositories;
 }
 
 /** Two retries beyond the first attempt — 1s then 3s — same budget as this file's neighbors. */

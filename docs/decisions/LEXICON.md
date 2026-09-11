@@ -365,3 +365,11 @@ Governance ; une simple CI post-publication ne protège pas la première
 divulgation. L'inscription dans l'inventaire topologique intervient seulement
 après que le repository est observable, afin que le truth-drift ne transforme
 jamais une intention en état du monde.
+
+## 13. Amendement du 2026-09-11 — dépôt administratif privé
+
+ADR-0039/I-31 admet exactement `libre-ai/product-research`, nom canonique d'un
+dépôt `administrative-private` transverse, hors portfolio, sans fiche produit.
+Ce nom ne désigne ni produit, ni package, ni crate. Le contenu de recherche reste
+non normatif ; seuls le nom, le rôle, la visibilité et la frontière d'autorité
+entrent dans l'index public. Les familles de noms existantes restent inchangées.
