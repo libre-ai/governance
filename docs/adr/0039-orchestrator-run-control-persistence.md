@@ -88,13 +88,18 @@ encadré par longueurs de l'organization et du run ; des vecteurs fixes prouvent
 l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
 d'insertion ou lecture : des fonctions `SECURITY DEFINER` appartenant au guard
 dérivent le sujet du contexte transactionnel et ne retournent qu'un résultat
-fermé. Le guard reçoit uniquement `SELECT`/`INSERT` sur les tombstones sous
-RLS ; il ne peut ni les mettre à jour, ni les supprimer, ni lire une autre
-relation. Aucune identité de connexion ne peut assumer ce rôle.
+fermé. Le guard reçoit uniquement `SELECT`/`INSERT` et le `DELETE` soumis à la
+policy d'expiration sur les tombstones sous RLS ; il ne peut ni les mettre à
+jour, ni lire une autre relation. Son unique fonction d'expiration impose en
+plus l'ordre, la taille et les deux bornes temporelles. Aucune identité de
+connexion ne peut assumer ce rôle.
 
 Les tombstones expirent exactement après `P35D`, plafond déclaré des
-sauvegardes ; une suppression anticipée est bloquée en base. Lors d'une
-restauration, le rôle restore charge d'abord un registre de suppressions
+sauvegardes ; une suppression anticipée est bloquée en base. Une opération
+globale bornée du rôle rétention les expire sans retourner leurs lignes, selon
+l'ordre `(expires_at, subject_digest)` et sous une double borne de temps injecté
+et d'horloge PostgreSQL. Lors d'une restauration, le rôle restore charge d'abord
+un registre de suppressions
 indépendamment protégé et accompagné d'un manifeste autoritatif. Le store
 recalcule son compte et son digest, exige une couverture au moins égale au
 gel des writers et refuse un snapshot d'exécution plus ancien que `P35D`.
@@ -121,11 +126,17 @@ implication.
 
 ### D6 — Arrêter avant merge sur dossier indépendant
 
-Le candidat immuable reçoit des revues architecture/performance, sécurité,
-vie privée/souveraineté et complétude sur le même SHA. Toute modification
-invalide les verdicts précédents. Les preuves couvrent PostgreSQL réel,
-concurrence, RLS, replay, rétention, suppression/restauration, compatibilité,
-couverture et rollback.
+Le candidat d'implémentation immuable `I` reçoit des revues
+architecture/performance, sécurité, vie privée/souveraineté et complétude sur
+le même SHA. Toute modification de `I` invalide les verdicts précédents. Après
+acceptation seulement, un enfant direct strictement evidence-only `E` peut
+ajouter le dossier et faire passer le seul critère `run-control-persistence` de
+`implemented-review-pending` à `accepted` avec `implementation_sha: I`. Un gate
+prouve `parent(E) = I`, limite son diff au dossier et à ces deux feuilles YAML,
+et vérifie que tout autre octet et tous les chemins d'implémentation sont
+byte-identiques à `I`. Les preuves couvrent PostgreSQL
+réel, concurrence, RLS, replay, rétention, suppression/restauration,
+compatibilité, couverture et rollback.
 
 ADR-0011 D4 impose ensuite un hard stop : le premier merge de persistance
 sécurité de couche 2 exige un prononcé explicite du propriétaire. L'approbation
@@ -203,8 +214,12 @@ prouve :
    tombstone-first sans résurrection, avec registre complet et frais ;
 5. les pages bornées, plans indexés, mesures `O(n)` et blocage production ;
 6. la compatibilité, couverture, documentation, rollback et tous les gates ;
-7. quatre verdicts indépendants acceptant le même SHA ;
-8. le prononcé propriétaire ADR-0011 D4 après ces preuves et avant merge.
+7. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
+8. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
+   evidence-only mécaniquement vérifié de `I`, et `I` puis `E` restent ancêtres
+   de la branche principale après un merge commit non-squashé et non-rebasé ;
+9. le prononcé propriétaire ADR-0011 D4 nomme `I` et `E` après ces preuves et
+   avant merge.
 
 Tout finding Blocking ou Major invalide les preuves de la révision. La fusion
 de cette tranche ne complète pas `WP-G3-O01` et n'autorise aucun service,

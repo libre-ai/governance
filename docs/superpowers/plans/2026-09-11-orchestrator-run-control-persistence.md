@@ -47,13 +47,13 @@
 
 - Modify `Cargo.toml`, `Cargo.lock`, `package.json`, `bun.lock` and `.github/workflows/ci.yml`.
 - Create `crates/agent-orchestrator-run/Cargo.toml`.
-- Create `src/{lib,error,ids,cursor,pool,event,store,lifecycle}.rs` in that crate.
+- Create `src/{lib,error,ids,cursor,pool,event,store,lifecycle,restore}.rs` in that crate.
 - Create `migrations/0001_run_control.sql` and `0002_deletion_barrier.sql` in that crate.
 - Create `tests/domain.rs`, one serial `tests/postgres.rs`, focused `tests/postgres/*.rs`, and `tests/support/*.rs`.
 - Create `benches/postgres_persistence.rs` and `tests/compat/{public_surface,stable_codes}.snapshot` plus `tests/compat_surface.rs`.
 - Create `verification/agent-orchestrator/check-run-capabilities.ts`, `run-capability-boundary.test.ts` and `with-postgres.sh`.
 - Modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml` and `tools/quality/rust-coverage-gate.test.ts`.
-- Create `docs/reviews/orchestrator-run-control-persistence/$REVIEW_SHA/` only after computing the seven-character immutable implementation SHA.
+- Create `docs/reviews/orchestrator-run-control-persistence/$REVIEW_SHORT/` only after computing the seven-character immutable implementation SHA.
 
 ## Locked branch interfaces
 
@@ -66,8 +66,11 @@ pub struct PoolLimits { max_connections: NonZeroU32, acquire_timeout: Duration }
 pub enum StoreError { InvalidInput, Conflict, Unavailable, IntegrityFailure, Internal }
 pub enum AppendOutcome { Appended { sequence: u64 }, Idempotent { sequence: u64 } }
 pub struct EventPageRequest { cursor: Option<String>, limit: u16 }
-pub struct RunPageRequest { cursor: Option<String>, limit: u16 }
+pub struct LedgerPageRequest { cursor: Option<String>, limit: u16 }
+pub struct ReferencePageRequest { cursor: Option<String>, limit: u16 }
+pub struct RunSweepPageRequest { cursor: Option<String>, limit: u16 }
 pub struct RestoreBatchSize(NonZeroU16);
+pub struct TombstoneExpiryBatchSize(NonZeroU16);
 pub struct PageMeta { pub next_cursor: Option<String> }
 pub struct Page<T> { pub data: Vec<T>, pub meta: PageMeta }
 
@@ -81,6 +84,7 @@ pub struct DeletionRegistryFact { execution_snapshot_at: DateTime<Utc>, writers_
 pub struct DeletionCommand { organization_id: OrganizationId, run_id: RunId, receipt_digest: Digest, deleted_at: DateTime<Utc> }
 pub struct DeletionOutcome { pub deleted: bool }
 pub struct SweepOutcome { pub inspected: u16, pub deleted: u16, pub meta: PageMeta }
+pub struct TombstoneExpiryOutcome { pub deleted: u16 }
 pub struct RestoreOutcome { pub processed: u64, pub deleted: u64, pub remaining: u64 }
 
 pub enum RunPhase { Ready, Authorized, InvocationStarted, DecisionRequested, EffectReserved, EffectStarted, EffectTerminal, Sealed, Transferred, Blocked, Completed, Quarantined }
@@ -95,15 +99,16 @@ impl RunStore {
     pub async fn append_event(&self, organization_id: &OrganizationId, graph_document: &Value, event_document: &Value, mission_retention: &MissionRetentionFact, observed_at: DateTime<Utc>) -> Result<AppendOutcome, StoreError>;
     pub async fn get_run(&self, organization_id: &OrganizationId, run_id: &RunId) -> Result<Option<RunSnapshot>, StoreError>;
     pub async fn list_events(&self, organization_id: &OrganizationId, run_id: &RunId, request: EventPageRequest) -> Result<Page<StoredEvent>, StoreError>;
-    pub async fn get_budget_ledger(&self, organization_id: &OrganizationId, run_id: &RunId, request: EventPageRequest) -> Result<Page<BudgetMovement>, StoreError>;
-    pub async fn get_attestation_refs(&self, organization_id: &OrganizationId, run_id: &RunId, request: EventPageRequest) -> Result<Page<AttestationReference>, StoreError>;
+    pub async fn get_budget_ledger(&self, organization_id: &OrganizationId, run_id: &RunId, request: LedgerPageRequest) -> Result<Page<BudgetMovement>, StoreError>;
+    pub async fn get_attestation_refs(&self, organization_id: &OrganizationId, run_id: &RunId, request: ReferencePageRequest) -> Result<Page<AttestationReference>, StoreError>;
 }
 
 impl LifecycleStore {
     pub async fn connect(options: PgConnectOptions, limits: PoolLimits) -> Result<Self, StoreError>;
     pub async fn apply_mission_retention(&self, organization_id: &OrganizationId, run_id: &RunId, fact: &MissionRetentionFact) -> Result<(), StoreError>;
     pub async fn delete_run(&self, command: &DeletionCommand) -> Result<DeletionOutcome, StoreError>;
-    pub async fn sweep_expired(&self, organization_id: &OrganizationId, observed_at: DateTime<Utc>, request: RunPageRequest) -> Result<SweepOutcome, StoreError>;
+    pub async fn sweep_expired(&self, organization_id: &OrganizationId, observed_at: DateTime<Utc>, request: RunSweepPageRequest) -> Result<SweepOutcome, StoreError>;
+    pub async fn expire_tombstones(&self, observed_at: DateTime<Utc>, batch_size: TombstoneExpiryBatchSize) -> Result<TombstoneExpiryOutcome, StoreError>;
 }
 
 impl RestoreStore {
@@ -319,7 +324,7 @@ fn identifiers_and_errors_never_reflect_input() -> Result<(), StoreError> {
 }
 ```
 
-Also cover organization length/case, malformed URNs, noncanonical digests, page limits 0/101, restore batch sizes 0/101, pool bounds and every invalid ordering/bound in `DeletionRegistryFact`. Cursor vectors use eight big-endian sequence bytes plus 32 digest bytes, Base64 URL-safe without padding; reject wrong length/alphabet/padding/sequence zero/noncanonical re-encoding.
+Also cover organization length/case, malformed URNs, noncanonical digests, page limits 0/101, restore/tombstone-expiry batch sizes 0/101, pool bounds and every invalid ordering/bound in `DeletionRegistryFact`. Implement four non-interchangeable cursor types. Each starts with tag `0x01` event, `0x02` ledger, `0x03` reference or `0x04` sweep and a 32-byte scope digest. Run scope is `SHA-256("libre-ai.run-cursor-scope.v1\0" || u32be(org_len) || org || u32be(run_len) || run)`; organization scope is `SHA-256("libre-ai.organization-cursor-scope.v1\0" || u32be(org_len) || org)`. Then encode the total SQL order key: event `(u64be sequence, 32-byte event digest)`, ledger `u64be sequence`, reference `(u64be sequence, explicit u8 kind code 1..8, u16be id length, id bytes, 32-byte digest)`, and sweep `(i64be retention-until Unix microseconds, u16be run-id length, run-id bytes)`. Encode Base64 URL-safe without padding. Fixed vectors cover every type; reject wrong tag/scope/length/alphabet/padding, zero sequence, invalid UTF-8/length framing and noncanonical re-encoding.
 
 - [ ] **Step 2: Run red and implement minimal values**
 
@@ -356,7 +361,7 @@ git commit -s -m "Add bounded run-store domain types"
 
 - [ ] **Step 1: Write the red schema test**
 
-Assert exactly seven tables; `relrowsecurity && relforcerowsecurity` for the six organization tables and for the content-free tombstone table; every role has login/superuser/bypass flags false; and grants match the design. Include `run_retention_facts` and `run_lifecycle` in exact RLS, trigger and privilege assertions. Also prove migration refusal when a role or `pgcrypto` is absent.
+Assert exactly seven product tables in schema `orchestrator_run`; `relrowsecurity && relforcerowsecurity` for the six organization tables and for the content-free tombstone table; every role has login/superuser/bypass flags false; and grants match the design. Include `run_retention_facts` and `run_lifecycle` in exact RLS, trigger and privilege assertions. The integration-only migration ledger lives in distinct schema `orchestrator_run_test_support` and is excluded from the product-table count. Also prove migration refusal when a role or `pgcrypto` is absent.
 
 - [ ] **Step 2: Build the local PostgreSQL wrapper**
 
@@ -390,7 +395,7 @@ Require failure because `orchestrator_run.runs` is absent.
 
 - [ ] **Step 4: Implement the run-control migration**
 
-Create `runs`, `run_events`, `run_retention_facts`, `run_lifecycle`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns, 32-byte digest checks, sequence/generation range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. `run_retention_facts` is append-only with primary key `(tenant_id,run_id,observed_at)` and an explicit digest comparison for idempotency/conflict; `run_lifecycle` is its disposable current projection. Index `(tenant_id,run_id,sequence,event_digest)` and `run_lifecycle(tenant_id,retention_until,run_id)`.
+Create `runs`, `run_events`, `run_retention_facts`, `run_lifecycle`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns, 32-byte digest checks, sequence/generation range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. `attestation_refs` uses the total primary key `(tenant_id,run_id,sequence,kind,id,digest)`. `run_retention_facts` is append-only with primary key `(tenant_id,run_id,observed_at)` and an explicit digest comparison for idempotency/conflict; `run_lifecycle` is its disposable current projection. Index `(tenant_id,run_id,sequence,event_digest)`, the reference order key, `run_lifecycle(tenant_id,retention_until,run_id)` and tombstones `(expires_at,subject_digest)`.
 
 Every organization table uses:
 
@@ -420,13 +425,13 @@ CREATE TABLE orchestrator_run.execution_deletion_tombstones (
 );
 ```
 
-Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. Guard-owned security-definer functions with fixed safe `search_path` record/compare one tombstone from `current_setting('app.tenant_id')` plus bound run/receipt/time; grant execution only to retention and return a closed boolean/outcome, never a row. The same guard owns the anti-resurrection trigger. Revoke all guard functions from public/app/restore. Retention has no raw tombstone insert/select/update; it may delete expired rows without `RETURNING`, guarded by `transaction_timestamp()`. Restore gets content-free select plus cross-organization run select/delete policies only. Guard gets only tombstone `SELECT`/`INSERT` under RLS, never `UPDATE`/`DELETE`, and no connection identity receives its membership.
+Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. Guard-owned security-definer functions with fixed safe `search_path` record/compare one tombstone from `current_setting('app.tenant_id')` plus bound run/receipt/time; grant execution only to retention and return a closed boolean/outcome, never a row. The same guard owns the anti-resurrection trigger and a separate bounded expiration function. Revoke all guard functions from public/app/restore. Retention has no raw tombstone insert/select/update/delete privilege; it receives `EXECUTE` only on the narrow record/compare/expire functions. Restore gets content-free select plus cross-organization run select/delete policies only. Guard gets only tombstone `SELECT`/`INSERT` and `DELETE` under a policy requiring `expires_at <= transaction_timestamp()`, never `UPDATE`; its expiration function also requires bound injected time, order `(expires_at,subject_digest)` and batch size without `RETURNING`. No connection identity receives guard membership.
 
-Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert, retention expiry delete and restore's content-free scan; app has no policy or table privilege. Test the guard's required insert separately from forbidden update/delete, and prove that table ownership alone cannot bypass the policy boundary.
+Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert/expired-delete and restore's content-free scan; app/retention have no raw table policy or privilege. Test guard insert and expired delete separately from forbidden update/early delete, direct retention access and function escalation; prove that table ownership alone cannot bypass the policy boundary.
 
 - [ ] **Step 6: Prove green and commit**
 
-Run the schema test through the wrapper. The integration-test binary embeds the two migration files with `include_str!`, applies them through a private test-only helper and records version plus SHA-256 in a migration ledger. Reapplying unchanged bytes is a no-op; changing bytes behind a recorded version is an integrity failure. The library exports no migration runner or raw SQL hook. Then:
+Run the schema test through the wrapper. The integration-test binary embeds the two migration files with `include_str!`, applies them through a private test-only helper and records version plus SHA-256 in `orchestrator_run_test_support.migration_ledger`. Reapplying unchanged bytes is a no-op; changing bytes behind a recorded version is an integrity failure. The library exports no migration runner or raw SQL hook. Then:
 
 ```bash
 git add package.json crates/agent-orchestrator-run/migrations crates/agent-orchestrator-run/tests \
@@ -575,11 +580,14 @@ Run focused cases through the PostgreSQL wrapper. Fix the common first-row `run_
 
 - [ ] **Step 1: Write red pagination and disclosure tests**
 
-Insert 205 events; assert pages 100/100/5 without duplicates/omissions. Reject foreign/wrong cursors without existence leakage. Invalid cursor/limit fails before SQL, proven with a closed pool. Returned types expose only canonical bytes or the specific bounded projection; redacted `Debug` contains type and count/sequence only.
+Insert 205 events and ledger rows plus multiple references sharing one sequence; assert complete pages without duplicates/omissions, including a page boundary inside that reference group. Exercise sweep candidates sharing a deadline. Reject foreign-scope and wrong-type cursors without existence leakage. Invalid cursor/limit fails before SQL, proven with a closed pool. Returned types expose only canonical bytes or the specific bounded projection; redacted `Debug` contains type and count/sequence only.
 
 - [ ] **Step 2: Implement one-query keyset pages**
 
-Use `limit + 1` and:
+Use `limit + 1`. Event pages order and seek by `(sequence,event_digest)`,
+ledger by unique `sequence`, references by the exact primary key suffix
+`(sequence,kind,id,digest)`, and sweep by `(retention_until,run_id)`. For
+example, event SQL is:
 
 ```sql
 WHERE tenant_id = $1 AND run_id = $2
@@ -588,7 +596,9 @@ ORDER BY sequence, event_digest
 LIMIT $5
 ```
 
-Drop the extra row and encode only `meta.next_cursor`. No offset, unbounded limit or N+1 reference query.
+Each query orders by the same complete tuple it encodes into its distinct
+cursor type. Drop the extra row and encode only `meta.next_cursor`. No offset,
+unbounded limit or N+1 reference query.
 `get_run` performs one organization-scoped join from `runs` to
 `run_lifecycle`; it never treats mutable lifecycle columns as execution replay
 input.
@@ -602,32 +612,35 @@ Assert `EXPLAIN (FORMAT JSON)` uses the organization/run/sequence index on repre
 **Files:** create `src/lifecycle.rs`, `tests/postgres/lifecycle.rs`; modify crate `src/lib.rs`, `tests/domain.rs`, `tests/postgres.rs`.
 
 **Interfaces:**
-- Consumes: retention/restore pools, SQL digest function, explicit time and authenticated deletion-registry fact.
-- Produces: `RetentionYears`, deletion, sweep, registry-verified restore replay and blocking count.
+- Consumes: retention pool, SQL digest function and explicit time.
+- Produces: `RetentionYears`, retention observation, explicit deletion, run sweep and bounded tombstone expiry. Task 11 owns the first restore implementation.
 
 - [ ] **Step 1: Write red retention and digest vectors**
 
-Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month, a sub-microsecond observation instant and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. Validate `DeletionRegistryFact` ordering and bounds without accepting a caller-supplied completeness boolean. For synthetic retention observations, assert Rust and PostgreSQL equality of the versioned mission-id/years/Unix-microseconds digest. For three synthetic organization/run pairs, assert Rust and PostgreSQL deletion-subject digest equality and preimage separation of `("ab","c")` from `("a","bc")`.
+Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month, a sub-microsecond observation instant and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. Validate `DeletionRegistryFact` ordering and bounds without accepting a caller-supplied completeness boolean. For synthetic retention observations, assert Rust and PostgreSQL equality of the versioned mission-id/years/Unix-microseconds digest. For three synthetic organization/run pairs, assert Rust and PostgreSQL deletion-subject digest equality and preimage separation of `("ab","c")` from `("a","bc")`. Add fixed Rust/PostgreSQL vectors for the automatic expiry receipt `SHA-256("libre-ai.execution-retention-expiry-receipt.v1\0" || subject_digest || i64be(retention_until_unix_microseconds))`.
 
 - [ ] **Step 2: Write red lifecycle transactions**
 
-Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after execution closure without changing any `runs` column. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare byte-exact state. For sweep, select an expired key then concurrently extend retention through that method; the shared lifecycle-row lock and under-lock recheck must preserve it.
+Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after execution closure without changing any `runs` column. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare byte-exact state. For run sweep, select an expired key then concurrently extend retention through that method; the shared lifecycle-row lock and under-lock recheck must preserve it. Prove its tombstone receipt equals the deterministic expiry vector. For tombstone expiry, insert 205 expired and unexpired synthetic rows, process batches of 100 in `(expires_at,subject_digest)` order, expose counts only, and prove neither injected future time nor a direct DELETE can remove a row before database time reaches exact `P35D`.
 
 - [ ] **Step 3: Implement bounded retention/deletion**
 
-`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. In one transaction they lock `run_lifecycle`, reject time rollback/equal-instant divergence, append the fact if new and update only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` recomputes subject digest in SQL, locks `run_lifecycle`, inserts/compares the tombstone and deletes the run cascade atomically. Sweep selects only `(run_id,retention_until)` keys from `run_lifecycle` and rechecks each locked lifecycle row against injected time before invoking the same private deletion primitive. Retention never updates `runs`.
+`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. In one transaction they lock `run_lifecycle`, reject time rollback/equal-instant divergence, append the fact if new and update only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` recomputes subject digest in SQL, locks `run_lifecycle`, inserts/compares the caller-authenticated tombstone receipt and deletes the run cascade atomically. Run sweep selects `(run_id,retention_until)` keys from `run_lifecycle`, rechecks each locked row, derives the versioned expiry receipt from subject digest plus retention deadline, and invokes the same private deletion primitive. `expire_tombstones` selects at most `TombstoneExpiryBatchSize` rows through `(expires_at,subject_digest)`, requires both injected and PostgreSQL time at/after expiry, deletes without `RETURNING` and returns only an aggregate count. Retention never updates `runs`.
 
-- [ ] **Step 4: Implement pre-open restore**
+- [ ] **Step 4: Keep restore behavior absent until its E2E is red**
 
-Restore accepts no organization. Before every replay/count operation, validate `snapshot_at <= writers_fenced_at <= observed_at`, `coverage_through >= writers_fenced_at` and `observed_at - snapshot_at <= P35D`. One repeatable-read transaction scans every locally restored tombstone in internally cursor-bounded pages ordered by subject digest and recomputes the registry digest as SHA-256 of `libre-ai.execution-deletion-registry.v1\0`, big-endian `u64` row count, then each row's fixed 32-byte subject digest, fixed 32-byte receipt digest and big-endian `i64` Unix-microsecond deletion/expiry instants. Compare count and digest with `DeletionRegistryFact`. Any absence, staleness or mismatch returns integrity failure before scanning execution rows. The same transaction then loops over restored `(tenant_id,run_id)` keys in batches of validated size 1..100, computes SQL subject digests, deletes keys joined to unexpired tombstones and finally counts remaining suppressed lineages before its single commit. The caller cannot stop after a partial page or supply a cursor. `suppressed_lineage_count` opens its own repeatable-read transaction, repeats the registry proof and returns only one aggregate count. The package authenticates neither the fact nor the writer fence and exposes no opening boolean. A future caller must authenticate both and prove every run/tombstone mutator, including retention expiry, was fenced; production remains closed.
+Implement only the validated `DeletionRegistryFact`, `RestoreBatchSize` and
+closed result types already covered by domain tests. Do not implement
+`RestoreStore::replay_tombstones` or `suppressed_lineage_count` in Task 10;
+Task 11 must first fail to compile against their absence.
 
 - [ ] **Step 5: Prove green and commit**
 
-Run domain/lifecycle/full PostgreSQL tests plus Clippy. Commit as `Enforce run retention and deletion barriers`.
+Run domain/lifecycle/full PostgreSQL tests plus Clippy. Commit as `Enforce run retention and deletion barriers`; no restore behavior exists in that commit.
 
 ### Task 11: Prove tombstone-first restore end to end
 
-**Files:** create `tests/postgres/e2e.rs`; modify `tests/postgres.rs` and, only if the red test requires it, `src/lifecycle.rs`.
+**Files:** create `src/restore.rs`, `tests/postgres/e2e.rs`; modify `src/lib.rs` and `tests/postgres.rs`.
 
 **Interfaces:**
 - Consumes: all three stores and locked synthetic graph/event fixtures.
@@ -639,9 +652,17 @@ Database A holds a complete A run and unrelated B run. Delete A and retain its t
 
 Add the negative recovery vector: take an execution and tombstone snapshot before deleting A, then present that stale registry after the deletion writer fence. Even though the local join reports zero, count/digest coverage verification must refuse pre-open. Also refuse an execution snapshot older than `P35D`, a missing manifest, wrong count, wrong digest and coverage ending before the fence.
 
-- [ ] **Step 2: Assert the service-open barrier remains external**
+Run the focused target now and require compile failure because
+`RestoreStore::replay_tombstones` and `suppressed_lineage_count` do not exist.
+
+- [ ] **Step 2: Finish all red restore/security vectors**
 
 Return `RestoreOutcome { processed, deleted, remaining }` only after registry verification; `remaining == 0` is necessary but a future caller still needs authenticated registry/writer-fence authority before opening. No method starts traffic. An expired tombstone is ignored only when injected time is after expiry, the execution snapshot is within `P35D` and the fixture proves the backup ceiling elapsed.
+
+Before implementation, add failures for registry time-order violations,
+cross-organization app/retention use, caller cursor injection, partial-page
+escape, rollback before final count and a writer-fence that omits tombstone
+expiry. Rerun and require red.
 
 - [ ] **Step 3: Run red, implement the missing behavior and prove green**
 
@@ -652,11 +673,30 @@ verification/agent-orchestrator/with-postgres.sh -- \
   cargo test -p libre-ai-agent-orchestrator-run --test postgres --locked -- --test-threads=1
 ```
 
-Require the first run to fail on the surviving lineage, then green without adding service/startup code. Commit as `Prove tombstone-first restore replay`.
+Implement restore only after both red steps. Restore accepts no organization.
+Before every replay/count operation, validate
+`snapshot_at <= writers_fenced_at <= observed_at`, `coverage_through >=
+writers_fenced_at` and `observed_at - snapshot_at <= P35D`. One
+repeatable-read transaction scans every locally restored tombstone in internal
+pages ordered by subject digest and recomputes the registry digest as SHA-256
+of `libre-ai.execution-deletion-registry.v1\0`, big-endian `u64` row count,
+then each row's fixed 32-byte subject/receipt digests and big-endian `i64`
+Unix-microsecond deletion/expiry instants. Compare count and digest before
+scanning execution rows. The same transaction loops over restored
+`(tenant_id,run_id)` keys in batches of 1..100, computes SQL subject digests,
+deletes matches and counts remaining suppressed lineages before its single
+commit. The caller cannot stop a partial page or supply a cursor.
+`suppressed_lineage_count` repeats the registry proof in its own
+repeatable-read transaction. The package authenticates neither registry fact
+nor writer fence and exposes no opening boolean.
+
+Require the initial runs to be red, then green without adding service/startup
+code. Run the whole PostgreSQL target and commit as `Prove tombstone-first
+restore replay`.
 
 ### Task 12: Add performance, compatibility and CI gates
 
-**Files:** create benchmark, compatibility snapshots/test; modify `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
+**Files:** create benchmark, `verification/agent-orchestrator/benchmark-memory.sh`, compatibility snapshots/test; modify `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
 
 **Interfaces:**
 - Consumes: complete store.
@@ -668,15 +708,17 @@ Snapshot every public re-export and five error codes. Extend the Bun coverage te
 
 - [ ] **Step 2: Implement the benchmark**
 
-Use fixed chain sizes `[1,32,256,2048,8192]`, at least 30 samples after warmup and `std::time::Instant`. Print:
+Use fixed chain sizes `[1,32,256,2048,8192]`, at least 30 samples after warmup and `std::time::Instant`. The benchmark accepts exactly one fixture size per process. On the required Linux CI runner, `benchmark-memory.sh` launches each process through `/usr/bin/time -v`, parses `Maximum resident set size` as bytes and fails if GNU time or the field is unavailable. It emits:
 
 ```text
 events,total_jcs_bytes,append_p50_us,append_p95_us,load_p50_us,page_p95_us,peak_rss_bytes
 ```
 
+RSS is observational, not the bounded-memory gate. Extract one private page-loop function used directly by `RestoreStore`; it returns a private `struct ScanStats { processed_rows, page_count, max_buffered_rows }`. Before consuming any page, that production loop returns `IntegrityFailure` when `page.len() > batch_size`; production consumes `processed_rows` for its completeness result but exposes no diagnostic field, hook or feature. A `#[cfg(test)]` module colocated in `src/restore.rs` calls that same private function with synthetic page fetch/consume closures. First require red then green for an oversized returned page being refused. For fixed batch 100, fail deterministically unless `max_buffered_rows <= batch_size`, the maximum is identical across total sizes 256, 2,048 and 8,192, and the two larger fixtures consume multiple pages; this rejects accumulating prior pages in a `Vec` while proving the exact production loop without cross-crate visibility. A real-PostgreSQL E2E restores 205 tombstones and runs successfully with batch 100; an accidentally unbounded SQL page would exceed the invariant and make that test fail.
+
 Exit non-zero on fixture/replay/query failure. Record statement counts in integration tests; set no hardware-dependent latency threshold.
 
-Add a separate pre-open series over fixed tombstone/run pairs `[(1,1),(32,256),(256,2048),(2048,8192)]` and print `tombstones,runs,reconcile_p50_us,reconcile_p95_us,peak_rss_bytes`. Assert complete processing and batch-bounded userspace memory; report the expected `O(tombstones + runs)` scaling without a hardware-dependent threshold.
+Add a separate pre-open series over fixed tombstone/run pairs `[(1,1),(32,256),(256,2048),(2048,8192)]` and print `tombstones,runs,reconcile_p50_us,reconcile_p95_us,peak_rss_bytes`. The external Cargo benchmark proves complete processing and the wrapper measures RSS; the colocated unit test is the blocking structural batch-bound proof. Report the expected `O(tombstones + runs)` scaling without a hardware-dependent latency or RSS threshold.
 
 - [ ] **Step 3: Wire CI through local PostgreSQL**
 
@@ -687,6 +729,8 @@ Use:
 - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 - run: RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
 - run: verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
+- name: Structural memory and RSS evidence
+  run: verification/agent-orchestrator/with-postgres.sh -- verification/agent-orchestrator/benchmark-memory.sh
 - name: Rust coverage (blocking)
   run: |
     verification/agent-orchestrator/with-postgres.sh -- \
@@ -708,14 +752,14 @@ verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --worksp
 cargo deny check --show-stats bans licenses sources
 bun run check
 verification/agent-orchestrator/with-postgres.sh -- \
-  cargo bench -p libre-ai-agent-orchestrator-run --bench postgres_persistence
+  verification/agent-orchestrator/benchmark-memory.sh
 ```
 
 Require green commands and complete benchmark rows. Commit as `Gate run-store compatibility and PostgreSQL proof`.
 
 ### Task 13: Document the bounded capability and rollback
 
-**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`, run-capability test.
+**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`, run-capability test; create `verification/agent-orchestrator/review-evidence.test.ts`.
 
 **Interfaces:**
 - Consumes: measured behavior and exact Governance SHA.
@@ -723,7 +767,7 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Run the Bun test and require failure against current docs.
+Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: pending status with no dossier passes; accepted status fails unless it names full `implementation_sha`, exactly one commit `E` transitions that criterion to accepted, `parent(E) == implementation_sha`, `E` changes only its exact review directory plus the two authorized YAML leaf edits, all four verdicts bind the implementation SHA, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
@@ -731,13 +775,29 @@ Add a compile-checked example that constructs `PgConnectOptions` outside the cra
 
 Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` as `implemented-review-pending`, explicitly leaving whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
 
+Implement the generic evidence gate before freezing the candidate. It reads the
+implementation object named by the project card and resolves the unique commit
+that changed its criterion from pending to accepted, rather than assuming
+`HEAD`, so later authorized work does not invalidate historical proof. It
+rejects abbreviated/missing/non-ancestor SHAs, merges, a non-direct parent,
+any diff outside the exact dossier directory and the two authorized leaves in
+`project.v1.yaml`, absent verdicts or mismatched command digests. Using the YAML
+CST ranges, it permits only the scalar transition for the unique criterion id
+`run-control-persistence` from `implemented-review-pending` to `accepted` and
+one adjacent insertion `implementation_sha: I`; the file must be byte-for-byte unchanged outside those two CST ranges. It also parses both documents, removes
+the inserted leaf and restores the old status in the accepted tree, then
+requires deep equality, so aliases or duplicate keys cannot disguise a second
+change. Set the CI checkout to `fetch-depth: 0` and add an assertion for it; the
+gate refuses rather than silently passing when the named Git objects or history
+are unavailable.
+
 - [ ] **Step 3: Prove green and commit**
 
 Run the documentation assertion, `bun run check` and full PostgreSQL workspace tests. Commit as `Document bounded run-control persistence`.
 
 ### Task 14: Build the immutable review dossier
 
-**Files:** create `docs/reviews/orchestrator-run-control-persistence/$REVIEW_SHA/{benchmark.csv,architecture.md,security.md,privacy.md,integration.md}` after computing `REVIEW_SHA="$(git rev-parse --short=7 HEAD)"`; modify only the new project-card criterion after approval.
+**Files:** create `docs/reviews/orchestrator-run-control-persistence/$REVIEW_SHORT/{benchmark.csv,architecture.md,security.md,privacy.md,completeness.md,integration.md,commands/manifest.json,commands/*.txt}` after computing full `REVIEW_SHA="$(git rev-parse HEAD)"` and `REVIEW_SHORT="$(git rev-parse --short=7 HEAD)"`; modify only the new project-card criterion after approval.
 
 **Interfaces:**
 - Consumes: clean immutable implementation candidate.
@@ -745,7 +805,7 @@ Run the documentation assertion, `bun run check` and full PostgreSQL workspace t
 
 - [ ] **Step 1: Freeze candidate and rerun every gate**
 
-Run Task 12 commands, require clean status, then record full HEAD, parents, author, committer and message. The dossier directory uses seven SHA characters; every file names the full SHA and digest of captured command output.
+Run Task 12 commands, require clean status, then record full implementation SHA `I`, parents, tree, message and a boolean DCO-valid result without copying author or committer identity into evidence. Capture outputs in a validated temporary directory outside the worktree; no untracked dossier may dirty the candidate during review. Normalize each combined stdout/stderr stream to UTF-8, LF endings and no ANSI escapes, reject secrets, personal data and absolute machine paths, then retain those exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical JCS and records for each stable id the exact non-secret argv array, exit code zero, relative output path and lowercase SHA-256 of the tracked normalized bytes. The evidence gate rehashes every file, rejects missing/unreferenced outputs and requires each review to cite the stable command ids it consumed. The eventual dossier directory uses seven SHA characters and every file names full `I`. The four review verdicts bind `I`, never the later evidence commit.
 
 - [ ] **Step 2: Run four independent review roles**
 
@@ -757,7 +817,7 @@ Any Blocking/Major finding gets a red regression, minimal fix and full rerun. A 
 
 - [ ] **Step 4: Commit accepted evidence and status**
 
-After all roles approve the same implementation SHA, add evidence. Mark only the new criterion accepted with full reviewed SHA; keep WP-G3-O01/service unclaimed. Commit as `Record run-control persistence review`, then rerun formatting, Clippy, PostgreSQL workspace tests, Bun check and clean-status proof.
+After all roles approve the same implementation SHA `I`, add only the exact dossier directory, change the unique `run-control-persistence` status from `implemented-review-pending` to `accepted`, and insert adjacent `implementation_sha: I`; keep WP-G3-O01/service unclaimed. Commit once as `Record run-control persistence review` and define its resulting full SHA as `E`. Require `parent(E) == I` and one parent. Run the pre-existing evidence gate; it resolves `E` from the unique status transition and must prove that `E` changes only the dossier and those two CST ranges in `project.v1.yaml`, every other byte at `E` is identical to `I`, all verdicts bind `I`, and every tracked normalized command output rehashes to its manifest digest. Then rerun formatting, Clippy, PostgreSQL workspace tests, Bun check and clean-status proof. Any other change creates a new implementation candidate and invalidates every verdict.
 
 ### Task 15: Open the PR and stop at the bootstrap hard gate
 
@@ -769,7 +829,7 @@ After all roles approve the same implementation SHA, add evidence. Mark only the
 
 - [ ] **Step 1: Push exact branch, create PR and verify head/CI**
 
-The PR names ADR-0039/D45, reviewed implementation SHA, evidence commit, commands, `O(n)` limitation and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
+The PR names ADR-0039/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, `O(n)` limitation and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
 
 - [ ] **Step 2: Restate and stop at ADR-0011 D4**
 
@@ -780,14 +840,14 @@ This merge establishes the first layer-2 PostgreSQL persistence barrier:
 canonical events, forced RLS, separated lifecycle/restore roles and
 tombstone-first recovery are proven. It still cannot authorize, execute,
 serve or deploy a run, and O(n) replay explicitly blocks production use.
-ADR-0011 D4 requires the owner's bootstrap pronouncement before merge.
+ADR-0011 D4 requires the owner's bootstrap pronouncement naming I and E before merge.
 ```
 
-Do not treat design, plan, Governance merge or PR creation approval as this pronouncement.
+Do not treat design, plan, Governance merge or PR creation approval as this pronouncement. The owner statement must name both full SHAs `I` and `E`.
 
 - [ ] **Step 3: Merge only after explicit pronouncement and verify**
 
-Merge without force, fetch `origin/main`, prove the merge tree contains reviewed implementation bytes plus evidence-only commit, then wait for post-merge CI. Create/verify an annotated evidence tag only if the established Phase 4A pattern requires it.
+Use only a merge commit that preserves the reviewed objects (`gh pr merge --merge`); squash and rebase merges are forbidden. Fetch `origin/main`, require both `git merge-base --is-ancestor "$I" origin/main` and `git merge-base --is-ancestor "$E" origin/main`, prove the merge tree contains reviewed implementation bytes plus the evidence-only commit, then wait for post-merge CI. Create/verify an annotated evidence tag only if the established Phase 4A pattern requires it.
 
 - [ ] **Step 4: Clean only owned state**
 

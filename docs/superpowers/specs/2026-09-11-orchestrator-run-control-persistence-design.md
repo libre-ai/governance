@@ -210,9 +210,9 @@ do not create cluster-global roles. Deployment/bootstrap authority provisions:
 - `libre_ai_app`, with only the operations required for run persistence;
 - `libre_ai_retention`, with the additional lifecycle operations required for
   expiry and explicit deletion;
-- a `NOLOGIN` tombstone-guard role that owns only the closed record/compare and
-  anti-resurrection functions, and receives only their required tombstone
-  `SELECT`/`INSERT` policies;
+- a `NOLOGIN` tombstone-guard role that owns only the closed record/compare,
+  anti-resurrection and bounded-expiration functions, and receives only their
+  required tombstone `SELECT`/`INSERT`/expired-`DELETE` policies;
 - `libre_ai_restore`, a `NOLOGIN` pre-open recovery role with bounded
   cross-organization `SELECT`/`DELETE` policies and no insert, update, schema
   or application capability.
@@ -355,11 +355,12 @@ A tombstone contains only a content-free subject digest, deletion receipt
 digest, deletion instant and expiry instant. It deliberately has no foreign
 key to a run: deleting the run cannot delete the evidence that prevents its
 restore. The application role cannot read, insert, update or delete this
-table. The retention role has no raw insert, select or update grant: it invokes
-guard-owned functions that derive the subject from its transaction-local
-organization context, insert or compare one tombstone and return only a closed
-outcome. It may delete expired tombstones without returning their rows; a
-database trigger blocks deletion before the `P35D` backup ceiling.
+table. The retention role has no raw insert, select, update or delete grant: it
+invokes guard-owned functions that derive the subject from its
+transaction-local organization context, insert or compare one tombstone and
+return only a closed outcome. Its separate bounded expiration function returns
+only a count; an RLS policy and database trigger both block deletion before the
+`P35D` backup ceiling.
 
 The deletion-subject digest has one versioned internal preimage:
 
@@ -378,13 +379,16 @@ installs a tombstone-guard-owned `SECURITY DEFINER` trigger with a fixed safe
 and rejects an unexpired matching tombstone without disclosing its presence to
 the application role. `FORCE RLS` remains active: policies grant that
 `NOLOGIN` guard role only the tombstone `SELECT` and `INSERT` required by its
-owned functions. It cannot `UPDATE` or `DELETE` a tombstone, cannot read any
-other relation, has no login and has no connection-principal member. Public
-and application execution of every guard function is revoked. Only the narrow
-record/compare functions are executable by the retention role; they recompute
-the subject from the local organization context, so a caller cannot substitute
-an unrelated digest. The restore role receives the separate content-free
-lookup policy required for pre-open replay.
+record/compare functions plus `DELETE` under the single policy
+`expires_at <= transaction_timestamp()` required by its bounded expiration
+function. It has no `UPDATE`, no other-relation privilege, no login and no
+connection-principal member. Public and application execution of every guard
+function is revoked. The retention role has no raw tombstone privilege and may
+execute only the narrow record, compare and expiration functions. Record and
+compare recompute the subject from the local organization context, so a caller
+cannot substitute an unrelated digest; expiration additionally binds injected
+time, total index order and batch size. The restore role receives the separate
+content-free lookup policy required for pre-open replay.
 
 ## 8. Public Rust surface
 
@@ -396,6 +400,11 @@ pub struct LifecycleStore { /* separate private PgPool */ }
 pub struct RestoreStore { /* separate pre-open-only PgPool */ }
 pub struct DeletionRegistryFact { /* private validated fields */ }
 pub struct RestoreBatchSize(NonZeroU16);
+pub struct TombstoneExpiryBatchSize(NonZeroU16);
+pub struct EventPageRequest { /* private event cursor + limit */ }
+pub struct LedgerPageRequest { /* private ledger cursor + limit */ }
+pub struct ReferencePageRequest { /* private reference cursor + limit */ }
+pub struct RunSweepPageRequest { /* private sweep cursor + limit */ }
 
 pub async fn connect(
     options: PgConnectOptions,
@@ -430,6 +439,12 @@ pub async fn replay_tombstones(
     observed_at: DateTime<Utc>,
     batch_size: RestoreBatchSize,
 ) -> Result<RestoreOutcome, StoreError>;
+
+pub async fn expire_tombstones(
+    &self,
+    observed_at: DateTime<Utc>,
+    batch_size: TombstoneExpiryBatchSize,
+) -> Result<TombstoneExpiryOutcome, StoreError>;
 ```
 
 Budget and attestation-reference queries follow the same organization-scoped,
@@ -486,11 +501,35 @@ retention limits and current database state. Until a Biscuit-authorized caller
 is separately implemented and proven, no production path may construct that
 command.
 
-Pages use an opaque cursor derived from `(sequence, event_digest)`, a closed
-limit range of 1 through 100 and a `{ data, meta }`-shaped Rust result. Offset
-pagination and unbounded exports are absent. Each page is fetched with one
-bounded query; related ledger/reference projections use explicit separate
-methods rather than N+1 loading.
+Events, ledger entries, attestation references and expiry candidates use
+distinct request/cursor types; a cursor for one query cannot parse as another.
+Each binary cursor starts with a one-byte type/version tag and a 32-byte scope
+digest, then carries its complete order key:
+
+- event: run scope, `(sequence, event_digest)`;
+- ledger: run scope, `sequence`;
+- reference: run scope, `(sequence, kind, id, digest)`;
+- sweep: organization scope, `(retention_until, run_id)`.
+
+Run scope is
+`SHA-256("libre-ai.run-cursor-scope.v1\0" || u32be(org_len) || org ||
+u32be(run_len) || run)`; organization scope is
+`SHA-256("libre-ai.organization-cursor-scope.v1\0" || u32be(org_len) || org)`.
+Cursor tags are respectively `0x01`, `0x02`, `0x03` and `0x04` in the order
+above. Reference kinds use explicit stable codes 1 through 8 in the declared
+`ReferenceKind` order, never Rust enum ordinals. Variable cursor strings are
+`u16be` length-framed, integers are big-endian, instants are signed
+Unix-microseconds, and the complete bytes use Base64 URL-safe encoding without
+padding. These tuples exactly match their relation's unique key and SQL
+`ORDER BY`, so every order is total. Fixed vectors prove tags, framing,
+round-trip, cross-type/scope refusal and canonical re-encoding. “Opaque” means
+caller-independent, not confidential; only bounded non-PII identifiers enter a
+cursor.
+
+All page types enforce a closed limit range of 1 through 100 and return a
+`{ data, meta }`-shaped Rust result. Offset pagination and unbounded exports are
+absent. Each page is fetched with one bounded query; related ledger/reference
+projections use explicit separate methods rather than N+1 loading.
 
 ## 9. Atomic append protocol
 
@@ -586,6 +625,20 @@ from the closed organization/run lineage; raw identifiers do not enter the
 tombstone. Deletion is idempotent for the same receipt and refuses a divergent
 receipt.
 
+Automatic run expiry derives, in Rust and PostgreSQL, a deterministic internal
+receipt rather than inventing an external authorization receipt:
+
+```text
+SHA-256(
+  "libre-ai.execution-retention-expiry-receipt.v1\0" ||
+  subject_digest || i64be(retention_until_unix_microseconds)
+)
+```
+
+Fixed cross-language vectors bind that preimage. Explicit deletion continues
+to require its caller-authenticated receipt digest; the two receipt sources are
+not interchangeable.
+
 While that tombstone is active, the tombstone-guard insertion trigger refuses
 recreation of the deleted organization/run lineage. This closes both the live
 append path and restore races even though the application role cannot query
@@ -627,6 +680,15 @@ Once a tombstone expires, the policy asserts that no backup capable of
 resurrecting that lineage remains; expiry is therefore a retention-authority
 operation, not a normal application sweep.
 
+`expire_tombstones` is a separate global, content-free retention operation. It
+accepts injected time and a validated batch size of 1 through 100, deletes in
+the total order `(expires_at, subject_digest)` without `RETURNING`, and exposes
+only the deleted count. The SQL predicate requires both `expires_at <=
+observed_at` and `expires_at <= transaction_timestamp()`; the database trigger
+also refuses any deletion before exact `P35D`. The `(expires_at,
+subject_digest)` index bounds selection. App and restore cannot call the method
+or assume its role.
+
 ## 12. Error and diagnostic discipline
 
 `StoreError` exposes only closed, constant categories such as invalid input,
@@ -664,9 +726,10 @@ All non-trivial behavior is test-first. The implementation must provide:
 - rollback, task cancellation and scrub failure cannot return a poisoned
   connection to either pool;
 - the app role cannot update/delete events, access tombstones or alter schema;
-- the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update or
-  delete a tombstone, has only the `SELECT`/`INSERT` its
-  closed owned functions require, and cannot read any other relation;
+- the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update a
+  tombstone, has only the `SELECT`/`INSERT`/expired-`DELETE` its closed owned
+  functions require, and cannot read any other relation; early/raw deletion
+  and every connection-principal membership are refused;
 - the restore role is `NOLOGIN`, lacks `BYPASSRLS`, cannot insert/update or
   access application methods, and its cross-organization policies cover only
   bounded tombstone replay;
@@ -716,6 +779,8 @@ synthetic and checked for forbidden content.
 - restore-role credentials cannot be used through `RunStore` or
   `LifecycleStore` constructors without their role/grant probes failing;
 - tombstones cannot expire before `P35D`;
+- automatic run expiry uses the versioned deterministic receipt and tombstone
+  expiry processes at most its validated batch in total index order;
 - the proof query blocks service opening while any restored lineage survives.
 
 ### 13.5 Performance proof
@@ -730,9 +795,21 @@ the organization/run/sequence indexes and may not show an unbounded sequential
 scan for the representative maximum fixture.
 
 The pre-open benchmark independently varies tombstone and restored-run counts.
-Registry verification plus reconciliation must scale `O(tombstones + runs)`;
-peak userspace memory remains bounded by the selected batch size even though
-the repeatable-read transaction spans the complete recovery proof.
+Registry verification plus reconciliation must scale `O(tombstones + runs)`.
+The production loop returns a private `ScanStats` value containing processed,
+page and maximum-current-page row counts; `RestoreStore` uses the processed
+count but exposes none of these diagnostics. Before consuming a fetched page,
+that same loop returns a closed integrity error if its row count exceeds the
+validated batch size. Unit tests colocated with the private loop prove this
+refusal, `max_buffered_rows <= batch_size` and identical maxima at a fixed batch
+size as total rows grow. A real-PostgreSQL E2E successfully processes more than
+two pages at batch 100, so an unbounded SQL fetch is caught by the same
+production check. The two largest fixtures must traverse multiple pages. This
+tests the exact production loop without a public or feature-gated test hook. A
+Linux CI wrapper separately runs each externally visible benchmark fixture in
+a new process via GNU `/usr/bin/time -v` and publishes normalized peak RSS
+bytes; missing collector output fails the evidence job, while no
+hardware-dependent RSS threshold is treated as correctness.
 
 ## 14. Quality gates
 
@@ -746,8 +823,10 @@ The implementation merge is blocked on, at minimum:
   function thresholds for the new crate;
 - dependency license/advisory/source review with an exact lockfile;
 - reproducible clean-schema migration and restore tests on real PostgreSQL;
-- an independent security, privacy, quality/performance and completeness
-  review dossier over the exact commit;
+- independent security, privacy, quality/performance and completeness verdicts
+  over the exact implementation commit `I`; if evidence is tracked, one direct
+  child `E` may change only the allow-listed dossier/status paths while a gate
+  proves every implementation byte equals `I`;
 - owner pronouncement at the ADR-0011 D4 hard stop before the first merge.
 
 An integration test that silently skips because PostgreSQL is unavailable is
@@ -850,8 +929,9 @@ The design is satisfied only when the exact reviewed implementation proves:
 11. no service, effect, worker or framework capability has entered scope;
 12. all repository, coverage, dependency and real-PostgreSQL gates are green.
 
-After the independent dossier is produced, work stops before merge for the
-owner's ADR-0011 D4 pronouncement. The next packages — native incremental
+After all verdicts accept implementation commit `I` and its mechanically
+restricted direct evidence child `E` is green, work stops before merge for the
+owner's ADR-0011 D4 pronouncement naming both. The next packages — native incremental
 checkpointing, Biscuit authorization, runtime service/connection construction,
 Harness execution safety, zero-PII operational diagnostics and deployment —
 remain separately closed. LangGraph continues to serve only as a removable
