@@ -81,6 +81,7 @@
 - Create `src/{lib,error,ids,cursor,pool,event,store,lifecycle,restore}.rs` in that crate.
 - Create `migrations/0001_run_control.sql` and `0002_deletion_barrier.sql` in that crate.
 - Create `tests/domain.rs`, one serial `tests/postgres.rs`, focused `tests/postgres/*.rs`, and `tests/support/*.rs`.
+- Create `crates/agent-orchestrator-run/examples/uds_persistence.rs` as the package-owned compile-checked documentation example.
 - Create `benches/postgres_persistence.rs` and `tests/compat/{public_surface,stable_codes}.snapshot` plus `tests/compat_surface.rs`.
 - Create `verification/agent-orchestrator/check-run-capabilities.ts`,
   `run-capability-boundary.test.ts`, `with-postgres.sh`,
@@ -1047,9 +1048,10 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 ### Task 13: Document the bounded capability and rollback
 
-**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`,
-`.github/workflows/ci.yml`, `package.json`, run-capability test; create
-`verification/agent-orchestrator/review-evidence.test.ts`.
+**Files:** create `crates/agent-orchestrator-run/examples/uds_persistence.rs` and
+`verification/agent-orchestrator/review-evidence.test.ts`; modify `README.md`,
+`docs/apps/orchestrator.md`, `project.v1.yaml`, `.github/workflows/ci.yml`,
+`package.json` and the run-capability test.
 
 **Interfaces:**
 - Consumes: measured behavior and exact Governance SHA.
@@ -1067,11 +1069,27 @@ and one invocation of `bun run check:run-review-evidence` from the blocking
 red; CI's existing `bun run check` is not assumed to discover arbitrary Bun
 test files.
 
+The same red workflow assertion requires the exact blocking command
+`cargo check --locked -p libre-ai-agent-orchestrator-run --example uds_persistence`.
+It also requires the package-owned source
+`crates/agent-orchestrator-run/examples/uds_persistence.rs`; a Markdown fence
+alone or a README doctest compiled through the pure root crate is not accepted
+as proof. Remove the example path or the workflow command in separate fixtures
+and require both cases to fail.
+
 The same gate gets red content fixtures before implementation. It must scan every tracked UTF-8 byte of the dossier, without inheriting the repository secret scanner's `docs/reviews` exclusion. Put distinct synthetic credential, personal-data and POSIX and Windows absolute machine paths into `benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`; each case must fail. JSON/JCS fixtures additionally encode the canaries with Unicode escapes and nested arrays/objects. Add nested duplicate properties, escape-equivalent property names and an overwritten first value containing a fully escaped path canary; each must fail in the temporary-directory, staged-blob and historical-`E` adapters of the same validator. Invalid UTF-8, an unknown extension or a file outside the exact allow-list also fails. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
-Add a compile-checked example that constructs no-secret `PgConnectOptions` outside the crate with an explicit Unix-domain socket, creates bounded pool limits, appends a synthetic content-free event and reads a page. State that the library cannot load secrets, use TCP/TLS, authorize, execute or serve.
+Create the exact package-owned example
+`crates/agent-orchestrator-run/examples/uds_persistence.rs`. It constructs
+no-secret `PgConnectOptions` outside the crate with an explicit Unix-domain
+socket, creates bounded pool limits, appends a synthetic content-free event and
+reads a page. Keep the README prose free of a root-crate doctest and link to the
+example instead. State that the library cannot load secrets, use TCP/TLS,
+authorize, execute or serve. Wire the exact package-scoped `cargo check` command
+above as a separate blocking CI step; this proof must not depend implicitly on
+Clippy's current target discovery.
 
 Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` with one `immutable-role-review` criterion at schema-valid `status: pending`, without `evidence`, and a note that implementation exists but independent review is not yet accepted. Explicitly leave whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
 
@@ -1106,9 +1124,11 @@ Git objects are unavailable.
 
 - [ ] **Step 3: Prove green and commit**
 
-Run the documentation assertion, `bun run check:run-review-evidence`,
-`bun run check`, and the exact serial debug and release PostgreSQL workspace commands
-from Task 12. Commit as `Document bounded run-control persistence`.
+Run the documentation assertion,
+`cargo check --locked -p libre-ai-agent-orchestrator-run --example uds_persistence`,
+`bun run check:run-review-evidence`, `bun run check`, and the exact serial debug
+and release PostgreSQL workspace commands from Task 12. Commit as
+`Document bounded run-control persistence`.
 
 ### Task 14: Build the immutable review dossier
 
@@ -1132,9 +1152,11 @@ reject secrets, personal data and absolute machine paths, then retain those
 exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical
 JCS and records `I` and, for each stable id, the exact non-secret argv array,
 exit code zero, relative output path and lowercase SHA-256 of the tracked
-normalized bytes. It must contain `cargo-doc-quiet`,
-`postgres-tests-release` and `run-review-evidence`; the last stable id captures
-`bun run check:run-review-evidence`. The release command proves execution of the
+normalized bytes. It must contain `cargo-doc-quiet`, `postgres-tests-release`,
+`run-example-check` and `run-review-evidence`; `run-example-check` captures
+`cargo check --locked -p libre-ai-agent-orchestrator-run --example uds_persistence`
+and `run-review-evidence` captures `bun run check:run-review-evidence`. The
+release command proves execution of the
 dev-unified `tracing/log-always` graph on `I`; the evidence command proves the
 gate is present and green in pending mode on `I`. The evidence gate rehashes
 every file, rejects missing/unreferenced outputs and requires each review to

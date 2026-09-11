@@ -435,6 +435,13 @@ describe("orchestrator run-control persistence authority", () => {
       "bun test verification/agent-orchestrator/review-evidence.test.ts",
     );
     expect(implementationPlan).toContain("run-review-evidence");
+    expect(implementationPlan).toContain(
+      "crates/agent-orchestrator-run/examples/uds_persistence.rs",
+    );
+    expect(implementationPlan).toContain(
+      "cargo check --locked -p libre-ai-agent-orchestrator-run --example uds_persistence",
+    );
+    expect(implementationPlan).toContain("run-example-check");
     expect(implementationPlan).not.toContain("receipt_digest: Digest, deleted_at: DateTime<Utc>");
     expect(design).toContain("caller supplies no deletion timestamp");
     expect(implementationPlan).toContain("clock_timestamp()` after acquiring");
