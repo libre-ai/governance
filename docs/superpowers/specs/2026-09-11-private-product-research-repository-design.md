@@ -114,9 +114,13 @@ product-research/
 ├── LICENSES/
 ├── REUSE.toml
 ├── registry/
-│   └── research-items.v1.json
+│   ├── research-items.v1.json
+│   └── sources.v1.json
 ├── schemas/
-│   └── research-item.v1.schema.json
+│   ├── research-item.v1.schema.json
+│   └── source.v1.schema.json
+├── sources/
+│   └── README.md
 ├── sessions/
 │   └── YYYY-MM-DD-topic/
 │       └── synthesis.md
@@ -183,6 +187,31 @@ Valeurs fermées :
 Un item `supported` reste une conclusion de recherche réfutable. Seul
 `promoted` signifie qu'une autorité a accepté une décision, sans donner au
 dépôt de recherche une valeur normative.
+
+`registry/sources.v1.json` résout chaque `evidence_refs` vers une source
+typée :
+
+```json
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "SRC-0001",
+      "kind": "public-url",
+      "title": "A public source title",
+      "locator": "https://example.org/source",
+      "observed_on": "2026-09-11"
+    }
+  ]
+}
+```
+
+Valeurs fermées de `kind` : `public-url`, `internal-observation` et
+`external-vault`. `public-url` exige une URL HTTPS. `internal-observation`
+porte uniquement une synthèse assainie dans `sources/README.md`.
+`external-vault` exige un identifiant opaque et une empreinte SHA-256, sans
+nom de client ni chemin local. Toute référence absente, dupliquée ou non
+conforme bloque le gate.
 
 ## 7. Contrôles GitHub
 
@@ -261,6 +290,9 @@ l'identité privée ni une phrase secrète ne transitent dans une variable CI.
 
 - validation positive de chaque `kind`, `status` et `classification` ;
 - rejet des champs inconnus, identifiants dupliqués et chemins hors dépôt ;
+- rejet d'une `evidence_refs` absente du registre de sources ;
+- validation HTTPS des sources publiques et exigence d'une empreinte SHA-256
+  pour les références de coffre externe ;
 - rejet de `confidential` et de toute autorité incomplète ;
 - transitions autorisées : `hypothesis -> supported|rejected`,
   `supported -> promoted|rejected|superseded`, `promoted -> superseded` ;
@@ -301,7 +333,10 @@ Avant la création distante :
    `visibility: private`, sans fiche projet publique ni exposition ;
 5. les validateurs de flotte traitent explicitement le rôle privé au lieu de
    le sauter silencieusement ; leurs tests positifs et négatifs précèdent le
-   changement de production.
+   changement de production ;
+6. les gates publics ne reçoivent aucun jeton transversal capable de lire le
+   dépôt privé : ils consignent son exemption, tandis que le workflow local
+   privé exécute les contrôles équivalents sur son propre contenu.
 
 L'entrée publique révèle uniquement le nom, le rôle, la visibilité et la
 frontière d'autorité. Elle ne révèle ni sujets de recherche, ni titres
