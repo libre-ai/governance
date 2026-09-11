@@ -96,10 +96,14 @@ fermée.
 ### D3 — Séparer app, rétention, restore et guard sous FORCE RLS
 
 Les rôles cluster `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` et
-`libre_ai_tombstone_guard` sont préprovisionnés `NOLOGIN`, sans superuser ni
-`BYPASSRLS`. Les migrations produit vérifient leur présence mais ne les créent
-pas. Les identités de connexion n'héritent que du rôle nécessaire et utilisent
-des pools physiquement séparés.
+`libre_ai_tombstone_guard` sont préprovisionnés `NOLOGIN NOSUPERUSER NOINHERIT
+NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0`, sans
+configuration de rôle ni membership sortant. Les migrations produit vérifient
+leur présence mais ne les créent pas. Les trois identités de connexion sont
+`LOGIN NOSUPERUSER NOINHERIT NOCREATEROLE NOCREATEDB NOREPLICATION
+NOBYPASSRLS`, chacune membre sans admin option de son seul rôle nécessaire,
+avec une limite de connexion positive bornée et sans ownership applicatif.
+Elles utilisent des pools physiquement séparés.
 
 Toute transaction organization-scoped exécute un `SET LOCAL ROLE` littéral et
 un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par

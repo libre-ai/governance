@@ -39,7 +39,7 @@
   `read committed`; restore alone uses `REPEATABLE READ` after writers are
   fenced.
 - Every organization transaction uses literal `SET LOCAL ROLE` plus `set_config('app.tenant_id', $1, true)`. Every organization table has `ENABLE` and `FORCE ROW LEVEL SECURITY`.
-- `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` and `libre_ai_tombstone_guard` are `NOLOGIN NOSUPERUSER NOBYPASSRLS`. Product migrations assert roles exist but never create them.
+- `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` and `libre_ai_tombstone_guard` are `NOLOGIN NOSUPERUSER NOINHERIT NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0`, have null `rolvaliduntil`, empty `rolconfig` and no outbound membership. Product migrations assert roles exist but never create them. The three connection identities are `LOGIN` but otherwise non-privileged/`NOINHERIT`, have explicit bounded connection limits and credential-policy expiry, and each has exactly one non-admin membership in its matching role.
 - Restore is pre-open-only and internally batch-bounded; one public reconciliation call processes every page inside one repeatable-read transaction. It has no append, export, update, schema or application capability.
 - Restore additionally requires an authenticated deletion-registry fact whose locally recomputed row count/digest match, whose coverage reaches an authoritative fence over every run/tombstone mutator including retention expiry, and whose execution snapshot is no older than `P35D`; zero residual lineages alone is never an opening proof.
 - Restore registry verification and per-run indexed tombstone lookup have the
@@ -461,7 +461,7 @@ git commit -s -m "Add bounded run-store domain types"
 
 - [ ] **Step 1: Write the red schema test**
 
-Assert exactly seven product tables in schema `orchestrator_run`; `relrowsecurity && relforcerowsecurity` for the six organization tables and for the content-free tombstone table; every role has login/superuser/bypass flags false; and grants match the design. Include `run_retention_facts` and `run_lifecycle` in exact RLS, trigger and privilege assertions. The integration-only migration ledger lives in distinct schema `orchestrator_run_test_support` and is excluded from the product-table count. Also prove migration refusal when a role or `pgcrypto` is absent.
+Assert exactly seven product tables in schema `orchestrator_run`; `relrowsecurity && relforcerowsecurity` for the six organization tables and for the content-free tombstone table; every capability role and connection identity matches the design's exact login, superuser, inherit, create-role, create-database, replication, bypass-RLS, connection-limit, validity, role-config and membership matrix; and grants match the design. Include `run_retention_facts` and `run_lifecycle` in exact RLS, trigger and privilege assertions. The integration-only migration ledger lives in distinct schema `orchestrator_run_test_support` and is excluded from the product-table count. Also prove migration refusal when a role or `pgcrypto` is absent.
 
 - [ ] **Step 2: Build the local PostgreSQL wrapper**
 
@@ -494,7 +494,7 @@ even if a later edit accidentally re-enables one. Local `trust` is confined to
 the mode-0700 random socket directory. Add wrapper-source assertions for all
 three properties and a negative fixture that removes each one in turn.
 
-Bootstrap one synthetic database, `pgcrypto`, the four global no-login roles and three login identities, each a member of exactly one connection role. Export percent-encoded Unix-socket app/retention/restore URLs only to the child command after `--`.
+Bootstrap one synthetic database, `pgcrypto`, the four global capability roles and three login identities with every attribute explicit: capability roles use `NOLOGIN NOSUPERUSER NOINHERIT NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0`; login identities use the same negative attributes except `LOGIN`, an explicit positive connection limit and a synthetic fixed expiry. Set no role configuration. Each login identity is a member of exactly its matching app/retention/restore role without admin option, no identity can assume guard, and no capability role has outbound membership. Export percent-encoded Unix-socket app/retention/restore URLs only to the child command after `--`.
 
 - [ ] **Step 3: Prove red against absent migrations**
 
@@ -1008,7 +1008,9 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 ### Task 13: Document the bounded capability and rollback
 
-**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`, `.github/workflows/ci.yml`, run-capability test; create `verification/agent-orchestrator/review-evidence.test.ts`.
+**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`,
+`.github/workflows/ci.yml`, `package.json`, run-capability test; create
+`verification/agent-orchestrator/review-evidence.test.ts`.
 
 **Interfaces:**
 - Consumes: measured behavior and exact Governance SHA.
@@ -1016,7 +1018,15 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and all four production blockers: `O(n)` replay, globally disabled unified diagnostics, absent remote TLS and unproven target role provisioning. Require the future target-side provider attestation or a separately authorized compatible EU provider before production. The capability gate gets fixtures proving that the current local review does not require provider attestation and remains green while explicitly non-production, but any production-ready claim without that evidence is red. Its future provider-proof fixture must reject incomplete ACL visibility, unexpected object ownership and a forbidden extra column grant even when table/routine grants and memberships match. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes.
+Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and all four production blockers: `O(n)` replay, globally disabled unified diagnostics, absent remote TLS and unproven target role provisioning. Require the future target-side provider attestation or a separately authorized compatible EU provider before production. The capability gate gets fixtures proving that the current local review does not require provider attestation and remains green while explicitly non-production, but any production-ready claim without that evidence is red. Its future provider-proof fixtures must reject incomplete ACL visibility, unexpected object ownership, a forbidden extra column grant, a capability role with `CREATEROLE`, a forbidden database owner through `pg_database.datdba` and a forbidden extension owner through `pg_extension.extowner`, even when the other attributes, grants and memberships match. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes.
+
+Before implementation, the run-capability test parses `package.json` and
+requires the exact script
+`"check:run-review-evidence": "bun run check:bun:runtime && bun test verification/agent-orchestrator/review-evidence.test.ts"`
+and one invocation of `bun run check:run-review-evidence` from the blocking
+`check` chain. A fixture removing either the script or its chain invocation is
+red; CI's existing `bun run check` is not assumed to discover arbitrary Bun
+test files.
 
 The same gate gets red content fixtures before implementation. It must scan every tracked UTF-8 byte of the dossier, without inheriting the repository secret scanner's `docs/reviews` exclusion. Put distinct synthetic credential, personal-data and POSIX and Windows absolute machine paths into `benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`; each case must fail. JSON/JCS fixtures additionally encode the canaries with Unicode escapes and nested arrays/objects. Add nested duplicate properties, escape-equivalent property names and an overwritten first value containing a fully escaped path canary; each must fail in the temporary-directory, staged-blob and historical-`E` adapters of the same validator. Invalid UTF-8, an unknown extension or a file outside the exact allow-list also fails. Run the Bun tests and require failure against current docs/missing gate.
 
@@ -1049,11 +1059,17 @@ decodes every file as strict UTF-8. It scans the raw decoded contents for
 credential markers, personal data and POSIX and Windows absolute machine paths.
 For every JSON/JCS file, it parses the document, emits its byte-for-byte RFC 8785 representation and requires those canonical bytes to equal the original bytes before trusting the parsed value. This fail-closed comparison must reject duplicate object names after decoding, including escape-equivalent names, because a parser-collapsed representation cannot equal the original. Only after that comparison passes may the validator recursively scan every decoded JSON string, including keys, so escape sequences cannot bypass the raw scan. No file, review role, extension or evidence directory receives an exemption. The same pure validator supports a content-only mode over staged Git blobs before `E` is created; the historical evidence gate reruns it over the exact blobs at `E`.
 
+Add the dedicated `check:run-review-evidence` script to `package.json` and
+invoke it from `check` before freezing `I`. The test target passes with the
+criterion still `pending`; after `E`, the same command resolves and validates
+the unique historical transition. Both modes fail closed when their required
+Git objects are unavailable.
+
 - [ ] **Step 3: Prove green and commit**
 
-Run the documentation assertion, `bun run check`, and the exact serial debug
-and release PostgreSQL workspace commands from Task 12. Commit as `Document
-bounded run-control persistence`.
+Run the documentation assertion, `bun run check:run-review-evidence`, `bun run
+check`, and the exact serial debug and release PostgreSQL workspace commands
+from Task 12. Commit as `Document bounded run-control persistence`.
 
 ### Task 14: Build the immutable review dossier
 
@@ -1077,11 +1093,13 @@ reject secrets, personal data and absolute machine paths, then retain those
 exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical
 JCS and records `I` and, for each stable id, the exact non-secret argv array,
 exit code zero, relative output path and lowercase SHA-256 of the tracked
-normalized bytes. It must contain `cargo-doc-quiet` and
-`postgres-tests-release`; the latter proves release execution of the
-dev-unified `tracing/log-always` graph on `I`. The evidence gate rehashes every
-file, rejects missing/unreferenced outputs and requires each review to cite the
-stable command ids it consumed. The eventual dossier directory uses seven SHA
+normalized bytes. It must contain `cargo-doc-quiet`,
+`postgres-tests-release` and `run-review-evidence`; the last stable id captures
+`bun run check:run-review-evidence`. The release command proves execution of the
+dev-unified `tracing/log-always` graph on `I`; the evidence command proves the
+gate is present and green in pending mode on `I`. The evidence gate rehashes
+every file, rejects missing/unreferenced outputs and requires each review to
+cite the stable command ids it consumed. The eventual dossier directory uses seven SHA
 characters; every verdict and the manifest name full `I`, while benchmark CSV
 and normalized command bytes are bound indirectly by their manifest path and
 SHA-256 and are never mutated merely to inject `I`. The four review verdicts

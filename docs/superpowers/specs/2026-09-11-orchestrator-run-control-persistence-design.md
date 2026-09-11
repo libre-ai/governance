@@ -276,23 +276,49 @@ Cloud cannot produce that proof, a compatible EU PostgreSQL provider must be
 selected and authorized separately; changing provider does not weaken the role
 model.
 
-The non-secret attestation report must query `pg_roles.rolcanlogin`,
-`pg_roles.rolsuper`, `pg_roles.rolbypassrls` and the other reviewed role
-attributes; `pg_auth_members` for exact memberships; ownership and raw ACLs
-through `pg_namespace.nspowner`/`nspacl`, `pg_class.relowner`/`relacl`,
-`pg_attribute.attacl`, `pg_proc.proowner`/`proacl`, `pg_database.datacl` and
-`pg_default_acl`; and `pg_extension` for `pgcrypto`. It cross-checks table,
-column and routine grants through `information_schema.table_privileges`,
+The non-secret attestation report must query the explicit role matrix below:
+`pg_roles.rolcanlogin`, `pg_roles.rolsuper`, `pg_roles.rolinherit`,
+`pg_roles.rolcreaterole`, `pg_roles.rolcreatedb`,
+`pg_roles.rolreplication`, `pg_roles.rolbypassrls`,
+`pg_roles.rolconnlimit`, `pg_roles.rolvaliduntil` and `pg_roles.rolconfig`. It
+reads `pg_auth_members` for exact inbound
+and outbound memberships and absence of an admin option. Ownership and raw ACLs
+come from `pg_namespace.nspowner`/`nspacl`,
+`pg_class.relowner`/`relacl`, `pg_attribute.attacl`,
+`pg_proc.proowner`/`proacl`, `pg_database.datdba`/`datacl`,
+`pg_extension.extowner` and `pg_default_acl`; `pg_extension` also proves
+`pgcrypto` presence. It cross-checks table, column and routine grants through
+`information_schema.table_privileges`,
 `information_schema.column_privileges` and
 `information_schema.routine_privileges`, after first proving that the audit
 identity can see the complete relevant ACL set. Effective positive and
 negative checks include `has_table_privilege`, `has_column_privilege`,
-`has_function_privilege`, `has_schema_privilege` and database privileges for
-every application identity and assumable role. The report fails closed when
-ACL visibility is incomplete, ownership is unexpected, or any privilege is
-missing or additional. It records no login secret or provider account
-identifier and binds the provider-authorized provisioning reference plus
-target configuration revision.
+`has_function_privilege`, `has_schema_privilege` and
+`has_database_privilege` for every application identity and assumable role.
+The report fails closed when ACL visibility is incomplete, ownership is
+unexpected, or any attribute, membership or privilege is missing or
+additional. It records no login secret or provider account identifier and
+binds the provider-authorized provisioning reference plus target configuration
+revision.
+
+The exact principal matrix is:
+
+- each of `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` and
+  `libre_ai_tombstone_guard` has `NOLOGIN NOSUPERUSER NOINHERIT NOCREATEROLE
+  NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0`, null
+  `rolvaliduntil`, empty `rolconfig` and no outbound role membership;
+- the deployment-bound app, retention and restore connection identities each
+  have `LOGIN NOSUPERUSER NOINHERIT NOCREATEROLE NOCREATEDB NOREPLICATION
+  NOBYPASSRLS`, an explicit positive `rolconnlimit` no greater than their
+  reviewed pool limit, the exact `rolvaliduntil` fixed by the separately
+  authorized credential policy, empty `rolconfig`, and exactly one membership
+  in their matching capability role without admin option;
+- no connection identity owns any database, extension, schema, relation,
+  column, sequence or routine. None receives a direct object grant beyond the
+  exact database connection boundary. The schema owner/migrator owns the
+  schema and ordinary objects, the guard role owns only its exact reviewed
+  closed routines, and the target configuration names the expected
+  non-application owners for the database and `pgcrypto` extension.
 
 These choices preserve a standard, replaceable PostgreSQL/JCS boundary and add
 no US hyperscaler or proprietary control plane.

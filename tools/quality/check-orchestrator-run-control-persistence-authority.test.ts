@@ -401,12 +401,29 @@ describe("orchestrator run-control persistence authority", () => {
     expect(design).toContain("information_schema.routine_privileges");
     expect(design).toContain("pg_attribute.attacl");
     expect(design).toContain("pg_class.relowner");
+    expect(design).toContain("pg_database.datdba");
+    expect(design).toContain("pg_extension.extowner");
     expect(design).toContain("has_column_privilege");
+    expect(design).toContain("has_database_privilege");
+    expect(design).toContain("rolcreaterole");
+    expect(design).toContain("rolcreatedb");
+    expect(design).toContain("rolreplication");
+    expect(design).toContain("rolinherit");
+    expect(design).toContain("rolconfig");
+    expect(adr).toContain("NOCREATEROLE");
     expect(design).toContain("pg_extension");
     expect(implementationPlan).toContain("forbidden extra column grant");
+    expect(implementationPlan).toContain("forbidden database owner");
+    expect(implementationPlan).toContain("forbidden extension owner");
+    expect(implementationPlan).toContain("CREATEROLE");
     expect(implementationPlan).toContain(
       "current local review does not require provider attestation",
     );
+    expect(implementationPlan).toContain('"check:run-review-evidence"');
+    expect(implementationPlan).toContain(
+      "bun test verification/agent-orchestrator/review-evidence.test.ts",
+    );
+    expect(implementationPlan).toContain("run-review-evidence");
     expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");
