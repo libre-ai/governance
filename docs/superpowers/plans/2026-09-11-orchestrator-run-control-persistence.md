@@ -15,16 +15,37 @@
 - Decision order is Security, Quality, Performance, Completeness.
 - Governance ADR-0039/D45 must be merged and verified on `main` before the Orchestrator implementation worktree is created.
 - This is a bounded first slice of existing `WP-G3-O01`; do not create an overlapping work package or claim the complete runtime package.
+- The accepted `WP-G3-O02` pure core is a mandatory dependency. Verify its
+  accepted evidence, exact current implementation pin and unchanged public API
+  before implementation; do not add accessors for private replay state.
+- This non-executing persistence slice alone may begin while Harness delivery
+  is still pending. WP-G3-H01 remains a prerequisite for every later slice and
+  for completion of `WP-G3-O01`; no Harness import, worker invocation, service
+  or effect is allowed here.
 - The root `libre-ai-agent-orchestrator` crate and its public API remain unchanged; the new crate consumes its existing parsing and whole-chain replay functions.
 - Contracts remains sole wire/retention authority. Store RFC 8785 event bytes as execution replay authority and bounded immutable retention observations as local lifecycle replay evidence; neither relational projection nor the observation journal selects policy.
+- `runs` stores only mechanically extracted immutable bindings and the current
+  event head. It stores no replay phase, generation-derived state or current
+  budget counters; `budget_ledger` mechanically copies validated event fields
+  and never becomes a second reducer.
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
 - The library reads no environment, file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`.
 - Pin every dependency exactly. SQLx uses only `runtime-tokio`, `tls-rustls-ring-native-roots`, `postgres`, `json` and `chrono`; no macros, embedded migrations, SQLite or MySQL.
-- App, retention and restore use separate connection identities and pools. Every returned connection executes `DISCARD ALL`; scrub failure discards it.
+- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()`. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- Every live app/retention writer explicitly begins at `READ COMMITTED` before
+  role/context setup. Guard functions and the anti-resurrection trigger are
+  `VOLATILE` and refuse unless `current_setting('transaction_isolation')` is
+  `read committed`; restore alone uses `REPEATABLE READ` after writers are
+  fenced.
 - Every organization transaction uses literal `SET LOCAL ROLE` plus `set_config('app.tenant_id', $1, true)`. Every organization table has `ENABLE` and `FORCE ROW LEVEL SECURITY`.
 - `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` and `libre_ai_tombstone_guard` are `NOLOGIN NOSUPERUSER NOBYPASSRLS`. Product migrations assert roles exist but never create them.
 - Restore is pre-open-only and internally batch-bounded; one public reconciliation call processes every page inside one repeatable-read transaction. It has no append, export, update, schema or application capability.
 - Restore additionally requires an authenticated deletion-registry fact whose locally recomputed row count/digest match, whose coverage reaches an authoritative fence over every run/tombstone mutator including retention expiry, and whose execution snapshot is no older than `P35D`; zero residual lineages alone is never an opening proof.
+- Restore registry verification and per-run indexed tombstone lookup have the
+  honest decision bound `O(tombstones + runs * log(tombstones))`; including
+  physical cascade deletion, total restore is
+  `O(tombstones + runs * log(tombstones) + purged_rows)`. Client memory remains
+  bounded by one validated page and whole-registry hash joins are refused.
 - Public errors and `Debug`/`Display` reveal constant codes or aggregate counts only: never SQL, connection data, identifiers, digests, documents, paths or rejected values.
 - Tests use synthetic identifiers only and fail, never skip, when PostgreSQL is absent.
 - Strict red-green-refactor applies to non-trivial logic. Coverage remains blocking at 87% lines and 90% functions; formatting, Clippy `-D warnings`, tests, dependency policy and Bun gates remain green.
@@ -41,17 +62,28 @@
 - Modify `docs/decisions/DECISION-REGISTER.md` with D45.
 - Prepare the approved design status on the ADR branch; it takes effect as authority only after ADR merge.
 - Create `tools/quality/check-orchestrator-run-control-persistence-authority.test.ts`.
-- Keep `docs/transformation/work-packages.v1.json` byte-identical: existing `WP-G3-O01` alone owns `crates/agent-orchestrator-run/**`.
+- Modify `docs/transformation/work-packages.v1.json` to add `WP-G3-O02` as an
+  O01 dependency, prospectively transfer the six exact shared Orchestrator
+  support paths O02 owned, and assign the exact CI workflow path to O01 for the
+  first time under the satellite rule.
+- Modify `tools/quality/check-authorized-execution-native-core-authority.test.ts`
+  so the O02 gate binds the remaining pure-core paths after that transfer.
+- Apply the ADR-0020 satellite precedence rule: broad historical paths still
+  recorded under completed `WP-G2-T01`, `WP-G2-Q01` and `WP-G2-A01` are not
+  concurrent Orchestrator satellite authority. No branch for those packages or
+  O02 may touch an O01 transferred path while this slice is active.
 
 ### Orchestrator
 
-- Modify `Cargo.toml`, `Cargo.lock`, `package.json`, `bun.lock` and `.github/workflows/ci.yml`.
+- Modify `Cargo.toml`, `Cargo.lock`, `package.json` and `.github/workflows/ci.yml`.
 - Create `crates/agent-orchestrator-run/Cargo.toml`.
 - Create `src/{lib,error,ids,cursor,pool,event,store,lifecycle,restore}.rs` in that crate.
 - Create `migrations/0001_run_control.sql` and `0002_deletion_barrier.sql` in that crate.
 - Create `tests/domain.rs`, one serial `tests/postgres.rs`, focused `tests/postgres/*.rs`, and `tests/support/*.rs`.
 - Create `benches/postgres_persistence.rs` and `tests/compat/{public_surface,stable_codes}.snapshot` plus `tests/compat_surface.rs`.
-- Create `verification/agent-orchestrator/check-run-capabilities.ts`, `run-capability-boundary.test.ts` and `with-postgres.sh`.
+- Create `verification/agent-orchestrator/check-run-capabilities.ts`,
+  `run-capability-boundary.test.ts`, `with-postgres.sh`,
+  `benchmark-memory.sh` and `review-evidence.test.ts`.
 - Modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml` and `tools/quality/rust-coverage-gate.test.ts`.
 - Create `docs/reviews/orchestrator-run-control-persistence/$REVIEW_SHORT/` only after computing the seven-character immutable implementation SHA.
 
@@ -74,7 +106,7 @@ pub struct TombstoneExpiryBatchSize(NonZeroU16);
 pub struct PageMeta { pub next_cursor: Option<String> }
 pub struct Page<T> { pub data: Vec<T>, pub meta: PageMeta }
 
-pub struct RunSnapshot { run_id: RunId, head_sequence: u64, phase: RunPhase, retention_until: DateTime<Utc> }
+pub struct RunSnapshot { run_id: RunId, head_sequence: u64, head_event_digest: Digest, retention_until: DateTime<Utc> }
 pub struct StoredEvent { sequence: u64, canonical_jcs: Vec<u8> }
 pub struct BudgetMovement { sequence: u64, delta: [u64; 7], total: [u64; 7] }
 pub struct AttestationReference { sequence: u64, kind: ReferenceKind, id: String, digest: Digest, media_type: String }
@@ -87,7 +119,6 @@ pub struct SweepOutcome { pub inspected: u16, pub deleted: u16, pub meta: PageMe
 pub struct TombstoneExpiryOutcome { pub deleted: u16 }
 pub struct RestoreOutcome { pub processed: u64, pub deleted: u64, pub remaining: u64 }
 
-pub enum RunPhase { Ready, Authorized, InvocationStarted, DecisionRequested, EffectReserved, EffectStarted, EffectTerminal, Sealed, Transferred, Blocked, Completed, Quarantined }
 pub enum ReferenceKind { Graph, Authorization, Invocation, Result, DecisionRequest, DecisionResponse, Lifecycle, ExecutionTransfer }
 
 pub struct RunStore { pool: PgPool, registry: ContractRegistry }
@@ -129,15 +160,18 @@ All request values have validating constructors; their fields remain private. Re
 - Create: `docs/adr/0039-orchestrator-run-control-persistence.md`
 - Modify: `docs/decisions/DECISION-REGISTER.md`
 - Modify: `docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md`
-- Verify unchanged: `docs/transformation/work-packages.v1.json`
+- Modify: `docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md`
+- Modify: `docs/transformation/work-packages.v1.json`
+- Modify: `tools/quality/check-authorized-execution-native-core-authority.test.ts`
 
 **Interfaces:**
 - Consumes: approved design and locked `WP-G3-O01`.
 - Produces: ADR-0039/D45 persistence authority; no runtime authority before merge.
 
-- [ ] **Step 1: Record the work-package digest and write the failing gate**
+- [ ] **Step 1: Write the failing authority and ownership gates**
 
-Run `sha256sum docs/transformation/work-packages.v1.json`, then create a Bun test with:
+Create a Bun test that binds the exact prospective file map and dependency
+split:
 
 ```ts
 expect(hasExpectedAdrTitle(adr)).toBeTrue();
@@ -145,14 +179,26 @@ expect(hasSingleD45Entry(register)).toBeTrue();
 expect(register).toContain("| D45 | Run-control persistence is isolated and non-executing");
 expect(design).toContain("authority ADR-0039/D45");
 const wp = plan.packages.find((entry) => entry.id === "WP-G3-O01");
-expect(wp?.writePaths).toEqual(["crates/agent-orchestrator-run/**"]);
+expect(wp?.dependsOn).toEqual([
+  "WP-G2-Q01", "WP-G2-D01", "WP-G2-A01", "WP-G3-H01", "WP-G3-O02",
+]);
+expect(wp?.writePaths).toEqual(expectedRunControlWritePaths);
 expect(wp?.definitionStatus).toBe("locked");
 expect(findRunControlOwners(plan).map((entry) => entry.id)).toEqual(["WP-G3-O01"]);
 ```
 
-The owner finder uses `Bun.Glob`, explicit child-prefix detection and a fail-closed static-prefix check for globs that can descend into the target. The canonical root, recursive parent `crates/**`, wildcard patterns such as `crates/agent-*/Cargo.toml`, `crates/*/src/**` and `**/*.rs`, global `**` and every child path therefore overlap. Synthetic negative cases must identify each competing owner while excluding a sibling crate.
+The exact O01 list contains the new crate, six shared support paths transferred
+from O02, one newly assigned exact CI path, its review dossier, the Rust
+coverage gate and its five named
+verification files. Update the existing O02 authority gate to remove only
+those transferred paths; `bun.lock`, root pure `src/**`, tests, compatibility
+and O02 evidence remain O02-owned. The two tests together must fail if a path
+is duplicated, missing or assigned through a broader glob.
 
-Run `bun test tools/quality/check-orchestrator-run-control-persistence-authority.test.ts` and require failure because ADR-0039/D45 are absent.
+The owner finder uses `Bun.Glob`, explicit child-prefix detection and a fail-closed static-prefix check for globs that can descend into the target. The canonical root, recursive parent `crates/**`, wildcard patterns such as `crates/agent-*/Cargo.toml`, `crates/*/src/**` and `**/*.rs`, global `**` and every child path therefore overlap. Synthetic negative cases must identify each competing owner while excluding a sibling crate. The Orchestrator implementation gate must later compare every changed path against the exact WP-G3-O01 writePaths, not only the crate subtree.
+
+Run both focused authority tests and require failure before the ADR, dependency
+and path transfer are applied.
 
 - [ ] **Step 2: Write ADR-0039 and D45**
 
@@ -171,12 +217,15 @@ The non-authority paragraph names service, Biscuit, Missions, Harness, worker, e
 
 - [ ] **Step 3: Make the gate green and commit**
 
-Set the design status to `approved for implementation — owner, 2026-09-11; authority ADR-0039/D45`. Run the focused test, `bun run check`, and recheck the work-package digest. Then:
+Set the design status to `approved for implementation — owner, 2026-09-11; authority ADR-0039/D45`. Run both focused tests and `bun run check`. Then:
 
 ```bash
 git add docs/adr/0039-orchestrator-run-control-persistence.md docs/decisions/DECISION-REGISTER.md \
   docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md \
-  tools/quality/check-orchestrator-run-control-persistence-authority.test.ts
+  docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md \
+  docs/transformation/work-packages.v1.json \
+  tools/quality/check-orchestrator-run-control-persistence-authority.test.ts \
+  tools/quality/check-authorized-execution-native-core-authority.test.ts
 git commit -s -m "Authorize orchestrator run-control persistence"
 ```
 
@@ -190,7 +239,12 @@ git commit -s -m "Authorize orchestrator run-control persistence"
 
 - [ ] **Step 1: Run role-separated doctrine review**
 
-Review exact authority uniqueness, unchanged pure core, persistence-only capability, unchanged/unique `WP-G3-O01`, `O(n)` production block, least-privilege restore and absent framework checkpoint. Any Blocking/Major finding invalidates the SHA and returns to Task 1 with a regression assertion.
+Review exact authority uniqueness, unchanged pure-core code/API, the
+non-overlapping prospective O02→O01 support-path transfer, persistence-only
+capability, the narrow H01 dependency split, append `O(n)` production block,
+honest restore complexity, closed deletion function, least-privilege restore
+and absent framework checkpoint. Any Blocking/Major finding invalidates the
+SHA and returns to Task 1 with a regression assertion.
 
 - [ ] **Step 2: Push, open the Governance PR and verify CI**
 
@@ -203,13 +257,14 @@ Restate that merge creates persistence authority but no service/effect/deploymen
 ### Task 3: Create the isolated Orchestrator workspace boundary
 
 **Files:**
-- Modify: `Cargo.toml`, `Cargo.lock`, `package.json`, `bun.lock`
+- Modify: `Cargo.toml`, `Cargo.lock`, `package.json`
 - Create: `crates/agent-orchestrator-run/Cargo.toml`, `crates/agent-orchestrator-run/src/lib.rs`
 - Create: `verification/agent-orchestrator/check-run-capabilities.ts`
 - Create: `verification/agent-orchestrator/run-capability-boundary.test.ts`
 
 **Interfaces:**
-- Consumes: merged Governance SHA and unchanged root crate 0.2.0.
+- Consumes: merged Governance SHA, accepted O02 implementation/evidence and
+  unchanged root crate 0.2.0 public API.
 - Produces: compilable run crate and exact capability gate.
 
 - [ ] **Step 1: Create the worktree only after authority merge**
@@ -224,6 +279,21 @@ cd ../../libre-ai-worktrees/orchestrator-run-control-persistence
 
 Verify clean status and personal GitHub identity.
 
+Before editing, resolve the current Orchestrator `main`, verify the accepted
+O02 implementation/evidence objects and confirm that its public replay state
+still exposes at least sequence and event digest. Record those exact SHAs in
+the review evidence. Check current Harness `main` without treating H01 as
+satisfied: this slice may proceed while it is pending, but refuse immediately
+if the planned diff imports Harness or opens any later O01 capability.
+
+Concretely, locate the unique phase `native-authorized-execution` in
+`project.v1.yaml`, then its unique `immutable-role-review` criterion. Require
+that criterion to be `accepted`, parse the full implementation SHA from its
+`evidence.reference`, require that object and named dossier to exist, require
+the SHA to be an ancestor of fetched Orchestrator `main`, then run the O02
+authority, compatibility and capability gates at that fetched head. A status
+string or historical Governance row alone is not delivery proof.
+
 - [ ] **Step 2: Write and run the red capability test**
 
 ```ts
@@ -234,7 +304,7 @@ expect(runSourceFailures("src/lib.rs", "std::fs::read(\"x\")")).toContain("capab
 expect(runSourceFailures("src/lib.rs", "std::env::var(\"DATABASE_URL\")")).toContain("capability-forbidden:src/lib.rs:environment");
 ```
 
-The scanner covers only production `src/**/*.rs` and forbids filesystem, process, arbitrary network, environment, wall-clock constructors, logs/tracing, HTTP/RPC, unsafe/FFI and framework names. Run the test and require failure because the crate/checker are absent.
+The scanner covers only production `src/**/*.rs` and forbids filesystem, process, arbitrary network, environment, wall-clock constructors, logs/tracing, HTTP/RPC, unsafe/FFI and framework names. It also loads the merged machine work-package map and compares every changed path against the exact WP-G3-O01 writePaths; any O02-owned or unlisted path fails. Run the test and require failure because the crate/checker are absent.
 
 - [ ] **Step 3: Add workspace and exact manifest**
 
@@ -293,7 +363,7 @@ bun run check:run-capabilities
 - [ ] **Step 5: Commit the boundary**
 
 ```bash
-git add Cargo.toml Cargo.lock package.json bun.lock crates/agent-orchestrator-run \
+git add Cargo.toml Cargo.lock package.json crates/agent-orchestrator-run \
   verification/agent-orchestrator/check-run-capabilities.ts \
   verification/agent-orchestrator/run-capability-boundary.test.ts
 git commit -s -m "Add isolated run-control persistence crate"
@@ -370,17 +440,29 @@ Use a validated `mktemp` directory and cleanup trap:
 ```bash
 set -euo pipefail
 pg_bin="$(pg_config --bindir)"
-major="$($pg_bin/postgres --version | sed -E 's/.* ([0-9]+).*/\1/')"
+major="$("$pg_bin/postgres" --version | sed -E 's/.* ([0-9]+).*/\1/')"
 test "$major" -ge 14
 cluster="$(mktemp -d)"
-tmp_root="${TMPDIR%/}"
+tmp_root="${TMPDIR:-/tmp}"
+tmp_root="${tmp_root%/}"
 case "$cluster" in "$tmp_root"/*) ;; *) exit 1 ;; esac
+case "$cluster" in *[!A-Za-z0-9_./-]*) exit 1 ;; esac
+chmod 700 "$cluster"
 socket="$cluster/socket"
-mkdir "$socket"
+mkdir -m 700 "$socket"
 trap '"$pg_bin/pg_ctl" -D "$cluster/data" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$cluster"' EXIT
-"$pg_bin/initdb" -D "$cluster/data" --auth=trust --no-locale >/dev/null
-"$pg_bin/pg_ctl" -D "$cluster/data" -o "-F -k $socket" -w start >/dev/null
+"$pg_bin/initdb" -D "$cluster/data" --auth-local=trust --auth-host=reject --no-locale >/dev/null
+"$pg_bin/pg_ctl" -D "$cluster/data" -o "-F -k '$socket' -c listen_addresses=''" -w start >/dev/null
+test "$("$pg_bin/psql" -h "$socket" -d postgres -Atqc 'SHOW listen_addresses')" = ""
+test "$("$pg_bin/psql" -h "$socket" -d postgres -Atqc \
+  "SELECT count(*) FROM pg_hba_file_rules WHERE type <> 'local' AND auth_method IS DISTINCT FROM 'reject'")" = "0"
 ```
+
+The empty `listen_addresses` assertion proves that this cluster owns no TCP
+listener; the `pg_hba_file_rules` assertion keeps every host rule fail-closed
+even if a later edit accidentally re-enables one. Local `trust` is confined to
+the mode-0700 random socket directory. Add wrapper-source assertions for all
+three properties and a negative fixture that removes each one in turn.
 
 Bootstrap one synthetic database, `pgcrypto`, the four global no-login roles and three login identities, each a member of exactly one connection role. Export percent-encoded Unix-socket app/retention/restore URLs only to the child command after `--`.
 
@@ -395,7 +477,7 @@ Require failure because `orchestrator_run.runs` is absent.
 
 - [ ] **Step 4: Implement the run-control migration**
 
-Create `runs`, `run_events`, `run_retention_facts`, `run_lifecycle`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns, 32-byte digest checks, sequence/generation range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. `attestation_refs` uses the total primary key `(tenant_id,run_id,sequence,kind,id,digest)`. `run_retention_facts` is append-only with primary key `(tenant_id,run_id,observed_at)` and an explicit digest comparison for idempotency/conflict; `run_lifecycle` is its disposable current projection. Index `(tenant_id,run_id,sequence,event_digest)`, the reference order key, `run_lifecycle(tenant_id,retention_until,run_id)` and tombstones `(expires_at,subject_digest)`.
+Create `runs`, `run_events`, `run_retention_facts`, `run_lifecycle`, `budget_ledger` and `attestation_refs`. Use composite `(tenant_id, run_id)` keys, seven nonnegative checked budget delta/total columns only in `budget_ledger`, 32-byte digest checks, sequence range 1..1,000,000,000 and `canonical_jcs` byte length 1..65,536. `runs` stores only mechanically extracted immutable bindings, creation/last-event instants and head sequence/digest; it has no phase, readiness, completion, quarantine, active generation or current budget columns. `run_events` is unique on `(tenant_id,event_id)`, foreign-keyed to runs with cascade, append-only by grant and update trigger. Every budget row binds the same event sequence and digest and copies only schema-validated event fields; SQL never derives budget policy. `attestation_refs` uses the total primary key `(tenant_id,run_id,sequence,kind,id,digest)`. `run_retention_facts` is append-only with primary key `(tenant_id,run_id,observed_at)` and an explicit digest comparison for idempotency/conflict; `run_lifecycle` is its disposable current projection. Index `(tenant_id,run_id,sequence,event_digest)`, the reference order key, `run_lifecycle(tenant_id,retention_until,run_id)` and tombstones `(expires_at,subject_digest)`.
 
 Every organization table uses:
 
@@ -407,9 +489,9 @@ CREATE POLICY runs_organization ON orchestrator_run.runs
   WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), ''));
 ```
 
-Grant app only column-scoped `UPDATE` on the mutable execution fields of `runs`, plus the exact organization-scoped reads/inserts needed for append. Grant app and retention `UPDATE` only on the retention years, deadline, latest observation instant and fact digest in `run_lifecycle`; grant the exact `SELECT`/`INSERT` needed on `run_retention_facts`. Retention receives per-organization lifecycle reads/deletes and no `UPDATE` on `runs`; no role receives table-wide `UPDATE` on either projection. All app/retention writers lock `run_lifecycle` before touching a lineage. The `runs` projection stores all seven checked budget totals, excludes lifecycle fields and rejects every update after closure. Lifecycle identity/mission columns are immutable by grants and trigger.
+Grant app only column-scoped `UPDATE` on the mutable mechanical head and last-event fields of `runs`, plus the exact organization-scoped reads/inserts needed for append. Grant app and retention `UPDATE` only on the retention years, deadline, latest observation instant and fact digest in `run_lifecycle`; grant the exact `SELECT`/`INSERT` needed on `run_retention_facts`. Retention receives per-organization lifecycle reads and no raw `UPDATE` or `DELETE` on `runs`; no role receives table-wide `UPDATE` on either projection. All app writers and guard-owned deletion calls lock `run_lifecycle` before touching a lineage. `runs` identity/binding/creation columns are immutable by grants and trigger. Lifecycle identity/mission columns are likewise immutable.
 
-Add deferred constraint triggers on run insert/update and event/ledger insert. At commit they require the run head sequence/digest and all seven totals to match the immutable head event/ledger row. This permits the store's tentative first row inside one transaction but rejects direct projection mutation or an event committed without its ledger.
+Add deferred constraint triggers on run insert/update and event/ledger insert. At commit they require the run head sequence/digest to match the maximum immutable event and every ledger row to bind its same immutable event sequence/digest. This permits the store's tentative first row inside one transaction but rejects direct head mutation, an event committed without its ledger or a ledger detached from its event.
 
 Add append-only triggers to `run_retention_facts` that acquire the referenced `run_lifecycle` row lock, recompute the versioned mission-id/years/Unix-microseconds digest, bind the mission to the run and reject an observation older than the newest immutable fact. Add deferred triggers on fact insert and lifecycle insert/update requiring the latest fact and projection instant/digest/years/deadline to agree at commit. Prove direct fact-only, lifecycle-only, stale, digest-divergent and identity-changing writes all fail, including a multi-statement attempt that temporarily rewinds then restores the lifecycle projection around a stale insert.
 
@@ -421,13 +503,22 @@ CREATE TABLE orchestrator_run.execution_deletion_tombstones (
   receipt_digest bytea NOT NULL CHECK (octet_length(receipt_digest) = 32),
   deleted_at timestamptz NOT NULL,
   expires_at timestamptz NOT NULL,
-  CHECK (expires_at = deleted_at + interval '35 days')
+  CHECK (expires_at = deleted_at + interval '840 hours')
 );
 ```
 
-Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. Guard-owned security-definer functions with fixed safe `search_path` record/compare one tombstone from `current_setting('app.tenant_id')` plus bound run/receipt/time; grant execution only to retention and return a closed boolean/outcome, never a row. The same guard owns the anti-resurrection trigger and a separate bounded expiration function. Revoke all guard functions from public/app/restore. Retention has no raw tombstone insert/select/update/delete privilege; it receives `EXECUTE` only on the narrow record/compare/expire functions. Restore gets content-free select plus cross-organization run select/delete policies only. Guard gets only tombstone `SELECT`/`INSERT` and `DELETE` under a policy requiring `expires_at <= transaction_timestamp()`, never `UPDATE`; its expiration function also requires bound injected time, order `(expires_at,subject_digest)` and batch size without `RETURNING`. No connection identity receives guard membership.
+`P35D` is an exact elapsed duration, not a calendar-day operation. Every
+tombstone computation and guard check uses `interval '840 hours'`, independent
+of the session `TimeZone`; mission retention years remain a separate UTC
+calendar operation. Fixed Rust/PostgreSQL vectors cover Europe/Paris spring
+and autumn DST boundaries and rerun after poisoning the pooled session
+timezone.
 
-Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert/expired-delete and restore's content-free scan; app/retention have no raw table policy or privilege. Test guard insert and expired delete separately from forbidden update/early delete, direct retention access and function escalation; prove that table ownership alone cannot bypass the policy boundary.
+Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. A guard-owned `SECURITY DEFINER VOLATILE lock_lineage(run_id)` with fixed safe `search_path` derives the subject from `current_setting('app.tenant_id')`, refuses unless `current_setting('transaction_isolation') = 'read committed'`, and calls `pg_advisory_xact_lock` on its first signed 64 bits. Grant execute only to app and retention; the `VOLATILE` anti-resurrection trigger invokes it before every tombstone lookup and applies the same isolation refusal. All live writers explicitly begin `READ COMMITTED`, call it as a distinct statement before any lineage read/insert, then lock `run_lifecycle` when present and `runs` last. In `READ COMMITTED`, the trigger's post-lock lookup obtains the fresh command snapshot required to see a deletion that committed while the lock waited; `REPEATABLE READ` and `SERIALIZABLE` live writes refuse rather than rely on stale-snapshot behavior. Hash collision may only over-serialize. Fixed Rust/PostgreSQL vectors bind the advisory key derivation.
+
+A guard-owned `SECURITY DEFINER` function named `delete_lineage_with_tombstone`, under the same fixed `search_path`, acquires that advisory lock, locks `run_lifecycle` when present, inserts or compares the bound run/receipt/time tombstone and only then deletes the organization-scoped run cascade in the same transaction. It returns a closed boolean/outcome, never a row; a divergent receipt fails before deletion. The same guard owns the anti-resurrection trigger and a separate bounded expiration function. Revoke the deletion and expiration functions from public/app/restore; revoke `lock_lineage` from public/restore. Retention has no raw insert/select/update/delete on tombstones and no raw `DELETE` on runs or dependent tables; it receives `EXECUTE` only on `lock_lineage`, `delete_lineage_with_tombstone` and the expiration function. Restore gets content-free tombstone select plus cross-organization run select/delete policies only. The guard lock-only grant is exact: organization-scoped `SELECT` plus `UPDATE(retention_until)` on `run_lifecycle` solely so `SELECT ... FOR UPDATE` is legal, with a schema-owner trigger that refuses any actual lifecycle value change under the guard role. Guard also receives `SELECT(tenant_id, run_id)` on `runs` for the targeted predicate and organization-scoped `DELETE` on `runs`; every other run column and operation is denied. It otherwise gets only tombstone `SELECT`/`INSERT` and tombstone `DELETE` under a policy requiring `expires_at <= transaction_timestamp()`, never tombstone `UPDATE`. Its expiration function also requires bound injected time, order `(expires_at,subject_digest)` and batch size without `RETURNING`. No connection identity receives guard membership.
+
+Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert/expired-delete and restore's content-free scan; app/retention have no raw table policy or privilege. Test the closed lineage-deletion function and guard expiry separately from forbidden tombstone update/early delete, an attempted guard-role lifecycle update, direct retention `DELETE` against runs/children/tombstones and function escalation; prove that table ownership alone cannot bypass the policy boundary. Establish a live transaction snapshot before a concurrent deletion, then prove the next `READ COMMITTED` post-lock lookup observes the tombstone and refuses resurrection. Repeat through direct SQL. Poison the session default to `REPEATABLE READ`, and explicitly try both `REPEATABLE READ` and `SERIALIZABLE`; every guard function/trigger must refuse before mutation.
 
 - [ ] **Step 6: Prove green and commit**
 
@@ -449,26 +540,32 @@ git commit -s -m "Add run-control PostgreSQL schema"
 
 - [ ] **Step 1: Write and run red pool tests**
 
-Use `max_connections=1`. Poison the sole session with a session-level GUC/role; cover success, callback error, task cancellation and backend termination during scrub. The next borrower receives a clean/new connection, never poison. Prove every wrong identity/store pair returns only `run-store.unavailable`.
+Use `max_connections=1`. Poison the sole session with a session-level GUC/role; cover success, callback error, task cancellation and backend termination during scrub. The next borrower receives a clean/new connection, never poison. Execute the same bound prepared query before and after checkout to catch a stale SQLx client-cache entry after server discard. Inject cache-clear and discard failures separately and prove each connection is destroyed. Build caller options with statement and slow-statement logging deliberately enabled, install a serialized test capture for the `sqlx::query` target, exercise all three stores and assert that no `db.statement` or SQL text is emitted after the store takes ownership. Prove every wrong identity/store pair returns only `run-store.unavailable`.
 
 - [ ] **Step 2: Construct private scrubbed pools**
 
 ```rust
+let options = options.disable_statement_logging();
+
 PgPoolOptions::new()
     .min_connections(0)
     .max_connections(limits.max_connections())
     .acquire_timeout(limits.acquire_timeout())
     .after_release(|connection, _| Box::pin(async move {
-        match sqlx::query("DISCARD ALL").execute(connection).await {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
+        if connection.clear_cached_statements().await.is_err() {
+            return Ok(false);
         }
+
+        Ok(sqlx::raw_sql("DISCARD ALL")
+            .execute(connection)
+            .await
+            .is_ok())
     }))
     .connect_with(options)
     .await
 ```
 
-Immediately probe session user membership, target role flags and absence of membership in the other connection roles. Close on mismatch. App/retention helpers use literal `SET LOCAL ROLE` then bound `set_config`; restore uses literal role only and accepts no organization.
+Immediately probe session user membership, target role flags and absence of membership in the other connection roles. Close on mismatch. App/retention helpers issue `BEGIN ISOLATION LEVEL READ COMMITTED` before literal `SET LOCAL ROLE` and bound `set_config`; restore uses `BEGIN ISOLATION LEVEL REPEATABLE READ`, literal role only and accepts no organization.
 
 `RunStore::connect` also constructs the embedded `ContractRegistry` once before returning. Registry construction failure closes the pool and maps to the constant internal error.
 
@@ -501,7 +598,7 @@ execution/lifecycle snapshot is byte-identical to the live projection.
 
 - [ ] **Step 2: Add red refusals/idempotency tests**
 
-Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Corrupt a different stored event through the admin test identity and prove that an otherwise exact duplicate refuses integrity failure rather than bypassing whole-chain replay. Every refusal compares all relation counts, the previous execution head and the previous lifecycle projection before/after. Also prove an unrecorded older retention observation refuses, an exact equal-instant observation is idempotent and an equal-instant divergent observation conflicts. After `append(E,F1)` then `apply_mission_retention(F2)`, retrying exact `E,F1` remains idempotent without reverting F2 because its exact retention observation is already recorded. On a closed run, an exact event duplicate carrying an unrecorded new observation must not reinsert the event or mutate lifecycle; it refuses, while the same authenticated observation succeeds through `LifecycleStore` only.
+Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Corrupt a different stored event through the admin test identity and prove that an otherwise exact duplicate refuses integrity failure rather than bypassing whole-chain replay. Every refusal compares all relation counts, the previous execution head and the previous lifecycle projection before/after. Also prove an unrecorded older retention observation refuses, an exact equal-instant observation is idempotent and an equal-instant divergent observation conflicts. After `append(E1,F1)` then `append(E2,F1)`, retrying the historical exact `E1,F1` is idempotent and leaves the E2 head unchanged. On a closed run, an exact event duplicate carrying an unrecorded new observation must not reinsert the event or mutate lifecycle. Task 10 adds cross-method retry proofs only after `LifecycleStore` exists.
 
 - [ ] **Step 3: Run red**
 
@@ -535,10 +632,14 @@ struct ValidatedEvent {
 ```
 
 Extract references only from `graphRef`, `authorizationRef`, `invocationRef`, `resultRef`, `decisionRequestRef`, `decisionResponseRef`, `lifecycleRef`, `executionTransferRef`; reject missing/malformed fields and never recursively collect arbitrary objects.
+`budget_delta` and `budget_total` are mechanical schema projections from that
+same validated event. The runtime crate never derives them, persists no current
+budget state in `runs` and treats successful whole-chain pure replay—not the
+ledger—as the semantic budget verdict.
 
 - [ ] **Step 5: Implement one-transaction append**
 
-Validate graph/candidate, compare explicit organization and mission-retention fact, derive its versioned internal digest, canonicalize and size-check; begin app transaction; insert tentative `runs` and `run_lifecycle` rows with `ON CONFLICT DO NOTHING`; lock `run_lifecycle` first and then `runs`; classify exact event idempotency without returning; load all JCS ordered by sequence and revalidate/parse all. Replay the stored chain for an exact duplicate, or append the new candidate in memory and replay it. For an exact event duplicate, return without writes when its exact retention observation is already recorded, even if a later fact is current; an unrecorded observation refuses and must use `LifecycleStore`. For a new event, reject stale/equal-instant divergent retention, append the fact if new, update `run_lifecycle` from run creation, insert event/ledger/references and update the execution projection. Commit once. Every value is bound. Neither projection phase nor lifecycle policy is fed into execution replay.
+Validate graph/candidate, compare explicit organization and mission-retention fact, derive its versioned internal digest, canonicalize and size-check; begin app transaction; acquire the common lineage advisory lock before tombstone inspection or tentative insert; insert tentative `runs` and `run_lifecycle` rows with `ON CONFLICT DO NOTHING`; lock `run_lifecycle` and then `runs`; classify exact event idempotency without returning; load all JCS ordered by sequence and revalidate/parse all. Replay the stored chain for an exact duplicate, or append the new candidate in memory and replay it. For a new event, require the replay state's existing public `sequence()` and `event_digest()` to equal the candidate mechanical head. An exact historical duplicate compares the replayed current head with both the maximum stored immutable event and `runs`, never with the historical candidate. Do not add a pure-core accessor or reproduce private state. For an exact event duplicate, return without writes when its exact retention observation is already recorded, even if a later fact is current; an unrecorded observation refuses and must use `LifecycleStore`. For a new event, reject stale/equal-instant divergent retention, append the fact if new, update `run_lifecycle` from run creation, insert event/ledger/references and update only the mechanical execution head. Commit once. Every value is bound. Neither projection phase, generation, current budget nor lifecycle policy is fed into execution replay.
 
 - [ ] **Step 6: Inject database failures without production hooks**
 
@@ -560,11 +661,23 @@ Run append and domain tests plus Clippy. Commit store/event/test files as `Persi
 
 Create one run per organization. Through every public method, A observes no B data and cannot alter B. Direct SQL under app role with missing, empty, A and B context proves select/insert/update/delete. Public results never distinguish foreign row from absent.
 
-Also attempt direct app-role mutation of the open `runs` head/totals and direct event insertion without its ledger. The deferred coherence triggers must reject both at commit without exposing constraint names through public errors. Prove retention has no `UPDATE` privilege on `runs`, app and retention lack table-wide `UPDATE`, lifecycle identity/mission columns cannot change, and a closed execution row rejects every update while an authorized lifecycle-only update still succeeds.
+Also attempt direct app-role mutation of the `runs` head and direct event insertion without its ledger. The deferred coherence triggers must reject both at commit without exposing constraint names through public errors. Prove retention has no raw `UPDATE` or `DELETE` privilege on `runs`, app and retention lack table-wide `UPDATE`, and lifecycle identity/mission columns cannot change. An authenticated lifecycle-only update must leave every `runs` column unchanged.
 
 - [ ] **Step 2: Write red concurrency tests**
 
 Release 16 Tokio tasks with a barrier against the same absent run: eight exact and eight divergent candidates. Repeat at an existing head. Assert one canonical successor, exact idempotency, divergent conflict, contiguous sequence and no orphan projection rows.
+
+Add a separate barrier race between the first append of an absent lineage and
+a retention transaction that invokes the already migrated SQL functions
+`lock_lineage` then `delete_lineage_with_tombstone` directly; the public
+`delete_run` method does not exist until Task 10. Repeat both lock-acquisition
+orders, including a transaction whose first snapshot predates the deletion.
+Final state must always contain the tombstone and no live lineage: append may
+commit before the subsequent deletion or fail after deletion, but it may never
+commit a live run behind an already committed tombstone. A direct app-role
+first insert must take the same advisory lock through its anti-resurrection
+trigger. Direct app/retention writes under `REPEATABLE READ` or `SERIALIZABLE`
+must refuse before mutation.
 
 - [ ] **Step 3: Fix only database serialization and prove green**
 
@@ -621,11 +734,11 @@ Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month, a sub-microsecond obs
 
 - [ ] **Step 2: Write red lifecycle transactions**
 
-Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after execution closure without changing any `runs` column. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare byte-exact state. For run sweep, select an expired key then concurrently extend retention through that method; the shared lifecycle-row lock and under-lock recheck must preserve it. Prove its tombstone receipt equals the deterministic expiry vector. For tombstone expiry, insert 205 expired and unexpired synthetic rows, process batches of 100 in `(expires_at,subject_digest)` order, expose counts only, and prove neither injected future time nor a direct DELETE can remove a row before database time reaches exact `P35D`.
+Cover deletion, same-receipt idempotency, divergent receipt, exact elapsed `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Fixed Rust/PostgreSQL expiry vectors straddle Europe/Paris spring-forward and fall-back transitions; repeat them after setting a poisoned session timezone and prove expiry remains exactly 840 hours. Direct SQL as retention must fail to delete `runs`, events, projections or tombstones; the public deletion method succeeds only through `delete_lineage_with_tombstone`. Race public `delete_run` against the first append of an absent lineage in both lock-acquisition orders and require a tombstone with no live lineage. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after the last execution event without changing any `runs` column. After `append(E,F1)` then `apply_mission_retention(F2)`, retrying exact `E,F1` remains idempotent without reverting F2 because its exact retention observation is already recorded. On a closed run, an exact event duplicate carrying an unrecorded new observation must not reinsert the event or mutate lifecycle; it refuses, while the same authenticated observation succeeds through `LifecycleStore`. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare canonical bytes, mechanical projections and public replay head byte-exactly without encoding private pure state. For run sweep, select an expired key then concurrently extend retention through that method; the common advisory lock must be acquired first, followed by the lifecycle-row lock and under-lock recheck, so the extension is preserved without deadlock. Prove its tombstone receipt equals the deterministic expiry vector. For tombstone expiry, insert 205 expired and unexpired synthetic rows, process batches of 100 in `(expires_at,subject_digest)` order, expose counts only, and prove neither injected future time nor a direct DELETE can remove a row before database time reaches exact `P35D`.
 
 - [ ] **Step 3: Implement bounded retention/deletion**
 
-`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. In one transaction they lock `run_lifecycle`, reject time rollback/equal-instant divergence, append the fact if new and update only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` recomputes subject digest in SQL, locks `run_lifecycle`, inserts/compares the caller-authenticated tombstone receipt and deletes the run cascade atomically. Run sweep selects `(run_id,retention_until)` keys from `run_lifecycle`, rechecks each locked row, derives the versioned expiry receipt from subject digest plus retention deadline, and invokes the same private deletion primitive. `expire_tombstones` selects at most `TombstoneExpiryBatchSize` rows through `(expires_at,subject_digest)`, requires both injected and PostgreSQL time at/after expiry, deletes without `RETURNING` and returns only an aggregate count. Retention never updates `runs`.
+`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. Every live method begins `READ COMMITTED`, calls `lock_lineage` before any lineage read, then locks `run_lifecycle`, rejects time rollback/equal-instant divergence, appends the fact if new and updates only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` sets the retention role/context, calls `lock_lineage` as a distinct statement, and invokes `delete_lineage_with_tombstone`; the guard-owned function rechecks isolation, reacquires the advisory lock reentrantly, recomputes the subject, locks lifecycle after advisory, inserts/compares the caller-authenticated receipt and deletes the run cascade atomically. Run sweep selects `(run_id,retention_until)` keys, then for each candidate calls `lock_lineage` before locking and rechecking `run_lifecycle`, derives the versioned expiry receipt from subject digest plus retention deadline, and invokes the same closed function. `expire_tombstones` selects at most `TombstoneExpiryBatchSize` rows through `(expires_at,subject_digest)`, requires both injected and PostgreSQL time at/after expiry, deletes without `RETURNING` and returns only an aggregate count. Retention never directly updates or deletes `runs`.
 
 - [ ] **Step 4: Keep restore behavior absent until its E2E is red**
 
@@ -684,8 +797,10 @@ then each row's fixed 32-byte subject/receipt digests and big-endian `i64`
 Unix-microsecond deletion/expiry instants. Compare count and digest before
 scanning execution rows. The same transaction loops over restored
 `(tenant_id,run_id)` keys in batches of 1..100, computes SQL subject digests,
-deletes matches and counts remaining suppressed lineages before its single
-commit. The caller cannot stop a partial page or supply a cursor.
+performs one primary-key B-tree tombstone lookup per run, deletes matches and
+counts remaining suppressed lineages before its single commit. It must not
+build or request a hash table of the complete tombstone registry. The caller
+cannot stop a partial page or supply a cursor.
 `suppressed_lineage_count` repeats the registry proof in its own
 repeatable-read transaction. The package authenticates neither registry fact
 nor writer fence and exposes no opening boolean.
@@ -696,7 +811,7 @@ restore replay`.
 
 ### Task 12: Add performance, compatibility and CI gates
 
-**Files:** create benchmark, `verification/agent-orchestrator/benchmark-memory.sh`, compatibility snapshots/test; modify `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
+**Files:** create benchmark, `verification/agent-orchestrator/benchmark-memory.sh`, compatibility snapshots/test; modify `src/restore.rs`, `tests/postgres/e2e.rs`, `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
 
 **Interfaces:**
 - Consumes: complete store.
@@ -714,11 +829,19 @@ Use fixed chain sizes `[1,32,256,2048,8192]`, at least 30 samples after warmup a
 events,total_jcs_bytes,append_p50_us,append_p95_us,load_p50_us,page_p95_us,peak_rss_bytes
 ```
 
-RSS is observational, not the bounded-memory gate. Extract one private page-loop function used directly by `RestoreStore`; it returns a private `struct ScanStats { processed_rows, page_count, max_buffered_rows }`. Before consuming any page, that production loop returns `IntegrityFailure` when `page.len() > batch_size`; production consumes `processed_rows` for its completeness result but exposes no diagnostic field, hook or feature. A `#[cfg(test)]` module colocated in `src/restore.rs` calls that same private function with synthetic page fetch/consume closures. First require red then green for an oversized returned page being refused. For fixed batch 100, fail deterministically unless `max_buffered_rows <= batch_size`, the maximum is identical across total sizes 256, 2,048 and 8,192, and the two larger fixtures consume multiple pages; this rejects accumulating prior pages in a `Vec` while proving the exact production loop without cross-crate visibility. A real-PostgreSQL E2E restores 205 tombstones and runs successfully with batch 100; an accidentally unbounded SQL page would exceed the invariant and make that test fail.
+RSS is observational, not the bounded-memory gate. Extract one private page-loop function used directly by `RestoreStore`; it returns a private `struct ScanStats { processed_rows, page_count, max_buffered_rows }`. Each fetch is immediately wrapped in a private single-page lease whose owned row type is not `Clone`; the consumer receives borrows only, the lease must drop before the next fetch, and no owning row or page can escape the loop. Before consuming any page, that production loop returns `IntegrityFailure` when `page.len() > batch_size`; production consumes `processed_rows` for its completeness result but exposes no diagnostic field, hook or feature. A `#[cfg(test)]` module colocated in `src/restore.rs` calls that same private function with synthetic page fetch/consume closures and non-Clone, drop-counted rows. First require red then green for an oversized returned page being refused and for every fetch after the first observing zero live rows from the prior page. For fixed batch 100, require `max_buffered_rows <= batch_size`, identical maxima across total sizes 256, 2,048 and 8,192, and multiple pages for the two larger fixtures. `max_buffered_rows` proves only the SQL/page-size bound; the drop-counted single-owner fixture plus the no-escape type shape proves release before the next page. A real-PostgreSQL E2E restores 205 tombstones and runs successfully with batch 100; an accidentally unbounded SQL page would exceed the invariant and make that test fail. The external per-process RSS series remains complementary evidence against allocations outside the owned row page.
 
 Exit non-zero on fixture/replay/query failure. Record statement counts in integration tests; set no hardware-dependent latency threshold.
 
-Add a separate pre-open series over fixed tombstone/run pairs `[(1,1),(32,256),(256,2048),(2048,8192)]` and print `tombstones,runs,reconcile_p50_us,reconcile_p95_us,peak_rss_bytes`. The external Cargo benchmark proves complete processing and the wrapper measures RSS; the colocated unit test is the blocking structural batch-bound proof. Report the expected `O(tombstones + runs)` scaling without a hardware-dependent latency or RSS threshold.
+Add a separate pre-open series over fixed tombstone/run pairs `[(1,1),(32,256),(256,2048),(2048,8192)]` and print `tombstones,runs,reconcile_p50_us,reconcile_p95_us,peak_rss_bytes`. The external Cargo benchmark proves complete processing and the wrapper measures RSS; the colocated unit test is the blocking structural batch-bound proof. The declared lookup/reconciliation decision bound is
+`O(tombstones + runs * log(tombstones))`: scan and digest the registry once,
+then perform one indexed subject-digest lookup per restored run. Physical
+cascade deletion adds work linear in the actually deleted dependent rows, so
+the honest end-to-end bound is
+`O(tombstones + runs * log(tombstones) + purged_rows)`. Assert
+`EXPLAIN (FORMAT JSON)` uses the tombstone primary-key B-tree and refuses a
+hash join, hash aggregate or any whole-registry materialization. The benchmark
+reports the measured curve; it does not by itself prove the complexity class.
 
 - [ ] **Step 3: Wire CI through local PostgreSQL**
 
@@ -759,7 +882,7 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 ### Task 13: Document the bounded capability and rollback
 
-**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`, run-capability test; create `verification/agent-orchestrator/review-evidence.test.ts`.
+**Files:** modify `README.md`, `docs/apps/orchestrator.md`, `project.v1.yaml`, `.github/workflows/ci.yml`, run-capability test; create `verification/agent-orchestrator/review-evidence.test.ts`.
 
 **Interfaces:**
 - Consumes: measured behavior and exact Governance SHA.
@@ -767,13 +890,13 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: pending status with no dossier passes; accepted status fails unless it names full `implementation_sha`, exactly one commit `E` transitions that criterion to accepted, `parent(E) == implementation_sha`, `E` changes only its exact review directory plus the two authorized YAML leaf edits, all four verdicts bind the implementation SHA, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
+Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
 Add a compile-checked example that constructs `PgConnectOptions` outside the crate, creates bounded pool limits, appends a synthetic content-free event and reads a page. State that the library cannot load secrets, authorize, execute or serve.
 
-Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` as `implemented-review-pending`, explicitly leaving whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
+Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` with one `immutable-role-review` criterion at schema-valid `status: pending`, without `evidence`, and a note that implementation exists but independent review is not yet accepted. Explicitly leave whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
 
 Implement the generic evidence gate before freezing the candidate. It reads the
 implementation object named by the project card and resolves the unique commit
@@ -782,14 +905,16 @@ that changed its criterion from pending to accepted, rather than assuming
 rejects abbreviated/missing/non-ancestor SHAs, merges, a non-direct parent,
 any diff outside the exact dossier directory and the two authorized leaves in
 `project.v1.yaml`, absent verdicts or mismatched command digests. Using the YAML
-CST ranges, it permits only the scalar transition for the unique criterion id
-`run-control-persistence` from `implemented-review-pending` to `accepted` and
-one adjacent insertion `implementation_sha: I`; the file must be byte-for-byte unchanged outside those two CST ranges. It also parses both documents, removes
-the inserted leaf and restores the old status in the accepted tree, then
-requires deep equality, so aliases or duplicate keys cannot disguise a second
-change. Set the CI checkout to `fetch-depth: 0` and add an assertion for it; the
-gate refuses rather than silently passing when the named Git objects or history
-are unavailable.
+CST ranges, it locates the unique phase id `run-control-persistence` and its
+unique `immutable-role-review` criterion. It permits only that criterion's
+scalar transition from `pending` to `accepted` and insertion of the
+schema-valid adjacent `evidence` mapping containing the review date and a
+`reference` that names the exact dossier plus full `I`; the file must be byte-for-byte unchanged outside the status scalar and evidence mapping CST ranges.
+It also parses both documents, removes the inserted evidence mapping
+and restores `pending` in the accepted tree, then requires deep equality, so
+aliases or duplicate keys cannot disguise a second change. Set the CI checkout
+to `fetch-depth: 0` and add an assertion for it; the gate refuses rather than
+silently passing when the named Git objects or history are unavailable.
 
 - [ ] **Step 3: Prove green and commit**
 
@@ -805,11 +930,11 @@ Run the documentation assertion, `bun run check` and full PostgreSQL workspace t
 
 - [ ] **Step 1: Freeze candidate and rerun every gate**
 
-Run Task 12 commands, require clean status, then record full implementation SHA `I`, parents, tree, message and a boolean DCO-valid result without copying author or committer identity into evidence. Capture outputs in a validated temporary directory outside the worktree; no untracked dossier may dirty the candidate during review. Normalize each combined stdout/stderr stream to UTF-8, LF endings and no ANSI escapes, reject secrets, personal data and absolute machine paths, then retain those exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical JCS and records for each stable id the exact non-secret argv array, exit code zero, relative output path and lowercase SHA-256 of the tracked normalized bytes. The evidence gate rehashes every file, rejects missing/unreferenced outputs and requires each review to cite the stable command ids it consumed. The eventual dossier directory uses seven SHA characters and every file names full `I`. The four review verdicts bind `I`, never the later evidence commit.
+Run Task 12 commands, require clean status, then record full implementation SHA `I`, parents, tree, message and a boolean DCO-valid result without copying author or committer identity into evidence. Capture outputs in a validated temporary directory outside the worktree; no untracked dossier may dirty the candidate during review. Normalize each combined stdout/stderr stream to UTF-8, LF endings and no ANSI escapes, reject secrets, personal data and absolute machine paths, then retain those exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical JCS and records `I` and, for each stable id, the exact non-secret argv array, exit code zero, relative output path and lowercase SHA-256 of the tracked normalized bytes. The evidence gate rehashes every file, rejects missing/unreferenced outputs and requires each review to cite the stable command ids it consumed. The eventual dossier directory uses seven SHA characters; every verdict and the manifest name full `I`, while benchmark CSV and normalized command bytes are bound indirectly by their manifest path and SHA-256 and are never mutated merely to inject `I`. The four review verdicts bind `I`, never the later evidence commit.
 
 - [ ] **Step 2: Run four independent review roles**
 
-Architecture/performance proves no policy duplication, canonical revalidation including the idempotent path, constant append statement count, honest append and `O(tombstones + runs)` restore byte/time/memory scaling, no checkpoint/service and `O(n)` production block. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation, races, error leakage, immutable rows, exact guard privilege matrix, tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
+Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and the production block. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, forced statement-log disabling, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
 
 - [ ] **Step 3: Remediate without carrying stale approval**
 
@@ -817,7 +942,7 @@ Any Blocking/Major finding gets a red regression, minimal fix and full rerun. A 
 
 - [ ] **Step 4: Commit accepted evidence and status**
 
-After all roles approve the same implementation SHA `I`, add only the exact dossier directory, change the unique `run-control-persistence` status from `implemented-review-pending` to `accepted`, and insert adjacent `implementation_sha: I`; keep WP-G3-O01/service unclaimed. Commit once as `Record run-control persistence review` and define its resulting full SHA as `E`. Require `parent(E) == I` and one parent. Run the pre-existing evidence gate; it resolves `E` from the unique status transition and must prove that `E` changes only the dossier and those two CST ranges in `project.v1.yaml`, every other byte at `E` is identical to `I`, all verdicts bind `I`, and every tracked normalized command output rehashes to its manifest digest. Then rerun formatting, Clippy, PostgreSQL workspace tests, Bun check and clean-status proof. Any other change creates a new implementation candidate and invalidates every verdict.
+After all roles approve the same implementation SHA `I`, add only the exact dossier directory, locate phase `run-control-persistence` and change only its `immutable-role-review` criterion from `pending` to `accepted`, then insert adjacent schema-valid `evidence: { date, reference }` whose reference names the dossier and full `I`; keep WP-G3-O01/service unclaimed. Commit once as `Record run-control persistence review` and define its resulting full SHA as `E`. Require `parent(E) == I` and one parent. Run the pre-existing evidence gate; it resolves `E` from the unique status transition and must prove that `E` changes only the dossier plus the status scalar and evidence mapping CST ranges in `project.v1.yaml`, every other byte at `E` is identical to `I`, all verdicts bind `I`, and every tracked normalized command output rehashes to its manifest digest. Then rerun formatting, Clippy, PostgreSQL workspace tests, Bun check and clean-status proof. Any other change creates a new implementation candidate and invalidates every verdict.
 
 ### Task 15: Open the PR and stop at the bootstrap hard gate
 

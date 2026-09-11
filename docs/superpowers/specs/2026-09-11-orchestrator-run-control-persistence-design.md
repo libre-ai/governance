@@ -39,6 +39,13 @@ merge ADR-0039/D45 to bind this bounded slice of the existing locked
 complete runtime package proven; authorization consumption, execution and
 service capabilities remain closed inside that package.
 
+This slice depends on the accepted `WP-G3-O02` pure core. It is the only
+`WP-G3-O01` slice allowed to begin while `WP-G3-H01` is not proven on the
+current Harness `main`, because it imports no Harness API, exposes no service
+and cannot invoke a worker or effect. `WP-G3-H01` remains a prerequisite for
+every later `WP-G3-O01` slice and for declaring `WP-G3-O01` complete. This is
+a narrow dependency split, not a statement that Harness confinement exists.
+
 ## 2. Payoff and proof boundary
 
 Phase 4A proved deterministic decisions in memory. Phase 4B turns those
@@ -118,11 +125,34 @@ adds `crates/agent-orchestrator-run` as a member. Existing capability gates keep
 scanning the pure root `src/`; an additional gate explicitly limits the new
 crate to its authorized database capability.
 
+For the Orchestrator satellite, the machine work-package map prospectively
+transfers six exact shared support paths needed by this slice from completed
+`WP-G3-O02` to `WP-G3-O01`: `Cargo.toml`, `Cargo.lock`, `package.json`,
+`README.md`, `docs/apps/orchestrator.md` and `project.v1.yaml`. It assigns the
+exact `.github/workflows/ci.yml` path to O01 for the first time under the
+ADR-0020 satellite rule; this is not rewritten as a historical O02 transfer.
+`WP-G3-O01` additionally owns only its named review, coverage-gate and
+verification paths. Historical `WP-G3-O02` commits remain
+unchanged; `bun.lock`, root `src/**`, pure-core tests, compatibility evidence
+and its authority gate remain owned by `WP-G3-O02`. Before each implementation
+commit, a structural gate compares every changed path with the exact current
+`WP-G3-O01.writePaths` list and refuses any unlisted or overlapping edit.
+
+`WP-G2-T01`, `WP-G2-Q01` and `WP-G2-A01` retain broad hub-era path records in
+the original plan. Under ADR-0020's repository-satellite migration, those
+hub-era paths are not concurrent satellite write authority: for current
+Orchestrator work the exact prospective O01/O02 lists above are authoritative,
+and no branch under those completed packages may modify the transferred paths
+concurrently. This precedence rule preserves historical package evidence while
+removing active co-ownership; changing it requires a new Governance decision.
+
 Phase 4B does not change the root crate's API or introduce a native checkpoint.
 The Phase 4A decision deliberately left persisted state projections closed
 until separately authorized. The persistence proof therefore calls the
 existing whole-chain replay API over canonical events; it does not duplicate
-the private state reducer inside the runtime crate.
+the private state reducer inside the runtime crate. In particular, persistence
+does not persist replay phase, generation-derived state or private budget
+counters, and it does not add accessors to expose them.
 
 No new repository is created. The canonical lexicon and the locked work
 package already place `crates/agent-orchestrator-run/**` in the Orchestrator
@@ -133,9 +163,10 @@ security boundary.
 
 The Rust crate reuses the proven structural PostgreSQL barrier from
 `@libre-ai/data`: every application transaction sets the restricted
-`libre_ai_app` role and the local `app.tenant_id` setting; pooled connections
-are scrubbed with `DISCARD ALL` before reuse. It does not depend on the
-TypeScript package or copy its domain policy.
+`libre_ai_app` role and the local `app.tenant_id` setting. Before reuse, pooled
+connections clear SQLx's client-side prepared-statement cache and then execute
+unprepared `DISCARD ALL`; either failure destroys the connection. It does not
+depend on the TypeScript package or copy its domain policy.
 
 Domain and public Rust names use `OrganizationId`. Database columns retain
 `tenant_id` and the `app.tenant_id` setting so the shared RLS barrier remains
@@ -167,7 +198,8 @@ It may not:
 
 The caller injects connection options, authoritative time and already
 established authority facts. It resolves endpoints and secrets outside this
-crate; the crate never formats or exposes those options. Pool construction is
+crate; the crate immediately applies `disable_statement_logging()` and never
+formats or exposes those options. Pool construction is
 inside the crate because accepting an opaque prebuilt pool would make the
 mandatory `DISCARD ALL` return hook unverifiable. The crate still recomputes
 every comparison it owns. Future environment/secret loading and request
@@ -210,9 +242,9 @@ do not create cluster-global roles. Deployment/bootstrap authority provisions:
 - `libre_ai_app`, with only the operations required for run persistence;
 - `libre_ai_retention`, with the additional lifecycle operations required for
   expiry and explicit deletion;
-- a `NOLOGIN` tombstone-guard role that owns only the closed record/compare,
-  anti-resurrection and bounded-expiration functions, and receives only their
-  required tombstone `SELECT`/`INSERT`/expired-`DELETE` policies;
+- a `NOLOGIN` tombstone-guard role that owns the closed lineage-deletion,
+  anti-resurrection and bounded-expiration functions, and receives only the
+  table privileges and forced-RLS policies those functions require;
 - `libre_ai_restore`, a `NOLOGIN` pre-open recovery role with bounded
   cross-organization `SELECT`/`DELETE` policies and no insert, update, schema
   or application capability.
@@ -221,30 +253,49 @@ The connection principal receives only the right to assume its intended role.
 No application pool connects as a superuser, table owner or role with
 `BYPASSRLS`.
 
-Every application method opens a private transaction and performs, before any
-table access:
+Every live application or retention method opens a private transaction and
+performs, before any table access:
 
-1. `SET LOCAL ROLE libre_ai_app`;
-2. `SELECT set_config('app.tenant_id', $1, true)` with the explicit
+1. `BEGIN ISOLATION LEVEL READ COMMITTED`;
+2. `SET LOCAL ROLE libre_ai_app` (or the retention role);
+3. `SELECT set_config('app.tenant_id', $1, true)` with the explicit
    organization identifier;
-3. the bounded query or mutation;
-4. commit or rollback.
+4. the bounded query or mutation;
+5. commit or rollback.
 
 Lifecycle methods use physically separate, store-owned pools and set either
 `libre_ai_retention` for organization-scoped live lifecycle work or
-`libre_ai_restore` for pre-open recovery. Pool release executes `DISCARD ALL`;
-a connection that cannot be scrubbed is discarded. Tests intentionally poison
-a pooled session, exercise rollback and cancellation paths, and prove that
-neither role nor organization context survives reuse.
+`libre_ai_restore` for pre-open recovery. Restore begins explicitly at
+`REPEATABLE READ`, but only after its external writer fence; live writers never
+use a transaction-wide stale snapshot. Pool release executes `DISCARD ALL`;
+before that server reset it calls `clear_cached_statements`, and the reset uses
+`raw_sql` so it creates no new persistent prepared entry. A connection that
+cannot complete either step is discarded. Store construction overrides any
+caller statement/slow-statement logging level with
+`disable_statement_logging()`. Tests intentionally poison a pooled session,
+exercise rollback and cancellation paths, reuse the same bound query across a
+scrub, inject each scrub failure, and prove that neither cached statement,
+role, organization context nor SQL text survives or reaches a `sqlx::query`
+log event.
 
 `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY` apply to every
 organization-scoped table. Policies require both a non-empty local setting and
 exact equality with `tenant_id` for read and write. The restricted roles have
 no ability to disable RLS, change policies or mutate schema.
 
-Every app and retention writer acquires the same `run_lifecycle` row lock
-before touching a run. This common lock serializes append, policy observation,
-explicit deletion and expiry without giving retention `UPDATE` on `runs`.
+Before inspecting tombstones or touching any lineage table, every app or
+retention lifecycle writer and every guard-owned lineage-deletion function
+verifies `current_setting('transaction_isolation') = 'read committed'` and
+acquires the same transaction-level advisory lock derived from the first eight
+bytes of the versioned deletion-subject digest. The `VOLATILE` guard functions
+and trigger refuse every other live isolation level; their post-lock lookup at
+`READ COMMITTED` must see a tombstone committed while the lock waited. A collision can only
+over-serialize unrelated lineages; it cannot allow concurrent mutation. The
+anti-resurrection insert trigger acquires the same lock before its tombstone
+lookup, so direct SQL and the absent-first-run case cannot bypass it. Writers
+then acquire the `run_lifecycle` row lock, when the row exists, before `runs`.
+This common order serializes append, policy observation, explicit deletion and
+expiry without giving retention raw `UPDATE` or `DELETE` on `runs`.
 No role receives table-wide `UPDATE` on `runs`: app receives column grants only
 for the mutable execution projection, while app and retention receive column
 grants only for the mutable lifecycle projection. Row locking remains possible
@@ -260,21 +311,24 @@ destination, comment, free-form error or personal identity is stored.
 ### 7.1 `runs`
 
 One row is the current query projection for a run. Its composite primary key is
-`(tenant_id, run_id)`. It stores only bounded identifiers, contract digests,
-orchestrator identity, active generation, head sequence, head event digest,
-closed phase code and creation/last-event/closure instants. Lifecycle deadlines
-are deliberately absent.
+`(tenant_id, run_id)`. It stores only bounded immutable identifiers and contract
+digests mechanically extracted from validated canonical events, creation and
+last-event instants, head sequence and head event digest. Lifecycle deadlines
+are deliberately absent. It does not persist replay phase, readiness,
+completion, quarantine, active generation or current budget state.
 
 The row is not replay authority. It is updated in the same transaction as each
-event and can be rebuilt from the immutable event chain. A database trigger
-rejects every update of a closed run. Retention never updates this relation;
-deletion removes it and its dependent projections atomically.
+event and can be rebuilt from the immutable event chain. Identity and creation
+columns are immutable; only app may update the mechanical head and last-event
+columns. Retention never updates or directly deletes this relation; the
+guard-owned closed deletion function removes it and its dependent projections
+atomically.
 
-Deferred coherence triggers require, at commit, that the run head and every
-budget total match the immutable head event and ledger row. This permits a
-tentative first projection during atomic append but prevents the application
-role from committing a projection mutation or event without its corresponding
-evidence.
+Deferred coherence triggers require, at commit, that the run head matches the
+maximum immutable event and that every ledger row is bound to its same
+immutable event sequence and digest. This permits a tentative first projection
+during atomic append but prevents the application role from committing a head
+mutation, event or ledger row without its corresponding evidence.
 
 ### 7.2 `run_retention_facts`
 
@@ -337,9 +391,11 @@ bytes before insert and never override them.
 ### 7.5 `budget_ledger`
 
 The ledger is append-only and keyed by event sequence. It stores the bounded,
-checked budget deltas and resulting counters required for independent audit.
-The current budget projection in `runs` is derived from the same application.
-No caller supplies a “budget accepted” verdict.
+schema-validated budget deltas and resulting counters mechanically extracted
+from the canonical event for independent audit. It binds the event digest and
+never computes phase, routing or policy. Whole-chain pure replay remains the
+only validator of budget semantics; no current budget projection exists in
+`runs`, and no caller supplies a “budget accepted” verdict.
 
 ### 7.6 `attestation_refs`
 
@@ -352,7 +408,11 @@ this projection and remain organization-scoped.
 ### 7.7 `execution_deletion_tombstones`
 
 A tombstone contains only a content-free subject digest, deletion receipt
-digest, deletion instant and expiry instant. It deliberately has no foreign
+digest, deletion instant and expiry instant. `P35D` is represented in
+PostgreSQL as exact elapsed `interval '840 hours'`, never calendar
+`interval '35 days'`, so a poisoned session timezone or DST boundary cannot
+shorten the barrier. Mission-retention years remain a distinct UTC calendar
+calculation. It deliberately has no foreign
 key to a run: deleting the run cannot delete the evidence that prevents its
 restore. The application role cannot read, insert, update or delete this
 table. The retention role has no raw insert, select, update or delete grant: it
@@ -374,21 +434,40 @@ SHA-256(
 
 Length framing prevents concatenation ambiguity. Rust and PostgreSQL
 implementations must match fixed cross-language vectors. The schema owner
-installs a tombstone-guard-owned `SECURITY DEFINER` trigger with a fixed safe
-`search_path`. It recomputes this digest for every attempted `runs` insertion
-and rejects an unexpired matching tombstone without disclosing its presence to
-the application role. `FORCE RLS` remains active: policies grant that
-`NOLOGIN` guard role only the tombstone `SELECT` and `INSERT` required by its
-record/compare functions plus `DELETE` under the single policy
-`expires_at <= transaction_timestamp()` required by its bounded expiration
-function. It has no `UPDATE`, no other-relation privilege, no login and no
-connection-principal member. Public and application execution of every guard
-function is revoked. The retention role has no raw tombstone privilege and may
-execute only the narrow record, compare and expiration functions. Record and
-compare recompute the subject from the local organization context, so a caller
-cannot substitute an unrelated digest; expiration additionally binds injected
-time, total index order and batch size. The restore role receives the separate
-content-free lookup policy required for pre-open replay.
+installs tombstone-guard-owned `SECURITY DEFINER` functions and trigger with a
+fixed safe `search_path`. The insertion trigger recomputes this digest for every
+attempted `runs` insertion and rejects an unexpired matching tombstone without
+disclosing its presence to the application role.
+
+The guard-owned `SECURITY DEFINER VOLATILE lock_lineage` function derives the
+same subject, refuses unless transaction isolation is `read committed`, and
+calls `pg_advisory_xact_lock` on its first signed 64 bits. Public and restore
+execution are revoked; app and retention may execute it only after setting
+their transaction-local organization context. Cross-language fixed vectors
+bind the lock key to the subject digest, and the insert trigger calls this same
+function before every anti-resurrection lookup.
+
+The guard-owned `delete_lineage_with_tombstone` function derives the subject
+from the transaction-local organization context, acquires the common advisory
+lock and then the lifecycle row lock when present, inserts or compares the
+receipt, and deletes the run cascade in the same transaction. A
+divergent receipt refuses before deletion. `FORCE RLS` remains active: policies
+and grants give the `NOLOGIN` guard only the tombstone `SELECT`/`INSERT`, expired
+tombstone `DELETE`, organization-scoped lifecycle `SELECT` plus column-scoped
+`UPDATE(retention_until)` solely to authorize `SELECT ... FOR UPDATE`, and
+`SELECT(tenant_id, run_id)` plus organization-scoped `DELETE` on `runs`
+required by those closed functions. A schema-owner trigger refuses any actual
+lifecycle value change under the guard role. Every other run column and
+operation is denied. The guard has no tombstone `UPDATE`, no other relation
+privilege, no login and no connection-principal member. Public and restore
+execution of every guard function is revoked; app receives only
+`lock_lineage`, while retention receives only `lock_lineage`,
+`delete_lineage_with_tombstone` and the bounded tombstone-expiry function.
+The retention role has no raw `DELETE` on runs, dependent projections or
+tombstones.
+Expiration binds injected time, total index order and batch size. The restore
+role receives the separate content-free lookup and pre-open lineage deletion
+policies required for recovery.
 
 ## 8. Public Rust surface
 
@@ -453,18 +532,23 @@ an explicit deletion command whose authorization has already been verified by
 a future caller. They do not expose a public bypass flag or reuse the
 application pool.
 
+`RunSnapshot` exposes only `run_id`, `head_sequence`, `head_event_digest` and
+the joined `retention_until`. It cannot expose phase, ready step, completion,
+quarantine, generation or current budget counters. Those values remain
+available only while the unchanged pure replay result is evaluated in memory.
+
 `MissionRetentionFact` binds the owning mission identifier, a validated
 `P1Y` through `P6Y` duration and its observation time. Every append compares
 that mission with the event/run, derives the internal observation digest and
 computes retention from run creation, not from the latest append.
 `LifecycleStore::apply_mission_retention` records the same bounded fact and may
-update `run_lifecycle` after execution closure when Missions changes its
+update `run_lifecycle` after the last execution event when Missions changes its
 policy; it never updates `runs`. Both paths reject an unrecorded stale
 observation, treat an exact repeated observation as idempotent and refuse a
-divergent value at the same instant. An exact event retry may reference an older fact only when
-that exact fact is already present in the immutable journal; it performs no
-lifecycle write. Neither method accepts a caller-classified “policy valid”
-boolean.
+divergent value at the same instant. An exact event retry may reference an older
+fact only when the exact retention observation is already recorded in the
+immutable journal; it performs no lifecycle write. Neither method accepts a
+caller-classified “policy valid” boolean.
 
 `PoolLimits` has closed minimum/maximum bounds for connection count and
 acquisition timeout. All store constructors install the same `after_release`
@@ -535,11 +619,13 @@ projections use explicit separate methods rather than N+1 loading.
 
 `append_event` executes one database transaction:
 
-1. establish restricted role and organization context;
-2. validate and normalize the supplied graph and candidate event through the
+1. validate and normalize the supplied graph and candidate event through the
    existing pure core, prove their graph digests match, bind the explicit
    mission-retention fact, canonicalize the event with RFC 8785 and recompute
    its event digest;
+2. begin explicitly at `READ COMMITTED`, establish restricted role and
+   organization context, then call `lock_lineage` as a distinct statement
+   before any lineage read or insert;
 3. create the first `runs` and `run_lifecycle` keys with
    `INSERT ... ON CONFLICT DO NOTHING` when absent, lock `run_lifecycle` first
    and then lock the `(tenant_id, run_id)` execution projection with
@@ -554,14 +640,17 @@ projections use explicit separate methods rather than N+1 loading.
 6. call the existing pure whole-chain replay with the validated graph, adding
    the candidate in memory only when it is new; any integrity, causal, phase,
    routing, generation or budget refusal aborts the append;
-7. after an exact duplicate's complete stored chain passes replay, return
-   idempotent success without writes only if its exact retention observation is already recorded,
-   whether or not a later observation is current; refuse an unrecorded
-   observation on this retry path so standalone policy changes use
-   `LifecycleStore` rather than event idempotency;
-8. for a new event, append its retention observation when needed, update
-   `run_lifecycle`, insert the immutable event, budget row and allowed opaque
-   references, then update `runs` from the accepted replay state;
+7. require the replay state's public sequence and event digest to match the
+   candidate for a new event, or the maximum stored immutable event and current
+   `runs` head for an exact historical duplicate; after that duplicate check,
+   return idempotent success without writes only if its exact retention
+   observation is already recorded, whether or not a later observation is
+   current; refuse an unrecorded observation on this retry path so standalone
+   policy changes use `LifecycleStore` rather than event idempotency;
+8. for a new event, append its
+   retention observation when needed, update `run_lifecycle`, insert the
+   immutable event, mechanically extracted budget row and allowed opaque
+   references, then update only the mechanical `runs` head fields;
 9. commit once.
 
 Any divergent identity/sequence collision returns a closed conflict and writes
@@ -596,12 +685,14 @@ closed as integrity corruption; it is never repaired in place.
 
 The `runs`, ledger, reference and `run_lifecycle` relations are disposable
 projections. A deterministic rebuild into an empty projection schema rebuilds
-the execution projections from `run_events` and the lifecycle projection from `run_retention_facts`,
-first deriving and verifying run creation from the event replay, then applying
-retention observations in ascending instant order against that origin and
-refusing equal-instant divergence. Rebuild never overwrites either immutable
-source. An independent test compares the resulting native execution and
-lifecycle state byte-for-byte through a private deterministic proof encoder.
+the execution projections from `run_events` and the lifecycle projection from
+`run_retention_facts`, first replaying the event chain through the pure core,
+requiring its public sequence and event digest to match the reconstructed head,
+then applying retention observations in ascending instant order against the
+mechanically extracted creation instant and refusing equal-instant divergence.
+Rebuild never overwrites either immutable source. An independent test compares
+canonical event bytes and every mechanical execution/lifecycle projection
+field byte-for-byte; it does not encode or reproduce private native state.
 
 ## 11. Retention, deletion and restore
 
@@ -614,16 +705,19 @@ outside the locked bounds or unequal execution/mission retention.
 Expiry uses a two-stage, bounded sweep:
 
 1. select candidate keys with a cursor and no payload export;
-2. for each bounded batch, open a retention transaction, lock the shared
-   lifecycle row and recheck its deadline against injected authoritative time,
-   write the tombstone, then delete projections, observations and events
-   atomically.
+2. for each bounded batch, open an explicit `READ COMMITTED` retention
+   transaction, call `lock_lineage` for a candidate before any lifecycle read,
+   lock the shared lifecycle row and recheck its deadline against injected
+   authoritative time, then invoke `delete_lineage_with_tombstone`, which
+   reacquires the advisory lock reentrantly, inserts or compares the tombstone
+   and deletes the run cascade atomically.
 
-Explicit deletion follows the same transaction order. A tombstone is committed
-before or with run deletion, never afterward. The subject digest is derived
-from the closed organization/run lineage; raw identifiers do not enter the
-tombstone. Deletion is idempotent for the same receipt and refuses a divergent
-receipt.
+Explicit deletion uses that same closed guard function. Retention has no raw
+`DELETE` path around it. A tombstone is committed before or with run deletion,
+never afterward. The subject digest is derived from the closed
+organization/run lineage; raw identifiers do not enter the tombstone. Deletion
+is idempotent for the same receipt and refuses a divergent receipt before any
+lineage removal.
 
 Automatic run expiry derives, in Rust and PostgreSQL, a deterministic internal
 receipt rather than inventing an external authorization receipt:
@@ -685,7 +779,9 @@ accepts injected time and a validated batch size of 1 through 100, deletes in
 the total order `(expires_at, subject_digest)` without `RETURNING`, and exposes
 only the deleted count. The SQL predicate requires both `expires_at <=
 observed_at` and `expires_at <= transaction_timestamp()`; the database trigger
-also refuses any deletion before exact `P35D`. The `(expires_at,
+also refuses any deletion before exact elapsed `P35D`, expressed as 840 hours.
+Fixed Rust/PostgreSQL vectors straddle Europe/Paris spring and autumn DST
+transitions and are repeated after poisoning the session timezone. The `(expires_at,
 subject_digest)` index bounds selection. App and restore cannot call the method
 or assume its role.
 
@@ -706,13 +802,18 @@ package and cannot be inferred from this design.
 
 All non-trivial behavior is test-first. The implementation must provide:
 
+- a disposable PostgreSQL harness that uses only a mode-0700 private Unix
+  socket, has an empty `listen_addresses`, configures every host HBA rule as
+  `reject`, and fails before tests if either property cannot be proved;
+
 ### 13.1 Unit and property tests
 
 - identifier, digest, cursor and retention-bound validation;
 - canonicalization and stored-digest equality;
 - constant-only `Display` and `Debug` for every public error;
 - cursor monotonicity and limit bounds;
-- checked budget arithmetic and projection derivation;
+- mechanical budget-field extraction and event/ledger binding without policy
+  derivation;
 - generated canonical documents proving property-order independence.
 
 ### 13.2 Real PostgreSQL integration tests
@@ -725,23 +826,34 @@ All non-trivial behavior is test-first. The implementation must provide:
 - role and context do not survive pool release;
 - rollback, task cancellation and scrub failure cannot return a poisoned
   connection to either pool;
+- a caller-enabled SQLx statement logger is forced off, and clearing either
+  the client prepared-statement cache or the unprepared server session fails
+  by destroying the connection;
+- live writers prove the lock order advisory then lifecycle then run at
+  `READ COMMITTED`; a transaction whose snapshot predates concurrent deletion
+  observes the committed tombstone after waiting, while direct app/retention
+  writes at `REPEATABLE READ` or `SERIALIZABLE` refuse before mutation;
 - the app role cannot update/delete events, access tombstones or alter schema;
 - the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update a
-  tombstone, has only the `SELECT`/`INSERT`/expired-`DELETE` its closed owned
-  functions require, and cannot read any other relation; early/raw deletion
-  and every connection-principal membership are refused;
+  tombstone, has only the tombstone access, lifecycle lock and
+  organization-scoped run deletion its closed owned functions require, and
+  cannot read any other relation; early/raw deletion and every
+  connection-principal membership are refused;
 - the restore role is `NOLOGIN`, lacks `BYPASSRLS`, cannot insert/update or
   access application methods, and its cross-organization policies cover only
   bounded tombstone replay;
 - app and retention have only column-scoped lifecycle `UPDATE`; retention has
-  no `UPDATE` on `runs`, and neither role can mutate lifecycle identity or
-  mission binding;
+  no raw `UPDATE` or `DELETE` on `runs`, and neither role can mutate lifecycle
+  identity or mission binding;
 - application attempts to recreate a tombstoned run fail without revealing
   whether the tombstone exists;
-- a closed execution projection cannot be updated, while a later authenticated
-  retention observation changes only the lifecycle projection;
+- a direct execution-head mutation without the corresponding immutable event
+  and ledger evidence cannot commit, while a later authenticated retention
+  observation changes only the lifecycle projection;
 - concurrent first append and concurrent next append commit exactly one
   lineage, while exact duplicates remain idempotent;
+- a concurrent deletion and first append of the same absent lineage always
+  leaves an active tombstone and no live run, in both lock-acquisition orders;
 - injected failure at each SQL boundary leaves no partial event, ledger,
   reference or projection write.
 
@@ -762,8 +874,8 @@ synthetic and checked for forbidden content.
 - a value greater than `P6Y` is refused;
 - selection followed by a concurrent retention change is rechecked under
   lock;
-- retention after execution closure changes only `run_lifecycle`; all `runs`
-  columns remain byte-identical;
+- retention after the last execution event changes only `run_lifecycle`; all
+  `runs` columns remain byte-identical;
 - stale and equal-instant divergent observations are refused, while exact
   repeats are idempotent;
 - lifecycle rebuild from the immutable observation journal is byte-identical
@@ -795,17 +907,28 @@ the organization/run/sequence indexes and may not show an unbounded sequential
 scan for the representative maximum fixture.
 
 The pre-open benchmark independently varies tombstone and restored-run counts.
-Registry verification plus reconciliation must scale `O(tombstones + runs)`.
+Registry verification plus the lookup/reconciliation decision has the declared bound
+`O(tombstones + runs * log(tombstones))`: the registry is scanned once and
+each restored run performs one primary-key B-tree tombstone lookup. Checked
+plans must use that index and reject a hash join, hash aggregate or other
+materialization of the complete tombstone set. Physical cascade deletion adds
+linear work in the dependent rows actually removed, so the full bound is
+`O(tombstones + runs * log(tombstones) + purged_rows)`.
 The production loop returns a private `ScanStats` value containing processed,
 page and maximum-current-page row counts; `RestoreStore` uses the processed
-count but exposes none of these diagnostics. Before consuming a fetched page,
-that same loop returns a closed integrity error if its row count exceeds the
-validated batch size. Unit tests colocated with the private loop prove this
-refusal, `max_buffered_rows <= batch_size` and identical maxima at a fixed batch
-size as total rows grow. A real-PostgreSQL E2E successfully processes more than
-two pages at batch 100, so an unbounded SQL fetch is caught by the same
-production check. The two largest fixtures must traverse multiple pages. This
-tests the exact production loop without a public or feature-gated test hook. A
+count but exposes none of these diagnostics. Every fetch enters a private
+single-page lease whose owned row type is non-Clone; the consumer borrows rows,
+no owner can escape and the lease drops before the next fetch. Before consuming
+a fetched page, that same loop returns a closed integrity error if its row count
+exceeds the validated batch size. Unit tests colocated with the private loop
+use drop-counted rows and prove oversized-page refusal, zero prior live rows at
+every subsequent fetch, `max_buffered_rows <= batch_size` and identical maxima
+at a fixed batch size as total rows grow. The statistic alone proves only the
+page-size bound; the lease/type/drop proof establishes row-owner release. A
+real-PostgreSQL E2E successfully processes more than two pages at batch 100, so
+an unbounded SQL fetch is caught by the same production check. The two largest
+fixtures must traverse multiple pages. This tests the exact production loop
+without a public or feature-gated test hook. A
 Linux CI wrapper separately runs each externally visible benchmark fixture in
 a new process via GNU `/usr/bin/time -v` and publishes normalized peak RSS
 bytes; missing collector output fails the evidence job, while no

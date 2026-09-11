@@ -37,6 +37,22 @@ pur. Elle ne crée pas de package concurrent : le `WP-G3-O01` verrouillé reste
 le seul propriétaire de `crates/agent-orchestrator-run/**` et demeure incomplet
 après cette réalisation.
 
+Le plan machine transfère prospectivement d'O02 vers O01 les six chemins
+support partagés qu'O02 possédait : manifests Cargo/package, README,
+documentation Orchestrator et carte projet. Il attribue pour la première fois
+à O01 le chemin CI exact sous la règle satellite ADR-0020. Les chemins
+de code pur, `bun.lock`, tests, compatibilité et preuves historiques d'O02 ne
+changent pas de propriétaire. Le gate O01 compare chaque chemin modifié à la
+liste exacte autorisée ; aucune glob support large ni coordination implicite
+n'est admise.
+
+Cette tranche dépend explicitement du `WP-G3-O02` accepté. Elle peut commencer
+même si `WP-G3-H01` n'est pas prouvé sur le `main` Harness courant parce
+qu'elle n'importe aucune API Harness, n'ouvre aucun service et ne peut invoquer
+ni worker ni effet. H01 reste une dépendance obligatoire de toute tranche O01
+ultérieure et de la complétion de `WP-G3-O01`. Cette exception étroite ne
+déclare donc aucune capacité de confinement disponible.
+
 ### D2 — Conserver les octets JCS comme autorité et rejouer toute la chaîne
 
 Chaque événement accepté est validé contre Contracts, canonisé RFC 8785 et
@@ -44,6 +60,14 @@ stocké avec son digest SHA-256. Ces octets JCS sont l'autorité de replay de
 l'exécution ; les tables de tête, budget et références d'attestation sont des
 projections reconstructibles. À chaque append, le store recharge et revalide
 toute la chaîne verrouillée avant de calculer la transition suivante.
+
+La projection `runs` ne persiste que les identifiants/digests mécaniquement
+extraits, les instants de création/dernier événement et la tête
+séquence/digest. Elle ne persiste ni phase de replay, ni génération dérivée,
+ni état courant des budgets : ces valeurs restent privées au reducer pur et
+aucun accessor n'est ajouté pour les exporter. Le ledger de budget recopie les
+champs validés de l'événement et les lie à son digest ; il ne recalcule aucune
+politique.
 
 La rétention n'est pas déductible des événements quand Missions change sa
 politique après la fermeture d'un run. Le store conserve donc séparément les
@@ -56,7 +80,8 @@ des événements.
 
 Une transaction verrouille la tête du run, puis écrit événement, ledger,
 références et projection de façon atomique. Des contraintes différées refusent
-au commit une tête ou des totaux qui ne correspondent pas aux lignes immuables.
+au commit une tête sans événement maximal correspondant ou un ledger non lié à
+son événement immuable.
 Un doublon octet-identique est idempotent ; une collision divergente refuse
 fermée.
 
@@ -70,15 +95,24 @@ des pools physiquement séparés.
 
 Toute transaction organization-scoped exécute un `SET LOCAL ROLE` littéral et
 un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par
-`ENABLE ROW LEVEL SECURITY` et `FORCE ROW LEVEL SECURITY`. Chaque retour au
-pool exécute `DISCARD ALL` ; une connexion impossible à nettoyer est détruite.
+`ENABLE ROW LEVEL SECURITY` et `FORCE ROW LEVEL SECURITY`. La construction des
+pools impose `disable_statement_logging()`. Chaque retour au pool vide d'abord
+le cache client de prepared statements SQLx puis exécute `DISCARD ALL` sans
+préparation persistante ; l'échec de l'une des deux étapes détruit la
+connexion.
+Les writers live commencent explicitement en `READ COMMITTED`. Les fonctions
+guard et le trigger anti-résurrection sont `VOLATILE`, vérifient
+`current_setting('transaction_isolation')` et refusent `REPEATABLE READ` ou
+`SERIALIZABLE` : après une attente advisory, leur lecture suivante doit voir
+le tombstone concurrent commité. Seul restore emploie `REPEATABLE READ`, après
+gel autoritatif des writers.
 Le rôle restore est limité à la récupération pré-ouverture et ne peut ni
 append, ni exporter, ni modifier un schéma, ni accéder aux méthodes applicatives.
-Le rôle rétention ne modifie jamais une ligne `runs` fermée : tous les writers
-se synchronisent sur une projection lifecycle séparée. Aucun rôle ne reçoit
-un `UPDATE` global sur `runs` ; les grants applicatifs restent limités aux
-colonnes de projection d'exécution, et les grants lifecycle aux seules colonnes
-de rétention.
+Le rôle rétention ne modifie ni ne supprime directement une ligne `runs` : tous
+les writers se synchronisent sur une projection lifecycle séparée. Aucun rôle
+ne reçoit un `UPDATE` global sur `runs` ; les grants applicatifs restent limités
+aux colonnes de tête mécanique, et les grants lifecycle aux seules colonnes de
+rétention.
 
 ### D4 — Rendre suppression et restauration anti-résurrection
 
@@ -86,16 +120,30 @@ Une suppression autorisée inscrit et conserve atomiquement un tombstone
 content-free avant de retirer la lignée. Son sujet est un SHA-256 versionné et
 encadré par longueurs de l'organization et du run ; des vecteurs fixes prouvent
 l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
-d'insertion ou lecture : des fonctions `SECURITY DEFINER` appartenant au guard
-dérivent le sujet du contexte transactionnel et ne retournent qu'un résultat
-fermé. Le guard reçoit uniquement `SELECT`/`INSERT` et le `DELETE` soumis à la
-policy d'expiration sur les tombstones sous RLS ; il ne peut ni les mettre à
-jour, ni lire une autre relation. Son unique fonction d'expiration impose en
-plus l'ordre, la taille et les deux bornes temporelles. Aucune identité de
-connexion ne peut assumer ce rôle.
+d'insertion, lecture ou suppression : la fonction guard
+`delete_lineage_with_tombstone` dérive le sujet du contexte transactionnel,
+verrouille la lignée, inscrit ou compare le reçu puis supprime le run cascade
+dans la même transaction. Un reçu divergent refuse avant le `DELETE`. Le guard
+reçoit uniquement les privilèges RLS tombstone, verrou lifecycle et `DELETE`
+organization-scoped sur `runs` nécessaires à ses fonctions fermées ; il ne
+peut mettre à jour un tombstone ni lire une autre relation. Sa fonction
+d'expiration impose en plus l'ordre, la taille et les deux bornes temporelles.
+Aucune identité de connexion ne peut assumer ce rôle, et rétention n'a aucun
+`DELETE` brut sur la lignée ou ses dépendances.
+
+Avant toute inspection ou insertion, append, mise à jour lifecycle, sweep et
+suppression acquièrent le même `pg_advisory_xact_lock` dérivé du sujet, puis le
+row lock lifecycle et enfin, pour append, le row lock `runs` ; le trigger
+anti-résurrection prend le verrou avant sa lecture. Le verrou couvre donc aussi
+la lignée encore absente, que le row lock lifecycle ne peut pas voir, et cet
+ordre unique prévient l'interblocage. Une collision de clé ne crée qu'une
+sérialisation superflue et ne permet aucun bypass.
 
 Les tombstones expirent exactement après `P35D`, plafond déclaré des
-sauvegardes ; une suppression anticipée est bloquée en base. Une opération
+sauvegardes ; PostgreSQL l'exprime comme `interval '840 hours'` et jamais
+comme 35 jours calendaires, afin qu'un fuseau de session empoisonné ou un
+passage DST ne raccourcisse pas la barrière. La rétention en années reste un
+calcul calendaire UTC séparé. Une suppression anticipée est bloquée en base. Une opération
 globale bornée du rôle rétention les expire sans retourner leurs lignes, selon
 l'ordre `(expires_at, subject_digest)` et sous une double borne de temps injecté
 et d'horloge PostgreSQL. Lors d'une restauration, le rôle restore charge d'abord
@@ -119,6 +167,15 @@ PostgreSQL publient tailles, octets, mémoire et percentiles sur des longueurs
 fixes, sans seuil dépendant du matériel. Les plans de requête bornés doivent
 utiliser les indexes organization/run/sequence.
 
+La restauration vérifie le registre en `O(tombstones)`, puis effectue pour
+chaque run restauré un lookup B-tree de tombstone. La décision de rapprochement
+est donc en `O(tombstones + runs * log(tombstones))`. La suppression cascade
+ajoute un coût linéaire dans les lignes dépendantes réellement purgées : la
+borne complète est
+`O(tombstones + runs * log(tombstones) + purged_rows)`. La mémoire cliente est
+bornée par une seule page propriétaire, libérée avant la suivante ; aucun hash
+join ou chargement intégral du registre n'est admis.
+
 Aucun service de production ne peut consommer cette implémentation avant une
 autorisation distincte d'état incrémental ou une borne autoritative démontrée
 par les mesures. Un checkpoint de framework n'est pas une solution admise par
@@ -130,11 +187,13 @@ Le candidat d'implémentation immuable `I` reçoit des revues
 architecture/performance, sécurité, vie privée/souveraineté et complétude sur
 le même SHA. Toute modification de `I` invalide les verdicts précédents. Après
 acceptation seulement, un enfant direct strictement evidence-only `E` peut
-ajouter le dossier et faire passer le seul critère `run-control-persistence` de
-`implemented-review-pending` à `accepted` avec `implementation_sha: I`. Un gate
-prouve `parent(E) = I`, limite son diff au dossier et à ces deux feuilles YAML,
-et vérifie que tout autre octet et tous les chemins d'implémentation sont
-byte-identiques à `I`. Les preuves couvrent PostgreSQL
+ajouter le dossier, puis faire passer de `pending` à `accepted` le critère
+`immutable-role-review` de la phase `run-control-persistence` et lui ajouter le
+mapping schéma-valide `evidence: { date, reference }`. La référence nomme le
+dossier et le SHA complet `I`. Un gate prouve `parent(E) = I`, limite son diff
+au dossier, au scalaire de statut et au mapping evidence, et vérifie que tout
+autre octet et tous les chemins d'implémentation sont byte-identiques à `I`.
+Les preuves couvrent PostgreSQL
 réel, concurrence, RLS, replay, rétention, suppression/restauration,
 compatibilité, couverture et rollback.
 
@@ -212,7 +271,10 @@ prouve :
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
 4. la rétention mission bornée, la suppression atomique et la restauration
    tombstone-first sans résurrection, avec registre complet et frais ;
-5. les pages bornées, plans indexés, mesures `O(n)` et blocage production ;
+5. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
+   `O(tombstones + runs * log(tombstones))`, restauration totale
+   `O(tombstones + runs * log(tombstones) + purged_rows)` et blocage
+   production ;
 6. la compatibilité, couverture, documentation, rollback et tous les gates ;
 7. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
 8. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct

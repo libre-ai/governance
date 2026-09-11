@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 interface WorkPackage {
   readonly id: string;
+  readonly dependsOn: readonly string[];
   readonly definitionStatus: string;
   readonly humanGates: readonly string[];
   readonly writePaths: readonly string[];
@@ -13,6 +14,85 @@ interface WorkPackagePlan {
 
 const runControlWritePath = "crates/agent-orchestrator-run/**";
 const runControlRoot = "crates/agent-orchestrator-run";
+const transferredFromPureCorePaths = [
+  "Cargo.toml",
+  "Cargo.lock",
+  "package.json",
+  "README.md",
+  "docs/apps/orchestrator.md",
+  "project.v1.yaml",
+] as const;
+const expectedRunControlWritePaths = [
+  runControlWritePath,
+  ...transferredFromPureCorePaths,
+  ".github/workflows/ci.yml",
+  "docs/reviews/orchestrator-run-control-persistence/**",
+  "tools/quality/rust-coverage-gate.test.ts",
+  "verification/agent-orchestrator/check-run-capabilities.ts",
+  "verification/agent-orchestrator/run-capability-boundary.test.ts",
+  "verification/agent-orchestrator/with-postgres.sh",
+  "verification/agent-orchestrator/benchmark-memory.sh",
+  "verification/agent-orchestrator/review-evidence.test.ts",
+] as const;
+const expectedDeclaredPathOwners = ["WP-G2-T01", "WP-G2-Q01", "WP-G2-A01", "WP-G3-O01"] as const;
+
+function staticPrefix(writePath: string): string {
+  const wildcardIndexes = ["*", "?", "[", "{"].map((marker) => writePath.indexOf(marker));
+  const firstWildcard = Math.min(
+    ...wildcardIndexes.filter((index) => index >= 0),
+    writePath.length,
+  );
+
+  return writePath.slice(0, firstWildcard).replace(/\/$/, "");
+}
+
+function overlapProbes(writePath: string): readonly string[] {
+  const prefix = staticPrefix(writePath);
+  if (prefix === writePath) {
+    return [writePath, `${writePath}/__authority_probe__`];
+  }
+  if (prefix.length === 0) {
+    return ["__authority_probe__", "crates/agent-orchestrator-run/__authority_probe__"];
+  }
+
+  return [prefix, `${prefix}/__authority_probe__`];
+}
+
+function writePathsOverlap(left: string, right: string): boolean {
+  const leftGlob = new Bun.Glob(left);
+  const rightGlob = new Bun.Glob(right);
+  const probes = new Set([...overlapProbes(left), ...overlapProbes(right)]);
+
+  if ([...probes].some((probe) => leftGlob.match(probe) && rightGlob.match(probe))) {
+    return true;
+  }
+
+  const containsWildcard = (writePath: string): boolean => /[*?[{]/.test(writePath);
+  if (!containsWildcard(left) || !containsWildcard(right)) {
+    return false;
+  }
+
+  const leftPrefix = staticPrefix(left);
+  const rightPrefix = staticPrefix(right);
+  // Glob intersection is not available from Bun.Glob. When both patterns can
+  // share a character prefix before either wildcard, ownership must fail
+  // closed even if a finite probe does not satisfy their suffixes. Requiring
+  // a path-segment boundary here would miss wildcards inside a component.
+  return (
+    leftPrefix.length === 0 ||
+    rightPrefix.length === 0 ||
+    leftPrefix.startsWith(rightPrefix) ||
+    rightPrefix.startsWith(leftPrefix)
+  );
+}
+
+function findDeclaredRunControlPathOwners(plan: WorkPackagePlan): readonly WorkPackage[] {
+  return plan.packages.filter((entry) =>
+    entry.writePaths.some((candidate) =>
+      expectedRunControlWritePaths.some((authorized) => writePathsOverlap(candidate, authorized)),
+    ),
+  );
+}
 
 function overlapsRunControlBoundary(writePath: string): boolean {
   if (writePath === runControlRoot || writePath.startsWith(`${runControlRoot}/`)) {
@@ -57,60 +137,70 @@ describe("orchestrator run-control persistence authority", () => {
       packages: [
         {
           id: "parent-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/**"],
         },
         {
           id: "child-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-orchestrator-run/src/**"],
         },
         {
           id: "wildcard-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-*/**"],
         },
         {
           id: "global-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["**"],
         },
         {
           id: "nested-wildcard-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/*/src/**"],
         },
         {
           id: "wildcard-file-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-*/Cargo.toml"],
         },
         {
           id: "suffix-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["**/*.rs"],
         },
         {
           id: "brace-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/{agent-orchestrator-run,agent-harness}/**"],
         },
         {
           id: "sibling-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-harness/**"],
         },
         {
           id: "literal-sibling-owner",
+          dependsOn: [],
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-orchestrator"],
@@ -130,6 +220,46 @@ describe("orchestrator run-control persistence authority", () => {
     ]);
   });
 
+  test("detects an unexpected exact or glob owner of support paths", () => {
+    const packageFixture = (id: string, writePaths: readonly string[]): WorkPackage => ({
+      id,
+      dependsOn: [],
+      definitionStatus: "locked",
+      humanGates: [],
+      writePaths,
+    });
+    const plan: WorkPackagePlan = {
+      packages: [
+        packageFixture("WP-G3-O01", expectedRunControlWritePaths),
+        packageFixture("unexpected-exact-owner", ["README.md"]),
+        packageFixture("unexpected-glob-owner", ["verification/agent-orchestrator/**"]),
+        packageFixture("unexpected-suffix-owner", [
+          "docs/reviews/orchestrator-run-control-persistence/*/security.md",
+        ]),
+        packageFixture("unexpected-component-wildcard-owner", [
+          "docs/reviews/orchestrator-*/**/security.md",
+        ]),
+        packageFixture("unrelated-owner", ["crates/agent-harness/**"]),
+      ],
+    };
+    const sharedWitness = "docs/reviews/orchestrator-run-control-persistence/abcdef0/security.md";
+
+    expect(
+      new Bun.Glob("docs/reviews/orchestrator-*/**/security.md").match(sharedWitness),
+    ).toBeTrue();
+    expect(
+      new Bun.Glob("docs/reviews/orchestrator-run-control-persistence/**").match(sharedWitness),
+    ).toBeTrue();
+
+    expect(findDeclaredRunControlPathOwners(plan).map((entry) => entry.id)).toEqual([
+      "WP-G3-O01",
+      "unexpected-exact-owner",
+      "unexpected-glob-owner",
+      "unexpected-suffix-owner",
+      "unexpected-component-wildcard-owner",
+    ]);
+  });
+
   test("binds ADR-0039, D45 and only the locked runtime work package", async () => {
     const [adr, decisionRegister, design, implementationPlan, plan] = await Promise.all([
       Bun.file("docs/adr/0039-orchestrator-run-control-persistence.md").text(),
@@ -141,7 +271,9 @@ describe("orchestrator run-control persistence authority", () => {
       Bun.file("docs/transformation/work-packages.v1.json").json() as Promise<WorkPackagePlan>,
     ]);
     const workPackage = plan.packages.find((entry) => entry.id === "WP-G3-O01");
+    const pureCorePackage = plan.packages.find((entry) => entry.id === "WP-G3-O02");
     const runControlOwners = findRunControlOwners(plan);
+    const declaredPathOwners = findDeclaredRunControlPathOwners(plan);
 
     expect(hasExpectedAdrTitle(adr)).toBeTrue();
     expect(hasExpectedAdrTitle("")).toBeFalse();
@@ -152,7 +284,7 @@ describe("orchestrator run-control persistence authority", () => {
     expect(design).toContain("authority ADR-0039/D45");
     expect(adr).toContain("faits de rétention immuables");
     expect(design).toContain("### 7.2 `run_retention_facts`");
-    expect(design).toContain(
+    expect(design.replace(/\s+/g, " ")).toContain(
       "execution projections from `run_events` and the lifecycle projection from `run_retention_facts`",
     );
     expect(design).toContain("No role receives table-wide `UPDATE` on `runs`");
@@ -167,15 +299,60 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("max_buffered_rows");
     expect(implementationPlan).toContain("orchestrator_run_test_support");
     expect(design).not.toContain("It cannot `UPDATE` or `DELETE` a tombstone");
-    expect(implementationPlan).toContain("byte-for-byte unchanged outside those two CST ranges");
+    expect(implementationPlan).toContain(
+      "byte-for-byte unchanged outside the status scalar and evidence mapping CST ranges",
+    );
+    expect(implementationPlan).not.toContain("implemented-review-pending");
+    expect(implementationPlan).not.toContain("implementation_sha:");
     expect(implementationPlan).toContain("struct ScanStats");
     expect(implementationPlan).toContain("page.len() > batch_size");
+    expect(implementationPlan).toContain("single-page lease");
+    expect(implementationPlan).toContain("drop-counted rows");
+    expect(implementationPlan).toContain("purged_rows");
+    expect(implementationPlan).toContain("clear_cached_statements");
+    expect(implementationPlan).toContain("disable_statement_logging");
+    expect(implementationPlan).toContain("immutable-role-review");
+    expect(implementationPlan).toContain("interval '840 hours'");
+    expect(implementationPlan).not.toContain(
+      "CHECK (expires_at = deleted_at + interval '35 days')",
+    );
+    expect(implementationPlan).toContain("listen_addresses=''");
+    expect(implementationPlan).toContain("--auth-host=reject");
+    expect(design).toContain("does not persist replay phase");
+    expect(implementationPlan).not.toContain("pub enum RunPhase");
+    expect(implementationPlan).toContain("delete_lineage_with_tombstone");
+    expect(implementationPlan).toContain("O(tombstones + runs * log(tombstones))");
+    expect(implementationPlan).toContain("WP-G3-H01 remains a prerequisite for every later slice");
+    expect(implementationPlan).toContain(
+      "every changed path against the exact WP-G3-O01 writePaths",
+    );
+    expect(design).toContain("WP-G2-T01`, `WP-G2-Q01` and `WP-G2-A01`");
+    expect(design).toContain("hub-era paths are not concurrent satellite write authority");
+    expect(implementationPlan).toContain("ADR-0020 satellite precedence rule");
+    expect(implementationPlan).toContain("guard lock-only grant");
+    expect(implementationPlan).toContain("SELECT(tenant_id, run_id)` on `runs`");
+    expect(implementationPlan).toContain("pg_advisory_xact_lock");
+    expect(implementationPlan).toContain("transaction_isolation");
+    expect(implementationPlan).toContain("READ COMMITTED");
+    expect(implementationPlan).toContain("VOLATILE");
+    expect(implementationPlan).toContain("historical duplicate compares the replayed current head");
     expect(implementationPlan).toContain("commands/manifest.json");
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$I" origin/main');
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$E" origin/main');
     expect(workPackage?.definitionStatus).toBe("locked");
+    expect(workPackage?.dependsOn).toEqual([
+      "WP-G2-Q01",
+      "WP-G2-D01",
+      "WP-G2-A01",
+      "WP-G3-H01",
+      "WP-G3-O02",
+    ]);
     expect(workPackage?.humanGates).toEqual(["layer-2-bootstrap-security-merge"]);
-    expect(workPackage?.writePaths).toEqual([runControlWritePath]);
+    expect(workPackage?.writePaths).toEqual(expectedRunControlWritePaths);
+    for (const transferredPath of transferredFromPureCorePaths) {
+      expect(pureCorePackage?.writePaths).not.toContain(transferredPath);
+    }
     expect(runControlOwners.map((entry) => entry.id)).toEqual(["WP-G3-O01"]);
+    expect(declaredPathOwners.map((entry) => entry.id)).toEqual([...expectedDeclaredPathOwners]);
   });
 });
