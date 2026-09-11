@@ -131,12 +131,13 @@ describe("orchestrator run-control persistence authority", () => {
   });
 
   test("binds ADR-0039, D45 and only the locked runtime work package", async () => {
-    const [adr, decisionRegister, design, plan] = await Promise.all([
+    const [adr, decisionRegister, design, implementationPlan, plan] = await Promise.all([
       Bun.file("docs/adr/0039-orchestrator-run-control-persistence.md").text(),
       Bun.file("docs/decisions/DECISION-REGISTER.md").text(),
       Bun.file(
         "docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md",
       ).text(),
+      Bun.file("docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md").text(),
       Bun.file("docs/transformation/work-packages.v1.json").json() as Promise<WorkPackagePlan>,
     ]);
     const workPackage = plan.packages.find((entry) => entry.id === "WP-G3-O01");
@@ -155,6 +156,8 @@ describe("orchestrator run-control persistence authority", () => {
       "execution projections from `run_events` and the lifecycle projection from `run_retention_facts`",
     );
     expect(design).toContain("No role receives table-wide `UPDATE` on `runs`");
+    expect(design).toContain("exact retention observation is already recorded");
+    expect(implementationPlan).toContain("exact retention observation is already recorded");
     expect(workPackage?.definitionStatus).toBe("locked");
     expect(workPackage?.humanGates).toEqual(["layer-2-bootstrap-security-merge"]);
     expect(workPackage?.writePaths).toEqual([runControlWritePath]);

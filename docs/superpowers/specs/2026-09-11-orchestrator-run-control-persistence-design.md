@@ -444,9 +444,11 @@ that mission with the event/run, derives the internal observation digest and
 computes retention from run creation, not from the latest append.
 `LifecycleStore::apply_mission_retention` records the same bounded fact and may
 update `run_lifecycle` after execution closure when Missions changes its
-policy; it never updates `runs`. Both paths reject a stale observation, treat
-an exact repeated observation as idempotent and refuse a divergent value at
-the same instant. Neither method accepts a caller-classified “policy valid”
+policy; it never updates `runs`. Both paths reject an unrecorded stale
+observation, treat an exact repeated observation as idempotent and refuse a
+divergent value at the same instant. An exact event retry may reference an older fact only when
+that exact fact is already present in the immutable journal; it performs no
+lifecycle write. Neither method accepts a caller-classified “policy valid”
 boolean.
 
 `PoolLimits` has closed minimum/maximum bounds for connection count and
@@ -514,9 +516,10 @@ methods rather than N+1 loading.
    the candidate in memory only when it is new; any integrity, causal, phase,
    routing, generation or budget refusal aborts the append;
 7. after an exact duplicate's complete stored chain passes replay, return
-   idempotent success without writes only if its retention observation is
-   already current; refuse a new observation on this retry path so standalone
-   policy changes use `LifecycleStore` rather than event idempotency;
+   idempotent success without writes only if its exact retention observation is already recorded,
+   whether or not a later observation is current; refuse an unrecorded
+   observation on this retry path so standalone policy changes use
+   `LifecycleStore` rather than event idempotency;
 8. for a new event, append its retention observation when needed, update
    `run_lifecycle`, insert the immutable event, budget row and allowed opaque
    references, then update `runs` from the accepted replay state;
