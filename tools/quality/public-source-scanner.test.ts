@@ -2,11 +2,148 @@ import { describe, expect, test } from "bun:test";
 
 import {
   containsCredentialMarker,
+  containsEmailIdentifier,
+  containsEmailIdentifierExcludingRfc2606Examples,
   containsSensitivePublicMarker,
   decodeSensitiveMarkers,
   publicSourceScannerSelfTestFailures,
   publicSourceScannerSelfTests,
 } from "./public-source-scanner";
+
+describe("email identifier line boundaries", () => {
+  test.each([
+    ["bare LF before at-sign", "markdown\n@AGENTS.md"],
+    ["bare CR before at-sign", "markdown\r@AGENTS.md"],
+    ["bare CRLF without WSP before at-sign", "markdown\r\n@AGENTS.md"],
+    ["bare LF after at-sign", "alice@\ncustomer.company"],
+    ["bare CR after at-sign", "alice@\rcustomer.company"],
+    ["bare CRLF without WSP after at-sign", "alice@\r\ncustomer.company"],
+  ])("does not join independent lines: %s", (_label, value) => {
+    expect(containsEmailIdentifier(value)).toBe(false);
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+  });
+
+  test.each([
+    ["same-line SP/HTAB", "alice \t @ \t customer.company"],
+    ["folding before at-sign", "alice\r\n \t@example.company"],
+    ["folding after at-sign", "alice@\r\n \texample.company"],
+    ["folding on both sides", "alice\r\n \t@\r\n  example.company"],
+  ])("recognizes explicit folding whitespace: %s", (_label, value) => {
+    expect(containsEmailIdentifier(value)).toBe(true);
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(true);
+  });
+
+  test.each([
+    "markdown%0A%40AGENTS.md",
+    "markdown%0D%40AGENTS.md",
+    "markdown&#10;&commat;AGENTS&period;md",
+  ])("keeps a decoded bare line break as a hard boundary", (value) => {
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+  });
+
+  test("detects decoded valid CRLF folding", () => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples("alice%0D%0A%20%40customer%2Ecompany"),
+    ).toBe(true);
+  });
+});
+
+describe("RFC 2606 example-aware email identifiers", () => {
+  test.each([
+    "alice@example.com",
+    "alice@example.net",
+    "alice@example.org",
+    "alice@docs.libre-ai.example",
+    "alice@docs.libre-ai.invalid",
+    "alice@docs.libre-ai.test",
+  ])("ignores only a canonical ASCII dot-atom example: %s", (value) => {
+    expect(containsEmailIdentifier(value)).toBe(true);
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+  });
+
+  test.each([
+    ["quoted", '"alice"@example.org'],
+    ["commented local", "alice(comment)@example.org"],
+    ["commented domain", "alice@(comment)example.org"],
+    ["SMTPUTF8", "😀@example.org"],
+    ["domain literal", "alice@[192.0.2.1]"],
+    ["malformed label", "alice@bad_name.example"],
+    ["percent-encoded", "alice%40example.org"],
+    ["HTML-encoded", "alice&commat;example&period;org"],
+    ["NFKC at-sign", "alice＠example.org"],
+    ["default-ignorable", "ali\u200bce@example.org"],
+    ["comma inside apparent local", "ali,ce@example.org"],
+    ["colon before trailing address", "unknown:alice@example.org"],
+    ["semicolon inside apparent local", "ali;ce@example.org"],
+    ["closing parenthesis before trailing address", "ali)ce@example.org"],
+  ])("does not exempt a non-canonical reserved-domain form: %s", (_label, value) => {
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(true);
+  });
+
+  test.each([
+    " ",
+    ",",
+    ";",
+    ":",
+    ")",
+  ])("continues after an ignored example separated by %s", (separator) => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples(
+        `first@example.org${separator}admin@customer.company`,
+      ),
+    ).toBe(true);
+  });
+
+  test("detects a personal identifier before and between ignored examples", () => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples(
+        "admin@customer.company,first@example.org;second@example.net",
+      ),
+    ).toBe(true);
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples(
+        "first@example.org;admin@customer.company:second@example.net",
+      ),
+    ).toBe(true);
+  });
+
+  test("preserves raw provenance across mixed encoded and canonical candidates", () => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples(
+        "first@example.org,second%40example.net;admin@customer.company",
+      ),
+    ).toBe(true);
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples("first@example.org,second%40example.net"),
+    ).toBe(true);
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples("alice@example.org,alice%40example.org"),
+    ).toBe(true);
+  });
+
+  test.each([
+    "alice@example.org documentation%2Fguide",
+    "alice@example.org documentation (note)",
+  ])("does not taint a raw canonical example when unrelated text is projected: %s", (value) => {
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+  });
+
+  test("keeps adjacent canonical examples and email-labelled examples exempt", () => {
+    expect(
+      containsEmailIdentifierExcludingRfc2606Examples(
+        "first@example.org,second@example.net;contact:third@example.com",
+      ),
+    ).toBe(false);
+  });
+
+  test("stays bounded while structurally rejecting many canonical candidates", () => {
+    const value = "contact:a@example.org,".repeat(2_900);
+    const started = Bun.nanoseconds();
+
+    expect(containsEmailIdentifierExcludingRfc2606Examples(value)).toBe(false);
+    expect((Bun.nanoseconds() - started) / 1e6).toBeLessThan(2_000);
+  });
+});
 
 describe("specialized-vector public-source scanner", () => {
   for (const [label, value, expectedSensitive] of publicSourceScannerSelfTests) {

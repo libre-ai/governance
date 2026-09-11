@@ -63,8 +63,12 @@ const asciiAtext = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]$/;
 const asciiLetter = /^[A-Za-z]$/;
 const uriSchemeCharacter = /^[A-Za-z0-9+.-]$/;
 const whitespace = /^[\t\n\r ]$/;
+const horizontalWhitespace = /^[\t ]$/;
 const domainCodePoint = /^[\p{L}\p{M}\p{N}.-]$/u;
 const domainBoundaryContinuation = /^[\p{L}\p{M}\p{N}_.-]$/u;
+const apparentReservedDomainCodePoint = /^[A-Za-z0-9_.-]$/;
+const canonicalAsciiDotAtom = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$/;
+const exactRfc2606ExampleDomains = new Set(["example.com", "example.net", "example.org"]);
 const textEncoder = new TextEncoder();
 const maximumDecodedCodePoints = 65_536;
 const emailContextLabels = new Set([
@@ -338,22 +342,46 @@ function projectEmailContextByDirectAt(value: string): string {
   return output.join("");
 }
 
-function skipWhitespaceBackward(value: string, end: number): number {
+/**
+ * RFC folding whitespace is horizontal whitespace on one line, optionally
+ * continued by CRLF only when the next physical line starts with SP/HTAB.
+ * Bare CR/LF are document boundaries: accepting them here joins unrelated
+ * Markdown lines into a synthetic address.
+ */
+function skipFoldingWhitespaceBackward(value: string, end: number): number {
   let cursor = end;
   while (cursor > 0) {
-    const start = previousCodePointStart(value, cursor);
-    if (!isWhitespaceAt(value, start, cursor)) break;
-    cursor = start;
+    let horizontalStart = cursor;
+    while (horizontalStart > 0) {
+      const start = previousCodePointStart(value, horizontalStart);
+      if (!horizontalWhitespace.test(value.slice(start, horizontalStart))) break;
+      horizontalStart = start;
+    }
+    const consumedHorizontal = horizontalStart < cursor;
+    cursor = horizontalStart;
+    if (
+      !consumedHorizontal ||
+      cursor < 2 ||
+      value.charCodeAt(cursor - 2) !== 0x0d ||
+      value.charCodeAt(cursor - 1) !== 0x0a
+    )
+      break;
+    cursor -= 2;
   }
   return cursor;
 }
 
-function skipWhitespaceForward(value: string, start: number): number {
+function skipFoldingWhitespaceForward(value: string, start: number): number {
   let cursor = start;
   while (cursor < value.length) {
-    const end = nextCodePointEnd(value, cursor);
-    if (!isWhitespaceAt(value, cursor, end)) break;
-    cursor = end;
+    while (cursor < value.length && horizontalWhitespace.test(value[cursor] ?? "")) cursor += 1;
+    if (
+      value.charCodeAt(cursor) !== 0x0d ||
+      value.charCodeAt(cursor + 1) !== 0x0a ||
+      !horizontalWhitespace.test(value[cursor + 2] ?? "")
+    )
+      break;
+    cursor += 2;
   }
   return cursor;
 }
@@ -378,11 +406,19 @@ function findOpeningQuoteBoundaries(value: string): ReadonlySet<number> {
 }
 
 function hasEmailContextLabel(value: string, colon: number): boolean {
-  const match = value
-    .slice(0, colon)
-    .toLowerCase()
-    .match(/(?:^|[\t\n\r ])([\p{L}-]+)$/u);
-  return match !== null && emailContextLabels.has(match[1] ?? "");
+  let start = colon;
+  while (start > 0) {
+    const previous = previousCodePointStart(value, start);
+    if (!/^[\p{L}-]$/u.test(value.slice(previous, start))) break;
+    start = previous;
+  }
+  if (start === colon) return false;
+  if (start > 0) {
+    const boundary = previousCodePointStart(value, start);
+    const character = value.slice(boundary, start);
+    if (!isWhitespaceAt(value, boundary, start) && !"(<[{,;)".includes(character)) return false;
+  }
+  return emailContextLabels.has(value.slice(start, colon).toLowerCase());
 }
 
 function hasValidLocalBoundary(
@@ -393,16 +429,22 @@ function hasValidLocalBoundary(
   if (start === 0) return true;
   const previous = previousCodePointStart(value, start);
   const character = value.slice(previous, start);
-  if (isWhitespaceAt(value, previous, start) || "(<[{".includes(character)) return true;
+  if (isWhitespaceAt(value, previous, start) || "(<[{,;:)".includes(character)) return true;
   if (character === '"') return openingQuotes.has(previous);
-  return character === ":" && hasEmailContextLabel(value, previous);
+  return false;
 }
 
-function hasValidDotAtomLocal(
+interface EmailLocalCandidate {
+  readonly end: number;
+  readonly kind: "dot-atom" | "quoted";
+  readonly start: number;
+}
+
+function parseDotAtomLocal(
   value: string,
   end: number,
   openingQuotes: ReadonlySet<number>,
-): boolean {
+): EmailLocalCandidate | null {
   let start = end;
   while (start > 0) {
     const previous = previousCodePointStart(value, start);
@@ -410,7 +452,7 @@ function hasValidDotAtomLocal(
     if (!(character === "." || isAtextAt(value, previous, start))) break;
     start = previous;
   }
-  if (start === end || !hasValidLocalBoundary(value, start, openingQuotes)) return false;
+  if (start === end || !hasValidLocalBoundary(value, start, openingQuotes)) return null;
   const candidate = value.slice(start, end);
   if (
     candidate.startsWith(".") ||
@@ -418,8 +460,8 @@ function hasValidDotAtomLocal(
     candidate.includes("..") ||
     textEncoder.encode(candidate).byteLength > 64
   )
-    return false;
-  return true;
+    return null;
+  return { end, kind: "dot-atom", start };
 }
 
 function isUnescapedQuote(value: string, index: number): boolean {
@@ -443,32 +485,34 @@ function isAllowedQuotedCodePoint(codePoint: number): boolean {
   );
 }
 
-function hasValidQuotedLocal(
+function parseQuotedLocal(
   value: string,
   end: number,
   openingQuotes: ReadonlySet<number>,
-): boolean {
+): EmailLocalCandidate | null {
   const closingQuote = end - 1;
-  if (!isUnescapedQuote(value, closingQuote)) return false;
+  if (!isUnescapedQuote(value, closingQuote)) return null;
   for (let openingQuote = closingQuote - 1; openingQuote >= 0; openingQuote -= 1) {
     if (!isUnescapedQuote(value, openingQuote)) continue;
-    if (!hasValidLocalBoundary(value, openingQuote, openingQuotes)) return false;
+    if (!hasValidLocalBoundary(value, openingQuote, openingQuotes)) return null;
     for (let cursor = openingQuote + 1; cursor < closingQuote; ) {
       let codePoint = value.codePointAt(cursor);
-      if (codePoint === undefined) return false;
+      if (codePoint === undefined) return null;
       cursor = nextCodePointEnd(value, cursor);
       if (codePoint === 0x5c) {
-        if (cursor >= closingQuote) return false;
+        if (cursor >= closingQuote) return null;
         codePoint = value.codePointAt(cursor);
-        if (codePoint === undefined) return false;
+        if (codePoint === undefined) return null;
         cursor = nextCodePointEnd(value, cursor);
         if (!(codePoint === 0x09 || (codePoint >= 0x20 && codePoint <= 0x7e) || codePoint >= 0x80))
-          return false;
-      } else if (!isAllowedQuotedCodePoint(codePoint)) return false;
+          return null;
+      } else if (!isAllowedQuotedCodePoint(codePoint)) return null;
     }
-    return textEncoder.encode(value.slice(openingQuote, end)).byteLength <= 64;
+    return textEncoder.encode(value.slice(openingQuote, end)).byteLength <= 64
+      ? { end, kind: "quoted", start: openingQuote }
+      : null;
   }
-  return false;
+  return null;
 }
 
 function isDomainDot(character: string): boolean {
@@ -491,16 +535,23 @@ function hasValidDomainBoundary(value: string, end: number): boolean {
   return !domainBoundaryContinuation.test(value.slice(end, next));
 }
 
-function hasValidDomainLiteral(value: string, start: number): boolean {
-  const closing = value.indexOf("]", start + 1);
-  const boundary = closing < 0 ? closing : skipTrailingDomainDots(value, closing + 1);
-  if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, boundary)) return false;
-  const literal = value.slice(start + 1, closing);
-  if (/^IPv6:/i.test(literal)) return isIP(literal.slice(5)) === 6;
-  return isIP(literal) === 4;
+interface EmailDomainCandidate {
+  readonly ascii: string | null;
+  readonly end: number;
+  readonly kind: "dns" | "literal";
+  readonly start: number;
 }
 
-function hasValidDnsDomain(value: string, start: number): boolean {
+function parseDomainLiteral(value: string, start: number): EmailDomainCandidate | null {
+  const closing = value.indexOf("]", start + 1);
+  const boundary = closing < 0 ? closing : skipTrailingDomainDots(value, closing + 1);
+  if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, boundary)) return null;
+  const literal = value.slice(start + 1, closing);
+  const valid = /^IPv6:/i.test(literal) ? isIP(literal.slice(5)) === 6 : isIP(literal) === 4;
+  return valid ? { ascii: null, end: closing + 1, kind: "literal", start } : null;
+}
+
+function parseDnsDomain(value: string, start: number): EmailDomainCandidate | null {
   let end = start;
   while (end < value.length) {
     const next = nextCodePointEnd(value, end);
@@ -508,56 +559,237 @@ function hasValidDnsDomain(value: string, start: number): boolean {
     if (!(domainCodePoint.test(character) || isDomainDot(character))) break;
     end = next;
   }
-  if (end === start || !hasValidDomainBoundary(value, end)) return false;
+  if (end === start || !hasValidDomainBoundary(value, end)) return null;
   while (end > start) {
     const previous = previousCodePointStart(value, end);
     if (!isDomainDot(value.slice(previous, end))) break;
     end = previous;
   }
-  if (end === start) return false;
+  if (end === start) return null;
   const ascii = domainToASCII(value.slice(start, end));
-  if (ascii.length === 0 || ascii.length > 253) return false;
+  if (ascii.length === 0 || ascii.length > 253) return null;
   const labels = ascii.toLowerCase().split(".");
-  if (labels.length < 2) return false;
+  if (labels.length < 2) return null;
   for (const label of labels) {
     if (label.length === 0 || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label))
-      return false;
+      return null;
   }
   const topLevel = labels.at(-1) ?? "";
-  return /^[a-z]{2,63}$/.test(topLevel) || /^xn--[a-z0-9-]{2,59}$/.test(topLevel);
+  if (!(/^[a-z]{2,63}$/.test(topLevel) || /^xn--[a-z0-9-]{2,59}$/.test(topLevel))) return null;
+  return { ascii: ascii.toLowerCase(), end, kind: "dns", start };
 }
 
-function hasValidDomain(value: string, start: number): boolean {
-  return value[start] === "["
-    ? hasValidDomainLiteral(value, start)
-    : hasValidDnsDomain(value, start);
+function parseDomain(value: string, start: number): EmailDomainCandidate | null {
+  return value[start] === "[" ? parseDomainLiteral(value, start) : parseDnsDomain(value, start);
 }
 
-function containsEmailIdentifierWithoutComments(value: string): boolean {
+interface EmailCandidate {
+  readonly at: number;
+  readonly canonicalSeparatorBoundary: boolean;
+  readonly domain: EmailDomainCandidate;
+  readonly local: EmailLocalCandidate;
+}
+
+type EmailCandidatePolicy = (candidate: EmailCandidate, value: string) => boolean;
+type EmailCandidatePolicyFactory = () => EmailCandidatePolicy;
+
+function isRfc2606ExampleDomain(domain: string): boolean {
+  return (
+    exactRfc2606ExampleDomains.has(domain) ||
+    domain.endsWith(".example") ||
+    domain.endsWith(".invalid") ||
+    domain.endsWith(".test")
+  );
+}
+
+function hasCanonicalSeparatorBoundary(
+  value: string,
+  localStart: number,
+  previousCandidateEnd: number | null,
+): boolean {
+  if (localStart === 0) return true;
+  const separatorStart = previousCodePointStart(value, localStart);
+  const separator = value.slice(separatorStart, localStart);
+  if (!",;:)".includes(separator)) return true;
+  if (previousCandidateEnd === separatorStart || separatorStart === 0) return true;
+  if (separator === ":" && hasEmailContextLabel(value, separatorStart)) return true;
+  const beforeSeparator = previousCodePointStart(value, separatorStart);
+  return !domainBoundaryContinuation.test(value.slice(beforeSeparator, separatorStart));
+}
+
+function hasMalformedReservedDomain(value: string, start: number): boolean {
+  let end = start;
+  while (end < value.length && apparentReservedDomainCodePoint.test(value[end] ?? "")) end += 1;
+  while (end > start && value[end - 1] === ".") end -= 1;
+  if (end === start) return false;
+  return isRfc2606ExampleDomain(value.slice(start, end).toLowerCase());
+}
+
+function containsEmailCandidate(
+  value: string,
+  policy: EmailCandidatePolicy,
+  malformedReservedIsSensitive: boolean,
+): boolean {
   const openingQuotes = findOpeningQuoteBoundaries(value);
+  let previousCandidateEnd: number | null = null;
   for (let at = value.indexOf("@"); at >= 0; at = value.indexOf("@", at + 1)) {
-    const localEnd = skipWhitespaceBackward(value, at);
-    const domainStart = skipWhitespaceForward(value, at + 1);
-    if (!hasValidDomain(value, domainStart)) continue;
-    if (
-      hasValidDotAtomLocal(value, localEnd, openingQuotes) ||
-      hasValidQuotedLocal(value, localEnd, openingQuotes)
-    )
-      return true;
+    const localEnd = skipFoldingWhitespaceBackward(value, at);
+    const domainStart = skipFoldingWhitespaceForward(value, at + 1);
+    const local =
+      parseDotAtomLocal(value, localEnd, openingQuotes) ??
+      parseQuotedLocal(value, localEnd, openingQuotes);
+    if (local === null) continue;
+    const domain = parseDomain(value, domainStart);
+    if (domain === null) {
+      if (malformedReservedIsSensitive && hasMalformedReservedDomain(value, domainStart))
+        return true;
+      continue;
+    }
+    const candidate = {
+      at,
+      canonicalSeparatorBoundary: hasCanonicalSeparatorBoundary(
+        value,
+        local.start,
+        previousCandidateEnd,
+      ),
+      domain,
+      local,
+    } satisfies EmailCandidate;
+    previousCandidateEnd = domain.end;
+    if (policy(candidate, value)) return true;
   }
   return false;
 }
 
-export function containsEmailIdentifier(input: string): boolean {
-  if (containsEmailIdentifierWithoutComments(input)) return true;
+function containsEmailIdentifierAcrossCommentProjections(
+  input: string,
+  directPolicy: EmailCandidatePolicy,
+  projectedPolicy: EmailCandidatePolicyFactory,
+  malformedReservedIsSensitive: boolean,
+): boolean {
+  if (containsEmailCandidate(input, directPolicy, malformedReservedIsSensitive)) return true;
   const withoutComments = removeEmailComments(input);
-  if (withoutComments !== input && containsEmailIdentifierWithoutComments(withoutComments))
+  if (
+    withoutComments !== input &&
+    containsEmailCandidate(withoutComments, projectedPolicy(), malformedReservedIsSensitive)
+  )
     return true;
   const projectedContext = projectEmailContextWithoutComments(input);
-  if (projectedContext !== input && containsEmailIdentifierWithoutComments(projectedContext))
+  if (
+    projectedContext !== input &&
+    containsEmailCandidate(projectedContext, projectedPolicy(), malformedReservedIsSensitive)
+  )
     return true;
   const directContext = projectEmailContextByDirectAt(input);
-  return directContext !== input && containsEmailIdentifierWithoutComments(directContext);
+  return (
+    directContext !== input &&
+    containsEmailCandidate(directContext, projectedPolicy(), malformedReservedIsSensitive)
+  );
+}
+
+const everyEmailCandidateIsSensitive: EmailCandidatePolicy = () => true;
+const everyEmailCandidateIsSensitiveFactory: EmailCandidatePolicyFactory = () =>
+  everyEmailCandidateIsSensitive;
+
+function isNonRfc2606ExampleCandidate(candidate: EmailCandidate, value: string): boolean {
+  if (
+    candidate.local.kind !== "dot-atom" ||
+    candidate.domain.kind !== "dns" ||
+    candidate.domain.ascii === null ||
+    !candidate.canonicalSeparatorBoundary ||
+    candidate.local.end !== candidate.at ||
+    candidate.domain.start !== candidate.at + 1
+  )
+    return true;
+  const local = value.slice(candidate.local.start, candidate.local.end);
+  const rawDomain = value.slice(candidate.domain.start, candidate.domain.end);
+  return !(
+    canonicalAsciiDotAtom.test(local) &&
+    /^[A-Za-z0-9.-]+$/.test(rawDomain) &&
+    isRfc2606ExampleDomain(candidate.domain.ascii)
+  );
+}
+
+function canonicalExampleFingerprint(candidate: EmailCandidate, value: string): string {
+  return value.slice(candidate.local.start, candidate.domain.end);
+}
+
+function collectCanonicalRfc2606Examples(value: string): ReadonlyMap<string, number> {
+  const examples = new Map<string, number>();
+  containsEmailCandidate(
+    value,
+    (candidate, candidateValue) => {
+      if (!isNonRfc2606ExampleCandidate(candidate, candidateValue)) {
+        const fingerprint = canonicalExampleFingerprint(candidate, candidateValue);
+        examples.set(fingerprint, (examples.get(fingerprint) ?? 0) + 1);
+      }
+      return false;
+    },
+    false,
+  );
+  return examples;
+}
+
+function createSourceProvenancePolicy(
+  sourceExamples: ReadonlyMap<string, number>,
+): EmailCandidatePolicy {
+  const remaining = new Map(sourceExamples);
+  return (candidate, value) => {
+    if (isNonRfc2606ExampleCandidate(candidate, value)) return true;
+    const fingerprint = canonicalExampleFingerprint(candidate, value);
+    const count = remaining.get(fingerprint) ?? 0;
+    if (count === 0) return true;
+    if (count === 1) remaining.delete(fingerprint);
+    else remaining.set(fingerprint, count - 1);
+    return false;
+  };
+}
+
+export function containsEmailIdentifier(input: string): boolean {
+  return containsEmailIdentifierAcrossCommentProjections(
+    input,
+    everyEmailCandidateIsSensitive,
+    everyEmailCandidateIsSensitiveFactory,
+    false,
+  );
+}
+
+/**
+ * Detects an email identifier while excluding only source-authored RFC 2606
+ * examples in canonical ASCII dot-atom form. The raw source is required: a
+ * candidate produced by decoding, Unicode normalization, default-ignorable
+ * removal, or comment projection never gains the example exemption.
+ */
+export function containsEmailIdentifierExcludingRfc2606Examples(input: string): boolean {
+  if (exceedsDecodedCodePointLimit(input)) return true;
+  const sourceExamples = collectCanonicalRfc2606Examples(input);
+  const sourceProvenancePolicy = (): EmailCandidatePolicy =>
+    createSourceProvenancePolicy(sourceExamples);
+  if (
+    containsEmailIdentifierAcrossCommentProjections(
+      input,
+      isNonRfc2606ExampleCandidate,
+      sourceProvenancePolicy,
+      true,
+    )
+  )
+    return true;
+
+  const { variants, overLimit } = sensitiveVariants(input);
+  if (overLimit) return true;
+  for (const variant of variants) {
+    if (
+      variant !== input &&
+      containsEmailIdentifierAcrossCommentProjections(
+        variant,
+        sourceProvenancePolicy(),
+        sourceProvenancePolicy,
+        true,
+      )
+    )
+      return true;
+  }
+  return false;
 }
 
 function exceedsDecodedCodePointLimit(value: string): boolean {
@@ -747,6 +979,10 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["whole-quoted IDN CFWS email", '"alice (comment) @ example.орг"', true],
   ["parenthesized IPv6 CFWS email", "(alice (comment) @ [IPv6:2001:db8::1])", true],
   ["whole-quoted IPv6 CFWS email", '"alice (comment) @ [IPv6:2001:db8::1]"', true],
+  ["bare LF does not join email lines", "markdown\n@AGENTS.md", false],
+  ["bare CR does not join email lines", "markdown\r@AGENTS.md", false],
+  ["bare CRLF without WSP does not join email lines", "markdown\r\n@AGENTS.md", false],
+  ["RFC folded email", "alice\r\n \t@example.org", true],
   ["parentheses in quoted local email", '"ali(ce)"@example.org', true],
   ["Unicode domain email", "alice@example.орг", true],
   ["combining-mark IDN email", "alice@e\u0301xample.org", true],
@@ -791,9 +1027,11 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["narrow-no-break domain separator", "alice@\u202Fexample.org", false],
   ["ideographic-space domain separator", "alice@\u3000example.org", false],
   ["C0-separated local token", "ali\u0000ce@example.org", false],
-  ["colon-separated local token", "ali:ce@example.org", false],
-  ["unknown colon label", "unknown:alice@example.org", false],
-  ["comma-separated local token", "ali,ce@example.org", false],
+  ["colon-separated local token", "ali:ce@example.org", true],
+  ["unknown colon label", "unknown:alice@example.org", true],
+  ["comma-separated local token", "ali,ce@example.org", true],
+  ["semicolon-separated local token", "ali;ce@example.org", true],
+  ["closing-parenthesis-separated local token", "ali)ce@example.org", true],
   ["RFC slash atext email", "ali/ce@example.org", true],
   ["leading-dot local", ".alice@example.org", false],
   ["trailing-dot local", "alice.@example.org", false],
