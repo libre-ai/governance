@@ -1,6 +1,6 @@
 schema_version: libre-ai.repositories.v2
 authority: single source of the public topology (ADR-0009 §7 as amended by ADR-0020 — project STATE lives in each repository's project.v1.yaml card; this index carries topology only)
-updated_on: 2026-08-18
+updated_on: 2026-09-11
 # v2 (γ 3.6, design §6.2) : les champs d'état produit (exposure, benchmark,
 # hypothesis, evidence_required, promotion_criteria, kill_predicates) ont
 # MIGRÉ dans la fiche project.v1.yaml de chaque repo — preuve verte à
@@ -13,6 +13,16 @@ updated_on: 2026-08-18
 # un enum fermé active|archived vérifié mécaniquement par build-index.ts —
 # aucune valeur libre, aucun jeton de vague ne peut y résider.
 repositories:
+  - repository: libre-ai/product-research
+    role: administrative-private
+    layer: transverse
+    visibility: private
+    lifecycle: active
+    owns:
+      - sanitized non-authoritative product research
+      - research source and promotion registries
+    consumes:
+      - governance and contracts authority revisions
   - repository: libre-ai/libre-ai
     card: ecosystem/cards/libre-ai.project.v1.yaml
     role: hub
