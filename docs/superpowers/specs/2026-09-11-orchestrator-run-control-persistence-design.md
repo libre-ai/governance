@@ -1,7 +1,7 @@
 # Orchestrator Run-Control Persistence — Phase 4B Design
 
-- **Status:** draft for owner review; option A architecture approved on
-  2026-09-11; governance authorization pending under ADR-0039/D45
+- **Status:** approved for planning — owner, 2026-09-11; governance
+  authorization pending under ADR-0039/D45
 - **Date:** 2026-09-11
 - **Programme authority:** ADR-0011, ADR-0018, ADR-0034, ADR-0036 and
   ADR-0037
@@ -35,8 +35,10 @@ normal mechanical registry checks. This correction is bookkeeping, not a new
 architecture choice.
 
 This document authorizes no implementation by itself. Governance must first
-merge ADR-0039/D45 with a bounded additive package for this slice. That act may
-narrow `WP-G3-O01`; it must not mark the complete runtime package proven.
+merge ADR-0039/D45 to bind this bounded slice of the existing locked
+`WP-G3-O01`. It creates no overlapping work package and must not mark the
+complete runtime package proven; authorization consumption, execution and
+service capabilities remain closed inside that package.
 
 ## 2. Payoff and proof boundary
 
@@ -137,8 +139,10 @@ it does not reintroduce “tenant” into product or API language.
 
 The new crate may:
 
-- use an injected SQLx PostgreSQL pool;
-- open transactions through that pool;
+- consume caller-built SQLx `PgConnectOptions` and bounded pool limits;
+- construct and own one private PostgreSQL pool per authority role, with the
+  mandatory connection-scrubbing hook;
+- open transactions through those private pools;
 - encode already validated event documents as RFC 8785 JCS bytes;
 - calculate and compare SHA-256 digests;
 - return typed, bounded pages and constant public error codes.
@@ -154,10 +158,13 @@ It may not:
 - authorize a run, actor, deletion or retention policy;
 - accept a preclassified semantic verdict from an adapter.
 
-The caller injects the pool, authoritative time and already established
-authority facts. The crate still recomputes every comparison it owns. Future
-connection construction, secret loading and request authorization require
-separate packages.
+The caller injects connection options, authoritative time and already
+established authority facts. It resolves endpoints and secrets outside this
+crate; the crate never formats or exposes those options. Pool construction is
+inside the crate because accepting an opaque prebuilt pool would make the
+mandatory `DISCARD ALL` return hook unverifiable. The crate still recomputes
+every comparison it owns. Future environment/secret loading and request
+authorization require separate packages.
 
 Migration SQL belongs to the crate, but the library does not read or execute
 migration files at runtime. CI and future deployment tooling apply the exact
@@ -212,10 +219,11 @@ table access:
 3. the bounded query or mutation;
 4. commit or rollback.
 
-Lifecycle methods use a physically separate injected pool and set
+Lifecycle methods use a physically separate, store-owned pool and set
 `libre_ai_retention`. Pool release executes `DISCARD ALL`; a connection that
-cannot be scrubbed is discarded. Tests intentionally poison a pooled session
-and prove that neither role nor organization context survives reuse.
+cannot be scrubbed is discarded. Tests intentionally poison a pooled session,
+exercise rollback and cancellation paths, and prove that neither role nor
+organization context survives reuse.
 
 `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY` apply to every
 organization-scoped table. Policies require both a non-empty local setting and
@@ -308,7 +316,12 @@ The crate exposes typed stores, not SQL primitives:
 
 ```rust
 pub struct RunStore { /* private PgPool + embedded ContractRegistry */ }
-pub struct LifecycleStore { /* private retention PgPool */ }
+pub struct LifecycleStore { /* separate private PgPool */ }
+
+pub async fn connect(
+    options: PgConnectOptions,
+    limits: PoolLimits,
+) -> Result<Self, StoreError>;
 
 pub async fn append_event(
     &self,
@@ -337,6 +350,12 @@ cursor-bounded shape. Lifecycle methods accept explicit authoritative time and
 an explicit deletion command whose authorization has already been verified by
 a future caller. They do not expose a public bypass flag or reuse the
 application pool.
+
+`PoolLimits` has closed minimum/maximum bounds for connection count and
+acquisition timeout. Both store constructors install the same `after_release`
+hook and return a closed `StoreError` if initial connection or session
+scrubbing fails. Neither `PgConnectOptions`, `PgPool`, nor a raw connection is
+recoverable from the constructed store.
 
 Construction builds the fail-closed `ContractRegistry` once from SDK Rust's
 embedded canonical schemas. Each append validates the supplied graph and
@@ -492,6 +511,8 @@ All non-trivial behavior is test-first. The implementation must provide:
   organization B through any public method;
 - missing or poisoned organization context fails closed;
 - role and context do not survive pool release;
+- rollback, task cancellation and scrub failure cannot return a poisoned
+  connection to either pool;
 - the app role cannot update/delete events, access tombstones or alter schema;
 - the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot mutate a
   tombstone and cannot read any other relation;
