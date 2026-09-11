@@ -446,6 +446,11 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("execution_snapshot_digest");
     expect(design.replace(/\s+/g, " ")).toContain("no admissible execution snapshot can contain");
     expect(implementationPlan).toContain("snapshot between tombstone capture and deletion commit");
+    expect(design.replace(/\s+/g, " ")).toContain(
+      "validates only bounds, ordering and internal digests",
+    );
+    expect(implementationPlan).toContain("does not infer catalog authenticity or freshness");
+    expect(implementationPlan).not.toContain("wrong-catalog");
     expect(decisionRegister).toContain("role-provisioning compatibility");
     expect(implementationPlan).toContain("println!");
     expect(implementationPlan).toContain("immutable-role-review");

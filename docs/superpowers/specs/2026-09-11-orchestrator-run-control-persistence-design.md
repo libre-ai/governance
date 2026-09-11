@@ -719,20 +719,22 @@ through the writer fence and refuse a snapshot older than `P35D`. They replay
 every retained tombstone regardless of temporal eligibility. A registry may
 omit a purged tombstone only when its authenticated retirement proof binds the
 selected execution snapshot and proves that no admissible execution snapshot
-can contain that subject's lineage. The package verifies the exact snapshot,
-catalog-revision and proof-digest binding; the future caller authenticates the
-catalog membership and retirement semantics. They do not accept a
-caller-classified “registry complete” boolean. A future caller must
-authenticate the fact and prove the writer fence; this package opens neither
-capability.
+can contain that subject's lineage. The package validates only bounds, ordering
+and internal digests. It does not infer catalog authenticity or freshness and
+cannot compare a declared snapshot digest with the actual backup artifact. A
+future pre-open gate must authenticate the catalog, prove membership of the
+selected artifact and validate the retirement semantics before constructing
+the fact. Restore accepts no caller-classified “registry complete” boolean;
+this package opens none of those external capabilities.
 
 `SnapshotRetirementFact` is a bounded, content-free fact from the independent
 backup authority. It binds an immutable snapshot-catalog revision, an exact
 sorted set of subject/receipt digests, its count and set digest, and the
 observation instant. Its semantics are stronger than age: no admissible
 execution snapshot can contain any listed lineage. Tombstone expiry recomputes
-the exact selected set and refuses an absent, stale, partial or mismatched
-fact. Its set digest is SHA-256 over
+the exact selected set and refuses an absent, malformed, partial or internally
+mismatched fact. Catalog admission and freshness are external authority
+preconditions, not storage inferences. Its set digest is SHA-256 over
 `libre-ai.snapshot-retirement.v1\0`, the fixed snapshot-catalog digest,
 big-endian `i64` observation instant, big-endian `u16` count, then every sorted
 fixed subject/receipt digest pair. If the external fact is unavailable, the content-free tombstone remains

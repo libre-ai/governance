@@ -213,9 +213,13 @@ lignées restaurées. Un tombstone purgé ne peut être omis que si la preuve de
 retrait lie le snapshot sélectionné et exclut cette lignée ; son âge seul ne
 suffit pas. Restore supprime par pages bornées, puis exige un compte résiduel
 nul. Ce zéro est nécessaire mais jamais suffisant sans preuve de complétude et
-de fraîcheur du registre. Le crate vérifie ces faits mais ne les authentifie
-pas et ne contrôle aucun gel de writers ni démarrage de service ; ces autorités
-restent séparément fermées.
+de fraîcheur du registre. Le crate vérifie seulement leurs bornes, ordres et
+digests internes : il ne peut comparer le digest déclaré au backup réel ni
+décider quel catalogue est authentique ou courant. Le futur gate pré-ouverture
+doit authentifier le catalogue, l'appartenance du snapshot sélectionné et la
+preuve de retrait avant de construire ces faits. Le crate ne contrôle aucun
+gel de writers ni démarrage de service ; ces autorités restent séparément
+fermées.
 
 ### D5 — Mesurer le coût O(n) et interdire le branchement production
 
