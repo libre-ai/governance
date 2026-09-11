@@ -29,6 +29,9 @@ function overlapsRunControlBoundary(writePath: string): boolean {
     ...wildcardIndexes.filter((index) => index >= 0),
     writePath.length,
   );
+  if (firstWildcard === writePath.length) {
+    return false;
+  }
   const staticPrefix = writePath.slice(0, firstWildcard);
 
   return staticPrefix.length === 0 || runControlRoot.startsWith(staticPrefix);
@@ -105,6 +108,12 @@ describe("orchestrator run-control persistence authority", () => {
           definitionStatus: "locked",
           humanGates: [],
           writePaths: ["crates/agent-harness/**"],
+        },
+        {
+          id: "literal-sibling-owner",
+          definitionStatus: "locked",
+          humanGates: [],
+          writePaths: ["crates/agent-orchestrator"],
         },
       ],
     };
