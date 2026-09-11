@@ -896,7 +896,16 @@ restore replay`.
 
 - [ ] **Step 1: Write red compatibility and CI assertions**
 
-Snapshot every public re-export and five error codes. Extend the Bun coverage test to require test/coverage commands are wrapped by `with-postgres.sh --`, PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds remain. Add synthetic parsed-summary fixtures proving that workspace coverage passes while the run-store package coverage fails; the gate must reject that state, and must pass only when both independently meet 87/90. Run focused tests and require failure against the old workflow/missing snapshots.
+Snapshot every public re-export and five error codes. Extend the Bun coverage
+test to require test/coverage commands are wrapped by `with-postgres.sh --`,
+PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds
+remain. The structural workflow assertion also requires the exact quiet rustdoc
+command and both debug and release PostgreSQL workspace test commands; removing
+`--quiet` or either test mode is red. Add synthetic parsed-summary fixtures
+proving that workspace coverage passes while the run-store package coverage fails;
+the gate must reject that state, and must pass only when both
+independently meet 87/90. Run focused tests and require failure against the old
+workflow/missing snapshots.
 
 - [ ] **Step 2: Implement the benchmark**
 
@@ -936,8 +945,9 @@ Use:
 ```yaml
 - run: cargo fmt --all --check
 - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-- run: RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
+- run: RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps
 - run: verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
+- run: verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features
 - name: Structural memory and RSS evidence
   run: verification/agent-orchestrator/with-postgres.sh -- verification/agent-orchestrator/benchmark-memory.sh
 - name: Rust coverage (blocking)
@@ -955,14 +965,23 @@ Use:
 ```
 
 Use runner-provided PostgreSQL binaries; do not download a container or package during the job.
+The release test graph includes the dev dependency that activates
+`tracing/log-always`; consequently this command reruns the no-emission tests
+with release optimizations and that unified feature, rather than merely
+checking that the release graph compiles. The quiet rustdoc command must
+produce an empty combined stream on success. Its stable evidence id is
+`cargo-doc-quiet`; any output, including a machine path, fails evidence capture
+instead of being rewritten. The release test command uses stable id
+`postgres-tests-release`.
 
 - [ ] **Step 4: Run all gates and commit**
 
 ```bash
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
-RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
+RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps
 verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
+verification/agent-orchestrator/with-postgres.sh -- cargo test --release --locked --workspace --all-features
 cargo deny check --show-stats bans licenses sources
 bun run check
 verification/agent-orchestrator/with-postgres.sh -- \
@@ -1029,7 +1048,27 @@ Run the documentation assertion, `bun run check` and full PostgreSQL workspace t
 
 - [ ] **Step 1: Freeze candidate and rerun every gate**
 
-Run Task 12 commands, require clean status, then record full implementation SHA `I`, parents, tree, message and a boolean DCO-valid result without copying author or committer identity into evidence. Capture outputs in a validated temporary directory outside the worktree; no untracked dossier may dirty the candidate during review. Normalize each combined stdout/stderr stream to UTF-8, LF endings and no ANSI escapes, reject secrets, personal data and absolute machine paths, then retain those exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical JCS and records `I` and, for each stable id, the exact non-secret argv array, exit code zero, relative output path and lowercase SHA-256 of the tracked normalized bytes. The evidence gate rehashes every file, rejects missing/unreferenced outputs and requires each review to cite the stable command ids it consumed. The eventual dossier directory uses seven SHA characters; every verdict and the manifest name full `I`, while benchmark CSV and normalized command bytes are bound indirectly by their manifest path and SHA-256 and are never mutated merely to inject `I`. The four review verdicts bind `I`, never the later evidence commit.
+Run every Task 12 command, explicitly including both PostgreSQL debug and
+release workspace tests, require clean status, then record full implementation
+SHA `I`, parents, tree, message and a boolean DCO-valid result without copying
+author or committer identity into evidence. Capture outputs in a validated
+temporary directory outside the worktree; no untracked dossier may dirty the
+candidate during review. The successful `cargo-doc-quiet` capture must be
+empty; do not repair, redact or path-rewrite rustdoc output. Normalize every
+other combined stdout/stderr stream to UTF-8, LF endings and no ANSI escapes,
+reject secrets, personal data and absolute machine paths, then retain those
+exact bytes as `commands/<stable-id>.txt`. `commands/manifest.json` is canonical
+JCS and records `I` and, for each stable id, the exact non-secret argv array,
+exit code zero, relative output path and lowercase SHA-256 of the tracked
+normalized bytes. It must contain `cargo-doc-quiet` and
+`postgres-tests-release`; the latter proves release execution of the
+dev-unified `tracing/log-always` graph on `I`. The evidence gate rehashes every
+file, rejects missing/unreferenced outputs and requires each review to cite the
+stable command ids it consumed. The eventual dossier directory uses seven SHA
+characters; every verdict and the manifest name full `I`, while benchmark CSV
+and normalized command bytes are bound indirectly by their manifest path and
+SHA-256 and are never mutated merely to inject `I`. The four review verdicts
+bind `I`, never the later evidence commit.
 
 - [ ] **Step 2: Run four independent review roles**
 

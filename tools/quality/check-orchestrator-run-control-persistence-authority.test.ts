@@ -363,6 +363,15 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("sqlx::postgres::notice");
     expect(implementationPlan).toContain("debug and release");
     expect(implementationPlan).toContain("log-always");
+    expect(implementationPlan).toContain(
+      'RUSTDOCFLAGS="-D warnings" cargo doc --quiet --locked --workspace --all-features --no-deps',
+    );
+    expect(implementationPlan).toContain(
+      "cargo test --release --locked --workspace --all-features",
+    );
+    expect(implementationPlan.replace(/\s+/g, " ")).toContain(
+      "The release test graph includes the dev dependency that activates `tracing/log-always`",
+    );
     expect(implementationPlan).toContain("global downstream effect");
     expect(implementationPlan).toContain("driver that preserves safe downstream diagnostics");
     expect(implementationPlan).toContain("println!");
