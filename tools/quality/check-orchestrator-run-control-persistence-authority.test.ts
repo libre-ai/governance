@@ -145,6 +145,76 @@ async function adrPathsForNumber(expectedNumber: string): Promise<readonly strin
 }
 
 describe("orchestrator run-control persistence authority", () => {
+  test("binds the direct SQLx component profile and final-consumer graph proof", async () => {
+    const [adr, decisionRegister, design, implementationPlan] = await Promise.all([
+      Bun.file("docs/adr/0040-orchestrator-run-control-persistence.md").text(),
+      Bun.file("docs/decisions/DECISION-REGISTER.md").text(),
+      Bun.file(
+        "docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md",
+      ).text(),
+      Bun.file("docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md").text(),
+    ]);
+    const exactCoreDeclaration =
+      'sqlx-core = { version = "=0.9.0", default-features = false, features = ["_rt-tokio", "json", "chrono"] }';
+    const exactPostgresDeclaration =
+      'sqlx-postgres = { version = "=0.9.0", default-features = false, features = ["json", "chrono"] }';
+    const normalizedAdr = adr.replace(/\s+/g, " ");
+    const normalizedDesign = design.replace(/\s+/g, " ");
+    const normalizedPlan = implementationPlan.replace(/\s+/g, " ");
+
+    expect(implementationPlan).toContain(exactCoreDeclaration);
+    expect(implementationPlan).toContain(exactPostgresDeclaration);
+    expect(implementationPlan).not.toMatch(/^sqlx\s*=/m);
+    expect(implementationPlan).not.toContain('features = ["runtime-tokio", "postgres"');
+    expect(implementationPlan).toContain("use sqlx_core::connection::ConnectOptions;");
+    expect(implementationPlan).toContain("use sqlx_core::raw_sql::raw_sql;");
+    expect(implementationPlan).toContain(
+      "use sqlx_postgres::{PgConnectOptions, PgConnection, PgPool, PgPoolOptions, PgSslMode, Postgres};",
+    );
+    expect(implementationPlan).toContain('raw_sql("DISCARD ALL")');
+    expect(implementationPlan).not.toContain('sqlx::raw_sql("DISCARD ALL")');
+    expect(implementationPlan).not.toContain("use sqlx::postgres::PgConnectOptions");
+    expect(implementationPlan).toContain("sqlx::postgres::notice");
+
+    for (const authority of [adr, decisionRegister, design, implementationPlan]) {
+      expect(authority).toContain("2026-09-11");
+      expect(authority).toContain("sqlx-core");
+      expect(authority).toContain("sqlx-postgres");
+      expect(authority).toContain("semver-exempt");
+      expect(authority).toContain("_rt-tokio");
+    }
+
+    expect(normalizedAdr).toContain("active inconditionnellement `sqlx-core/migrate`");
+    expect(normalizedAdr).toContain("deux sites `eprintln!`");
+    expect(adr).not.toContain("observed API leak");
+    expect(design).toContain("does not prove an observed API leak");
+    expect(normalizedDesign).toContain("compile availability and known module exclusion only");
+    expect(normalizedDesign).toContain("not an end-to-end or complete dependency-source proof");
+    expect(normalizedDesign).toContain("complete requalification on every component update");
+    expect(normalizedDesign).toContain(
+      "Cargo metadata package superset is not the selected build graph",
+    );
+    expect(normalizedDesign).toContain("lockfile-only packages are not selected-graph failures");
+    expect(normalizedDesign).toContain("debug, release and dev `tracing/log-always`");
+
+    expect(normalizedPlan).toContain("separate same-graph consumer");
+    expect(normalizedPlan).toContain("facade introduced by another consumer");
+    expect(normalizedPlan).toContain("direct `sqlx-core/migrate`");
+    expect(normalizedPlan).toContain("direct `sqlx-postgres/migrate`");
+    expect(normalizedPlan).toContain("duplicate SQLx component versions");
+    expect(normalizedPlan).toContain("TLS or any extra feature");
+    expect(normalizedPlan).toContain("fails closed");
+    expect(normalizedPlan).toContain(
+      "`sqlx-core/default` may appear through `sqlx-postgres`, but it is empty in 0.9.0",
+    );
+    expect(normalizedPlan).toContain(
+      "compare concrete effective feature closures, not isolated feature names",
+    );
+    expect(normalizedPlan).toContain("truly unselected `cfg` branches");
+    expect(normalizedPlan).toContain("no directory named `testing` is exempt");
+    expect(normalizedPlan).toContain("four production blockers remain unchanged");
+  });
+
   test("detects every ownership pattern that overlaps the runtime boundary", () => {
     const plan: WorkPackagePlan = {
       packages: [
@@ -345,7 +415,10 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("tracing::level_filters::STATIC_MAX_LEVEL");
     expect(implementationPlan).toContain("log::STATIC_MAX_LEVEL");
     expect(implementationPlan).toContain(
-      'features = ["runtime-tokio", "postgres", "json", "chrono"]',
+      'sqlx-core = { version = "=0.9.0", default-features = false, features = ["_rt-tokio", "json", "chrono"] }',
+    );
+    expect(implementationPlan).toContain(
+      'sqlx-postgres = { version = "=0.9.0", default-features = false, features = ["json", "chrono"] }',
     );
     expect(implementationPlan).not.toContain("tls-rustls-ring-webpki");
     expect(implementationPlan).not.toContain("tls-rustls-ring-native-roots");

@@ -30,8 +30,9 @@
   and never becomes a second reducer.
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
 - The Rust layer reads no environment, ordinary file, process state, host wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`. The closed database deletion guard alone captures its post-lock effective deletion instant. This proof is Unix-domain socket only: construction refuses unless `get_socket()` is `Some`, rejects caller startup `options`, replaces password, application name and every file/inline certificate/key value with fixed non-secret values, forces `PgSslMode::Disable` and never calls `to_url_lossy`. Caller-side construction remains outside this boundary; no TCP or TLS transport is admitted.
-- Pin every dependency exactly. SQLx uses only `runtime-tokio`, `postgres`, `json` and `chrono`; no TLS implementation, macros, `ipnet`, embedded migrations, SQLite or MySQL.
-- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is one of four production blockers alongside whole-chain `O(n)` replay, absent remote TLS transport and unproven target role-provisioning compatibility; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- Pin every dependency exactly. Use the unmodified registry components directly: `sqlx-core` 0.9.0 enables only `_rt-tokio`, `json` and `chrono`; `sqlx-postgres` 0.9.0 enables only `json` and `chrono`. The `sqlx` facade and `migrate` are absent from every selected final consumer graph; no TLS implementation, macros, `offline`, `any`, `ipnet`, embedded migrations, SQLite or MySQL is selected. The explicitly semver-exempt core API and private `_rt-tokio` coupling are accepted only for this proof under exact pins and complete requalification on every component update; they do not support a performance or production-readiness claim.
+- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every logging-facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is one of four production blockers alongside whole-chain `O(n)` replay, absent remote TLS transport and unproven target role-provisioning compatibility; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. The four production blockers remain unchanged by the direct-component amendment. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- The 2026-09-11 compile-only diagnostic established component API availability and known module exclusion, not E2E behavior or complete dependency-source safety. SQLx 0.9.0's facade manifest unconditionally selects `sqlx-core/migrate`; core selects its `testing` module under that feature, including two direct `eprintln!` sites. Bind audits to the exact upstream 0.9.0 [facade manifest](https://docs.rs/crate/sqlx/0.9.0/source/Cargo.toml), [core module selection](https://docs.rs/crate/sqlx-core/0.9.0/source/src/lib.rs) and [testing module](https://docs.rs/crate/sqlx-core/0.9.0/source/src/testing/mod.rs). Do not infer an observed API leak from that source fact.
 - Clever Cloud Paris/EU remains a production candidate, not a proven target. Before any production adapter or deployment, an immutable provider attestation executed on the selected target must prove all four global `NOLOGIN` roles, three separate login identities, exact memberships/grants, RLS and guard-function privileges, and `pgcrypto` after provider-authorized provisioning. A local bootstrap or unrecorded support assurance is insufficient; failure to obtain this proof requires separately selecting and authorizing a compatible EU PostgreSQL provider without weakening the role model.
 - Every live app/retention writer explicitly begins at `READ COMMITTED` before
   role/context setup. Guard functions and the anti-resurrection trigger are
@@ -302,8 +303,9 @@ string or historical Governance row alone is not delivery proof.
 
 ```ts
 expect(await checkRunCapabilityBoundary()).toEqual([]);
-expect(runManifestFailures("sqlx = \"0.9\"")).toContain("sqlx-not-exact");
-expect(runManifestFailures("sqlx = { version = \"=0.9.0\", default-features = true }")).toContain("sqlx-default-features-enabled");
+expect(runManifestFailures("sqlx = { version = \"=0.9.0\", default-features = false }")).toContain("sqlx-facade-forbidden");
+expect(runManifestFailures("sqlx-core = { version = \"=0.9.0\", default-features = true }")).toContain("sqlx-core-default-features-enabled");
+expect(runManifestFailures("sqlx-postgres = { version = \"=0.9.0\", default-features = true }")).toContain("sqlx-postgres-default-features-enabled");
 expect(runSourceFailures("src/lib.rs", "std::fs::read(\"x\")")).toContain("capability-forbidden:src/lib.rs:filesystem");
 expect(runSourceFailures("src/lib.rs", "std::env::var(\"DATABASE_URL\")")).toContain("capability-forbidden:src/lib.rs:environment");
 ```
@@ -323,7 +325,10 @@ constructor and parser: `new`, `new_without_pgpass`, `Default::default`,
 `PgConnectOptions`, their fully qualified forms and import aliases. SQLx 0.9.0
 may read PostgreSQL environment variables, system identity, default socket
 paths or pgpass during those calls; later sanitation cannot undo that access.
-Only caller-injected `PgConnectOptions` may cross the public store boundary.
+Only caller-injected `sqlx_postgres::PgConnectOptions` may cross the public
+store boundary. Positive source fixtures import component APIs through
+`sqlx_core` and `sqlx_postgres`; facade re-exports are forbidden even when
+their concrete types would be identical.
 The scanner's sole logging-related production allow-list is the exact
 compile-time `STATIC_MAX_LEVEL` assertions; imports or executable
 instrumentation remain forbidden. It also loads the merged machine
@@ -362,7 +367,8 @@ serde_jcs = "=0.2.0"
 serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
 sha2 = { version = "=0.11.0", default-features = false }
 log = { version = "=0.4.33", default-features = false, features = ["max_level_off", "release_max_level_off"] }
-sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "json", "chrono"] }
+sqlx-core = { version = "=0.9.0", default-features = false, features = ["_rt-tokio", "json", "chrono"] }
+sqlx-postgres = { version = "=0.9.0", default-features = false, features = ["json", "chrono"] }
 tracing = { version = "=0.1.44", default-features = false, features = ["std", "max_level_off", "release_max_level_off"] }
 
 [dev-dependencies]
@@ -380,14 +386,44 @@ only to install the serialized test collector. If the locked dependency graph
 cannot unify on these exact releases, stop with resolver evidence rather than
 introducing duplicate versions.
 
+Use only the direct component APIs in production and positive fixtures:
+
+```rust
+use sqlx_core::connection::ConnectOptions;
+use sqlx_core::connection::Connection;
+use sqlx_core::query_scalar::query_scalar;
+use sqlx_core::raw_sql::raw_sql;
+use sqlx_postgres::{PgConnectOptions, PgConnection, PgPool, PgPoolOptions, PgSslMode, Postgres};
+```
+
+The core API is semver-exempt and `_rt-tokio` is a private feature. Exact
+0.9.0 pins make this bounded choice reproducible but do not make it stable;
+every component update triggers the complete graph, source, compilation,
+collector and PostgreSQL requalification.
+
 - [ ] **Step 4: Implement/wire the gate and prove green**
 
-The checker compares exact production/dev dependency sets and SQLx features,
-rejects every TLS or extra SQLx feature (notably `ipnet`, whose optional
-decoder has a raw `println!` path), and rejects `build.rs`, `src/main.rs`, `src/bin` and
-alternate production dependency sections. It verifies the resolved Cargo
-feature graph, not merely the direct manifest, and audits the active SQLx
-source graph for direct logger/event/stdout bypasses. Add normal-build const
+The checker compares exact production/dev dependency sets and SQLx component
+features, rejects every TLS or extra SQLx feature (notably `ipnet`, whose
+optional decoder has a raw `println!` path), and rejects `build.rs`,
+`src/main.rs`, `src/bin` and alternate production dependency sections. It
+verifies each final selected Cargo graph, not merely the direct manifest. The
+Cargo metadata package superset is not the selected build graph: lockfile-only
+packages are not selected-graph failures, while every effective feature and
+source in debug, release and dev `tracing/log-always` is audited.
+`sqlx-core/default` may appear through `sqlx-postgres`, but it is empty in
+0.9.0; compare concrete effective feature closures, not isolated feature
+names. Source exclusion is limited to truly unselected `cfg` branches; no
+directory named `testing` is exempt and no unreachable-call exception is
+allowed.
+
+Add distinct final-consumer negative fixtures. A facade introduced by another
+consumer, direct `sqlx-core/migrate`, direct `sqlx-postgres/migrate`, duplicate
+SQLx component versions, and TLS or any extra feature each fails closed.
+Keep the separate same-graph consumer reactivation case independent from the
+direct manifest cases so feature-unification regressions cannot hide behind
+manifest validation. Audit every selected SQLx source for direct
+logger/event/stdout bypasses. Add normal-build const
 assertions that `tracing::level_filters::STATIC_MAX_LEVEL` is `OFF` and
 `log::STATIC_MAX_LEVEL` is `Off`; the capability gate accepts only those exact
 assertions. Add `check:run-capabilities` to `package.json` immediately after
@@ -663,7 +699,7 @@ PgPoolOptions::new()
             return Ok(false);
         }
 
-        if sqlx::raw_sql("DISCARD ALL").execute(&mut *connection).await.is_err() {
+        if sqlx_core::raw_sql::raw_sql("DISCARD ALL").execute(&mut *connection).await.is_err() {
             return Ok(false);
         }
 
@@ -1117,7 +1153,7 @@ expect(runSourceFailures("examples/uds_persistence.rs", "ConnectOptions::from_ur
   .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
 expect(runSourceFailures("examples/uds_persistence.rs", "value.parse::<PgConnectOptions>()"))
   .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
-expect(runSourceFailures("examples/uds_persistence.rs", "use sqlx::postgres::PgConnectOptions as Options; Options::new()"))
+expect(runSourceFailures("examples/uds_persistence.rs", "use sqlx_postgres::PgConnectOptions as Options; Options::new()"))
   .toContain("capability-forbidden:examples/uds_persistence.rs:ambient-connect-options");
 ```
 

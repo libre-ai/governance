@@ -1,7 +1,7 @@
 # ADR-0040 — Persistance du contrôle de run Orchestrator
 
 - **Statut :** proposed — la fusion de cette pull request constitue l'arbitrage propriétaire
-- **Choix de conception :** recommandation A validée par le propriétaire le 2026-09-11 ; l'autorité Governance reste conditionnée à la fusion
+- **Choix de conception :** recommandation A validée par le propriétaire le 2026-09-11 ; profil de dépendances corrigé par le choix C explicite du même jour ; l'autorité Governance reste conditionnée à la fusion
 - **Étend :** ADR-0032 D38, ADR-0034 D40, ADR-0036 D42 et ADR-0037 D43
 - **Applique :** I-08 (preuves et critères), I-17 (action human-touch), I-21 (zéro donnée personnelle dans Git) et ADR-0011 D4 (premier merge sécurité de couche 2)
 - **Autorise :** la seule tranche de persistance du `WP-G3-O01`, dans le crate séparé `crates/agent-orchestrator-run/`
@@ -21,6 +21,38 @@ service. Elle réduit l'obligation du futur runtime : charger des octets
 canoniques, appliquer le cœur pur déjà accepté et refuser toute divergence. Le
 store ne devient ni une seconde autorité contractuelle ni un moteur
 d'exécution.
+
+## Correction du profil SQLx — 2026-09-11
+
+Le profil initial de cette déclaration utilisait la façade `sqlx` 0.9.0 avec
+ses default features désactivées. L'étude de source a établi un fait plus
+strict : la dépendance non optionnelle de la façade `sqlx` 0.9.0 active
+inconditionnellement `sqlx-core/migrate`. Le module `sqlx_core::testing`,
+sélectionné par cette feature, contient deux sites `eprintln!`. Cela invalide
+le refus source absolu du profil initial, sans établir
+qu'un de ces chemins ait été appelé par l'API proposée. Sources upstream
+versionnées : [manifest de la façade
+0.9.0](https://docs.rs/crate/sqlx/0.9.0/source/Cargo.toml), [sélection du module
+core 0.9.0](https://docs.rs/crate/sqlx-core/0.9.0/source/src/lib.rs) et [module
+testing 0.9.0](https://docs.rs/crate/sqlx-core/0.9.0/source/src/testing/mod.rs).
+
+Le choix propriétaire C remplace uniquement cette déclaration par les crates
+registry non modifiées `sqlx-core` et `sqlx-postgres` 0.9.0. Core active
+exactement `_rt-tokio`, `json` et `chrono`; Postgres active exactement `json`
+et `chrono`, default features désactivées dans les deux cas. Il accepte pour
+cette preuve l'API explicitement semver-exempt de `sqlx-core` et son couplage à
+la feature privée `_rt-tokio`, sous pins exacts et requalification complète à
+chaque mise à jour. Le gate porte sur le graphe final effectivement sélectionné
+en debug, release et dev `tracing/log-always`, et refuse toute réintroduction de
+la façade, de `migrate`, d'une version dupliquée, de TLS ou d'une feature non
+autorisée par un autre consommateur du même graphe. Les packages seulement
+présents dans le lockfile ou le superset de `cargo metadata` ne sont pas, seuls,
+des packages sélectionnés. `sqlx-postgres` peut faire apparaître la feature
+`sqlx-core/default`, qui est vide en 0.9.0 ; le gate compare la fermeture
+effective concrète, pas des noms de features isolés. Les quatre blocages
+production existants restent inchangés. Le diagnostic isolé n'a prouvé que la
+disponibilité à la compilation des APIs directes et l'exclusion connue du
+module `testing`, pas un E2E ni un audit exhaustif des sources du graphe.
 
 ## Décision
 
@@ -119,15 +151,25 @@ utilisent des pools physiquement séparés.
 Toute transaction organization-scoped exécute un `SET LOCAL ROLE` littéral et
 un `set_config('app.tenant_id', $1, true)` lié. Chaque table est protégée par
 `ENABLE ROW LEVEL SECURITY` et `FORCE ROW LEVEL SECURITY`. Dans le graphe Cargo
-exact, les dépendances normales `log` et `tracing` activent
+final sélectionné, les dépendances directes exactes `sqlx-core` et
+`sqlx-postgres` 0.9.0 remplacent la façade `sqlx`; ni la façade ni `migrate` ne
+peuvent être sélectionnés par un autre consommateur. Les dépendances normales
+`log` et `tracing` activent
 `max_level_off` et `release_max_level_off` ; des assertions de compilation
 imposent `log::STATIC_MAX_LEVEL == Off` et
-`tracing::level_filters::STATIC_MAX_LEVEL == OFF`. Les macros de façade de
-SQLx sont donc compilées hors du binaire en debug, release et sous la variante
+`tracing::level_filters::STATIC_MAX_LEVEL == OFF`. Les macros des façades de
+logging sont donc compilées hors du binaire en debug, release et sous la variante
 de test `tracing/log-always`. `disable_statement_logging()` reste imposé en
 défense en profondeur, mais ne porte pas seul la garantie. Le gate refuse tout
 appel direct à un logger/événement/stdout et toute feature SQLx hors liste,
 notamment `ipnet` et son chemin optionnel `println!`.
+
+L'audit source parcourt les crates SQLx réellement sélectionnés. Il peut
+écarter une branche `cfg` dont la feature est démontrée absente, mais aucun
+répertoire nommé `testing` ni aucun chemin supposé inatteignable ne reçoit
+d'exception. Le graphe final est éprouvé séparément en debug, release et dev
+`tracing/log-always`; le superset de packages de `cargo metadata` sert à
+résoudre les objets mais ne remplace pas cette sélection effective.
 
 Ce contrôle a un effet global aval assumé sur les instances de packages
 unifiées : tout consommateur du même graphe perd aussi les diagnostics de ces
@@ -320,8 +362,11 @@ du workspace et celle du nouveau crate atteignent chacune indépendamment au
 minimum 87 % des lignes et 90 % des fonctions ; l'agrégat du workspace ne peut
 pas masquer une régression locale.
 
-SQLx 0.9, Tokio, `log` et `tracing` sont épinglés avec leurs seules features
-nécessaires, sous licences MIT/Apache-2.0 compatibles. SQLx n'active aucune
+`sqlx-core` et `sqlx-postgres` 0.9.0, Tokio, `log` et `tracing` sont épinglés
+avec leurs seules features nécessaires, sous licences MIT/Apache-2.0
+compatibles. L'acceptation bornée de l'API semver-exempt de `sqlx-core` et de
+`_rt-tokio` impose une requalification complète à chaque mise à jour. SQLx
+n'active aucune
 feature TLS ni découverte de certificat. PostgreSQL 14+ avec `pgcrypto` est la
 cible portable locale de la preuve ; Clever Cloud PostgreSQL reste un candidat
 UE futur, sans compatibilité réseau ou de provisionnement revendiquée ni
@@ -373,6 +418,14 @@ chain disproportionnée. La preuve static-off sur graphe exact est plus étroite
 et réversible ; la production devra choisir un contrôle upstream ou un driver
 à diagnostics sûrs séparément prouvé.
 
+### Conserver la façade `sqlx` avec une preuve d'inatteignabilité
+
+Rejeté : en 0.9.0 sa dépendance non optionnelle sélectionne
+`sqlx-core/migrate`, donc le module `testing` et ses deux émissions directes.
+Une exemption de répertoire ou de call graph relâcherait le refus source
+existant. Le profil direct retire cette sélection connue sans fork ; toute
+réactivation future par un consommateur reste un échec du gate final.
+
 ### Inférer le variant certificat via les options sérialisées
 
 Rejeté : SQLx sérialise fichier et inline sous les mêmes clés, son formateur
@@ -391,8 +444,11 @@ prouve :
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
 4. le socket Unix explicite sans repli TCP, TLS forcé disabled, champs secrets
    neutralisés sans formatage et aucun TLS dans le graphe exact ;
-5. zéro émission et zéro évaluation sensible dans les graphes exacts debug,
-   release et `tracing/log-always`, sans bypass direct ;
+5. les graphes finaux sélectionnés debug, release et dev
+   `tracing/log-always` contiennent seulement `sqlx-core` et `sqlx-postgres`
+   0.9.0 sous les features autorisées, sans façade, `migrate`, duplication,
+   TLS ou feature supplémentaire, et prouvent zéro émission et zéro évaluation
+   sensible sans bypass direct ;
 6. la rétention mission bornée, la suppression atomique et la restauration
    tombstone-first sans résurrection, avec registre complet et frais ;
 7. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
