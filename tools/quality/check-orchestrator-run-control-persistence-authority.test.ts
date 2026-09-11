@@ -410,6 +410,9 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("scan every tracked UTF-8 byte of the dossier");
     expect(implementationPlan).toContain("recursively scan every decoded JSON string");
     expect(implementationPlan).toContain("POSIX and Windows absolute machine paths");
+    expect(implementationPlan).toContain("reject duplicate object names after decoding");
+    expect(implementationPlan).toContain("byte-for-byte RFC 8785 representation");
+    expect(implementationPlan).toContain("overwritten first value");
     expect(implementationPlan).toContain(
       "benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`",
     );
