@@ -315,14 +315,15 @@ implementations must match fixed cross-language vectors. The schema owner
 installs a tombstone-guard-owned `SECURITY DEFINER` trigger with a fixed safe
 `search_path`. It recomputes this digest for every attempted `runs` insertion
 and rejects an unexpired matching tombstone without disclosing its presence to
-the application role. `FORCE RLS` remains active: one policy grants that
-`NOLOGIN` guard role only the required tombstone lookup, and the role has
-neither `BYPASSRLS` nor other table privileges. Public and application
-execution of every guard function is revoked. Only the narrow record/compare
-functions are executable by the retention role; they recompute the subject
-from the local organization context, so a caller cannot substitute an
-unrelated digest. The restore role receives the separate content-free lookup
-policy required for pre-open replay.
+the application role. `FORCE RLS` remains active: policies grant that
+`NOLOGIN` guard role only the tombstone `SELECT` and `INSERT` required by its
+owned functions. It cannot `UPDATE` or `DELETE` a tombstone, cannot read any
+other relation, has no login and has no connection-principal member. Public
+and application execution of every guard function is revoked. Only the narrow
+record/compare functions are executable by the retention role; they recompute
+the subject from the local organization context, so a caller cannot substitute
+an unrelated digest. The restore role receives the separate content-free
+lookup policy required for pre-open replay.
 
 ## 8. Public Rust surface
 
@@ -332,6 +333,8 @@ The crate exposes typed stores, not SQL primitives:
 pub struct RunStore { /* private PgPool + embedded ContractRegistry */ }
 pub struct LifecycleStore { /* separate private PgPool */ }
 pub struct RestoreStore { /* separate pre-open-only PgPool */ }
+pub struct DeletionRegistryFact { /* private validated fields */ }
+pub struct RestoreBatchSize(NonZeroU16);
 
 pub async fn connect(
     options: PgConnectOptions,
@@ -359,6 +362,13 @@ pub async fn list_events(
     run_id: &RunId,
     page: EventPageRequest,
 ) -> Result<EventPage, StoreError>;
+
+pub async fn replay_tombstones(
+    &self,
+    registry: &DeletionRegistryFact,
+    observed_at: DateTime<Utc>,
+    batch_size: RestoreBatchSize,
+) -> Result<RestoreOutcome, StoreError>;
 ```
 
 Budget and attestation-reference queries follow the same organization-scoped,
@@ -381,6 +391,21 @@ hook and return a closed `StoreError` if initial connection or session
 scrubbing fails. Neither `PgConnectOptions`, `PgPool`, nor a raw connection is
 recoverable from a constructed store. `RestoreStore` exposes only tombstone
 replay and its blocking proof query; it has no event, export or append method.
+
+`DeletionRegistryFact` binds the execution-snapshot instant, the instant at
+which all writers were authoritatively fenced, the independently protected
+deletion registry's coverage-through instant, tombstone count and
+set digest. The digest preimage is `libre-ai.execution-deletion-registry.v1\0`,
+followed by the big-endian `u64` row count and, for every row ordered
+lexicographically by subject digest, the fixed 32-byte subject digest, fixed
+32-byte receipt digest and big-endian `i64` Unix-microsecond deletion and expiry
+instants. Restore methods recompute count and digest over every locally restored
+tombstone in cursor-bounded pages inside one repeatable-read transaction, require
+`snapshot_at <= writers_fenced_at <= observed_at`, require registry coverage
+through the writer fence and refuse a snapshot older than `P35D`. They do not
+accept a caller-classified “registry complete” boolean. A future caller must
+authenticate the fact and prove the writer fence; this package opens neither
+capability.
 
 Construction builds the fail-closed `ContractRegistry` once from SDK Rust's
 embedded canonical schemas. Each append validates the supplied graph and
@@ -414,15 +439,18 @@ methods rather than N+1 loading.
    absent, then lock the `(tenant_id, run_id)` projection with
    `SELECT ... FOR UPDATE`; the speculative first row remains inside the same
    transaction and cannot survive a refusal;
-4. return idempotent success only when an existing event identity, sequence,
-   digest and canonical bytes all match;
+4. classify an existing event identity as exact only when identity, sequence,
+   digest and canonical bytes all match, but do not return yet; a divergent
+   collision aborts;
 5. load the complete existing canonical event chain in sequence order under
-   the same lock, revalidate every stored document and append the candidate in
-   memory;
-6. call the existing pure whole-chain replay with the validated graph; any
-   causal, phase, routing, generation or budget refusal aborts the append;
-7. insert the immutable event, budget row and allowed opaque references, then
-   update the `runs` projection from the accepted replay state;
+   the same lock and revalidate every stored document;
+6. call the existing pure whole-chain replay with the validated graph, adding
+   the candidate in memory only when it is new; any integrity, causal, phase,
+   routing, generation or budget refusal aborts the append;
+7. return idempotent success without writes only after the exact duplicate's
+   complete stored chain has passed replay; otherwise insert the immutable
+   event, budget row and allowed opaque references, then update the `runs`
+   projection from the accepted replay state;
 8. commit once.
 
 Any divergent identity/sequence collision returns a closed conflict and writes
@@ -491,20 +519,34 @@ tombstone has legitimately expired.
 
 Restore has a mandatory pre-open phase under the dedicated restore authority:
 
-1. restore the tombstone relation first;
-2. replay all unexpired tombstones against restored execution records;
-3. delete every matching restored lineage and its projections;
-4. verify that no suppressed lineage remains;
-5. only then permit the application role or service traffic.
+1. fence every role that can mutate runs or tombstones outside this package,
+   including retention expiry;
+2. restore the tombstone relation first from an independently protected
+   deletion registry, not from the execution snapshot alone;
+3. verify its authoritative manifest: row count and deterministic set
+   digest match, coverage reaches the writer fence, and the execution snapshot
+   is no older than the `P35D` backup ceiling;
+4. replay all unexpired tombstones against restored execution records;
+5. delete every matching restored lineage and its projections;
+6. verify that no suppressed lineage remains;
+7. only then permit the application role or service traffic.
 
 Because tombstones intentionally contain no reversible organization or run
-identifier, `RestoreStore` scans restored run keys in cursor-bounded pages,
-recomputes each subject digest inside PostgreSQL and joins it against unexpired
-tombstones. Its cross-organization RLS policies permit only the reads and
-deletes required by this operation. The crate supplies the bounded replay
-operation and proof query, but does not control service startup. Future
-deployment tooling must make successful tombstone replay a blocking startup
-gate and must not retain restore-role membership in the application identity.
+identifier, `RestoreStore` opens one repeatable-read transaction, verifies the
+registry, then scans every restored run key in internally cursor-bounded pages,
+recomputes each subject digest inside PostgreSQL, deletes matches and obtains
+the final suppressed-lineage count before its single commit. The caller chooses
+only a validated batch size from 1 through 100; it cannot stop after a partial
+page or inject a cursor. Cross-organization RLS policies permit only the reads
+and deletes required by this operation. The crate supplies the bounded-memory
+replay operation and proof query. Both require `DeletionRegistryFact` and refuse
+before scanning execution rows when the locally recomputed registry manifest
+or time relationships disagree. A zero suppressed-lineage count is necessary
+but not sufficient without this completeness/freshness proof. The crate does
+not authenticate that fact, fence writers or control service startup. Future
+deployment tooling must make writer fencing, authoritative registry restore,
+manifest authentication and successful replay a blocking startup gate, and
+must not retain restore-role membership in the application identity.
 Once a tombstone expires, the policy asserts that no backup capable of
 resurrecting that lineage remains; expiry is therefore a retention-authority
 operation, not a normal application sweep.
@@ -546,8 +588,9 @@ All non-trivial behavior is test-first. The implementation must provide:
 - rollback, task cancellation and scrub failure cannot return a poisoned
   connection to either pool;
 - the app role cannot update/delete events, access tombstones or alter schema;
-- the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot mutate a
-  tombstone and cannot read any other relation;
+- the tombstone-guard role is `NOLOGIN`, lacks `BYPASSRLS`, cannot update or
+  delete a tombstone, has only the `SELECT`/`INSERT` its
+  closed owned functions require, and cannot read any other relation;
 - the restore role is `NOLOGIN`, lacks `BYPASSRLS`, cannot insert/update or
   access application methods, and its cross-organization policies cover only
   bounded tombstone replay;
@@ -580,6 +623,10 @@ synthetic and checked for forbidden content.
 - tombstones are content-free and inaccessible to the app role;
 - fixed vectors prove Rust/PostgreSQL deletion-subject digest equality;
 - restore applies tombstones first and cannot resurrect deleted lineage;
+- restore refuses an execution snapshot older than `P35D`, a registry whose
+  coverage does not reach the writer fence, and any count/digest mismatch;
+- restoring both execution rows and tombstones from a snapshot predating a
+  later deletion refuses pre-open rather than reporting a misleading zero;
 - restore-role credentials cannot be used through `RunStore` or
   `LifecycleStore` constructors without their role/grant probes failing;
 - tombstones cannot expire before `P35D`;
@@ -595,6 +642,11 @@ latency thresholds. The report includes event count, total bytes, peak memory
 and percentile latency at each fixed fixture size. Checked query plans must use
 the organization/run/sequence indexes and may not show an unbounded sequential
 scan for the representative maximum fixture.
+
+The pre-open benchmark independently varies tombstone and restored-run counts.
+Registry verification plus reconciliation must scale `O(tombstones + runs)`;
+peak userspace memory remains bounded by the selected batch size even though
+the repeatable-read transaction spans the complete recovery proof.
 
 ## 14. Quality gates
 
@@ -704,6 +756,8 @@ The design is satisfied only when the exact reviewed implementation proves:
 6. retention is equal to the mission fact and bounded by `P6Y`;
 7. deletion writes a content-free `P35D` tombstone atomically;
 8. restore applies tombstones before records and proves non-resurrection;
+   the deletion registry is independently protected, authenticated by a
+   future caller and locally verified complete/fresh through the writer fence;
 9. public diagnostics contain only closed codes;
 10. the pure crate API/capability and locked Contracts authority remain
     unchanged;

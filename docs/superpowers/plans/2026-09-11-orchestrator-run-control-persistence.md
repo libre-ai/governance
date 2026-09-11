@@ -23,7 +23,8 @@
 - App, retention and restore use separate connection identities and pools. Every returned connection executes `DISCARD ALL`; scrub failure discards it.
 - Every organization transaction uses literal `SET LOCAL ROLE` plus `set_config('app.tenant_id', $1, true)`. Every organization table has `ENABLE` and `FORCE ROW LEVEL SECURITY`.
 - `libre_ai_app`, `libre_ai_retention`, `libre_ai_restore` and `libre_ai_tombstone_guard` are `NOLOGIN NOSUPERUSER NOBYPASSRLS`. Product migrations assert roles exist but never create them.
-- Restore is pre-open-only, cursor-bounded `SELECT`/`DELETE`; it has no append, export, update, schema or application capability.
+- Restore is pre-open-only and internally batch-bounded; one public reconciliation call processes every page inside one repeatable-read transaction. It has no append, export, update, schema or application capability.
+- Restore additionally requires an authenticated deletion-registry fact whose locally recomputed row count/digest match, whose coverage reaches an authoritative fence over every run/tombstone mutator including retention expiry, and whose execution snapshot is no older than `P35D`; zero residual lineages alone is never an opening proof.
 - Public errors and `Debug`/`Display` reveal constant codes or aggregate counts only: never SQL, connection data, identifiers, digests, documents, paths or rejected values.
 - Tests use synthetic identifiers only and fail, never skip, when PostgreSQL is absent.
 - Strict red-green-refactor applies to non-trivial logic. Coverage remains blocking at 87% lines and 90% functions; formatting, Clippy `-D warnings`, tests, dependency policy and Bun gates remain green.
@@ -38,7 +39,7 @@
 
 - Create `docs/adr/0039-orchestrator-run-control-persistence.md`.
 - Modify `docs/decisions/DECISION-REGISTER.md` with D45.
-- Modify the approved design status only after ADR merge.
+- Prepare the approved design status on the ADR branch; it takes effect as authority only after ADR merge.
 - Create `tools/quality/check-orchestrator-run-control-persistence-authority.test.ts`.
 - Keep `docs/transformation/work-packages.v1.json` byte-identical: existing `WP-G3-O01` alone owns `crates/agent-orchestrator-run/**`.
 
@@ -66,7 +67,7 @@ pub enum StoreError { InvalidInput, Conflict, Unavailable, IntegrityFailure, Int
 pub enum AppendOutcome { Appended { sequence: u64 }, Idempotent { sequence: u64 } }
 pub struct EventPageRequest { cursor: Option<String>, limit: u16 }
 pub struct RunPageRequest { cursor: Option<String>, limit: u16 }
-pub struct RestorePageRequest { cursor: Option<String>, limit: u16 }
+pub struct RestoreBatchSize(NonZeroU16);
 pub struct PageMeta { pub next_cursor: Option<String> }
 pub struct Page<T> { pub data: Vec<T>, pub meta: PageMeta }
 
@@ -76,10 +77,11 @@ pub struct BudgetMovement { sequence: u64, delta: [u64; 7], total: [u64; 7] }
 pub struct AttestationReference { sequence: u64, kind: ReferenceKind, id: String, digest: Digest, media_type: String }
 pub struct RetentionYears(NonZeroU8);
 pub struct MissionRetentionFact { mission_id: String, retention: RetentionYears, observed_at: DateTime<Utc> }
+pub struct DeletionRegistryFact { execution_snapshot_at: DateTime<Utc>, writers_fenced_at: DateTime<Utc>, coverage_through: DateTime<Utc>, tombstone_count: u64, tombstone_set_digest: Digest }
 pub struct DeletionCommand { organization_id: OrganizationId, run_id: RunId, receipt_digest: Digest, deleted_at: DateTime<Utc> }
 pub struct DeletionOutcome { pub deleted: bool }
 pub struct SweepOutcome { pub inspected: u16, pub deleted: u16, pub meta: PageMeta }
-pub struct RestoreOutcome { pub processed: u16, pub deleted: u16, pub remaining: u64, pub meta: PageMeta }
+pub struct RestoreOutcome { pub processed: u64, pub deleted: u64, pub remaining: u64 }
 
 pub enum RunPhase { Ready, Authorized, InvocationStarted, DecisionRequested, EffectReserved, EffectStarted, EffectTerminal, Sealed, Transferred, Blocked, Completed, Quarantined }
 pub enum ReferenceKind { Graph, Authorization, Invocation, Result, DecisionRequest, DecisionResponse, Lifecycle, ExecutionTransfer }
@@ -106,8 +108,8 @@ impl LifecycleStore {
 
 impl RestoreStore {
     pub async fn connect(options: PgConnectOptions, limits: PoolLimits) -> Result<Self, StoreError>;
-    pub async fn replay_tombstones(&self, observed_at: DateTime<Utc>, request: RestorePageRequest) -> Result<RestoreOutcome, StoreError>;
-    pub async fn suppressed_lineage_count(&self, observed_at: DateTime<Utc>) -> Result<u64, StoreError>;
+    pub async fn replay_tombstones(&self, registry: &DeletionRegistryFact, observed_at: DateTime<Utc>, batch_size: RestoreBatchSize) -> Result<RestoreOutcome, StoreError>;
+    pub async fn suppressed_lineage_count(&self, registry: &DeletionRegistryFact, observed_at: DateTime<Utc>) -> Result<u64, StoreError>;
 }
 ```
 
@@ -133,14 +135,17 @@ All request values have validating constructors; their fields remain private. Re
 Run `sha256sum docs/transformation/work-packages.v1.json`, then create a Bun test with:
 
 ```ts
-expect(adr).toContain("# ADR-0039 — Persistance du contrôle de run Orchestrator");
+expect(hasExpectedAdrTitle(adr)).toBeTrue();
+expect(hasSingleD45Entry(register)).toBeTrue();
 expect(register).toContain("| D45 | Run-control persistence is isolated and non-executing");
 expect(design).toContain("authority ADR-0039/D45");
 const wp = plan.packages.find((entry) => entry.id === "WP-G3-O01");
 expect(wp?.writePaths).toEqual(["crates/agent-orchestrator-run/**"]);
 expect(wp?.definitionStatus).toBe("locked");
-expect(plan.packages.filter((entry) => entry.writePaths.some((path) => path.includes("agent-orchestrator-run")))).toHaveLength(1);
+expect(findRunControlOwners(plan).map((entry) => entry.id)).toEqual(["WP-G3-O01"]);
 ```
+
+The owner finder uses `Bun.Glob` plus explicit child-prefix detection so the canonical root, a recursive parent such as `crates/**`, a wildcard parent such as `crates/agent-*/**`, the global `**` pattern and every child path overlap. Synthetic negative cases must identify each competing owner while excluding a sibling crate.
 
 Run `bun test tools/quality/check-orchestrator-run-control-persistence-authority.test.ts` and require failure because ADR-0039/D45 are absent.
 
@@ -312,7 +317,7 @@ fn identifiers_and_errors_never_reflect_input() -> Result<(), StoreError> {
 }
 ```
 
-Also cover organization length/case, malformed URNs, noncanonical digests, limits 0/101 and pool bounds. Cursor vectors use eight big-endian sequence bytes plus 32 digest bytes, Base64 URL-safe without padding; reject wrong length/alphabet/padding/sequence zero/noncanonical re-encoding.
+Also cover organization length/case, malformed URNs, noncanonical digests, page limits 0/101, restore batch sizes 0/101, pool bounds and every invalid ordering/bound in `DeletionRegistryFact`. Cursor vectors use eight big-endian sequence bytes plus 32 digest bytes, Base64 URL-safe without padding; reject wrong length/alphabet/padding/sequence zero/noncanonical re-encoding.
 
 - [ ] **Step 2: Run red and implement minimal values**
 
@@ -411,9 +416,9 @@ CREATE TABLE orchestrator_run.execution_deletion_tombstones (
 );
 ```
 
-Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. Guard-owned security-definer functions with fixed safe `search_path` record/compare one tombstone from `current_setting('app.tenant_id')` plus bound run/receipt/time; grant execution only to retention and return a closed boolean/outcome, never a row. The same guard owns the anti-resurrection trigger. Revoke all guard functions from public/app/restore. Retention has no raw tombstone insert/select/update; it may delete expired rows without `RETURNING`, guarded by `transaction_timestamp()`. Restore gets content-free select plus cross-organization run select/delete policies only; guard gets tombstone lookup only.
+Implement the versioned length-framed digest with `pgcrypto.digest` and `int4send(octet_length(convert_to(value,'UTF8')))`. Guard-owned security-definer functions with fixed safe `search_path` record/compare one tombstone from `current_setting('app.tenant_id')` plus bound run/receipt/time; grant execution only to retention and return a closed boolean/outcome, never a row. The same guard owns the anti-resurrection trigger. Revoke all guard functions from public/app/restore. Retention has no raw tombstone insert/select/update; it may delete expired rows without `RETURNING`, guarded by `transaction_timestamp()`. Restore gets content-free select plus cross-organization run select/delete policies only. Guard gets only tombstone `SELECT`/`INSERT` under RLS, never `UPDATE`/`DELETE`, and no connection identity receives its membership.
 
-Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert, retention expiry delete and restore's content-free scan/delete; app has no policy or table privilege. Test that table ownership alone cannot bypass the policy boundary.
+Enable and force RLS on `execution_deletion_tombstones`. Its policies permit only guard lookup/insert, retention expiry delete and restore's content-free scan; app has no policy or table privilege. Test the guard's required insert separately from forbidden update/delete, and prove that table ownership alone cannot bypass the policy boundary.
 
 - [ ] **Step 6: Prove green and commit**
 
@@ -485,7 +490,7 @@ Independently parse all stored JCS and replay through the pure core.
 
 - [ ] **Step 2: Add red refusals/idempotency tests**
 
-Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Every refusal compares all five table counts and previous head before/after.
+Cover explicit organization mismatch, graph mismatch, stale event digest, broken predecessor, illegal phase, budget decrease/overflow, event over 65,536 bytes, exact replay and divergent event-id/sequence collision. Corrupt a different stored event through the admin test identity and prove that an otherwise exact duplicate refuses integrity failure rather than bypassing whole-chain replay. Every refusal compares all five table counts and previous head before/after.
 
 - [ ] **Step 3: Run red**
 
@@ -522,7 +527,7 @@ Extract references only from `graphRef`, `authorizationRef`, `invocationRef`, `r
 
 - [ ] **Step 5: Implement one-transaction append**
 
-Validate graph/candidate, compare explicit organization and mission-retention fact, canonicalize and size-check; begin app transaction; insert the complete tentative first projection with `ON CONFLICT DO NOTHING`; lock `(tenant_id,run_id)`; check exact idempotency; load all JCS ordered by sequence; revalidate/parse all; append candidate; call whole-chain replay; insert event/ledger/references; update projection from accepted replay and retention from creation; commit. Every value is bound. Projection phase is never fed into replay.
+Validate graph/candidate, compare explicit organization and mission-retention fact, canonicalize and size-check; begin app transaction; insert the complete tentative first projection with `ON CONFLICT DO NOTHING`; lock `(tenant_id,run_id)`; classify exact idempotency without returning; load all JCS ordered by sequence and revalidate/parse all. Replay the stored chain for an exact duplicate, or append the new candidate in memory and replay it. Only then return idempotent without writes or insert event/ledger/references and update projection from accepted replay and retention from creation; commit. Every value is bound. Projection phase is never fed into replay.
 
 - [ ] **Step 6: Inject database failures without production hooks**
 
@@ -588,12 +593,12 @@ Assert `EXPLAIN (FORMAT JSON)` uses the organization/run/sequence index on repre
 **Files:** create `src/lifecycle.rs`, `tests/postgres/lifecycle.rs`; modify crate `src/lib.rs`, `tests/domain.rs`, `tests/postgres.rs`.
 
 **Interfaces:**
-- Consumes: retention/restore pools, SQL digest function and explicit time.
-- Produces: `RetentionYears`, deletion, sweep, restore replay and blocking count.
+- Consumes: retention/restore pools, SQL digest function, explicit time and authenticated deletion-registry fact.
+- Produces: `RetentionYears`, deletion, sweep, registry-verified restore replay and blocking count.
 
 - [ ] **Step 1: Write red retention and digest vectors**
 
-Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. For three synthetic organization/run pairs, assert Rust and PostgreSQL framed SHA-256 equality and preimage separation of `("ab","c")` from `("a","bc")`.
+Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month and a fact whose mission differs from the event/run. Clamp 2028-02-29 plus one year to 2029-02-28. Validate `DeletionRegistryFact` ordering and bounds without accepting a caller-supplied completeness boolean. For three synthetic organization/run pairs, assert Rust and PostgreSQL framed SHA-256 equality and preimage separation of `("ab","c")` from `("a","bc")`.
 
 - [ ] **Step 2: Write red lifecycle transactions**
 
@@ -605,7 +610,7 @@ Cover deletion, same-receipt idempotency, divergent receipt, exact `P35D`, app i
 
 - [ ] **Step 4: Implement pre-open restore**
 
-Restore accepts no organization. One cursor page scans restored `(tenant_id,run_id)` keys, computes SQL subject digests and deletes keys joined to unexpired tombstones. `suppressed_lineage_count` is one aggregate using the same join and returns only a count.
+Restore accepts no organization. Before every replay/count operation, validate `snapshot_at <= writers_fenced_at <= observed_at`, `coverage_through >= writers_fenced_at` and `observed_at - snapshot_at <= P35D`. One repeatable-read transaction scans every locally restored tombstone in internally cursor-bounded pages ordered by subject digest and recomputes the registry digest as SHA-256 of `libre-ai.execution-deletion-registry.v1\0`, big-endian `u64` row count, then each row's fixed 32-byte subject digest, fixed 32-byte receipt digest and big-endian `i64` Unix-microsecond deletion/expiry instants. Compare count and digest with `DeletionRegistryFact`. Any absence, staleness or mismatch returns integrity failure before scanning execution rows. The same transaction then loops over restored `(tenant_id,run_id)` keys in batches of validated size 1..100, computes SQL subject digests, deletes keys joined to unexpired tombstones and finally counts remaining suppressed lineages before its single commit. The caller cannot stop after a partial page or supply a cursor. `suppressed_lineage_count` opens its own repeatable-read transaction, repeats the registry proof and returns only one aggregate count. The package authenticates neither the fact nor the writer fence and exposes no opening boolean. A future caller must authenticate both and prove every run/tombstone mutator, including retention expiry, was fenced; production remains closed.
 
 - [ ] **Step 5: Prove green and commit**
 
@@ -621,11 +626,13 @@ Run domain/lifecycle/full PostgreSQL tests plus Clippy. Commit as `Enforce run r
 
 - [ ] **Step 1: Write the red backup/restore scenario**
 
-Database A holds a complete A run and unrelated B run. Delete A and retain its tombstone. Materialize database B with execution rows deliberately restored before tombstones, then restore tombstones. Assert count is 1 before replay, 0 after bounded replay, A absent and B byte-identical.
+Database A holds a complete A run and unrelated B run. Delete A and retain its tombstone. Materialize database B with execution rows deliberately restored before tombstones, then restore the independently protected tombstone registry plus its literal count/digest/coverage fact. Assert count is 1 before replay, 0 after bounded replay, A absent and B byte-identical.
+
+Add the negative recovery vector: take an execution and tombstone snapshot before deleting A, then present that stale registry after the deletion writer fence. Even though the local join reports zero, count/digest coverage verification must refuse pre-open. Also refuse an execution snapshot older than `P35D`, a missing manifest, wrong count, wrong digest and coverage ending before the fence.
 
 - [ ] **Step 2: Assert the service-open barrier remains external**
 
-Return `RestoreOutcome { processed, deleted, remaining }`; only `remaining == 0` can be interpreted by a future caller as openable. No method starts traffic. An expired tombstone is ignored only when injected time is after expiry and the fixture proves the backup ceiling elapsed.
+Return `RestoreOutcome { processed, deleted, remaining }` only after registry verification; `remaining == 0` is necessary but a future caller still needs authenticated registry/writer-fence authority before opening. No method starts traffic. An expired tombstone is ignored only when injected time is after expiry, the execution snapshot is within `P35D` and the fixture proves the backup ceiling elapsed.
 
 - [ ] **Step 3: Run red, implement the missing behavior and prove green**
 
@@ -659,6 +666,8 @@ events,total_jcs_bytes,append_p50_us,append_p95_us,load_p50_us,page_p95_us,peak_
 ```
 
 Exit non-zero on fixture/replay/query failure. Record statement counts in integration tests; set no hardware-dependent latency threshold.
+
+Add a separate pre-open series over fixed tombstone/run pairs `[(1,1),(32,256),(256,2048),(2048,8192)]` and print `tombstones,runs,reconcile_p50_us,reconcile_p95_us,peak_rss_bytes`. Assert complete processing and batch-bounded userspace memory; report the expected `O(tombstones + runs)` scaling without a hardware-dependent threshold.
 
 - [ ] **Step 3: Wire CI through local PostgreSQL**
 
@@ -705,7 +714,7 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Run the Bun test and require failure against current docs.
+Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Run the Bun test and require failure against current docs.
 
 - [ ] **Step 2: Update documentation and card**
 
@@ -731,7 +740,7 @@ Run Task 12 commands, require clean status, then record full HEAD, parents, auth
 
 - [ ] **Step 2: Run four independent review roles**
 
-Architecture/performance proves no policy duplication, canonical revalidation, constant statement count, honest byte/time/memory scaling, no checkpoint/service and `O(n)` production block. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation, races, error leakage, immutable rows, tombstone expiry/guard and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, content-free tombstones, retention/order, licenses and EU target. Completeness reproduces empty migration, concurrency, replay, pagination, deletion, restore, compatibility, coverage and rollback.
+Architecture/performance proves no policy duplication, canonical revalidation including the idempotent path, constant append statement count, honest append and `O(tombstones + runs)` restore byte/time/memory scaling, no checkpoint/service and `O(n)` production block. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation, races, error leakage, immutable rows, exact guard privilege matrix, tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
 
 - [ ] **Step 3: Remediate without carrying stale approval**
 

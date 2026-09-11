@@ -74,14 +74,23 @@ encadré par longueurs de l'organization et du run ; des vecteurs fixes prouvent
 l'égalité Rust/PostgreSQL. Le rôle rétention ne reçoit aucun accès brut
 d'insertion ou lecture : des fonctions `SECURITY DEFINER` appartenant au guard
 dérivent le sujet du contexte transactionnel et ne retournent qu'un résultat
-fermé.
+fermé. Le guard reçoit uniquement `SELECT`/`INSERT` sur les tombstones sous
+RLS ; il ne peut ni les mettre à jour, ni les supprimer, ni lire une autre
+relation. Aucune identité de connexion ne peut assumer ce rôle.
 
 Les tombstones expirent exactement après `P35D`, plafond déclaré des
 sauvegardes ; une suppression anticipée est bloquée en base. Lors d'une
-restauration, le rôle restore rejoue d'abord les tombstones non expirés contre
+restauration, le rôle restore charge d'abord un registre de suppressions
+indépendamment protégé et accompagné d'un manifeste autoritatif. Le store
+recalcule son compte et son digest, exige une couverture au moins égale au
+gel des writers et refuse un snapshot d'exécution plus ancien que `P35D`.
+Manifeste absent, incomplet, périmé ou incohérent refuse la pré-ouverture.
+Seulement après cette preuve, restore rejoue les tombstones non expirés contre
 les lignées restaurées, les supprime par pages bornées, puis exige un compte
-résiduel nul avant toute ouverture future du trafic. Le crate fournit cette
-preuve mais ne contrôle aucun démarrage de service.
+résiduel nul. Ce zéro est nécessaire mais jamais suffisant sans preuve de
+complétude et de fraîcheur du registre. Le crate vérifie ces faits mais ne les
+authentifie pas et ne contrôle aucun gel de writers ni démarrage de service ;
+ces autorités restent séparément fermées.
 
 ### D5 — Mesurer le coût O(n) et interdire le branchement production
 
@@ -176,7 +185,7 @@ prouve :
 2. l'atomicité sous concurrence et échec injecté dans PostgreSQL réel ;
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
 4. la rétention mission bornée, la suppression atomique et la restauration
-   tombstone-first sans résurrection ;
+   tombstone-first sans résurrection, avec registre complet et frais ;
 5. les pages bornées, plans indexés, mesures `O(n)` et blocage production ;
 6. la compatibilité, couverture, documentation, rollback et tous les gates ;
 7. quatre verdicts indépendants acceptant le même SHA ;
