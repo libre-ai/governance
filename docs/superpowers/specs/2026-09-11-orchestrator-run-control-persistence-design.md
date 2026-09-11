@@ -1,6 +1,6 @@
 # Orchestrator Run-Control Persistence — Phase 4B Design
 
-- **Status:** approved for implementation — owner, 2026-09-11; authority ADR-0039/D45
+- **Status:** approved for implementation — owner, 2026-09-11; authority ADR-0040/D45
 - **Date:** 2026-09-11
 - **Programme authority:** ADR-0011, ADR-0018, ADR-0034, ADR-0036 and
   ADR-0037
@@ -27,14 +27,16 @@ A TypeScript adapter was rejected because ADR-0018 selected Rust for this
 boundary and because sharing the TypeScript data implementation would create
 coupling without strengthening the database barrier.
 
-The earlier working label `ADR-0038/D44` is no longer available. Current
-Governance `main` assigns it to private-first repository publication. This
-design therefore reserves the next identifiers, `ADR-0039/D45`, subject to the
-normal mechanical registry checks. This correction is bookkeeping, not a new
-architecture choice.
+The earlier working label `ADR-0038/D44` is no longer available: Governance
+assigns ADR-0038 to private-first repository publication and D44 to that
+decision. Current `main` also assigns ADR-0039 to private product research.
+This design therefore reserves the next free ADR identifier with the existing
+free decision identifier, `ADR-0040/D45`, subject to the normal mechanical
+registry checks. This correction is bookkeeping, not a new architecture
+choice.
 
 This document authorizes no implementation by itself. Governance must first
-merge ADR-0039/D45 to bind this bounded slice of the existing locked
+merge ADR-0040/D45 to bind this bounded slice of the existing locked
 `WP-G3-O01`. It creates no overlapping work package and must not mark the
 complete runtime package proven; authorization consumption, execution and
 service capabilities remain closed inside that package.
@@ -704,13 +706,15 @@ outside the locked bounds or unequal execution/mission retention.
 
 Expiry uses a two-stage, bounded sweep:
 
-1. select candidate keys with a cursor and no payload export;
-2. for each bounded batch, open an explicit `READ COMMITTED` retention
-   transaction, call `lock_lineage` for a candidate before any lifecycle read,
-   lock the shared lifecycle row and recheck its deadline against injected
-   authoritative time, then invoke `delete_lineage_with_tombstone`, which
-   reacquires the advisory lock reentrantly, inserts or compares the tombstone
-   and deletes the run cascade atomically.
+1. select a bounded candidate page with a cursor and no payload export;
+2. in one explicit `READ COMMITTED` transaction, derive every candidate's
+   signed advisory key, sort and deduplicate those keys by their immutable
+   numeric value, and acquire all of them in that order before any lifecycle
+   row lock; the mutable deadline cursor order is never a lock order;
+3. recheck each lifecycle row against injected authoritative time, then invoke
+   `delete_lineage_with_tombstone`, which reacquires its already-held advisory
+   lock reentrantly, inserts or compares the tombstone and deletes the run
+   cascade atomically.
 
 Explicit deletion uses that same closed guard function. Retention has no raw
 `DELETE` path around it. A tombstone is committed before or with run deletion,
@@ -942,8 +946,9 @@ The implementation merge is blocked on, at minimum:
 - the complete Rust unit, integration, E2E and documentation-test suites;
 - repository TypeScript/governance checks, including capability and authority
   pin gates;
-- a generated coverage report meeting the repository's blocking line and
-  function thresholds for the new crate;
+- generated workspace and new-crate coverage reports, each independently
+  meeting the repository's blocking line and function thresholds, so strong
+  coverage elsewhere cannot hide a run-store regression;
 - dependency license/advisory/source review with an exact lockfile;
 - reproducible clean-schema migration and restore tests on real PostgreSQL;
 - independent security, privacy, quality/performance and completeness verdicts

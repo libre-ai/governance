@@ -4,7 +4,7 @@
 
 **Goal:** Prove atomic, organization-isolated and lifecycle-safe persistence of locked authorized-execution events in a separate Rust crate without opening a production service or external effect.
 
-**Architecture:** Governance first authorizes only the persistence slice of the existing locked `WP-G3-O01` under ADR-0039/D45. Orchestrator then adds `crates/agent-orchestrator-run`, whose private SQLx pools enforce role separation, transaction-local organization context and connection scrubbing; append operations store RFC 8785 bytes and replay the complete locked event chain through the unchanged pure core. Immutable bounded retention observations separately rebuild a mutable lifecycle projection without making the database a policy authority. A dedicated pre-open restore role removes tombstoned lineages across organizations without widening application or live-retention identities.
+**Architecture:** Governance first authorizes only the persistence slice of the existing locked `WP-G3-O01` under ADR-0040/D45. Orchestrator then adds `crates/agent-orchestrator-run`, whose private SQLx pools enforce role separation, transaction-local organization context and connection scrubbing; append operations store RFC 8785 bytes and replay the complete locked event chain through the unchanged pure core. Immutable bounded retention observations separately rebuild a mutable lifecycle projection without making the database a policy authority. A dedicated pre-open restore role removes tombstoned lineages across organizations without widening application or live-retention identities.
 
 **Tech Stack:** Rust 1.97 / edition 2024, SQLx 0.9.0, Tokio, PostgreSQL 14+, `pgcrypto`, RFC 8785 JCS, SHA-256, Bun 1.4 gates and GitHub Actions.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Decision order is Security, Quality, Performance, Completeness.
-- Governance ADR-0039/D45 must be merged and verified on `main` before the Orchestrator implementation worktree is created.
+- Governance ADR-0040/D45 must be merged and verified on `main` before the Orchestrator implementation worktree is created.
 - This is a bounded first slice of existing `WP-G3-O01`; do not create an overlapping work package or claim the complete runtime package.
 - The accepted `WP-G3-O02` pure core is a mandatory dependency. Verify its
   accepted evidence, exact current implementation pin and unchanged public API
@@ -58,7 +58,7 @@
 
 ### Governance
 
-- Create `docs/adr/0039-orchestrator-run-control-persistence.md`.
+- Create `docs/adr/0040-orchestrator-run-control-persistence.md`.
 - Modify `docs/decisions/DECISION-REGISTER.md` with D45.
 - Prepare the approved design status on the ADR branch; it takes effect as authority only after ADR merge.
 - Create `tools/quality/check-orchestrator-run-control-persistence-authority.test.ts`.
@@ -157,7 +157,7 @@ All request values have validating constructors; their fields remain private. Re
 
 **Files:**
 - Create: `tools/quality/check-orchestrator-run-control-persistence-authority.test.ts`
-- Create: `docs/adr/0039-orchestrator-run-control-persistence.md`
+- Create: `docs/adr/0040-orchestrator-run-control-persistence.md`
 - Modify: `docs/decisions/DECISION-REGISTER.md`
 - Modify: `docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md`
 - Modify: `docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md`
@@ -166,7 +166,7 @@ All request values have validating constructors; their fields remain private. Re
 
 **Interfaces:**
 - Consumes: approved design and locked `WP-G3-O01`.
-- Produces: ADR-0039/D45 persistence authority; no runtime authority before merge.
+- Produces: ADR-0040/D45 persistence authority; no runtime authority before merge.
 
 - [ ] **Step 1: Write the failing authority and ownership gates**
 
@@ -177,7 +177,7 @@ split:
 expect(hasExpectedAdrTitle(adr)).toBeTrue();
 expect(hasSingleD45Entry(register)).toBeTrue();
 expect(register).toContain("| D45 | Run-control persistence is isolated and non-executing");
-expect(design).toContain("authority ADR-0039/D45");
+expect(design).toContain("authority ADR-0040/D45");
 const wp = plan.packages.find((entry) => entry.id === "WP-G3-O01");
 expect(wp?.dependsOn).toEqual([
   "WP-G2-Q01", "WP-G2-D01", "WP-G2-A01", "WP-G3-H01", "WP-G3-O02",
@@ -200,7 +200,7 @@ The owner finder uses `Bun.Glob`, explicit child-prefix detection and a fail-clo
 Run both focused authority tests and require failure before the ADR, dependency
 and path transfer are applied.
 
-- [ ] **Step 2: Write ADR-0039 and D45**
+- [ ] **Step 2: Write ADR-0040 and D45**
 
 Use these exact decision headings:
 
@@ -217,10 +217,10 @@ The non-authority paragraph names service, Biscuit, Missions, Harness, worker, e
 
 - [ ] **Step 3: Make the gate green and commit**
 
-Set the design status to `approved for implementation — owner, 2026-09-11; authority ADR-0039/D45`. Run both focused tests and `bun run check`. Then:
+Set the design status to `approved for implementation — owner, 2026-09-11; authority ADR-0040/D45`. Run both focused tests and `bun run check`. Then:
 
 ```bash
-git add docs/adr/0039-orchestrator-run-control-persistence.md docs/decisions/DECISION-REGISTER.md \
+git add docs/adr/0040-orchestrator-run-control-persistence.md docs/decisions/DECISION-REGISTER.md \
   docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md \
   docs/superpowers/plans/2026-09-11-orchestrator-run-control-persistence.md \
   docs/transformation/work-packages.v1.json \
@@ -235,7 +235,7 @@ git commit -s -m "Authorize orchestrator run-control persistence"
 
 **Interfaces:**
 - Consumes: green Governance authoring commit.
-- Produces: merged ADR-0039/D45 SHA, required by Task 3.
+- Produces: merged ADR-0040/D45 SHA, required by Task 3.
 
 - [ ] **Step 1: Run role-separated doctrine review**
 
@@ -252,7 +252,7 @@ Push only the design branch and create the PR with `bun run check` evidence. Res
 
 - [ ] **Step 3: Stop for the doctrine owner signature, then verify merge**
 
-Restate that merge creates persistence authority but no service/effect/deployment. Obtain explicit owner pronouncement. Only then merge without force and verify ADR-0039/D45 from fetched `origin/main`; record the full Governance SHA.
+Restate that merge creates persistence authority but no service/effect/deployment. Obtain explicit owner pronouncement. Only then merge without force and verify ADR-0040/D45 from fetched `origin/main`; record the full Governance SHA.
 
 ### Task 3: Create the isolated Orchestrator workspace boundary
 
@@ -340,13 +340,11 @@ sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-toki
 
 [dev-dependencies]
 tokio = { version = "=1.53.1", default-features = false, features = ["macros", "rt-multi-thread", "sync", "time"] }
-
-[[bench]]
-name = "postgres_persistence"
-harness = false
+tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 ```
 
-The selected Tokio 1.53.1 release is MIT, requires Rust 1.71 and is compatible with Rust 1.97. If the locked SQLx graph cannot unify on it, stop with the resolver evidence rather than introducing a second Tokio version.
+The selected Tokio 1.53.1 release is MIT, requires Rust 1.71 and is compatible with Rust 1.97. The two MIT tracing crates are dev-only and exist solely to install a scoped `sqlx::query` capture proving that caller-enabled statement logging is disabled; production scanning still forbids tracing. If the locked dependency graph cannot unify on these exact releases, stop with resolver evidence rather than introducing duplicate versions.
 
 - [ ] **Step 4: Implement/wire the gate and prove green**
 
@@ -375,7 +373,10 @@ git commit -s -m "Add isolated run-control persistence crate"
 
 **Interfaces:**
 - Consumes: exact Base64/SHA dependencies.
-- Produces: IDs, digests, `PoolLimits`, `StoreError`, page/cursor types and outcomes from the locked interface.
+- Produces: every non-I/O validated value from the locked interface, including
+  IDs, digests, `PoolLimits`, `StoreError`, `RetentionYears`,
+  `MissionRetentionFact`, `DeletionCommand`, `DeletionRegistryFact`, both
+  restore/expiry batch sizes, page/cursor types and closed outcomes.
 
 - [ ] **Step 1: Write red tests**
 
@@ -398,7 +399,7 @@ Also cover organization length/case, malformed URNs, noncanonical digests, page 
 
 - [ ] **Step 2: Run red and implement minimal values**
 
-Run `cargo test -p libre-ai-agent-orchestrator-run --test domain --locked` and require compile failure. Implement manual validators and manual redacted formatting. Error codes are exactly:
+Run `cargo test -p libre-ai-agent-orchestrator-run --test domain --locked` and require compile failure. Implement every non-I/O value named by this task, including retention/deletion/registry types required by Tasks 7 and 10, with manual validators and manual redacted formatting. Error codes are exactly:
 
 ```rust
 match self {
@@ -540,7 +541,7 @@ git commit -s -m "Add run-control PostgreSQL schema"
 
 - [ ] **Step 1: Write and run red pool tests**
 
-Use `max_connections=1`. Poison the sole session with a session-level GUC/role; cover success, callback error, task cancellation and backend termination during scrub. The next borrower receives a clean/new connection, never poison. Execute the same bound prepared query before and after checkout to catch a stale SQLx client-cache entry after server discard. Inject cache-clear and discard failures separately and prove each connection is destroyed. Build caller options with statement and slow-statement logging deliberately enabled, install a serialized test capture for the `sqlx::query` target, exercise all three stores and assert that no `db.statement` or SQL text is emitted after the store takes ownership. Prove every wrong identity/store pair returns only `run-store.unavailable`.
+Use `max_connections=1`. Poison the sole session with a session-level GUC/role; cover success, callback error, task cancellation and backend termination during scrub. The next borrower receives a clean/new connection, never poison. Execute the same bound prepared query before and after checkout to catch a stale SQLx client-cache entry after server discard. Inject cache-clear and discard failures separately and prove each connection is destroyed. Build caller options with statement and slow-statement logging deliberately enabled and install a serialized test capture for the `sqlx::query` target. As a positive control, emit a synthetic `sqlx::query`-target event containing a secret-free sentinel and first assert that the capture records it; then clear the capture, exercise all three stores and assert that no `db.statement`, sentinel or SQL text is emitted after the store takes ownership. Prove every wrong identity/store pair returns only `run-store.unavailable`.
 
 - [ ] **Step 2: Construct private scrubbed pools**
 
@@ -725,8 +726,10 @@ Assert `EXPLAIN (FORMAT JSON)` uses the organization/run/sequence index on repre
 **Files:** create `src/lifecycle.rs`, `tests/postgres/lifecycle.rs`; modify crate `src/lib.rs`, `tests/domain.rs`, `tests/postgres.rs`.
 
 **Interfaces:**
-- Consumes: retention pool, SQL digest function and explicit time.
-- Produces: `RetentionYears`, retention observation, explicit deletion, run sweep and bounded tombstone expiry. Task 11 owns the first restore implementation.
+- Consumes: Task 4's validated retention/deletion/registry values, retention
+  pool, SQL digest function and explicit time.
+- Produces: retention observation, explicit deletion, run sweep and bounded
+  tombstone expiry operations. Task 11 owns the first restore implementation.
 
 - [ ] **Step 1: Write red retention and digest vectors**
 
@@ -734,16 +737,16 @@ Accept exact `P1Y`..`P6Y`; reject `P0Y`, `P7Y`, day/month, a sub-microsecond obs
 
 - [ ] **Step 2: Write red lifecycle transactions**
 
-Cover deletion, same-receipt idempotency, divergent receipt, exact elapsed `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Fixed Rust/PostgreSQL expiry vectors straddle Europe/Paris spring-forward and fall-back transitions; repeat them after setting a poisoned session timezone and prove expiry remains exactly 840 hours. Direct SQL as retention must fail to delete `runs`, events, projections or tombstones; the public deletion method succeeds only through `delete_lineage_with_tombstone`. Race public `delete_run` against the first append of an absent lineage in both lock-acquisition orders and require a tombstone with no live lineage. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after the last execution event without changing any `runs` column. After `append(E,F1)` then `apply_mission_retention(F2)`, retrying exact `E,F1` remains idempotent without reverting F2 because its exact retention observation is already recorded. On a closed run, an exact event duplicate carrying an unrecorded new observation must not reinsert the event or mutate lifecycle; it refuses, while the same authenticated observation succeeds through `LifecycleStore`. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare canonical bytes, mechanical projections and public replay head byte-exactly without encoding private pure state. For run sweep, select an expired key then concurrently extend retention through that method; the common advisory lock must be acquired first, followed by the lifecycle-row lock and under-lock recheck, so the extension is preserved without deadlock. Prove its tombstone receipt equals the deterministic expiry vector. For tombstone expiry, insert 205 expired and unexpired synthetic rows, process batches of 100 in `(expires_at,subject_digest)` order, expose counts only, and prove neither injected future time nor a direct DELETE can remove a row before database time reaches exact `P35D`.
+Cover deletion, same-receipt idempotency, divergent receipt, exact elapsed `P35D`, app invisibility, active-tombstone recreation refusal with generic error, early expiry refusal, and rollback after tombstone insertion. Fixed Rust/PostgreSQL expiry vectors straddle Europe/Paris spring-forward and fall-back transitions; repeat them after setting a poisoned session timezone and prove expiry remains exactly 840 hours. Direct SQL as retention must fail to delete `runs`, events, projections or tombstones; the public deletion method succeeds only through `delete_lineage_with_tombstone`. Race public `delete_run` against the first append of an absent lineage in both lock-acquisition orders and require a tombstone with no live lineage. Prove `apply_mission_retention` binds the stored mission, records one immutable observation, recomputes from creation and succeeds after the last execution event without changing any `runs` column. After `append(E,F1)` then `apply_mission_retention(F2)`, retrying exact `E,F1` remains idempotent without reverting F2 because its exact retention observation is already recorded. On a closed run, an exact event duplicate carrying an unrecorded new observation must not reinsert the event or mutate lifecycle; it refuses, while the same authenticated observation succeeds through `LifecycleStore`. Prove stale observation refusal against the newest immutable fact even if one transaction temporarily rewinds the projection, exact observation idempotency and equal-instant divergence refusal. Rebuild execution first from `run_events`, derive and verify creation, then rebuild lifecycle from `run_retention_facts`; compare canonical bytes, mechanical projections and public replay head byte-exactly without encoding private pure state. For run sweep, select an expired key then concurrently extend retention through that method; the common advisory lock must be acquired first, followed by the lifecycle-row lock and under-lock recheck, so the extension is preserved. Add two runs and two concurrent sweeps whose mutable deadline cursor orders are forced to `[A,B]` and `[B,A]`; require completion without deadlock and byte-correct final state. Prove its tombstone receipt equals the deterministic expiry vector. For tombstone expiry, insert 205 expired and unexpired synthetic rows, process batches of 100 in `(expires_at,subject_digest)` order, expose counts only, and prove neither injected future time nor a direct DELETE can remove a row before database time reaches exact `P35D`.
 
 - [ ] **Step 3: Implement bounded retention/deletion**
 
-`RetentionYears` stores `NonZeroU8` 1..6. `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. Every live method begins `READ COMMITTED`, calls `lock_lineage` before any lineage read, then locks `run_lifecycle`, rejects time rollback/equal-instant divergence, appends the fact if new and updates only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` sets the retention role/context, calls `lock_lineage` as a distinct statement, and invokes `delete_lineage_with_tombstone`; the guard-owned function rechecks isolation, reacquires the advisory lock reentrantly, recomputes the subject, locks lifecycle after advisory, inserts/compares the caller-authenticated receipt and deletes the run cascade atomically. Run sweep selects `(run_id,retention_until)` keys, then for each candidate calls `lock_lineage` before locking and rechecking `run_lifecycle`, derives the versioned expiry receipt from subject digest plus retention deadline, and invokes the same closed function. `expire_tombstones` selects at most `TombstoneExpiryBatchSize` rows through `(expires_at,subject_digest)`, requires both injected and PostgreSQL time at/after expiry, deletes without `RETURNING` and returns only an aggregate count. Retention never directly updates or deletes `runs`.
+Task 4's `RetentionYears` stores `NonZeroU8` 1..6, and its `MissionRetentionFact` binds mission, duration and observation time; both append and lifecycle update compare it with stored/event mission, derive the internal observation digest and compute from run creation. Every live method begins `READ COMMITTED`, calls `lock_lineage` before any lineage read, then locks `run_lifecycle`, rejects time rollback/equal-instant divergence, appends the fact if new and updates only lifecycle columns. `DeletionCommand` validates organization/run, receipt digest and UTC deletion time. `delete_run` sets the retention role/context, calls `lock_lineage` as a distinct statement, and invokes `delete_lineage_with_tombstone`; the guard-owned function rechecks isolation, reacquires the advisory lock reentrantly, recomputes the subject, locks lifecycle after advisory, inserts/compares the caller-authenticated receipt and deletes the run cascade atomically. Run sweep selects one cursor-ordered bounded candidate page, derives signed advisory keys for the whole page, sorts and deduplicates them by immutable signed numeric value, acquires all of them before any lifecycle row lock, then rechecks lifecycle rows and invokes the same closed function. The mutable deadline cursor order remains separate from lock order and is never reused to acquire locks. `expire_tombstones` selects at most `TombstoneExpiryBatchSize` rows through `(expires_at,subject_digest)`, requires both injected and PostgreSQL time at/after expiry, deletes without `RETURNING` and returns only an aggregate count. Retention never directly updates or deletes `runs`.
 
 - [ ] **Step 4: Keep restore behavior absent until its E2E is red**
 
-Implement only the validated `DeletionRegistryFact`, `RestoreBatchSize` and
-closed result types already covered by domain tests. Do not implement
+Reuse the already implemented Task 4 `DeletionRegistryFact`,
+`RestoreBatchSize` and closed result types without widening them. Do not implement
 `RestoreStore::replay_tombstones` or `suppressed_lineage_count` in Task 10;
 Task 11 must first fail to compile against their absence.
 
@@ -811,7 +814,7 @@ restore replay`.
 
 ### Task 12: Add performance, compatibility and CI gates
 
-**Files:** create benchmark, `verification/agent-orchestrator/benchmark-memory.sh`, compatibility snapshots/test; modify `src/restore.rs`, `tests/postgres/e2e.rs`, `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
+**Files:** create benchmark, `verification/agent-orchestrator/benchmark-memory.sh`, compatibility snapshots/test; modify crate `Cargo.toml`, `src/restore.rs`, `tests/postgres/e2e.rs`, `.github/workflows/ci.yml`, `tools/quality/rust-coverage-gate.test.ts`, `package.json`.
 
 **Interfaces:**
 - Consumes: complete store.
@@ -819,9 +822,18 @@ restore replay`.
 
 - [ ] **Step 1: Write red compatibility and CI assertions**
 
-Snapshot every public re-export and five error codes. Extend the Bun coverage test to require test/coverage commands are wrapped by `with-postgres.sh --`, PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds remain. Run focused tests and require failure against the old workflow/missing snapshots.
+Snapshot every public re-export and five error codes. Extend the Bun coverage test to require test/coverage commands are wrapped by `with-postgres.sh --`, PostgreSQL >=14 is checked, workspace/all-features are used and 87/90 thresholds remain. Add synthetic parsed-summary fixtures proving that workspace coverage passes while the run-store package coverage fails; the gate must reject that state, and must pass only when both independently meet 87/90. Run focused tests and require failure against the old workflow/missing snapshots.
 
 - [ ] **Step 2: Implement the benchmark**
+
+Create `benches/postgres_persistence.rs` and add its explicit target to the crate
+manifest in this same step, never earlier:
+
+```toml
+[[bench]]
+name = "postgres_persistence"
+harness = false
+```
 
 Use fixed chain sizes `[1,32,256,2048,8192]`, at least 30 samples after warmup and `std::time::Instant`. The benchmark accepts exactly one fixture size per process. On the required Linux CI runner, `benchmark-memory.sh` launches each process through `/usr/bin/time -v`, parses `Maximum resident set size` as bytes and fails if GNU time or the field is unavailable. It emits:
 
@@ -860,7 +872,12 @@ Use:
       cargo llvm-cov --locked --workspace --all-features --lcov \
       --output-path coverage/lcov.info \
       --fail-under-lines 87 --fail-under-functions 90
-    cargo llvm-cov report --summary-only | tee -a "$GITHUB_STEP_SUMMARY"
+    verification/agent-orchestrator/with-postgres.sh -- \
+      cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
+      --output-path coverage/run-store.lcov.info \
+      --fail-under-lines 87 --fail-under-functions 90
+    cargo llvm-cov report -p libre-ai-agent-orchestrator-run \
+      --all-features --summary-only | tee -a "$GITHUB_STEP_SUMMARY"
 ```
 
 Use runner-provided PostgreSQL binaries; do not download a container or package during the job.
@@ -874,6 +891,14 @@ RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-de
 verification/agent-orchestrator/with-postgres.sh -- cargo test --locked --workspace --all-features
 cargo deny check --show-stats bans licenses sources
 bun run check
+verification/agent-orchestrator/with-postgres.sh -- \
+  cargo llvm-cov --locked --workspace --all-features --lcov \
+  --output-path coverage/lcov.info \
+  --fail-under-lines 87 --fail-under-functions 90
+verification/agent-orchestrator/with-postgres.sh -- \
+  cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov \
+  --output-path coverage/run-store.lcov.info \
+  --fail-under-lines 87 --fail-under-functions 90
 verification/agent-orchestrator/with-postgres.sh -- \
   verification/agent-orchestrator/benchmark-memory.sh
 ```
@@ -890,7 +915,7 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0039/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
+Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
@@ -954,7 +979,7 @@ After all roles approve the same implementation SHA `I`, add only the exact doss
 
 - [ ] **Step 1: Push exact branch, create PR and verify head/CI**
 
-The PR names ADR-0039/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, `O(n)` limitation and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
+The PR names ADR-0040/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, `O(n)` limitation and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
 
 - [ ] **Step 2: Restate and stop at ADR-0011 D4**
 

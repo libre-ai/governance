@@ -1,4 +1,4 @@
-# ADR-0039 — Persistance du contrôle de run Orchestrator
+# ADR-0040 — Persistance du contrôle de run Orchestrator
 
 - **Statut :** proposed — la fusion de cette pull request constitue l'arbitrage propriétaire
 - **Choix de conception :** recommandation A validée par le propriétaire le 2026-09-11 ; l'autorité Governance reste conditionnée à la fusion
@@ -138,6 +138,10 @@ anti-résurrection prend le verrou avant sa lecture. Le verrou couvre donc aussi
 la lignée encore absente, que le row lock lifecycle ne peut pas voir, et cet
 ordre unique prévient l'interblocage. Une collision de clé ne crée qu'une
 sérialisation superflue et ne permet aucun bypass.
+Un sweep multi-lignées pré-acquiert toutes les clés advisory distinctes de sa
+page bornée, triées par valeur signée immuable, avant le premier row lock. Son
+ordre de curseur par deadline reste séparé et ne peut donc créer un cycle quand
+deux sweeps ont observé des ordres de deadlines différents.
 
 Les tombstones expirent exactement après `P35D`, plafond déclaré des
 sauvegardes ; PostgreSQL l'exprime comme `interval '840 hours'` et jamais
@@ -221,7 +225,9 @@ ne devient visible.
 Toute logique non triviale suit rouge-vert-refactor. Format, Clippy sans
 warning, rustdoc sans warning, tests unitaires/intégration/E2E, compatibilité
 publique, inventaire de dépendances et gates Bun sont bloquants. La couverture
-générée reste au minimum de 87 % des lignes et 90 % des fonctions.
+du workspace et celle du nouveau crate atteignent chacune indépendamment au
+minimum 87 % des lignes et 90 % des fonctions ; l'agrégat du workspace ne peut
+pas masquer une régression locale.
 
 SQLx 0.9 et Tokio sont épinglés avec leurs seules features nécessaires, sous
 licences MIT/Apache-2.0 compatibles. PostgreSQL 14+ avec `pgcrypto` est la cible

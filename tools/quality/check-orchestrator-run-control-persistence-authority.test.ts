@@ -124,11 +124,24 @@ function findRunControlOwners(plan: WorkPackagePlan): readonly WorkPackage[] {
 }
 
 function hasExpectedAdrTitle(adr: string): boolean {
-  return adr.startsWith("# ADR-0039 — Persistance du contrôle de run Orchestrator\n");
+  return adr.startsWith("# ADR-0040 — Persistance du contrôle de run Orchestrator\n");
 }
 
 function hasSingleD45Entry(decisionRegister: string): boolean {
   return decisionRegister.split("\n").filter((line) => line.startsWith("| D45 |")).length === 1;
+}
+
+async function adrPathsForNumber(expectedNumber: string): Promise<readonly string[]> {
+  const owners: string[] = [];
+  for await (const path of new Bun.Glob("docs/adr/*.md").scan(".")) {
+    const firstLine = (await Bun.file(path).text()).split("\n", 1)[0] ?? "";
+    const number = /^# ADR-(\d{4})\b/.exec(firstLine)?.[1];
+    if (number === expectedNumber) {
+      owners.push(path);
+    }
+  }
+
+  return owners.sort();
 }
 
 describe("orchestrator run-control persistence authority", () => {
@@ -260,9 +273,9 @@ describe("orchestrator run-control persistence authority", () => {
     ]);
   });
 
-  test("binds ADR-0039, D45 and only the locked runtime work package", async () => {
+  test("binds ADR-0040, D45 and only the locked runtime work package", async () => {
     const [adr, decisionRegister, design, implementationPlan, plan] = await Promise.all([
-      Bun.file("docs/adr/0039-orchestrator-run-control-persistence.md").text(),
+      Bun.file("docs/adr/0040-orchestrator-run-control-persistence.md").text(),
       Bun.file("docs/decisions/DECISION-REGISTER.md").text(),
       Bun.file(
         "docs/superpowers/specs/2026-09-11-orchestrator-run-control-persistence-design.md",
@@ -277,11 +290,14 @@ describe("orchestrator run-control persistence authority", () => {
 
     expect(hasExpectedAdrTitle(adr)).toBeTrue();
     expect(hasExpectedAdrTitle("")).toBeFalse();
+    expect(await adrPathsForNumber("0040")).toEqual([
+      "docs/adr/0040-orchestrator-run-control-persistence.md",
+    ]);
     expect(hasSingleD45Entry(decisionRegister)).toBeTrue();
     expect(decisionRegister).toContain(
       "| D45 | Run-control persistence is isolated and non-executing",
     );
-    expect(design).toContain("authority ADR-0039/D45");
+    expect(design).toContain("authority ADR-0040/D45");
     expect(adr).toContain("faits de rétention immuables");
     expect(design).toContain("### 7.2 `run_retention_facts`");
     expect(design.replace(/\s+/g, " ")).toContain(
@@ -311,6 +327,9 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("purged_rows");
     expect(implementationPlan).toContain("clear_cached_statements");
     expect(implementationPlan).toContain("disable_statement_logging");
+    expect(implementationPlan).toContain("tracing-subscriber =");
+    expect(implementationPlan).toContain("positive control");
+    expect(implementationPlan).toContain("synthetic `sqlx::query`-target event");
     expect(implementationPlan).toContain("immutable-role-review");
     expect(implementationPlan).toContain("interval '840 hours'");
     expect(implementationPlan).not.toContain(
@@ -332,6 +351,12 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("guard lock-only grant");
     expect(implementationPlan).toContain("SELECT(tenant_id, run_id)` on `runs`");
     expect(implementationPlan).toContain("pg_advisory_xact_lock");
+    expect(implementationPlan).toContain(
+      "sorts and deduplicates them by immutable signed numeric value",
+    );
+    expect(implementationPlan).toContain(
+      "mutable deadline cursor order remains separate from lock order",
+    );
     expect(implementationPlan).toContain("transaction_isolation");
     expect(implementationPlan).toContain("READ COMMITTED");
     expect(implementationPlan).toContain("VOLATILE");
@@ -339,6 +364,12 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("commands/manifest.json");
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$I" origin/main');
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$E" origin/main');
+    expect(implementationPlan).toContain(
+      "cargo llvm-cov --locked -p libre-ai-agent-orchestrator-run --all-features --lcov",
+    );
+    expect(implementationPlan).toContain(
+      "workspace coverage passes while the run-store package coverage fails",
+    );
     expect(workPackage?.definitionStatus).toBe("locked");
     expect(workPackage?.dependsOn).toEqual([
       "WP-G2-Q01",
