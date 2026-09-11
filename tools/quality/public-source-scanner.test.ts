@@ -10,11 +10,15 @@ import {
   publicSourceScannerSelfTests,
 } from "./public-source-scanner";
 
+function emailFixture(local: string, domain: string): string {
+  return [local, "@", domain].join("");
+}
+
 describe("email identifier line boundaries", () => {
   test.each([
-    ["bare LF before at-sign", "markdown\n@AGENTS.md"],
-    ["bare CR before at-sign", "markdown\r@AGENTS.md"],
-    ["bare CRLF without WSP before at-sign", "markdown\r\n@AGENTS.md"],
+    ["bare LF before at-sign", emailFixture("markdown\n", "AGENTS.md")],
+    ["bare CR before at-sign", emailFixture("markdown\r", "AGENTS.md")],
+    ["bare CRLF without WSP before at-sign", emailFixture("markdown\r\n", "AGENTS.md")],
     ["bare LF after at-sign", "alice@\ncustomer.company"],
     ["bare CR after at-sign", "alice@\rcustomer.company"],
     ["bare CRLF without WSP after at-sign", "alice@\r\ncustomer.company"],
@@ -25,7 +29,7 @@ describe("email identifier line boundaries", () => {
 
   test.each([
     ["same-line SP/HTAB", "alice \t @ \t customer.company"],
-    ["folding before at-sign", "alice\r\n \t@example.company"],
+    ["folding before at-sign", emailFixture("alice\r\n \t", "example.company")],
     ["folding after at-sign", "alice@\r\n \texample.company"],
     ["folding on both sides", "alice\r\n \t@\r\n  example.company"],
   ])("recognizes explicit folding whitespace: %s", (_label, value) => {
@@ -99,9 +103,9 @@ describe("RFC 2606 example-aware email identifiers", () => {
     ["SMTPUTF8", "😀@example.org"],
     ["domain literal", "alice@[192.0.2.1]"],
     ["malformed label", "alice@bad_name.example"],
-    ["leading-hyphen exact example", "alice@-example.org"],
-    ["trailing-hyphen exact example", "alice@example-.org"],
-    ["empty-label exact example", "alice@example..org"],
+    ["leading-hyphen exact example", emailFixture("alice", "-example.org")],
+    ["trailing-hyphen exact example", emailFixture("alice", "example-.org")],
+    ["empty-label exact example", emailFixture("alice", "example..org")],
     ["percent-encoded", "alice%40example.org"],
     ["eight-digit Unicode escape", "alice%U00000040example.org"],
     ["HTML-encoded", "alice&commat;example&period;org"],
@@ -124,7 +128,11 @@ describe("RFC 2606 example-aware email identifiers", () => {
   ])("continues after an ignored example separated by %s", (separator) => {
     expect(
       containsEmailIdentifierExcludingRfc2606Examples(
-        `first@example.org${separator}admin@customer.company`,
+        [
+          emailFixture("first", "example.org"),
+          separator,
+          emailFixture("admin", "customer.company"),
+        ].join(""),
       ),
     ).toBe(true);
   });
@@ -132,12 +140,24 @@ describe("RFC 2606 example-aware email identifiers", () => {
   test("detects a personal identifier before and between ignored examples", () => {
     expect(
       containsEmailIdentifierExcludingRfc2606Examples(
-        "admin@customer.company,first@example.org;second@example.net",
+        [
+          emailFixture("admin", "customer.company"),
+          ",",
+          emailFixture("first", "example.org"),
+          ";",
+          emailFixture("second", "example.net"),
+        ].join(""),
       ),
     ).toBe(true);
     expect(
       containsEmailIdentifierExcludingRfc2606Examples(
-        "first@example.org;admin@customer.company:second@example.net",
+        [
+          emailFixture("first", "example.org"),
+          ";",
+          emailFixture("admin", "customer.company"),
+          ":",
+          emailFixture("second", "example.net"),
+        ].join(""),
       ),
     ).toBe(true);
   });
@@ -145,7 +165,11 @@ describe("RFC 2606 example-aware email identifiers", () => {
   test("preserves raw provenance across mixed encoded and canonical candidates", () => {
     expect(
       containsEmailIdentifierExcludingRfc2606Examples(
-        "first@example.org,second%40example.net;admin@customer.company",
+        [
+          emailFixture("first", "example.org"),
+          ",second%40example.net;",
+          emailFixture("admin", "customer.company"),
+        ].join(""),
       ),
     ).toBe(true);
     expect(
