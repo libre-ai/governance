@@ -407,6 +407,12 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain("VOLATILE");
     expect(implementationPlan).toContain("historical duplicate compares the replayed current head");
     expect(implementationPlan).toContain("commands/manifest.json");
+    expect(implementationPlan).toContain("scan every tracked UTF-8 byte of the dossier");
+    expect(implementationPlan).toContain("recursively scan every decoded JSON string");
+    expect(implementationPlan).toContain("POSIX and Windows absolute machine paths");
+    expect(implementationPlan).toContain(
+      "benchmark.csv`, every review Markdown file, `commands/manifest.json` and `commands/*.txt`",
+    );
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$I" origin/main');
     expect(implementationPlan).toContain('git merge-base --is-ancestor "$E" origin/main');
     expect(implementationPlan).toContain(
