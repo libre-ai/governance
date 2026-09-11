@@ -29,9 +29,9 @@
   budget counters; `budget_ledger` mechanically copies validated event fields
   and never becomes a second reducer.
 - Whole-chain append replay is deliberately `O(n)`. No production service may consume it until separately authorized incremental state or an authoritative measured bound closes that risk.
-- The library reads no environment, file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`. Before connection, it inspects a short-lived, never-formatted `to_url_lossy()` value and rejects `sslrootcert`, `sslcert` or `sslkey` query keys with constant `InvalidInput`, so SQLx cannot read caller-selected certificate paths. Caller-side construction remains outside this boundary; WebPKI roots and inline certificate material are the only admitted TLS inputs.
-- Pin every dependency exactly. SQLx uses only `runtime-tokio`, `tls-rustls-ring-webpki`, `postgres`, `json` and `chrono`; no macros, native-root filesystem discovery, `ipnet`, embedded migrations, SQLite or MySQL.
-- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is an additional production blocker; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
+- The library reads no environment, ordinary file, process state, wall clock or secret. Its only I/O is PostgreSQL through private pools built from caller-provided `PgConnectOptions`. This proof is Unix-domain socket only: construction refuses unless `get_socket()` is `Some`, rejects caller startup `options`, replaces password, application name and every file/inline certificate/key value with fixed non-secret values, forces `PgSslMode::Disable` and never calls `to_url_lossy`. Caller-side construction remains outside this boundary; no TCP or TLS transport is admitted.
+- Pin every dependency exactly. SQLx uses only `runtime-tokio`, `postgres`, `json` and `chrono`; no TLS implementation, macros, `ipnet`, embedded migrations, SQLite or MySQL.
+- App, retention and restore use separate connection identities and pools. Store construction overrides caller options with `disable_statement_logging()` as defense in depth. In the exact unified graph, normal exact `log` and `tracing` dependencies compile every facade macro to static `OFF` in debug and release, including the dev-only `tracing/log-always` variant. This has a deliberate global downstream effect on the unified package instances: every same-graph consumer of those instances loses `log`/`tracing` diagnostics. A duplicate package version or other graph change invalidates the proof. The effect is acceptable only for this non-production proof and is one of three production blockers alongside whole-chain `O(n)` replay and absent remote TLS transport; removing it requires a separately proven upstream option or driver that preserves safe downstream diagnostics. Every returned connection first clears SQLx's client statement cache, then executes unprepared `DISCARD ALL`; either scrub failure discards it.
 - Every live app/retention writer explicitly begins at `READ COMMITTED` before
   role/context setup. Guard functions and the anti-resurrection trigger are
   `VOLATILE` and refuse unless `current_setting('transaction_isolation')` is
@@ -241,10 +241,10 @@ git commit -s -m "Authorize orchestrator run-control persistence"
 
 Review exact authority uniqueness, unchanged pure-core code/API, the
 non-overlapping prospective O02→O01 support-path transfer, persistence-only
-capability, the narrow H01 dependency split, append `O(n)` production block,
-honest restore complexity, closed deletion function, least-privilege restore
-and absent framework checkpoint. Any Blocking/Major finding invalidates the
-SHA and returns to Task 1 with a regression assertion.
+capability, the narrow H01 dependency split, all three production blocks,
+UDS-only SQLx graph, honest restore complexity, closed deletion function,
+least-privilege restore and absent framework checkpoint. Any Blocking/Major
+finding invalidates the SHA and returns to Task 1 with a regression assertion.
 
 - [ ] **Step 2: Push, open the Governance PR and verify CI**
 
@@ -345,7 +345,7 @@ serde_jcs = "=0.2.0"
 serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
 sha2 = { version = "=0.11.0", default-features = false }
 log = { version = "=0.4.33", default-features = false, features = ["max_level_off", "release_max_level_off"] }
-sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "json", "chrono"] }
+sqlx = { version = "=0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "json", "chrono"] }
 tracing = { version = "=0.1.44", default-features = false, features = ["std", "max_level_off", "release_max_level_off"] }
 
 [dev-dependencies]
@@ -366,8 +366,8 @@ introducing duplicate versions.
 - [ ] **Step 4: Implement/wire the gate and prove green**
 
 The checker compares exact production/dev dependency sets and SQLx features,
-rejects every extra SQLx feature (notably `ipnet`, whose optional decoder has a
-raw `println!` path), and rejects `build.rs`, `src/main.rs`, `src/bin` and
+rejects every TLS or extra SQLx feature (notably `ipnet`, whose optional
+decoder has a raw `println!` path), and rejects `build.rs`, `src/main.rs`, `src/bin` and
 alternate production dependency sections. It verifies the resolved Cargo
 feature graph, not merely the direct manifest, and audits the active SQLx
 source graph for direct logger/event/stdout bypasses. Add normal-build const
@@ -591,20 +591,36 @@ static `OFF` assertions and absence of direct bypasses in every active SQLx
 crate. The claim is limited to that exact allow-listed graph; any feature
 addition invalidates it.
 
-Construct synthetic file-backed `sslrootcert`, `sslcert` and `sslkey` options.
-Before any pool or socket action, inspect only the keys of a tightly scoped
-`options.to_url_lossy().query_pairs()` value, never format, store or return its
-password-bearing representation, and return constant `InvalidInput`. Prove
-rejection with nonexistent paths and a closed database endpoint so success
-cannot depend on filesystem or SQL I/O. Inline certificate material and
-WebPKI roots remain admitted. Prove every wrong identity/store pair returns
-only `run-store.unavailable`.
+Require an explicit Unix-domain socket before any pool action and return
+constant `InvalidInput` when `get_socket()` is `None` or caller startup
+`get_options()` is `Some`; this refuses every TCP endpoint without parsing or
+serializing options. Force `PgSslMode::Disable`. Replace any caller password,
+application name and file/inline root certificate, client certificate and
+client key with fixed non-secret values before SQLx I/O. Never call `to_url_lossy`.
+
+Prove a socket option combined with `host("[")`, password and distinct
+file/inline certificate sentinels connects through the private test socket
+without panic, filesystem read, sentinel emission or TLS request. Prove a TCP
+host, absent socket and startup options refuse before socket/SQL I/O. The exact
+resolved graph contains no TLS implementation. Prove every wrong identity/
+store pair returns only `run-store.unavailable`. Remote TLS transport is a
+separately authorized production capability, not part of this proof.
 
 - [ ] **Step 2: Construct private scrubbed pools**
 
 ```rust
-reject_file_backed_tls_without_formatting(&options)?;
-let options = options.disable_statement_logging();
+if options.get_socket().is_none() || options.get_options().is_some() {
+    return Err(StoreError::InvalidInput);
+}
+
+let options = options
+    .password("")
+    .application_name("libre-ai-run-control-proof")
+    .ssl_root_cert_from_pem(Vec::new())
+    .ssl_client_cert_from_pem(b"")
+    .ssl_client_key_from_pem(b"")
+    .ssl_mode(PgSslMode::Disable)
+    .disable_statement_logging();
 
 PgPoolOptions::new()
     .min_connections(0)
@@ -973,11 +989,11 @@ Require green commands and complete benchmark rows. Commit as `Gate run-store co
 
 - [ ] **Step 1: Write/red-run documentation assertions**
 
-Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and the `O(n)` production block. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
+Require all three docs to name ADR-0040/D45, exact Governance SHA, new crate, canonical JCS, forced RLS, the independently protected deletion-registry fact, tombstone-first restore and all three production blocks: `O(n)` replay, globally disabled unified diagnostics and absent remote TLS. Reject “production ready”, “executes missions” and “LangGraph checkpoint”. Add red synthetic commit-graph fixtures for the evidence gate: a `pending` review criterion with no evidence or dossier passes; `accepted` fails unless its schema-valid `evidence.reference` names the full implementation SHA `I` and exact dossier, exactly one commit `E` transitions that criterion to accepted, `parent(E) == I`, `E` changes only its exact review directory plus the status scalar and evidence mapping CST ranges, all four verdicts bind `I`, and every captured command has tracked normalized output whose digest verifies. Negative fixtures must combine a legitimate transition with (a) another project-card criterion/exposure change, (b) an extra source-file change, and (c) altered command-output bytes. Run the Bun tests and require failure against current docs/missing gate.
 
 - [ ] **Step 2: Update documentation and card**
 
-Add a compile-checked example that constructs `PgConnectOptions` outside the crate, creates bounded pool limits, appends a synthetic content-free event and reads a page. State that the library cannot load secrets, authorize, execute or serve.
+Add a compile-checked example that constructs no-secret `PgConnectOptions` outside the crate with an explicit Unix-domain socket, creates bounded pool limits, appends a synthetic content-free event and reads a page. State that the library cannot load secrets, use TCP/TLS, authorize, execute or serve.
 
 Rollback text: stop consumers; pin/revert code; retain applied forward migrations and canonical event/tombstone evidence; never destructive-down-migrate or rewrite events. Add phase `run-control-persistence` with one `immutable-role-review` criterion at schema-valid `status: pending`, without `evidence`, and a note that implementation exists but independent review is not yet accepted. Explicitly leave whole WP-G3-O01 incomplete. Do not alter Phase 4A accepted evidence, maturity or exposure.
 
@@ -1017,7 +1033,7 @@ Run Task 12 commands, require clean status, then record full implementation SHA 
 
 - [ ] **Step 2: Run four independent review roles**
 
-Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and both production blocks. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, compile-time `log`/`tracing` `OFF` in the exact debug/release/`log-always` graph, direct SQLx collector/stdout bypasses, PostgreSQL INFO/NOTICE/WARNING, file-backed TLS rejection before I/O, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, WebPKI without native-root filesystem discovery, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
+Architecture/performance proves no policy duplication or private pure-state projection, canonical revalidation including the idempotent path, constant append statement count, honest append `O(n)`, lookup/reconciliation `O(tombstones + runs * log(tombstones))`, total restore `O(tombstones + runs * log(tombstones) + purged_rows)`, the single-page lease/no-escape memory proof, indexed per-run lookup, no checkpoint/service and all three production blocks. Security attacks SQL injection, wrong roles, RLS/GUC/pool cancellation and prepared-cache reset, compile-time `log`/`tracing` `OFF` in the exact debug/release/`log-always` graph, direct SQLx collector/stdout bypasses, PostgreSQL INFO/NOTICE/WARNING, mandatory Unix socket, TCP refusal, forced TLS disablement, inert password/certificate inputs without URL serialization, absent-lineage races, error leakage, immutable rows, direct-retention deletion bypass, exact guard privilege matrix, timezone-independent exact tombstone expiry, stale/incomplete deletion registry and restore escalation. Privacy/sovereignty proves synthetic fixtures, no raw content/PII/logging, no TLS/native-store/certificate dependency in this local-only proof, content-free tombstones, authenticated independent registry precondition, retention/order, licenses and future EU target. Completeness reproduces exact work-package file authority, O02/H01 dependency gates, empty migration, concurrency, replay, pagination, deletion, stale-snapshot refusal, verified restore, compatibility, coverage and rollback.
 
 - [ ] **Step 3: Remediate without carrying stale approval**
 
@@ -1037,7 +1053,7 @@ After all roles approve the same implementation SHA `I`, add only the exact doss
 
 - [ ] **Step 1: Push exact branch, create PR and verify head/CI**
 
-The PR names ADR-0040/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, `O(n)` limitation and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
+The PR names ADR-0040/D45, reviewed implementation SHA `I`, its direct evidence child `E`, commands, all three production blockers and all unopened capabilities. Push only `refs/heads/feat/orchestrator-run-control-persistence`. Resolve `orchestrator_pr="$(gh pr view --json number --jq .number)"`; verify `headRefOid == E`, merge state and `gh pr checks "$orchestrator_pr" --watch`.
 
 - [ ] **Step 2: Restate and stop at ADR-0011 D4**
 
@@ -1053,6 +1069,9 @@ package instances out globally; a duplicate-version or feature-graph change
 invalidates the proof. No production consumer may remove that block until an
 upstream option or driver preserves safe downstream diagnostics without SQLx
 leakage.
+The store is Unix-domain socket only and has no TLS implementation. Remote
+transport to the declared EU target requires a separately proven WebPKI
+`verify-full` connection and secret boundary before production use.
 ADR-0011 D4 requires the owner's bootstrap pronouncement naming I and E before merge.
 ```
 

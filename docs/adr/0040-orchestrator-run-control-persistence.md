@@ -32,13 +32,13 @@ sans I/O et sa surface publique demeure inchangée. Le nouveau crate reçoit des
 brut, ni migration, ni constructeur lisant l'environnement, le système de
 fichiers, l'horloge ou un secret.
 
-Avant toute connexion, le crate inspecte uniquement les clés de requête d'une
-représentation `to_url_lossy()` à durée de vie minimale et refuse
-`sslrootcert`, `sslcert` ou `sslkey` par `InvalidInput` constant. Cette
-représentation peut contenir un mot de passe : elle n'est jamais formatée,
-loguée, stockée ou retournée. Les racines WebPKI et le matériel certificat
-inline restent admis ; la construction des options par l'appelant reste hors
-de cette frontière.
+Cette preuve est Unix-domain socket only. Avant tout pool ou I/O, le crate
+exige `PgConnectOptions::get_socket() == Some`, refuse les startup options de
+l'appelant, remplace mot de passe, nom d'application et tout certificat/clé
+fichier ou inline par des valeurs fixes non secrètes, puis force
+`PgSslMode::Disable`. Il n'appelle jamais `to_url_lossy` ni aucun formateur
+d'options. La construction des options par l'appelant reste hors de cette
+frontière ; aucun TCP ou TLS n'est autorisé dans cette tranche.
 
 Cette tranche consomme les schémas embarqués par SDK Rust et le replay du cœur
 pur. Elle ne crée pas de package concurrent : le `WP-G3-O01` verrouillé reste
@@ -121,6 +121,12 @@ graphe invalide la preuve. Ce coût n'est acceptable que pour cette preuve non
 productive. Chaque retour au pool vide d'abord le cache client de prepared
 statements SQLx puis exécute `DISCARD ALL` sans préparation persistante ;
 l'échec de l'une des deux étapes détruit la connexion.
+
+Le graphe SQLx ne contient aucune implémentation TLS. Le socket explicite
+sélectionne le chemin UDS sans repli TCP même si le host inerte est malformé ;
+`PgSslMode::Disable` est réappliqué à chaque pool et connexion de remplacement.
+Les tests utilisent le socket privé mode 0700 du harness, avec
+`listen_addresses` vide et toutes les règles HBA host refusées.
 Les writers live commencent explicitement en `READ COMMITTED`. Les fonctions
 guard et le trigger anti-résurrection sont `VOLATILE`, vérifient
 `current_setting('transaction_isolation')` et refusent `REPEATABLE READ` ou
@@ -211,6 +217,11 @@ Elle ne peut pas être retirée pour « réactiver les logs » : une option upst
 ou un driver séparément prouvé doit préserver des diagnostics aval sûrs sans
 réintroduire les émissions SQLx de requête, notice, pool ou erreur.
 
+L'absence volontaire de transport TCP/TLS est le troisième blocage production.
+La cible future Clever Cloud Paris/UE requiert une autorisation séparée avec
+WebPKI `verify-full`, propriété/zeroization des secrets et preuve de transport ;
+elle n'est pas joignable par cette tranche locale.
+
 ### D6 — Arrêter avant merge sur dossier indépendant
 
 Le candidat d'implémentation immuable `I` reçoit des revues
@@ -243,6 +254,9 @@ positif par leurs APIs directes, puis les tests exigent zéro événement et zé
 évaluation d'un formateur sensible sur tous les chemins SQLx, y compris
 erreur/cancellation/nettoyage et PostgreSQL `RAISE INFO`, `NOTICE` et
 `WARNING`. Cette preuve vaut uniquement pour le graphe exact vérifié.
+Des options host malformé, mot de passe et certificats/clé fichier ou inline
+synthétiques prouvent en plus l'absence de panic, sérialisation, lecture de
+fichier, transmission et émission sur le chemin UDS.
 
 Les tests PostgreSQL réels prouvent l'absence de lecture, mutation, inférence
 ou collision cross-organization par toute méthode publique. Ils empoisonnent
@@ -260,11 +274,11 @@ minimum 87 % des lignes et 90 % des fonctions ; l'agrégat du workspace ne peut
 pas masquer une régression locale.
 
 SQLx 0.9, Tokio, `log` et `tracing` sont épinglés avec leurs seules features
-nécessaires, sous licences MIT/Apache-2.0 compatibles. SQLx utilise Rustls avec
-racines WebPKI, sans découverte du magasin natif ni certificat choisi par
-chemin. PostgreSQL 14+ avec `pgcrypto` est la cible portable ; Clever Cloud
-PostgreSQL reste la cible UE déclarée, sans autoriser ici un provisionnement ou
-déploiement.
+nécessaires, sous licences MIT/Apache-2.0 compatibles. SQLx n'active aucune
+feature TLS ni découverte de certificat. PostgreSQL 14+ avec `pgcrypto` est la
+cible portable locale de la preuve ; Clever Cloud PostgreSQL reste la cible UE
+future déclarée, sans compatibilité réseau revendiquée ni provisionnement ou
+déploiement autorisé ici.
 
 ## Compatibilité et rollback
 
@@ -312,6 +326,13 @@ chain disproportionnée. La preuve static-off sur graphe exact est plus étroite
 et réversible ; la production devra choisir un contrôle upstream ou un driver
 à diagnostics sûrs séparément prouvé.
 
+### Inférer le variant certificat via les options sérialisées
+
+Rejeté : SQLx sérialise fichier et inline sous les mêmes clés, son formateur
+peut paniquer sur des champs appelant, et une clé privée inline serait copiée
+dans des buffers non zeroized. La preuve locale n'active ni sérialisation
+d'options ni TLS.
+
 ## Gate d'acceptation
 
 La tranche de persistance n'est mergeable que si une même révision immuable
@@ -321,21 +342,23 @@ prouve :
    rétention et reconstruction séparée des deux projections ;
 2. l'atomicité sous concurrence et échec injecté dans PostgreSQL réel ;
 3. `FORCE RLS`, les quatre rôles minimaux et le nettoyage des pools ;
-4. le refus pré-I/O des certificats TLS par chemin, puis zéro émission et zéro
-   évaluation sensible dans les graphes exacts debug, release et
-   `tracing/log-always`, sans bypass direct ;
-5. la rétention mission bornée, la suppression atomique et la restauration
+4. le socket Unix explicite sans repli TCP, TLS forcé disabled, champs secrets
+   neutralisés sans formatage et aucun TLS dans le graphe exact ;
+5. zéro émission et zéro évaluation sensible dans les graphes exacts debug,
+   release et `tracing/log-always`, sans bypass direct ;
+6. la rétention mission bornée, la suppression atomique et la restauration
    tombstone-first sans résurrection, avec registre complet et frais ;
-6. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
+7. les pages bornées, plans indexés, mesures append `O(n)`, rapprochement
    `O(tombstones + runs * log(tombstones))`, restauration totale
    `O(tombstones + runs * log(tombstones) + purged_rows)` et blocage
-   production, auquel s'ajoute le blocage des diagnostics globaux ;
-7. la compatibilité, couverture, documentation, rollback et tous les gates ;
-8. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
-9. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
+   production, auxquels s'ajoutent les blocages diagnostics globaux et
+   transport distant ;
+8. la compatibilité, couverture, documentation, rollback et tous les gates ;
+9. quatre verdicts indépendants acceptant le même SHA d'implémentation `I` ;
+10. si le dossier est suivi dans Git, son unique commit `E` est l'enfant direct
    evidence-only mécaniquement vérifié de `I`, et `I` puis `E` restent ancêtres
    de la branche principale après un merge commit non-squashé et non-rebasé ;
-10. le prononcé propriétaire ADR-0011 D4 nomme `I` et `E` après ces preuves et
+11. le prononcé propriétaire ADR-0011 D4 nomme `I` et `E` après ces preuves et
    avant merge.
 
 Tout finding Blocking ou Major invalide les preuves de la révision. La fusion

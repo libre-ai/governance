@@ -119,7 +119,7 @@ Contracts / SDK Rust
                                       +----------------+---------------+
                                                        |
                                                        v
-                                           PostgreSQL in EU residency
+                                           local PostgreSQL proof
 ```
 
 The root package remains a normal package and a workspace root. The workspace
@@ -179,9 +179,8 @@ it does not reintroduce “tenant” into product or API language.
 
 The new crate may:
 
-- consume caller-built SQLx `PgConnectOptions` and bounded pool limits after
-  rejecting file-backed `sslrootcert`, `sslcert` and `sslkey` inputs before
-  connection I/O;
+- consume caller-built SQLx `PgConnectOptions` with an explicit Unix-domain
+  socket and bounded pool limits;
 - construct and own one private PostgreSQL pool per authority role, with the
   mandatory connection-scrubbing hook;
 - open transactions through those private pools;
@@ -191,8 +190,10 @@ The new crate may:
 
 It may not:
 
-- read environment variables, secrets, files or process state;
+- load or inspect environment variables, secrets, ordinary files or process
+  state;
 - create its own connection configuration or discover a database endpoint;
+- open TCP or negotiate TLS;
 - expose its pool or a raw SQLx transaction;
 - call an HTTP, RPC, worker, Missions, Harness or effect endpoint;
 - read the wall clock implicitly;
@@ -201,19 +202,21 @@ It may not:
 - accept a preclassified semantic verdict from an adapter.
 
 The caller injects connection options, authoritative time and already
-established authority facts. It resolves endpoints and secrets outside this
-crate. Before SQLx can connect or read a certificate path, the crate inspects
-only the query keys of a tightly scoped `PgConnectOptions::to_url_lossy()`
-value and rejects `sslrootcert`, `sslcert` or `sslkey` with constant
-`InvalidInput`. Because that transient representation may contain a password,
-it is never formatted, logged, stored or returned. WebPKI roots and inline
-certificate material remain admitted. The crate then applies
-`disable_statement_logging()` as defense in depth and never formats or exposes
-the options. Caller-side option construction remains outside this boundary.
+established authority facts. It resolves the local endpoint outside this
+crate and must not place a real secret in the proof-only options. Before SQLx
+I/O, the crate requires `PgConnectOptions::get_socket()` to be `Some`, refuses
+caller startup `options`, then replaces password, application name and all
+file/inline certificate and key fields with fixed non-secret values. It forces
+`PgSslMode::Disable`, applies `disable_statement_logging()` as defense in depth
+and never invokes `to_url_lossy` or any other option formatter. Thus hostile
+synthetic secret fields are neither inspected nor transmitted by the store;
+real secret ingestion remains unauthorized.
+
 Pool construction is inside the crate because accepting an opaque prebuilt
 pool would make the mandatory `DISCARD ALL` return hook unverifiable. The crate
-still recomputes every comparison it owns. Future environment/secret loading
-and request authorization require separate packages.
+still recomputes every comparison it owns. Future remote endpoint/TLS and
+secret loading, zeroizing ownership and request authorization require separate
+packages.
 
 Migration SQL belongs to the crate, but the library does not read or execute
 migration files at runtime. CI and future deployment tooling apply the exact
@@ -223,11 +226,11 @@ filesystem and schema-owner capabilities out of the application process.
 ## 5. Dependencies and portability
 
 The persistence crate uses Rust and pins SQLx exactly at `0.9.0` with default
-features disabled. Only PostgreSQL, Tokio runtime, Chrono, JSON and Rustls with
-WebPKI roots are enabled. Native-root filesystem discovery, `ipnet`, the
-embedded-migration macro and SQLite/MySQL drivers stay disabled. Direct
-dependencies already used for canonicalization, digests and time values are
-pinned consistently with the pure crate.
+features disabled. Only PostgreSQL, Tokio runtime, Chrono and JSON are enabled.
+Every TLS implementation, `ipnet`, the embedded-migration macro and SQLite/
+MySQL drivers stay disabled. Direct dependencies already used for
+canonicalization, digests and time values are pinned consistently with the
+pure crate.
 
 Exact normal dependencies on `log` 0.4.33 and `tracing` 0.1.44 enable
 `max_level_off` and `release_max_level_off`; normal-build const assertions
@@ -248,10 +251,12 @@ downstream diagnostics while suppressing SQLx query, notice, pool and error
 emissions. The no-emission claim applies only to the exact feature graph.
 
 SQLx 0.9.0 is MIT OR Apache-2.0 and supports the repository's Rust toolchain.
-PostgreSQL is the only storage engine in scope. Production remains targeted at
-Clever Cloud PostgreSQL in the Paris/EU residency boundary; this package does
-not provision or deploy it. Tests use an ordinary PostgreSQL 14-or-newer
-server and never require a Docker Hub image.
+PostgreSQL is the only storage engine in scope. Tests use an ordinary
+PostgreSQL 14-or-newer server through the mode-0700 private Unix-domain socket
+and never require a Docker Hub image. Clever Cloud PostgreSQL in Paris/EU
+remains the future production target, but this local-only package cannot reach
+it: remote WebPKI `verify-full`, secret ownership and transport verification
+must be authorized and proved separately.
 
 The schema uses PostgreSQL's `pgcrypto` extension only for the database-side
 SHA-256 deletion-subject check. The migration preflight must prove the
@@ -311,6 +316,13 @@ pooled session, exercise rollback and cancellation paths, reuse the same bound
 query across a scrub, inject each scrub failure, and prove that neither cached
 statement, role, organization context nor SQL text survives or reaches any
 collector.
+
+All pool constructors first require an explicit Unix-domain socket, reject
+caller startup options, overwrite secret-capable option fields with fixed
+non-secret values and force `PgSslMode::Disable`. The exact SQLx graph contains
+no TLS implementation. `get_socket() == None` refuses before pool or network
+I/O; a present socket is SQLx's non-fallback UDS path even if the inert host is
+malformed. The same rule applies to every initial and replacement connection.
 
 `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY` apply to every
 organization-scoped table. Policies require both a non-empty local setting and
@@ -872,9 +884,14 @@ All non-trivial behavior is test-first. The implementation must provide:
   `tracing/log-always` graph, while normal-build assertions keep both
   `STATIC_MAX_LEVEL` values at `OFF` and an exact-graph audit rejects direct
   logger/event/stdout bypasses or any extra SQLx feature;
-- synthetic file-backed `sslrootcert`, `sslcert` and `sslkey` options return
-  constant `InvalidInput` before filesystem or SQL I/O, while their transient
-  password-bearing URL representation is never formatted or retained;
+- absent socket, TCP-only options and caller startup options return constant
+  `InvalidInput` before pool, socket or SQL I/O;
+- an explicit private socket combined with `host("[")`, password and distinct
+  file/inline certificate and key sentinels connects without panic, TLS,
+  filesystem access, option serialization, sentinel emission or transmission;
+- the resolved dependency graph contains no TLS implementation, all pools
+  force `PgSslMode::Disable`, and the harness proves private UDS operation with
+  empty `listen_addresses` and rejecting host HBA rules;
 - clearing either the client prepared-statement cache or the unprepared server
   session fails by destroying the connection;
 - live writers prove the lock order advisory then lifecycle then run at
@@ -1013,9 +1030,10 @@ the barrier is absent.
 - Rust, SQLx, `log`, `tracing`, PostgreSQL, `pgcrypto`, RFC 8785 and SHA-256 are
   open, portable building blocks with acceptable licenses; `pgcrypto` is
   available on the declared Clever Cloud target.
-- WebPKI roots avoid native certificate-store discovery, and the store rejects
-  caller-selected TLS certificate paths before any filesystem access.
-- Production residency remains on Clever Cloud in the declared EU region.
+- The local-only proof has no TLS/native-certificate-store dependency and uses
+  only the harness's mode-0700 Unix-domain socket with TCP disabled.
+- Future production residency remains on Clever Cloud in the declared EU
+  region; this local-only proof does not connect to it.
 - RLS, forced least privilege, content-free storage, bounded exports,
   retention, deletion and restore are designed as blocking proofs.
 - The pure authority remains independent of the persistence library and any
@@ -1027,12 +1045,15 @@ Biscuit request authorization, secret acquisition, endpoint construction,
 zero-PII runtime observability, service startup orchestration and an authorized
 incremental-state boundary are not yet implemented. In the exact graph, the
 proof's static-off dependency features also disable safe diagnostics globally
-for every consumer of the unified package instances. Consequently this crate
-cannot be wired to a production request or open a real run. Treating injected
-construction of a deletion command as production authorization, treating the
-`O(n)` proof append as an unmeasured production hot path, or merely removing
-static `OFF` without a proven safe SQLx logging boundary would be a
-security/quality violation, not an integration shortcut.
+for every consumer of the unified package instances. The store is also
+Unix-domain socket only and deliberately has no remote TLS implementation.
+Remote TLS transport is therefore a separate production blocker.
+Consequently this crate cannot be wired to a production request or open a real
+run. Treating injected construction of a deletion command as production
+authorization, treating the `O(n)` proof append as an unmeasured production hot
+path, merely removing static `OFF` without a proven safe SQLx logging boundary,
+or enabling TCP/TLS without a WebPKI `verify-full` and secret-boundary proof
+would be a security/quality violation, not an integration shortcut.
 
 ### FAIL
 
@@ -1101,6 +1122,13 @@ audit and supply-chain surface. The exact-graph static-off proof is narrower
 and reversible; production must choose a proven upstream control or a driver
 with safe diagnostics rather than silently inheriting this compromise.
 
+### Infer certificate variants through serialized connection options
+
+Rejected on security and quality. SQLx serializes file and inline material
+under the same keys, its formatter can panic on caller fields, and serializing
+inline private keys creates additional non-zeroized secret buffers. The
+non-production proof instead avoids option serialization and TLS entirely.
+
 ## 18. Acceptance and stopping point
 
 The design is satisfied only when the exact reviewed implementation proves:
@@ -1115,15 +1143,18 @@ The design is satisfied only when the exact reviewed implementation proves:
 8. restore applies tombstones before records and proves non-resurrection;
    the deletion registry is independently protected, authenticated by a
    future caller and locally verified complete/fresh through the writer fence;
-9. file-backed TLS material is rejected before I/O and the exact debug,
-   release and `tracing/log-always` dependency graphs compile all facade
-   logging out, expose no direct bypass and evaluate no sensitive formatter;
-10. public diagnostics contain only closed codes, while the global static-off
+9. every store is Unix-domain socket only, forces TLS disabled, sanitizes
+   secret-capable option fields without formatting them, and the exact graph
+   contains no TLS implementation;
+10. the exact debug, release and `tracing/log-always` dependency graphs compile
+   all facade logging out, expose no direct bypass and evaluate no sensitive
+   formatter;
+11. public diagnostics contain only closed codes, while the global static-off
     effect remains an explicit production blocker;
-11. the pure crate API/capability and locked Contracts authority remain
+12. the pure crate API/capability and locked Contracts authority remain
     unchanged;
-12. no service, effect, worker or framework capability has entered scope;
-13. all repository, coverage, dependency and real-PostgreSQL gates are green.
+13. no service, effect, worker or framework capability has entered scope;
+14. all repository, coverage, dependency and real-PostgreSQL gates are green.
 
 After all verdicts accept implementation commit `I` and its mechanically
 restricted direct evidence child `E` is green, work stops before merge for the

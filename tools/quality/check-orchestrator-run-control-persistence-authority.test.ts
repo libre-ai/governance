@@ -299,13 +299,17 @@ describe("orchestrator run-control persistence authority", () => {
     );
     expect(design).toContain("authority ADR-0040/D45");
     expect(adr).toContain("max_level_off");
-    expect(adr).toContain("sslrootcert");
+    expect(adr).toContain("PgSslMode::Disable");
     expect(design).toContain("tracing::level_filters::STATIC_MAX_LEVEL");
     expect(design).toContain("log::STATIC_MAX_LEVEL");
     expect(design).toContain("global downstream effect");
-    expect(design).toContain("WebPKI roots");
+    expect(design).toContain("Unix-domain socket");
+    expect(design).toContain("TLS transport");
+    expect(design).toContain("Every TLS implementation");
+    expect(design).toContain("never invokes `to_url_lossy`");
+    expect(design).not.toContain("PgConnectOptions::to_url_lossy()");
     expect(decisionRegister).toContain("diagnostics globally off");
-    expect(decisionRegister).toContain("file-backed TLS options before I/O");
+    expect(decisionRegister).toContain("Unix-domain socket only");
     expect(adr).toContain("faits de rétention immuables");
     expect(design).toContain("### 7.2 `run_retention_facts`");
     expect(design.replace(/\s+/g, " ")).toContain(
@@ -340,8 +344,18 @@ describe("orchestrator run-control persistence authority", () => {
     expect(implementationPlan).toContain('features = ["max_level_off", "release_max_level_off"]');
     expect(implementationPlan).toContain("tracing::level_filters::STATIC_MAX_LEVEL");
     expect(implementationPlan).toContain("log::STATIC_MAX_LEVEL");
-    expect(implementationPlan).toContain("tls-rustls-ring-webpki");
+    expect(implementationPlan).toContain(
+      'features = ["runtime-tokio", "postgres", "json", "chrono"]',
+    );
+    expect(implementationPlan).not.toContain("tls-rustls-ring-webpki");
     expect(implementationPlan).not.toContain("tls-rustls-ring-native-roots");
+    expect(implementationPlan).toContain("Never call `to_url_lossy`");
+    expect(implementationPlan).not.toContain("options.to_url_lossy().query_pairs()");
+    expect(implementationPlan).toContain("get_socket()");
+    expect(implementationPlan).toContain("PgSslMode::Disable");
+    expect(implementationPlan).toContain("Unix-domain socket only");
+    expect(implementationPlan).toContain("TLS transport");
+    expect(implementationPlan).toContain('host("[")');
     expect(implementationPlan).toContain("tracing-subscriber =");
     expect(implementationPlan).toContain("positive control");
     expect(implementationPlan).toContain("direct collector APIs");
