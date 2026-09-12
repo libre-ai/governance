@@ -1,0 +1,1114 @@
+{
+  "schemaVersion": "repository-catalog.v1",
+  "repositories": [
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": ".github",
+      "displayName": "Libre AI",
+      "category": "trust",
+      "benefit": {
+        "en": "Find the project and contribution rules",
+        "fr": "Retrouver le projet et ses règles de contribution"
+      },
+      "differentiator": {
+        "en": "Shared organization entry point",
+        "fr": "Point d’entrée commun à l’organisation"
+      },
+      "audience": {
+        "en": "Contributors",
+        "fr": "Contributeurs"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/.github"
+      },
+      "outcome": {
+        "en": "Organization profile sources",
+        "fr": "Sources du profil de l’organisation"
+      },
+      "limitation": {
+        "en": "The new organization journey has not been qualified",
+        "fr": "Le nouveau parcours de l’organisation n’est pas qualifié"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The new organization journey has not been qualified",
+          "fr": "Le nouveau parcours de l’organisation n’est pas qualifié"
+        },
+        "acceptance": "Follow the organization primary action to Missions and assert that contribution and evidence links resolve without exposing provisional names."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "ai-practice",
+      "displayName": "Libre AI Practice",
+      "category": "use",
+      "benefit": {
+        "en": "Practice responsible use of AI",
+        "fr": "S’exercer à une utilisation responsable de l’IA"
+      },
+      "differentiator": {
+        "en": "Local practice without personnel scoring",
+        "fr": "Pratique locale sans notation du personnel"
+      },
+      "audience": {
+        "en": "Professionals using AI at work",
+        "fr": "Professionnels utilisant l’IA au travail"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/ai-practices"
+      },
+      "outcome": {
+        "en": "Local application foundation",
+        "fr": "Fondation applicative locale"
+      },
+      "limitation": {
+        "en": "The sourced training paths remain to be written",
+        "fr": "Les parcours d’entraînement sourcés restent à écrire"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The sourced training paths remain to be written",
+          "fr": "Les parcours d’entraînement sourcés restent à écrire"
+        },
+        "acceptance": "Complete one exercise against a cited source, export its explanation, and assert that no personnel score or outbound data request is produced."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "app-kit",
+      "displayName": "Libre AI App Kit",
+      "category": "build",
+      "benefit": {
+        "en": "Build accessible application foundations",
+        "fr": "Construire des fondations applicatives accessibles"
+      },
+      "differentiator": {
+        "en": "Local assets and bounded UI and web primitives",
+        "fr": "Ressources locales et primitives UI et web bornées"
+      },
+      "audience": {
+        "en": "Application developers",
+        "fr": "Développeurs d’applications"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/ui"
+      },
+      "outcome": {
+        "en": "UI, web boundary and testing sources",
+        "fr": "Sources UI, frontière web et outils de test"
+      },
+      "limitation": {
+        "en": "The consolidated registry package has not been qualified",
+        "fr": "Le paquet consolidé distribué par registre n’est pas qualifié"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "developer-tools",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The consolidated registry package has not been qualified",
+          "fr": "Le paquet consolidé distribué par registre n’est pas qualifié"
+        },
+        "acceptance": "Install the consolidated packages from a registry in two independent consumers and pass keyboard, local-asset and web-boundary integration tests."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "artifact-proof",
+      "displayName": "Libre AI Artifact Proof",
+      "category": "trust",
+      "benefit": {
+        "en": "Check artifact bytes against their evidence",
+        "fr": "Contrôler les octets des artefacts par rapport aux preuves"
+      },
+      "differentiator": {
+        "en": "Content-addressed manifest validation",
+        "fr": "Validation de manifeste adressée par contenu"
+      },
+      "audience": {
+        "en": "Release reviewers",
+        "fr": "Relecteurs de publications"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/artifacts"
+      },
+      "outcome": {
+        "en": "In-memory candidate verifier sources",
+        "fr": "Sources du vérificateur de candidats en mémoire"
+      },
+      "limitation": {
+        "en": "The standalone offline CLI and signed fixture are unproved",
+        "fr": "La CLI autonome hors ligne et la fixture signée ne sont pas prouvées"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The standalone offline CLI and signed fixture are unproved",
+          "fr": "La CLI autonome hors ligne et la fixture signée ne sont pas prouvées"
+        },
+        "acceptance": "Run the standalone verifier offline against a signed fixture, validate SBOM and provenance, and reject tampered bytes without contributor-lineage data."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "artifact-proof"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "authorization",
+      "displayName": "Libre AI Authorization",
+      "category": "trust",
+      "benefit": {
+        "en": "Check attenuated authorization tokens",
+        "fr": "Contrôler des jetons d’autorisation atténués"
+      },
+      "differentiator": {
+        "en": "Biscuit verification with rotation and revocation",
+        "fr": "Vérification Biscuit avec rotation et révocation"
+      },
+      "audience": {
+        "en": "Service developers",
+        "fr": "Développeurs de services"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/authz-biscuit"
+      },
+      "outcome": {
+        "en": "Token issuance and verification crate sources",
+        "fr": "Sources du crate d’émission et vérification des jetons"
+      },
+      "limitation": {
+        "en": "Independent registry consumption and admission are unproved",
+        "fr": "La consommation indépendante par registre et l’admission ne sont pas prouvées"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Independent registry consumption and admission are unproved",
+          "fr": "La consommation indépendante par registre et l’admission ne sont pas prouvées"
+        },
+        "acceptance": "Install the published crate in an independent example and prove threat-model refusals, rotation and revocation through registry-consumer tests."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "authorization"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "collaboration",
+      "displayName": "Libre AI Collaboration",
+      "category": "explore",
+      "benefit": {
+        "en": "Exchange collaborative updates through a relay",
+        "fr": "Échanger des mises à jour collaboratives via un relais"
+      },
+      "differentiator": {
+        "en": "Separated client core and relay",
+        "fr": "Noyau client et relais séparés"
+      },
+      "audience": {
+        "en": "Developers of collaborative applications",
+        "fr": "Développeurs d’applications collaboratives"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/collab-core"
+      },
+      "outcome": {
+        "en": "Collaboration core and relay sources",
+        "fr": "Sources du noyau de collaboration et du relais"
+      },
+      "limitation": {
+        "en": "Real cryptography and two independent clients are unproved",
+        "fr": "La cryptographie réelle et deux clients indépendants ne sont pas prouvés"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Real cryptography and two independent clients are unproved",
+          "fr": "La cryptographie réelle et deux clients indépendants ne sont pas prouvés"
+        },
+        "acceptance": "Exchange an encrypted update between two independent clients through the relay and reject tampered ciphertext in an end-to-end test."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "collaboration"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "contracts",
+      "displayName": "Libre AI Contracts",
+      "category": "build",
+      "benefit": {
+        "en": "Validate shared machine-readable boundaries",
+        "fr": "Valider des frontières communes lisibles par machine"
+      },
+      "differentiator": {
+        "en": "Canonical schemas separated from generated types",
+        "fr": "Schémas canoniques séparés des types générés"
+      },
+      "audience": {
+        "en": "Integration developers",
+        "fr": "Développeurs d’intégrations"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/contracts"
+      },
+      "outcome": {
+        "en": "Schema catalog and runtime validator sources",
+        "fr": "Sources du catalogue de schémas et des validateurs"
+      },
+      "limitation": {
+        "en": "Clean target packaging and anonymous consumption are not qualified",
+        "fr": "Le packaging de la cible propre et sa consommation anonyme ne sont pas qualifiés"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "developer-tools",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Clean target packaging and anonymous consumption are not qualified",
+          "fr": "Le packaging de la cible propre et sa consommation anonyme ne sont pas qualifiés"
+        },
+        "acceptance": "Generate both SDKs twice with identical bytes and validate accepted and rejected canonical vectors through anonymous registry installations."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "data-lifecycle",
+      "displayName": "Libre AI Data Lifecycle",
+      "category": "build",
+      "benefit": {
+        "en": "Bound data access and retention by organization",
+        "fr": "Borner l’accès et la conservation des données par organisation"
+      },
+      "differentiator": {
+        "en": "Database isolation and deletion receipt boundaries",
+        "fr": "Isolation en base et frontières des reçus de suppression"
+      },
+      "audience": {
+        "en": "Developers handling application data",
+        "fr": "Développeurs gérant des données applicatives"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/data"
+      },
+      "outcome": {
+        "en": "Data helpers and database barrier sources",
+        "fr": "Sources des fonctions de données et barrières en base"
+      },
+      "limitation": {
+        "en": "Independent target reviews and registry consumption are not qualified",
+        "fr": "Les revues indépendantes de la cible et sa consommation par registre ne sont pas qualifiées"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "developer-tools",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Independent target reviews and registry consumption are not qualified",
+          "fr": "Les revues indépendantes de la cible et sa consommation par registre ne sont pas qualifiées"
+        },
+        "acceptance": "Use raw SQL to prove cross-organization denial, erase a subject, restore a backup and prove erased records cannot reappear."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "db-inspect",
+      "displayName": "Libre AI Database Inspector",
+      "category": "build",
+      "benefit": {
+        "en": "Inspect database policies and migration risks",
+        "fr": "Inspecter les politiques de base et risques de migration"
+      },
+      "differentiator": {
+        "en": "Specialized reports without becoming an ORM",
+        "fr": "Rapports spécialisés sans devenir un ORM"
+      },
+      "audience": {
+        "en": "Developers reviewing PostgreSQL changes",
+        "fr": "Développeurs examinant des changements PostgreSQL"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/db-inspect"
+      },
+      "outcome": {
+        "en": "Database inspection CLI and SQL fixtures",
+        "fr": "CLI d’inspection de base et fixtures SQL"
+      },
+      "limitation": {
+        "en": "Live PostgreSQL adoption proof is still required",
+        "fr": "Une preuve d’adoption sur PostgreSQL réel reste requise"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "developer-tools",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Live PostgreSQL adoption proof is still required",
+          "fr": "Une preuve d’adoption sur PostgreSQL réel reste requise"
+        },
+        "acceptance": "Inspect a live PostgreSQL fixture containing RLS, grants and migrations, detect deliberate violations and emit a redacted reproducible report."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "execution-guard",
+      "displayName": "Libre AI Execution Guard",
+      "category": "trust",
+      "benefit": {
+        "en": "Constrain execution at an explicit boundary",
+        "fr": "Contraindre l’exécution à une frontière explicite"
+      },
+      "differentiator": {
+        "en": "Refusal and confinement contracts",
+        "fr": "Contrats de refus et de confinement"
+      },
+      "audience": {
+        "en": "Execution-system developers",
+        "fr": "Développeurs de systèmes d’exécution"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/harness"
+      },
+      "outcome": {
+        "en": "Execution boundary sources and refusal tests",
+        "fr": "Sources de la frontière d’exécution et tests de refus"
+      },
+      "limitation": {
+        "en": "Independent confinement and integration proofs are missing",
+        "fr": "Les preuves de confinement autonome et d’intégration manquent"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Independent confinement and integration proofs are missing",
+          "fr": "Les preuves de confinement autonome et d’intégration manquent"
+        },
+        "acceptance": "Execute an independent confinement example, refuse forbidden effects and survive critical crash tests through the Mission Control integration."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "execution-guard"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "feed-radar",
+      "displayName": "Libre AI Radar",
+      "category": "use",
+      "benefit": {
+        "en": "Turn feed subscriptions into explainable selections",
+        "fr": "Transformer des abonnements en sélections explicables"
+      },
+      "differentiator": {
+        "en": "Readable selection rules",
+        "fr": "Règles de sélection lisibles"
+      },
+      "audience": {
+        "en": "People following information feeds",
+        "fr": "Personnes suivant des flux d’information"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/feed-radar"
+      },
+      "outcome": {
+        "en": "Rule evaluator and destination policy sources",
+        "fr": "Sources de l’évaluateur de règles et de la politique de destinations"
+      },
+      "limitation": {
+        "en": "Import to export through the interface is not qualified",
+        "fr": "Le parcours d’import vers l’export via l’interface n’est pas qualifié"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Import to export through the interface is not qualified",
+          "fr": "Le parcours d’import vers l’export via l’interface n’est pas qualifié"
+        },
+        "acceptance": "Import OPML containing RSS and Atom feeds, apply a readable rule, export the selected items and verify each inclusion against that rule."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "governance",
+      "displayName": "Libre AI Governance",
+      "category": "trust",
+      "benefit": {
+        "en": "Trace decisions and repository obligations",
+        "fr": "Retracer les décisions et obligations des dépôts"
+      },
+      "differentiator": {
+        "en": "Human-readable authority separate from wire contracts",
+        "fr": "Autorité lisible séparée des contrats de communication"
+      },
+      "audience": {
+        "en": "Reviewers and maintainers",
+        "fr": "Relecteurs et mainteneurs"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/governance"
+      },
+      "outcome": {
+        "en": "Decision register and governance checks",
+        "fr": "Registre de décisions et contrôles de gouvernance"
+      },
+      "limitation": {
+        "en": "The clean public portfolio is not admitted for publication",
+        "fr": "Le portefeuille public reconstruit n’est pas admis à la publication"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The clean public portfolio is not admitted for publication",
+          "fr": "Le portefeuille public reconstruit n’est pas admis à la publication"
+        },
+        "acceptance": "Validate all twenty candidate records, reject unauthorized public facts and reproduce every public projection from an immutable reviewed authority."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "mission-control",
+      "displayName": "Libre AI Mission Control",
+      "category": "build",
+      "benefit": {
+        "en": "Evaluate execution continuity deterministically",
+        "fr": "Évaluer la continuité d’exécution de façon déterministe"
+      },
+      "differentiator": {
+        "en": "Pure graph and causal evaluation",
+        "fr": "Évaluation pure des graphes et de la causalité"
+      },
+      "audience": {
+        "en": "Execution-system developers",
+        "fr": "Développeurs de systèmes d’exécution"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/envelope"
+      },
+      "outcome": {
+        "en": "Non-executing evaluation API sources",
+        "fr": "Sources de l’API d’évaluation sans exécution"
+      },
+      "limitation": {
+        "en": "Real execution and production persistence are not qualified",
+        "fr": "L’exécution réelle et la persistance en production ne sont pas qualifiées"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "developer-tools",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Real execution and production persistence are not qualified",
+          "fr": "L’exécution réelle et la persistance en production ne sont pas qualifiées"
+        },
+        "acceptance": "Replay a graph through interruption and recovery, refuse ambiguous effects, and demonstrate continuity without duplicated execution."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "missions",
+      "displayName": "Libre AI Missions",
+      "category": "use",
+      "benefit": {
+        "en": "Track bounded AI work and approvals",
+        "fr": "Suivre un travail IA borné et ses approbations"
+      },
+      "differentiator": {
+        "en": "Explicit authorization and traceable evidence",
+        "fr": "Autorisation explicite et preuves traçables"
+      },
+      "audience": {
+        "en": "People supervising AI work",
+        "fr": "Personnes supervisant un travail IA"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/missions"
+      },
+      "outcome": {
+        "en": "Command boundary and mission interface sources",
+        "fr": "Sources de la frontière de commande et de l’interface de missions"
+      },
+      "limitation": {
+        "en": "The real execution journey is not qualified",
+        "fr": "Le parcours d’exécution réel n’est pas qualifié"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The real execution journey is not qualified",
+          "fr": "Le parcours d’exécution réel n’est pas qualifié"
+        },
+        "acceptance": "Create a bounded mission, refuse an unauthorized action, record a human approval and verify the resulting evidence through the complete interface."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "model-policy",
+      "displayName": "Libre AI Model Policy",
+      "category": "use",
+      "benefit": {
+        "en": "Explain model choices against organization rules",
+        "fr": "Expliquer le choix des modèles selon les règles de l’organisation"
+      },
+      "differentiator": {
+        "en": "Replayable rule evaluation",
+        "fr": "Évaluation de règles rejouable"
+      },
+      "audience": {
+        "en": "People evaluating model use",
+        "fr": "Personnes évaluant l’utilisation des modèles"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/policy"
+      },
+      "outcome": {
+        "en": "Policy evaluator and application sources",
+        "fr": "Sources de l’évaluateur de politique et de l’application"
+      },
+      "limitation": {
+        "en": "The complete delivery journey is not qualified",
+        "fr": "Le parcours de livraison complet n’est pas qualifié"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The complete delivery journey is not qualified",
+          "fr": "Le parcours de livraison complet n’est pas qualifié"
+        },
+        "acceptance": "Evaluate an allowed and a refused model-use request, explain the policy rule, and replay both decisions against the same rule digest."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "notebook",
+      "displayName": "Libre AI Notebook",
+      "category": "use",
+      "benefit": {
+        "en": "Keep personal notes under local control",
+        "fr": "Garder ses notes sous contrôle local"
+      },
+      "differentiator": {
+        "en": "Explicit exports and local encryption boundary",
+        "fr": "Exports explicites et frontière de chiffrement locale"
+      },
+      "audience": {
+        "en": "People managing personal knowledge",
+        "fr": "Personnes gérant des connaissances personnelles"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/notebook"
+      },
+      "outcome": {
+        "en": "Backup and restore fixture interface",
+        "fr": "Interface de sauvegarde et restauration sur fixture"
+      },
+      "limitation": {
+        "en": "Real note capture and core integration are not qualified",
+        "fr": "La capture réelle des notes et l’intégration du noyau ne sont pas qualifiées"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "Real note capture and core integration are not qualified",
+          "fr": "La capture réelle des notes et l’intégration du noyau ne sont pas qualifiées"
+        },
+        "acceptance": "Capture a note through the real interface, encrypt and restore it locally, then export only an explicitly selected note with no network requests."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "sessions",
+      "displayName": "Libre AI Sessions",
+      "category": "use",
+      "benefit": {
+        "en": "Prepare sessions anchored in cited sources",
+        "fr": "Préparer des sessions ancrées dans des sources citées"
+      },
+      "differentiator": {
+        "en": "Explicit roles and product-owned data rights",
+        "fr": "Rôles explicites et droits sur les données gérés par le produit"
+      },
+      "audience": {
+        "en": "Facilitators and trainers",
+        "fr": "Facilitateurs et formateurs"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/sessions"
+      },
+      "outcome": {
+        "en": "Event flow and data-rights integration sources",
+        "fr": "Sources du flux d’événements et de l’intégration des droits"
+      },
+      "limitation": {
+        "en": "The complete facilitation journey remains to be assembled",
+        "fr": "Le parcours complet de facilitation reste à assembler"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "The complete facilitation journey remains to be assembled",
+          "fr": "Le parcours complet de facilitation reste à assembler"
+        },
+        "acceptance": "Prepare and facilitate one source-cited session, refuse an out-of-role action, and demonstrate product-local retention and erasure."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "travel-planner",
+      "displayName": "Libre AI Travel Planner",
+      "category": "explore",
+      "benefit": {
+        "en": "Compose itineraries from expiring sourced facts",
+        "fr": "Composer des itinéraires à partir de faits sourcés périssables"
+      },
+      "differentiator": {
+        "en": "Code checks itinerary constraints and freshness",
+        "fr": "Le code contrôle les contraintes et la fraîcheur"
+      },
+      "audience": {
+        "en": "People preparing a trip",
+        "fr": "Personnes préparant un voyage"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/travel-agent"
+      },
+      "outcome": {
+        "en": "Planning logic separated from city facts",
+        "fr": "Logique de planification séparée des faits urbains"
+      },
+      "limitation": {
+        "en": "One complete city journey and local ownership are unproved",
+        "fr": "Un parcours urbain complet et la maîtrise locale ne sont pas prouvés"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "One complete city journey and local ownership are unproved",
+          "fr": "Un parcours urbain complet et la maîtrise locale ne sont pas prouvés"
+        },
+        "acceptance": "Produce a complete itinerary for one city, reject expired facts, and export the result under local ownership through a runnable interface."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "travel-planner"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "vote-mirror",
+      "displayName": "Libre AI Vote Mirror",
+      "category": "explore",
+      "benefit": {
+        "en": "Compare personal positions with recorded votes",
+        "fr": "Comparer ses positions à des votes enregistrés"
+      },
+      "differentiator": {
+        "en": "Local comparison without political labels",
+        "fr": "Comparaison locale sans étiquettes politiques"
+      },
+      "audience": {
+        "en": "People examining public votes",
+        "fr": "Personnes examinant des votes publics"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/boussole-politique"
+      },
+      "outcome": {
+        "en": "Local comparison application sources",
+        "fr": "Sources de l’application de comparaison locale"
+      },
+      "limitation": {
+        "en": "A real jurisdiction corpus and deletion journey are unproved",
+        "fr": "Un corpus réel et le parcours de suppression ne sont pas prouvés"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "A real jurisdiction corpus and deletion journey are unproved",
+          "fr": "Un corpus réel et le parcours de suppression ne sont pas prouvés"
+        },
+        "acceptance": "Compare positions against a real cited corpus for one jurisdiction and prove local deletion through an immediately runnable complete interface."
+      },
+      "admission": {
+        "kind": "conditional",
+        "gate": "vote-mirror"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    },
+    {
+      "schemaVersion": "repository-contract.v1",
+      "slug": "website",
+      "displayName": "Libre AI Website",
+      "category": "use",
+      "benefit": {
+        "en": "Read sourced product information",
+        "fr": "Consulter des informations produit sourcées"
+      },
+      "differentiator": {
+        "en": "Static pages without tracking",
+        "fr": "Pages statiques sans suivi"
+      },
+      "audience": {
+        "en": "People evaluating Libre AI",
+        "fr": "Personnes évaluant Libre AI"
+      },
+      "action": {
+        "label": {
+          "en": "Inspect current source",
+          "fr": "Examiner les sources actuelles"
+        },
+        "url": "https://github.com/libre-ai/website"
+      },
+      "outcome": {
+        "en": "Static site source and build recipe",
+        "fr": "Sources du site statique et recette de compilation"
+      },
+      "limitation": {
+        "en": "No public deployment has been verified for this target",
+        "fr": "Aucun déploiement public n’est vérifié pour cette cible"
+      },
+      "dependencies": [],
+      "evidence": [],
+      "topics": [
+        "libre-ai",
+        "open-source",
+        "verification",
+        "transparency",
+        "typescript"
+      ],
+      "nextProof": {
+        "capability": {
+          "en": "No public deployment has been verified for this target",
+          "fr": "Aucun déploiement public n’est vérifié pour cette cible"
+        },
+        "acceptance": "Build twice from the same reviewed input digest, compare output digests, and pass anonymous browser navigation without external tracking requests."
+      },
+      "admission": {
+        "kind": "certain"
+      },
+      "proof": {
+        "kind": "pending"
+      }
+    }
+  ],
+  "primaryCta": "missions",
+  "pinCandidates": [],
+  "starCta": false
+}

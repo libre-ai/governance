@@ -4,24 +4,36 @@
   "copy": {
     "fr": {
       "tension": "Les plateformes propriétaires vous louent le produit.",
-      "promise": "Possédez la fabrique.",
+      "promise": "Du travail d’IA que vous pouvez vérifier.",
       "explanation": "Libre AI réunit les logiciels, la méthode et les preuves pour construire des outils d'IA que vous pouvez vérifier, modifier et déployer où vous le décidez.",
       "qualification": "Ouverts, souverains et explicables.",
       "reasonToBelieve": "Conçus dans une fabrique ouverte où la preuve fait partie du produit.",
-      "primaryCta": "Prenez les clés.",
+      "primaryCta": "Essayer Missions.",
       "secondaryCta": "Voir les preuves."
     },
     "en": {
       "tension": "Proprietary platforms rent you the product.",
-      "promise": "Own the factory.",
+      "promise": "AI work you can verify.",
       "explanation": "Libre AI brings together the software, method, and evidence to build AI tools you can inspect, modify, and deploy where you choose.",
       "qualification": "Open, sovereign, and explainable.",
       "reasonToBelieve": "Built in an open factory where evidence is part of the product.",
-      "primaryCta": "Take the keys.",
+      "primaryCta": "Try Missions.",
       "secondaryCta": "See the evidence."
     }
   },
   "products": [
+    {
+      "repository": "libre-ai/website",
+      "publicName": "Libre AI Website"
+    },
+    {
+      "repository": "libre-ai/missions",
+      "publicName": "Libre AI Missions"
+    },
+    {
+      "repository": "libre-ai/ai-practice",
+      "publicName": "Libre AI Practice"
+    },
     {
       "repository": "libre-ai/feed-radar",
       "publicName": "Libre AI Radar"
@@ -31,36 +43,36 @@
       "publicName": "Libre AI Notebook"
     },
     {
-      "repository": "libre-ai/ai-practices",
-      "publicName": "Libre AI Practices"
+      "repository": "libre-ai/model-policy",
+      "publicName": "Libre AI Model Policy"
     },
     {
       "repository": "libre-ai/sessions",
       "publicName": "Libre AI Sessions"
     },
     {
-      "repository": "libre-ai/boussole-politique",
-      "publicName": "Libre AI Boussole Politique"
+      "repository": "libre-ai/app-kit",
+      "publicName": "Libre AI App Kit"
     },
     {
-      "repository": "libre-ai/spec-studio",
-      "publicName": "Libre AI Spec Studio"
+      "repository": "libre-ai/contracts",
+      "publicName": "Libre AI Contracts"
     },
     {
-      "repository": "libre-ai/policy",
-      "publicName": "Libre AI Model Policy"
+      "repository": "libre-ai/governance",
+      "publicName": "Libre AI Governance"
     },
     {
-      "repository": "libre-ai/carriere",
-      "publicName": "Libre AI Carrière"
+      "repository": "libre-ai/mission-control",
+      "publicName": "Libre AI Mission Control"
     },
     {
-      "repository": "libre-ai/travel-agent",
-      "publicName": "Libre AI Travel Agent"
+      "repository": "libre-ai/data-lifecycle",
+      "publicName": "Libre AI Data Lifecycle"
     },
     {
-      "repository": "libre-ai/website",
-      "publicName": "Libre AI Website"
+      "repository": "libre-ai/db-inspect",
+      "publicName": "Libre AI Database Inspector"
     }
   ],
   "proofs": [

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "license-input.v1",
+  "files": [
+    {
+      "source": "source-a",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": "src/core.ts",
+      "contentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "target": "target-a",
+      "targetPath": "src/core.ts",
+      "kind": "code",
+      "sourceLicense": "MIT",
+      "targetLicense": "Apache-2.0",
+      "authorship": "known",
+      "reuseEvidence": ["1111111111111111111111111111111111111111111111111111111111111111"],
+      "repositoryLicenseEvidence": "2222222222222222222222222222222222222222222222222222222222222222",
+      "historyEvidence": "3333333333333333333333333333333333333333333333333333333333333333",
+      "signoffEvidence": ["4444444444444444444444444444444444444444444444444444444444444444"],
+      "rightsEvidence": ["5555555555555555555555555555555555555555555555555555555555555555"],
+      "requiredNotices": [],
+      "retainedNotices": [],
+      "obsoleteLicense": false,
+      "historyDeletionRevokesLicense": false
+    }
+  ]
+}

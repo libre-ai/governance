@@ -22,7 +22,7 @@ export function renderOrgBrandIntro(
     "",
     `**${copy.qualification}** ${copy.reasonToBelieve}`,
     "",
-    `[${copy.primaryCta}](https://libre-ai.fr/#produits) · [${copy.secondaryCta}](https://libre-ai.fr/#preuves)`,
+    `[${copy.primaryCta}](https://github.com/libre-ai/missions) · [${copy.secondaryCta}](https://libre-ai.fr/#preuves)`,
     BRAND_INTRO_END,
   ].join("\n");
 }

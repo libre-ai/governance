@@ -51,23 +51,23 @@ const copyFields = [
 
 const canonicalFrench: PublicBrandCopy = {
   tension: "Les plateformes propriétaires vous louent le produit.",
-  promise: "Possédez la fabrique.",
+  promise: "Du travail d’IA que vous pouvez vérifier.",
   explanation:
     "Libre AI réunit les logiciels, la méthode et les preuves pour construire des outils d'IA que vous pouvez vérifier, modifier et déployer où vous le décidez.",
   qualification: "Ouverts, souverains et explicables.",
   reasonToBelieve: "Conçus dans une fabrique ouverte où la preuve fait partie du produit.",
-  primaryCta: "Prenez les clés.",
+  primaryCta: "Essayer Missions.",
   secondaryCta: "Voir les preuves.",
 };
 
 const canonicalEnglish: PublicBrandCopy = {
   tension: "Proprietary platforms rent you the product.",
-  promise: "Own the factory.",
+  promise: "AI work you can verify.",
   explanation:
     "Libre AI brings together the software, method, and evidence to build AI tools you can inspect, modify, and deploy where you choose.",
   qualification: "Open, sovereign, and explainable.",
   reasonToBelieve: "Built in an open factory where evidence is part of the product.",
-  primaryCta: "Take the keys.",
+  primaryCta: "Try Missions.",
   secondaryCta: "See the evidence.",
 };
 

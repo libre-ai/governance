@@ -1,14 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  aggregateProgress,
-  checkStatusSection,
-  collectPathReferences,
-  renderStatusSection,
-  STATUS_SECTION_BEGIN,
-  STATUS_SECTION_END,
-  validateCard,
-} from "./project-cards";
+import { aggregateProgress, collectPathReferences, validateCard } from "./project-cards";
 
 /**
  * γ phase 3.2 — the project-card system (design §6, ADR-0020).
@@ -347,63 +339,6 @@ describe("aggregateProgress", () => {
     if (!report.computable) throw new Error("unreachable");
     // accepted 10 over applicable 20
     expect(report.overall_ratio).toBe(0.5);
-  });
-});
-
-describe("renderStatusSection and its divergence check", () => {
-  test("renders a deterministic sentinel-delimited section without any manual percent", () => {
-    const card = minimalCard();
-    const section = renderStatusSection(card);
-    expect(section.startsWith(STATUS_SECTION_BEGIN)).toBe(true);
-    expect(section.endsWith(STATUS_SECTION_END)).toBe(true);
-    expect(section).toContain("Maturité : usable");
-    expect(section).toContain("Exposition : usable-verifiable");
-    expect(section).toContain("Confiance : high");
-    expect(section).toContain("Preuves vérifiées le : 2026-07-29");
-    expect(section).toContain("0 % du périmètre actuellement déclaré");
-    expect(renderStatusSection(card)).toBe(section);
-  });
-
-  test("unstable scope renders the non-computable message, never a ratio", () => {
-    const card = minimalCard();
-    card.scope_stability = "unstable";
-    const section = renderStatusSection(card);
-    expect(section).toContain("Avancement non calculable — périmètre à clarifier");
-    expect(section).not.toMatch(/\d+ %/);
-  });
-
-  test("checkStatusSection flags a README whose generated section diverges", () => {
-    const card = minimalCard();
-    const fresh = renderStatusSection(card);
-    const readmeInSync = `# Envelope\n\nIntro.\n\n${fresh}\n\nSuite.\n`;
-    expect(checkStatusSection(readmeInSync, card)).toEqual([]);
-    const tampered = readmeInSync.replace("0 %", "80 %");
-    const failures = checkStatusSection(tampered, card);
-    expect(failures.length).toBeGreaterThan(0);
-    expect(failures.join("\n")).toContain("diverge");
-  });
-
-  test("checkStatusSection flags a README missing the generated section", () => {
-    const card = minimalCard();
-    const failures = checkStatusSection("# Envelope\n\nNo section here.\n", card);
-    expect(failures.length).toBeGreaterThan(0);
-  });
-
-  test("checkStatusSection flags a duplicated section pasted after the fresh one", () => {
-    const card = minimalCard();
-    const fresh = renderStatusSection(card);
-    const stale = fresh.replace("0 %", "99 %").replace("high", "low");
-    const readme = `# Envelope\n\n${fresh}\n\nProse.\n\n${stale}\n`;
-    const failures = checkStatusSection(readme, card);
-    expect(failures.length).toBeGreaterThan(0);
-    expect(failures.join("\n")).toContain("dupliqu");
-  });
-
-  test("the rendered section carries the honest current situation", () => {
-    const card = minimalCard();
-    const section = renderStatusSection(card);
-    expect(section).toContain("Situation actuelle :");
-    expect(section).toContain("Contrat envelope-v1 verrouillé");
   });
 });
 

@@ -9,7 +9,7 @@ import { aggregateProgress, collectPathReferences, validateCard } from "./projec
  * Scans every `*.project.v1.yaml` under `ecosystem/cards/` (the staging home
  * before cards are dispatched into their repositories in phase 3.6) plus any
  * `project.v1.yaml` at the repository root, validates each against the
- * schema, and prints the computed progress display — never a declared one.
+ * schema, as private engineering evidence; this gate grants no public facts.
  */
 const globs = [new Bun.Glob("ecosystem/cards/*.project.v1.yaml"), new Bun.Glob("project.v1.yaml")];
 const paths: string[] = [];
@@ -35,13 +35,14 @@ for (const path of paths.sort()) {
   // found during phase 3.1 review, and this gate is the guard it called for.
   // existsSync, not Bun.file().exists(): a directory is a verifiable target.
   const dangling = collectPathReferences(value).filter((reference) => !existsSync(reference));
-  const progress = aggregateProgress(value);
+  // Preserve engineering computation checks without publishing its progress display.
+  aggregateProgress(value);
   const name = (value as { project?: string }).project ?? path;
   report.check(
     `card ${name}`,
     dangling.length === 0,
     dangling.length === 0
-      ? `schema valid, references resolve — ${progress.display}`
+      ? "private engineering schema valid, references resolve"
       : `evidence reference(s) do not resolve: ${dangling.join(", ")}`,
   );
 }

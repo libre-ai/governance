@@ -1,0 +1,9 @@
+{
+  "fixtureVersion": "contract-mutation.v1",
+  "source": ".github",
+  "replace": {
+    "dependencies": [
+      "missing"
+    ]
+  }
+}

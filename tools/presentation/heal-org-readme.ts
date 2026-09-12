@@ -42,8 +42,8 @@
  */
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
 import { checkOrgReadmeDrift, isLiveState, readLiveState } from "./check-org-readme-drift";
+import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "./public-capabilities";
 
 export const HEAL_SECRET = "ORG_README_HEAL_TOKEN";
 export const HEAL_BRANCH = "heal/org-readme";
@@ -265,9 +265,8 @@ if (import.meta.main) {
   const drift = checkOrgReadmeDrift(state.readme, state.freshSection);
   if (drift.length === 0) {
     console.log(
-      `heal-org-readme: ${HEAL_REPOSITORY} ${HEAL_PATH} already matches the live cards — nothing to ` +
-        "heal there (a stale ecosystem/projections/fleet-status.v1.json is fixed in THIS repository: " +
-        "bun ecosystem/render-fleet-status.ts)",
+      `heal-org-readme: ${HEAL_REPOSITORY} ${HEAL_PATH} already matches the verified portfolio — nothing to ` +
+        "heal there; portfolio projection drift must be corrected with bun run build:portfolio",
     );
     process.exit(0);
   }

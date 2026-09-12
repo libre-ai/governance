@@ -1,6 +1,6 @@
 # Plateforme de marque Libre AI
 
-Ce document est l'autorité de la plateforme verbale et sémantique de Libre AI.
+Ce document est le miroir français gouverné de l’autorité anglaise README.en.md (ADR-0041).
 Les interfaces, le site et le profil d'organisation en sont des projections : ils
 ne reformulent pas la promesse et ne créent pas de preuve.
 
@@ -10,7 +10,7 @@ ne reformulent pas la promesse et ne créent pas de preuve.
 Les plateformes propriétaires vous louent le produit.
 
 <!-- libre-ai:brand:promise -->
-Possédez la fabrique.
+Du travail d’IA que vous pouvez vérifier.
 
 <!-- libre-ai:brand:explanation -->
 Libre AI réunit les logiciels, la méthode et les preuves pour construire des outils d'IA que vous pouvez vérifier, modifier et déployer où vous le décidez.
@@ -22,7 +22,7 @@ Ouverts, souverains et explicables.
 Conçus dans une fabrique ouverte où la preuve fait partie du produit.
 
 <!-- libre-ai:brand:primary-cta -->
-Prenez les clés.
+Essayer Missions.
 
 <!-- libre-ai:brand:secondary-cta -->
 Voir les preuves.
@@ -45,7 +45,7 @@ La voix est incisive, calme et falsifiable. Elle :
 - vise la dépendance créée par une fabrique fermée, jamais une entreprise, une
   communauté ou une origine géographique ;
 - commence par l'effet concret, puis expose le mécanisme ;
-- distingue `prévu`, `construit`, `utilisable`, `vérifié` et `éprouvé` ;
+- décrit la capacité actuelle, son action et sa limite sans étiquette de maturité ;
 - place la source, la date et la limite dans la même unité de lecture que
   l'affirmation ;
 - réserve « souverain », « sécurisé », « conforme » et « explicable » aux
@@ -74,44 +74,37 @@ ne les rend pas publiables.
 la forme `Libre AI <Product>`, avec le nom issu exclusivement du LEXICON. Le nom
 court peut suivre dans un contexte non ambigu. Un produit ne reçoit ni logo
 autonome, ni promesse propre, ni couleur permanente pouvant être confondue avec
-un état. Sa maturité et sa date viennent exclusivement de `project.v1.yaml`.
+un état. Ses faits publics viennent du contrat de capacité courante.
 
-Cette projection exhaustive suit l'inventaire courant sans graver son décompte
-dans la prose. Elle conserve l'élision déjà signée de « AI » dans le nom public
-de Practices.
+Cette famille cible suit le LEXICON §14 ; les noms conditionnels restent exclus
+jusqu’à leur admission. Aucun nom ne prouve une capacité ni n’autorise une publication.
 
 <!-- libre-ai:brand:product-family:begin -->
 | Repository | Nom public |
 | --- | --- |
+| libre-ai/website | Libre AI Website |
+| libre-ai/missions | Libre AI Missions |
+| libre-ai/ai-practice | Libre AI Practice |
 | libre-ai/feed-radar | Libre AI Radar |
 | libre-ai/notebook | Libre AI Notebook |
-| libre-ai/ai-practices | Libre AI Practices |
+| libre-ai/model-policy | Libre AI Model Policy |
 | libre-ai/sessions | Libre AI Sessions |
-| libre-ai/boussole-politique | Libre AI Boussole Politique |
-| libre-ai/spec-studio | Libre AI Spec Studio |
-| libre-ai/policy | Libre AI Model Policy |
-| libre-ai/carriere | Libre AI Carrière |
-| libre-ai/travel-agent | Libre AI Travel Agent |
-| libre-ai/website | Libre AI Website |
+| libre-ai/app-kit | Libre AI App Kit |
+| libre-ai/contracts | Libre AI Contracts |
+| libre-ai/governance | Libre AI Governance |
+| libre-ai/mission-control | Libre AI Mission Control |
+| libre-ai/data-lifecycle | Libre AI Data Lifecycle |
+| libre-ai/db-inspect | Libre AI Database Inspector |
 <!-- libre-ai:brand:product-family:end -->
 
 ## Sémantique visuelle
 
-Le concept est la **fabrique ouverte** et son geste, l'**assemblage ouvert** :
-pièces, joints, entrées, sorties et contrôles restent inspectables. Sa grammaire
-comprend le cadre ouvert, le joint orthogonal, la ligne d'assemblage, l'étiquette
-de preuve et une trame d'atelier discrète.
-
-La réalisation visuelle appartient à `@libre-ai/ui`. Elle utilise la palette
-**Envol constructif** : graphite chaud, jade minéral, iris ardoise et couleurs
-d'état réservées à leur sens. Jade et iris ne forment jamais un dégradé. Halos,
-cerveaux, étincelles, orbites, chatbots, réseaux décoratifs, chemins sinueux et
-contours topographiques sont exclus.
-
-Le signe candidat est le **Portique d'atelier**, construit en trois pièces sur
-une grille de 24 unités. Il reste monochrome et lisible à 16 px. Aucun asset
-figuratif n'est publié avant acceptation de sa licence dédiée et archivage du
-contrôle de similarité visuelle exigé par la politique de marque.
+La direction est **Evidence Signal** : noir, blanc et vert, contraste élevé,
+mouvement mesuré et repères de preuve. La couleur ne porte jamais seule un état.
+`app-kit` possède la réalisation visuelle. L’oiseau pixel existant reste le signe
+commun candidat, non publié avant acceptation de la licence exacte et archivage
+du contrôle de similarité visuelle daté. La fabrique ouverte reste une explication
+éditoriale de la remplaçabilité, jamais la promesse maîtresse ni le système figuratif.
 
 ## Preuve et projections
 
