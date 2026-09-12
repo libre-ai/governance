@@ -117,7 +117,7 @@ The coordinator alone owns the final transaction manifest and cutover command. W
 - [ ] Run the program acceptance command:
 
 ```bash
-bun tools/migration/verify-program.ts --run-dir /Users/ifi6567/Documents/libre-ai-migration-runs/current
+bun tools/migration/verify-program.ts --run-dir "$MIGRATION_RUN_DIR"
 ```
 
 Expected final line after private staging qualification and before destructive confirmation:
