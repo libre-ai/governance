@@ -1,0 +1,4 @@
+[workspace]
+members = ["crates/application"]
+[workspace.dependencies]
+synthetic-provider = "=1.0.0"

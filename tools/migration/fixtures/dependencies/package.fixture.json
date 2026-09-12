@@ -1,0 +1,12 @@
+{
+  "name": "synthetic-consumer",
+  "version": "1.0.0",
+  "private": true,
+  "exports": "./index.ts",
+  "dependencies": {
+    "synthetic-provider": "1.0.0"
+  },
+  "devDependencies": {
+    "synthetic-tests": "1.0.0"
+  }
+}

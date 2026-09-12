@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
 import {
   findOpenPullRequest,
   HEAL_BRANCH,
@@ -9,6 +8,7 @@ import {
   skipMessage,
   spliceStatusSection,
 } from "./heal-org-readme";
+import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "./public-capabilities";
 
 const wrap = (body: string) => `${STATUS_SECTION_BEGIN}\n${body}\n${STATUS_SECTION_END}`;
 

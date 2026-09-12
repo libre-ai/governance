@@ -47,8 +47,9 @@ jobs:
           echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
       - name: Verify exact CI revision
         run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
-      # Both scripts use Bun built-ins only — no `bun install` needed, which
-      # keeps this gate independent from the dependency supply chain.
+      - name: Install locked verifier dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      # Public presentation uses the locked portfolio verifier.
       - name: Regenerate the repository index and fail on drift
         run: |
           bun ecosystem/build-index.ts

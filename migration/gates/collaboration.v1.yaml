@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "collaboration",
+  "sources": [
+    "collab-core",
+    "collab-relay"
+  ],
+  "assertions": [
+    {
+      "id": "real-cryptography",
+      "requirement": "Real cryptography"
+    },
+    {
+      "id": "independent-clients",
+      "requirement": "Two independent clients"
+    },
+    {
+      "id": "relay-e2e",
+      "requirement": "Clients communicating through the relay in an end-to-end test"
+    }
+  ],
+  "failureDisposition": "Delete both sources; do not recreate the target"
+}

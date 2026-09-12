@@ -1,0 +1,7 @@
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "synthetic-provider": ["synthetic-provider@1.0.0"],
+    "synthetic-tests": ["synthetic-tests@1.0.0"],
+  },
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "vote-mirror",
+  "sources": [
+    "boussole-politique"
+  ],
+  "assertions": [
+    {
+      "id": "jurisdiction-corpus",
+      "requirement": "A real sourced corpus for one jurisdiction"
+    },
+    {
+      "id": "private-comparison-e2e",
+      "requirement": "Private comparison end to end"
+    },
+    {
+      "id": "deletion-proof",
+      "requirement": "Deletion proof"
+    },
+    {
+      "id": "runnable-user-path",
+      "requirement": "An immediately runnable user path"
+    }
+  ],
+  "failureDisposition": "Delete the source; do not recreate the target"
+}

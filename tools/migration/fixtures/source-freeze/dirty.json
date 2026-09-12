@@ -1,0 +1,11 @@
+{
+  "dirty": true,
+  "worktrees": [
+    {
+      "path": "/synthetic/private-worktree",
+      "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "dirty": true,
+      "detached": true
+    }
+  ]
+}

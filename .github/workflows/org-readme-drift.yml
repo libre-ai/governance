@@ -1,9 +1,9 @@
 name: Org README drift
 
 # Domain I (Process & CI), chantier 3. tools/presentation/render-org-readme.ts
-# computes libre-ai/.github's status section from a fresh fleet-status
-# projection, but the two live in different repositories: nothing verified
-# that a change to ecosystem/repositories.v1.yaml here ever reached the
+# computes libre-ai/.github's public section from verified portfolio
+# contracts, but the two live in different repositories: nothing verified
+# that a change to the admitted portfolio facts here ever reached the
 # published README there. A cross-repo push was judged too invasive (a
 # second credential, a cross-repo write path, a second branch protection to
 # reason about) for what a manual render-and-paste already fixes in one
@@ -40,8 +40,10 @@ jobs:
           echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
       - name: Verify exact CI Bun revision
         run: test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
-      # Reads every declared card, the hub's migration index and the live
-      # .github README over `gh api` — no `bun install` needed.
+      - name: Install locked verifier dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      # Reads admitted portfolio facts and the live README. Missing approved
+      # publication inputs fail closed before any remote read or heal.
       - name: Compare a fresh render against the published org README
         run: bun tools/presentation/check-org-readme-drift.ts
       # Owner decision 2026-09-07: a mechanical correction gets its pull

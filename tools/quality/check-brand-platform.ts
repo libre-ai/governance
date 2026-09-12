@@ -65,6 +65,7 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
 
   let expectedProjection: string | null = null;
   let projectedProductRepositories = new Set<string>();
+  let projectedNames = new Map<string, string>();
   try {
     const projection = buildPublicBrandProjection(
       documents.french,
@@ -73,6 +74,9 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
     );
     expectedProjection = renderPublicBrandProjection(projection);
     projectedProductRepositories = new Set(projection.products.map(({ repository }) => repository));
+    projectedNames = new Map(
+      projection.products.map(({ repository, publicName }) => [repository, publicName]),
+    );
   } catch (error) {
     const detail = error instanceof Error ? error.message : "unknown";
     findings.push(`brand.projection_invalid:${detail}`);
@@ -82,16 +86,33 @@ export function validateBrandPlatform(documents: BrandDocuments): readonly strin
   }
 
   try {
-    const index = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML.parse(
-      documents.repositoryIndex,
-    ) as { readonly repositories?: readonly Record<string, unknown>[] };
-    if (!Array.isArray(index.repositories)) throw new Error("repositories_missing");
-    for (const entry of index.repositories) {
-      if (typeof entry.product !== "string") continue;
-      const repository = typeof entry.repository === "string" ? entry.repository : "";
+    const begin = "<!-- libre-ai:portfolio:names:begin -->";
+    const end = "<!-- libre-ai:portfolio:names:end -->";
+    const source = documents.repositoryIndex;
+    if (
+      source.split(begin).length !== 2 ||
+      source.split(end).length !== 2 ||
+      source.indexOf(begin) >= source.indexOf(end)
+    ) {
+      throw new Error("target_names_markers_invalid");
+    }
+    const names = source.slice(source.indexOf(begin) + begin.length, source.indexOf(end));
+    const expected = new Set<string>();
+    for (const match of names.matchAll(/^\| ([a-z0-9.-]+) \| (Libre AI(?: [^|]+)?) \|$/gm)) {
+      if (match[1] === ".github") continue;
+      const repository = `libre-ai/${match[1]}`;
+      if (expected.has(repository)) throw new Error("target_name_duplicate");
+      expected.add(repository);
+      if (projectedNames.has(repository) && projectedNames.get(repository) !== match[2])
+        findings.push(`brand.product_family_name_drift:${repository}`);
       if (!projectedProductRepositories.has(repository)) {
-        findings.push(`brand.product_family_inventory_drift:${repository || "invalid"}`);
+        findings.push(`brand.product_family_inventory_drift:${repository}`);
       }
+    }
+    if (expected.size === 0) throw new Error("target_names_missing");
+    for (const repository of projectedProductRepositories) {
+      if (!expected.has(repository))
+        findings.push(`brand.product_family_inventory_drift:${repository}`);
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : "unknown";
@@ -146,7 +167,7 @@ async function readBrandDocuments(): Promise<BrandDocuments> {
     read("docs/README.md"),
     read("docs/decisions/INVARIANTS.md"),
     read("docs/decisions/DECISION-REGISTER.md"),
-    read("ecosystem/repositories.v1.yaml"),
+    read("docs/decisions/LEXICON.md"),
   ]);
   return {
     french,
@@ -171,7 +192,11 @@ if (import.meta.main) {
     ["D39 decision anchor", ["brand.decision_missing:"]],
     [
       "product family inventory",
-      ["brand.product_family_inventory_drift:", "brand.product_inventory_invalid:"],
+      [
+        "brand.product_family_inventory_drift:",
+        "brand.product_family_name_drift:",
+        "brand.product_inventory_invalid:",
+      ],
     ],
     ["brand authority map", ["brand.authority_map_missing:"]],
     ["asset publication license guard", ["brand.asset_publication_guard_missing:license-ref"]],

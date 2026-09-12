@@ -1,0 +1,690 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sources", "certainTargets", "conditionalTargets"],
+  "properties": {
+    "schemaVersion": {
+      "const": "public-portfolio.v1"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 36,
+      "maxItems": 36,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "localDirectory", "disposition", "target"],
+        "properties": {
+          "source": {
+            "enum": [
+              ".github",
+              "website",
+              "missions",
+              "auth",
+              "spec-studio",
+              "ai-practices",
+              "feed-radar",
+              "notebook",
+              "policy",
+              "sessions",
+              "rgpd-kit",
+              "ui",
+              "web-platform",
+              "testing",
+              "contracts",
+              "sdk-ts",
+              "sdk-rs",
+              "governance",
+              "ecosystem-engine",
+              "orchestrator",
+              "envelope",
+              "data",
+              "db-inspect",
+              "boussole-politique",
+              "travel-agent",
+              "harness",
+              "authz-biscuit",
+              "artifacts",
+              "provenance",
+              "collab-core",
+              "collab-relay",
+              "libre-ai",
+              "carriere",
+              "classification",
+              "knowledge",
+              "starter"
+            ]
+          },
+          "localDirectory": {
+            "type": "string",
+            "pattern": "^[.a-z0-9-]+$"
+          },
+          "disposition": {
+            "enum": ["retain", "rename", "absorb", "conditional", "delete"]
+          },
+          "target": {
+            "type": ["string", "null"]
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "source": {
+                "const": ".github"
+              },
+              "localDirectory": {
+                "const": "dot-github"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": ".github"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "ai-practices"
+              },
+              "localDirectory": {
+                "const": "ai-practices"
+              },
+              "disposition": {
+                "const": "rename"
+              },
+              "target": {
+                "const": "ai-practice"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "artifacts"
+              },
+              "localDirectory": {
+                "const": "artifacts"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "artifact-proof"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "auth"
+              },
+              "localDirectory": {
+                "const": "auth"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "missions"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "authz-biscuit"
+              },
+              "localDirectory": {
+                "const": "authz-biscuit"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "authorization"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "boussole-politique"
+              },
+              "localDirectory": {
+                "const": "boussole-politique"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "vote-mirror"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "carriere"
+              },
+              "localDirectory": {
+                "const": "carriere"
+              },
+              "disposition": {
+                "const": "delete"
+              },
+              "target": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "classification"
+              },
+              "localDirectory": {
+                "const": "classification"
+              },
+              "disposition": {
+                "const": "delete"
+              },
+              "target": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "collab-core"
+              },
+              "localDirectory": {
+                "const": "collab-core"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "collaboration"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "collab-relay"
+              },
+              "localDirectory": {
+                "const": "collab-relay"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "collaboration"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "contracts"
+              },
+              "localDirectory": {
+                "const": "contracts"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "contracts"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "data"
+              },
+              "localDirectory": {
+                "const": "data"
+              },
+              "disposition": {
+                "const": "rename"
+              },
+              "target": {
+                "const": "data-lifecycle"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "db-inspect"
+              },
+              "localDirectory": {
+                "const": "db-inspect"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "db-inspect"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "ecosystem-engine"
+              },
+              "localDirectory": {
+                "const": "ecosystem-engine"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "governance"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "envelope"
+              },
+              "localDirectory": {
+                "const": "envelope"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "mission-control"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "feed-radar"
+              },
+              "localDirectory": {
+                "const": "feed-radar"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "feed-radar"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "governance"
+              },
+              "localDirectory": {
+                "const": "governance"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "governance"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "harness"
+              },
+              "localDirectory": {
+                "const": "harness"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "execution-guard"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "knowledge"
+              },
+              "localDirectory": {
+                "const": "knowledge"
+              },
+              "disposition": {
+                "const": "delete"
+              },
+              "target": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "libre-ai"
+              },
+              "localDirectory": {
+                "const": "libre-ai"
+              },
+              "disposition": {
+                "const": "delete"
+              },
+              "target": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "missions"
+              },
+              "localDirectory": {
+                "const": "missions"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "missions"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "notebook"
+              },
+              "localDirectory": {
+                "const": "notebook"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "notebook"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "orchestrator"
+              },
+              "localDirectory": {
+                "const": "orchestrator"
+              },
+              "disposition": {
+                "const": "rename"
+              },
+              "target": {
+                "const": "mission-control"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "policy"
+              },
+              "localDirectory": {
+                "const": "policy"
+              },
+              "disposition": {
+                "const": "rename"
+              },
+              "target": {
+                "const": "model-policy"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "provenance"
+              },
+              "localDirectory": {
+                "const": "provenance"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "artifact-proof"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "rgpd-kit"
+              },
+              "localDirectory": {
+                "const": "rgpd-kit"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "sessions"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "sdk-rs"
+              },
+              "localDirectory": {
+                "const": "sdk-rs"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "contracts"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "sdk-ts"
+              },
+              "localDirectory": {
+                "const": "sdk-ts"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "contracts"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "sessions"
+              },
+              "localDirectory": {
+                "const": "sessions"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "sessions"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "spec-studio"
+              },
+              "localDirectory": {
+                "const": "spec-studio"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "missions"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "starter"
+              },
+              "localDirectory": {
+                "const": "starter"
+              },
+              "disposition": {
+                "const": "delete"
+              },
+              "target": {
+                "const": null
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "testing"
+              },
+              "localDirectory": {
+                "const": "testing"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "app-kit"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "travel-agent"
+              },
+              "localDirectory": {
+                "const": "travel-agent"
+              },
+              "disposition": {
+                "const": "conditional"
+              },
+              "target": {
+                "const": "travel-planner"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "ui"
+              },
+              "localDirectory": {
+                "const": "ui"
+              },
+              "disposition": {
+                "const": "rename"
+              },
+              "target": {
+                "const": "app-kit"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "web-platform"
+              },
+              "localDirectory": {
+                "const": "web-platform"
+              },
+              "disposition": {
+                "const": "absorb"
+              },
+              "target": {
+                "const": "app-kit"
+              }
+            }
+          },
+          {
+            "properties": {
+              "source": {
+                "const": "website"
+              },
+              "localDirectory": {
+                "const": "website"
+              },
+              "disposition": {
+                "const": "retain"
+              },
+              "target": {
+                "const": "website"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "certainTargets": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          ".github",
+          "website",
+          "missions",
+          "ai-practice",
+          "feed-radar",
+          "notebook",
+          "model-policy",
+          "sessions",
+          "app-kit",
+          "contracts",
+          "governance",
+          "mission-control",
+          "data-lifecycle",
+          "db-inspect"
+        ]
+      }
+    },
+    "conditionalTargets": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "vote-mirror",
+          "travel-planner",
+          "execution-guard",
+          "authorization",
+          "artifact-proof",
+          "collaboration"
+        ]
+      }
+    }
+  }
+}

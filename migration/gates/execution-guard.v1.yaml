@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "execution-guard",
+  "sources": [
+    "harness"
+  ],
+  "assertions": [
+    {
+      "id": "independent-guard",
+      "requirement": "Independent runnable guard"
+    },
+    {
+      "id": "autonomous-contract",
+      "requirement": "Autonomous contract"
+    },
+    {
+      "id": "mission-control-integration",
+      "requirement": "Mission Control integration"
+    },
+    {
+      "id": "threat-model",
+      "requirement": "Threat model"
+    },
+    {
+      "id": "critical-refusals",
+      "requirement": "Critical refusal tests"
+    },
+    {
+      "id": "critical-crashes",
+      "requirement": "Critical crash tests"
+    }
+  ],
+  "failureDisposition": "Integrate code required by Mission Control; delete the rest"
+}

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "portfolio-source-observations.v1",
+  "qualification": "not-reverified",
+  "observations": [
+    {
+      "target": ".github",
+      "source": ".github",
+      "revision": "ed57094964d53ce585818e2347c1ef303a61f512",
+      "path": "profile/README.md",
+      "sha256": "1b9449c077530d71edb01fc12a9d99c8aef13aca59d781ce6cd8827fb2ef32e6"
+    },
+    {
+      "target": "ai-practice",
+      "source": "ai-practices",
+      "revision": "80d345ee86e6df84c1d990fa4d1225e27837295a",
+      "path": "README.md",
+      "sha256": "b6b8d79140a627280d433319e55cec935a1e564e34d67b0343112ec30018b8ed"
+    },
+    {
+      "target": "app-kit",
+      "source": "ui",
+      "revision": "99282032a9c71ca4c30efeb441329144ff95cbf8",
+      "path": "README.md",
+      "sha256": "d10cae99ffe33e1f268de69c83a00577b4877e4f9b62cebb31b57c1bf102954a"
+    },
+    {
+      "target": "artifact-proof",
+      "source": "artifacts",
+      "revision": "04cfe1e28d0e3857752fb915513ac2dbc44022d6",
+      "path": "README.md",
+      "sha256": "2e72fd9c1b98c6557ee82301640d9da7e09da985e8bf14b6e84e8a5396c5806e"
+    },
+    {
+      "target": "authorization",
+      "source": "authz-biscuit",
+      "revision": "99f3b0dd4dfc2fcc4d435728cfc45cdb7e0429f0",
+      "path": "README.md",
+      "sha256": "c31d4c2e707700ab581db7bc5612dcd76696b9e44a786906575e8d3c2d462def"
+    },
+    {
+      "target": "collaboration",
+      "source": "collab-core",
+      "revision": "4f84e15830bb6cfb0857ede16a27f79e4fd1593b",
+      "path": "README.md",
+      "sha256": "fdcebac65cb9b7ecf31dcf51a0c9e95bc51dcb644cd324ecc5bacf240a3506d1"
+    },
+    {
+      "target": "contracts",
+      "source": "contracts",
+      "revision": "1c977091e42c766979b176a834436faf3ec8c114",
+      "path": "README.md",
+      "sha256": "1ff6233077783e403e9f3e87b7f9570b9e4d72606ece022b3c2f3b6429006a64"
+    },
+    {
+      "target": "data-lifecycle",
+      "source": "data",
+      "revision": "888ab151c475a61eb44183459429caa6746a1bc3",
+      "path": "README.md",
+      "sha256": "92836e6e65d014ab9d93d9f8b096b5d5f909b7c653ab1258d87b01eac553902c"
+    },
+    {
+      "target": "db-inspect",
+      "source": "db-inspect",
+      "revision": "3562198f8f04608305121663180e26f4eba03404",
+      "path": "README.md",
+      "sha256": "90fffeb156545ead600ec87d3f15ba1ad783909db88b1dad3d5336f1bb35e6cc"
+    },
+    {
+      "target": "execution-guard",
+      "source": "harness",
+      "revision": "a4da21afdebcb81fcc79cbbbb3df4335aa4e18ac",
+      "path": "README.md",
+      "sha256": "b60a73a17ee4b01bf88cc3560a2be2377a8bf18cef1f46ffac922ae98c7e5b69"
+    },
+    {
+      "target": "feed-radar",
+      "source": "feed-radar",
+      "revision": "21031cd7e3d51ba9eb40009c8a250e499c045289",
+      "path": "README.md",
+      "sha256": "5270f641a8704e9b8ecc9582a98a941b1579ae1d69776797422b32dfa5057c57"
+    },
+    {
+      "target": "governance",
+      "source": "governance",
+      "revision": "b75cedf879d2de3ef8069e3065ac9b3274544acb",
+      "path": "README.md",
+      "sha256": "5a3054111bd3df4af154b85180eb8d97d0ee34cd37e3a7ed3a3bdc573d232294"
+    },
+    {
+      "target": "mission-control",
+      "source": "envelope",
+      "revision": "c1879ff87a8eba727c4a3c9beb0fa578c91239b6",
+      "path": "README.md",
+      "sha256": "dcb9d2972f4d289fbb1003892065bf7cdd824cf01c31c0fec226f5b611625cc3"
+    },
+    {
+      "target": "missions",
+      "source": "missions",
+      "revision": "081cf8a2bed1a20a9ad675de6761f30df3cf93e3",
+      "path": "README.md",
+      "sha256": "8d12103d2377a0bf69789eadec28f8568d552ae28d526a59bd5e2b4480979e03"
+    },
+    {
+      "target": "model-policy",
+      "source": "policy",
+      "revision": "2df660b946fb0b913187127c6f9f26683167e722",
+      "path": "README.md",
+      "sha256": "aec10644ed2eed78ec38ac2c9364bde5ebd5341c35e65be32fecc675026b4c72"
+    },
+    {
+      "target": "notebook",
+      "source": "notebook",
+      "revision": "03e1f0e2ee4cb6148365d36a24dddd08648714c1",
+      "path": "README.md",
+      "sha256": "9d91d2b76849e55393ccd1ab88652c5019bd2fbaa5719538dcae71dae0ddc07a"
+    },
+    {
+      "target": "sessions",
+      "source": "sessions",
+      "revision": "930c7d89c4e8b042d749d4b673c62bcc51a245ec",
+      "path": "README.md",
+      "sha256": "0ff459622ae62e42292faffc6fb7f5d6e9b6e290bd6a37ad3d1f012824bfd1dc"
+    },
+    {
+      "target": "travel-planner",
+      "source": "travel-agent",
+      "revision": "b5a34de8a53b08ed8ef3abcd4b2c7555a4a11efb",
+      "path": "README.md",
+      "sha256": "03ac890d8fd6f097167b02c368c858e9bad864dbf68bc5460c310c5309b9d8a5"
+    },
+    {
+      "target": "vote-mirror",
+      "source": "boussole-politique",
+      "revision": "a3347c8f6b1b80531d0c8a701a67d8eb03dedc56",
+      "path": "README.md",
+      "sha256": "3a181b0880d6fc9babe51cea0df412900fbf303c7754e17032efdbc93d49b934"
+    },
+    {
+      "target": "website",
+      "source": "website",
+      "revision": "a0e7a00c68c6f08f6d531bb8f3ad40cd25872400",
+      "path": "README.md",
+      "sha256": "4be280a1b65be4defc0f479e9416987aace94dd67a87c6f8eee8525322569b30"
+    }
+  ]
+}

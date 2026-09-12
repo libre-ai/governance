@@ -42,11 +42,24 @@
     "lint": "bun run check:bun:runtime && biome ci .",
     "typecheck": "bun run check:bun:runtime && tsc --noEmit -p tsconfig.json",
     "test": "bun test",
-    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:names && bun run check:forgotten && bun run check:cards && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:licenses && bun run check:dead-code && bun run check:allowances && bun run check:kernel-status-authority && bun run check:skills && bun run check:skills-routing && bun run check:brand && bun run lint && bun run typecheck && bun test",
+    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:names && bun run check:forgotten && bun run check:cards && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:licenses && bun run check:dead-code && bun run check:allowances && bun run check:kernel-status-authority && bun run check:skills && bun run check:skills-routing && bun run check:public-portfolio-doctrine && bun run check:brand && bun run check:portfolio && bun run check:portfolio-projections && bun run check:public-presentation && bun run check:migration-order && bun run lint && bun run typecheck && bun test",
     "pretest": "bun run check:bun",
     "check:bun-snapshot": "bun run check:bun:runtime && bun tools/quality/verify-bun-snapshot.ts",
     "check:toolchain": "bun run check:bun && bun tools/quality/check-toolchain.ts",
     "check:context-conformance": "bun run check:bun:runtime && bun ecosystem/check-context-conformance.ts",
-    "check:dependabot-conformance": "bun run check:bun:runtime && bun ecosystem/check-dependabot-conformance.ts"
+    "check:dependabot-conformance": "bun run check:bun:runtime && bun ecosystem/check-dependabot-conformance.ts",
+    "check:migration-order": "bun run check:bun:runtime && bun tools/migration/execution-order.ts",
+    "migration:freeze": "bun run check:bun:runtime && bun tools/migration/source-freeze.ts",
+    "check:public-portfolio-doctrine": "bun run check:bun:runtime && bun tools/quality/check-public-portfolio-doctrine.ts",
+    "check:portfolio": "bun run check:bun:runtime && bun portfolio/validate-repositories.ts --planning",
+    "build:portfolio": "bun run check:bun:runtime && bun portfolio/build-projections.ts",
+    "check:portfolio-projections": "bun run check:bun:runtime && bun portfolio/build-projections.ts --check",
+    "migration:consumers": "bun run check:bun:runtime && bun tools/migration/dependency-graph.ts",
+    "check:public-presentation": "bun run check:bun:runtime && bun ecosystem/check-fleet-presentation.ts",
+    "migration:paths": "bun run check:bun:runtime && bun tools/migration/path-manifest.ts",
+    "migration:licenses": "bun run check:bun:runtime && bun tools/migration/license-audit.ts",
+    "migration:conditional": "bun run check:bun:runtime && bun tools/migration/conditional-gates.ts",
+    "github:settings": "bun run check:bun:runtime && bun tools/github/render-settings.ts",
+    "github:permissions": "bun run check:bun:runtime && bun tools/github/audit-permissions.ts"
   }
 }

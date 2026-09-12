@@ -14,19 +14,19 @@ describe("organization brand introduction", () => {
     expect(markdown).toContain(projection.copy.fr.tension);
     expect(markdown).toContain(projection.copy.fr.promise);
     expect(markdown).toContain(projection.copy.fr.explanation);
-    expect(markdown).toContain("https://libre-ai.fr/#produits");
+    expect(markdown).toContain("https://github.com/libre-ai/missions");
     expect(markdown).toContain("https://libre-ai.fr/#preuves");
     expect(markdown.split(BRAND_INTRO_BEGIN)).toHaveLength(2);
     expect(markdown.split(BRAND_INTRO_END)).toHaveLength(2);
   });
 
-  test("renders the governed English translation", () => {
+  test("renders the canonical English platform", () => {
     const markdown = renderOrgBrandIntro(projection, "en");
 
     expect(markdown).toContain(projection.copy.en.tension);
     expect(markdown).toContain(projection.copy.en.promise);
     expect(markdown).toContain(projection.copy.en.explanation);
-    expect(markdown).toContain("Take the keys.");
+    expect(markdown).toContain("Try Missions.");
     expect(markdown).toContain("See the evidence.");
   });
 

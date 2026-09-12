@@ -183,78 +183,7 @@ export function aggregateProgress(value: unknown): ProgressReport {
   };
 }
 
-export const STATUS_SECTION_BEGIN = "<!-- libre-ai:project-status:begin -->";
-export const STATUS_SECTION_END = "<!-- libre-ai:project-status:end -->";
-
-/**
- * The generated status section of a repository README. Deterministic,
- * sentinel-delimited, never hand-edited: the divergence gate fails when the
- * committed section differs from a fresh render of the card.
- */
-export function renderStatusSection(value: unknown): string {
-  const card = value as CardShape;
-  const report = aggregateProgress(card);
-  const lines = [
-    STATUS_SECTION_BEGIN,
-    "<!-- Section générée depuis project.v1.yaml — ne pas éditer à la main. -->",
-    "",
-    // The honest present state always travels with the statement: a render
-    // showing the mission without the current situation would present a
-    // planned capability as available (§7.5).
-    `- Situation actuelle : ${card.current_situation.trim()}`,
-    `- Maturité : ${card.maturity}`,
-    `- Exposition : ${card.exposure}`,
-    `- Confiance : ${card.confidence}`,
-    `- Preuves vérifiées le : ${card.freshness.last_verified_on}`,
-    `- Avancement : ${report.display}`,
-    "",
-    STATUS_SECTION_END,
-  ];
-  return lines.join("\n");
-}
-
-function countOccurrences(haystack: string, needle: string): number {
-  let count = 0;
-  let index = haystack.indexOf(needle);
-  while (index !== -1) {
-    count += 1;
-    index = haystack.indexOf(needle, index + needle.length);
-  }
-  return count;
-}
-
-/**
- * Divergence gate primitive: the README must contain exactly one generated
- * section, byte-identical to a fresh render of the card. A second block
- * pasted anywhere else — the most natural drift gesture — is refused.
- */
-export function checkStatusSection(readme: string, card: unknown): string[] {
-  // Fail safely on an invalid card instead of letting the render throw: when
-  // this gate runs across ~34 repositories in phase 3.6, a readable failure
-  // beats an uncaught exception.
-  const cardErrors = validateCard(card);
-  if (cardErrors.length > 0) {
-    return cardErrors.map((error) => `project.v1.yaml invalide — ${error}`);
-  }
-  const beginCount = countOccurrences(readme, STATUS_SECTION_BEGIN);
-  const endCount = countOccurrences(readme, STATUS_SECTION_END);
-  if (beginCount === 0 || endCount === 0) {
-    return ["README: generated project-status section missing (sentinels not found)"];
-  }
-  if (beginCount > 1 || endCount > 1) {
-    return [
-      "README: section statut dupliquée — une seule paire de sentinelles project-status est admise",
-    ];
-  }
-  const begin = readme.indexOf(STATUS_SECTION_BEGIN);
-  const end = readme.indexOf(STATUS_SECTION_END);
-  const committed = readme.slice(begin, end + STATUS_SECTION_END.length);
-  const fresh = renderStatusSection(card);
-  if (committed !== fresh) {
-    return ["README: la section statut générée diverge de la fiche project.v1.yaml"];
-  }
-  return [];
-}
+// Engineering progress remains private evidence; public presentation uses the portfolio.
 
 /**
  * Repo-path-looking tokens extracted from a reference string, anywhere in it

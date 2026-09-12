@@ -1,0 +1,5 @@
+docs/api.md
+src/dead.ts
+src/lib.ts
+src/main.ts
+src/only.test.ts
