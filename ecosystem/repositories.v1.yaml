@@ -118,6 +118,25 @@ repositories:
     lifecycle: active
     owns:
       - the package at the repository root (formerly packages/knowledge)
+  - repository: libre-ai/signalement
+    card: project.v1.yaml
+    role: reserved-product-home
+    layer: couche-1
+    product: Signalement
+    visibility: public
+    lifecycle: active
+    owns:
+      - reviewed web incident reporting, executable reproduction, fix verification, portable multi-system ticket projections (published 2026-09-15; inventoried here so the reconciliation gate stays green — the product owner amends this entry)
+    consumes: []
+  - repository: libre-ai/pi-evidence
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    owns:
+      - evidence recipes for agent-made changes (declared checks bound to revision, environment and model identity; signed in-toto attestations; CI replay)
+    consumes:
+      - distribution/templates/evidence (governed recipe variants)
   - repository: libre-ai/rgpd-kit
     card: project.v1.yaml
     role: satellite

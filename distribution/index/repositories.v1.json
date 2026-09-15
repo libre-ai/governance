@@ -230,6 +230,14 @@
       "card": "project.v1.yaml"
     },
     {
+      "repository": "libre-ai/pi-evidence",
+      "name": "pi-evidence",
+      "layer": "couche-2",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active"
+    },
+    {
       "repository": "libre-ai/policy",
       "name": "Model Policy",
       "layer": "couche-1",
@@ -297,6 +305,15 @@
       "canonical_paths": [
         "apps/sessions"
       ]
+    },
+    {
+      "repository": "libre-ai/signalement",
+      "name": "Signalement",
+      "layer": "couche-1",
+      "role": "reserved-product-home",
+      "visibility": "public",
+      "lifecycle": "active",
+      "card": "project.v1.yaml"
     },
     {
       "repository": "libre-ai/spec-studio",
