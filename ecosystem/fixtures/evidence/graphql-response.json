@@ -1,0 +1,25 @@
+{
+  "data": {
+    "repo0": {
+      "config": { "text": "<TEMPLATE:bun>" },
+      "packageJson": { "id": "blob-package-json" },
+      "cargoToml": null
+    },
+    "repo1": {
+      "config": null,
+      "packageJson": { "id": "blob-package-json" },
+      "cargoToml": { "id": "blob-cargo-toml" }
+    },
+    "repo2": {
+      "config": { "text": "<FIXTURE:drifted>" },
+      "packageJson": { "id": "blob-package-json" },
+      "cargoToml": null
+    },
+    "repo3": null,
+    "repo4": {
+      "config": null,
+      "packageJson": null,
+      "cargoToml": null
+    }
+  }
+}

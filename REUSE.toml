@@ -46,6 +46,7 @@ SPDX-License-Identifier = "CC-BY-4.0"
 path = [
   "contracts/**",
   "crates/contract-types/**",
+  ".evidence.json",
   "distribution/templates/**",
   "docs/security/notebook-core-v2-review/*.json",
   "docs/security/notebook-core-v2-review/*.wit",
