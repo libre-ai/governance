@@ -12,8 +12,10 @@ restored immediately. The original checkout is preserved.
 - Candidate: `8b02f8e61e1675948caaea5be3c57a898cbd624b`.
 - Historical sanitized base: `480b71141e4495547ddf1a38ff903be74aeca05f`.
 - Original preserved revision: `a49a9683b0e805fae0f11f2bea4534ce1f57b47e`.
-- Canonical manifest: `evidence/manifest.json`.
-- Manifest SHA-256: `b63c266142ffba8955ee4206a14d0212273f74827c2e6bde5ff95c7667e27c7e`.
+- RFC 8785 canonical manifest: `evidence/manifest.jcs.json` (no terminal newline).
+- JCS SHA-256: `492f8d648354c7af217a2eb8d673b952e4e5b9c321462085db3a22dd306f0d79`.
+- Native verifier serialization: `evidence/manifest.json` (one terminal newline).
+- Native verifier SHA-256, excluding that newline: `b63c266142ffba8955ee4206a14d0212273f74827c2e6bde5ff95c7667e27c7e`.
 - Exact admitted ref: `refs/heads/main` at the candidate.
 - Reachable objects: 19 commits, 120 blobs, 224 objects, 717 tree entries.
 
@@ -39,6 +41,14 @@ private/public access policy, exact Git/API ref comparison and manifest determin
 The checkout integration adds 12 cases and 133 assertions. They reproduce the original
 scanner rejection, accept the exact duplicate checkout ref after preparation, and reject
 unexpected or divergent refs without mutation. The scanner policy is unchanged.
+
+The independent review found that the product's native deterministic serialization is
+not JCS: two top-level keys are in the wrong order. The native bytes and digest remain
+retained for the existing verifier, while `CANONICALIZATION.md` supplies the independent
+canonicalization recipe and the byte-exact JCS artifact required by ADR-0038. Both decode
+to exactly the same complete manifest. A successful native mirror equality is necessary;
+the independently verified JCS equality is also required before exposure. This is not a
+claim that the product serializer itself conforms to RFC 8785.
 
 ## Independent reviews
 
