@@ -103,6 +103,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun ecosystem/check-dependabot-conformance.ts
+      # Same protocol for the evidence recipe (`.evidence.json`, byte-exact
+      # variant of distribution/templates/evidence/ selected by package.json and
+      # Cargo.toml at main): the fleet dogfooding of 2026-09-15 found repositories
+      # without any declared criterion, hence never better than `unverified`.
+      # Documentary repositories (no manifest) are exempt, asserted. Scheduled
+      # and dispatched runs only, for the same phantom-requirement reason.
+      - name: Every repository with executable checks carries the canonical evidence recipe
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun ecosystem/check-evidence-conformance.ts
       # A red scheduled run here is only visible to someone who opens the
       # Actions tab (AGENTIC-LOOP-INVENTORY.md, "Contrôle de dérive périodique"
       # — "absence de ligne récente" is its own failure mode). One red run
