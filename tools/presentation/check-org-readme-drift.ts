@@ -1,43 +1,22 @@
-/**
- * Org profile README drift gate (Domain I, Process & CI — chantier 3).
- *
- * `render-org-readme.ts` computes the organization profile's status section
- * from the committed fleet-status projection, but nothing verified that
- * `libre-ai/.github`'s published `profile/README.md` still carries what a
- * fresh computation would produce today — the two live in different
- * repositories, and `ecosystem/repositories.v1.yaml` or any project card can
- * change without anyone touching the other one.
- *
- * The gate reads the live README back and fails when it diverges from a
- * section rendered from the LIVE cards (never from a committed
- * intermediate). Since 2026-09-07 it also fails when the committed
- * projection `ecosystem/projections/fleet-status.v1.json` lags those same
- * live cards: that file is what `render-org-readme.ts` renders from and what
- * `libre-ai/website` ships as a pinned git-dep, and a stale copy made the
- * gate's own remedy ("run render-org-readme.ts and paste") re-render the
- * already-published, already-wrong section byte for byte. Two named
- * failures, two named commands: regenerate the projection with
- * `bun ecosystem/render-fleet-status.ts`, re-render the section with
- * `bun tools/presentation/render-org-readme.ts`.
- *
- * The heal path (`heal-org-readme.ts`) shares `readLiveState` so it splices
- * exactly the section this gate compares against, never a third rendering.
- * Failure surfaces through docs/method/AGENTIC-LOOP-INVENTORY.md's
- * "Contrôle de dérive périodique" — silence is indistinguishable from
- * correctness unless something checks.
- */
-
 import type { PublicBrandProjection } from "../../brand/build-public-projection";
-import { parseFleet } from "../../ecosystem/check-fleet-presentation";
-import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
-import { buildFleetStatus, type FleetStatus } from "../../ecosystem/render-fleet-status";
+import { checkPublicFacts } from "../../ecosystem/check-fleet-presentation";
+import type { PublicationSelection } from "../../portfolio/publication-input";
+import { readBoundedJson } from "../../portfolio/publication-input";
+import {
+  buildPublicFacts,
+  type PublicFacts,
+  readPublicSelection,
+  STATUS_SECTION_BEGIN,
+  STATUS_SECTION_END,
+} from "./public-capabilities";
+
 import {
   BRAND_INTRO_BEGIN,
   BRAND_INTRO_END,
   type BrandLanguage,
   renderOrgBrandIntro,
 } from "./render-org-brand-intro";
-import { renderOrgSection, summarizeMigration } from "./render-org-readme";
+import { renderOrgSection } from "./render-org-readme";
 
 function countOccurrences(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
@@ -45,7 +24,7 @@ function countOccurrences(haystack: string, needle: string): number {
 
 /**
  * Compares the live `.github` README against a freshly rendered section.
- * Mirrors `project-cards.ts`'s `checkStatusSection` sentinel discipline: one
+ * Uses the shared public section delimiter discipline: one
  * declared pair of sentinels, byte-identical content between them.
  */
 export function checkOrgReadmeDrift(liveReadme: string, freshSection: string): string[] {
@@ -67,7 +46,7 @@ export function checkOrgReadmeDrift(liveReadme: string, freshSection: string): s
   if (committed !== freshSection) {
     return [
       ".github profile/README.md: the published status section diverges from a fresh render of " +
-        "ecosystem/repositories.v1.yaml — run `bun tools/presentation/render-org-readme.ts` and " +
+        "portfolio/repositories.v1.yaml — run `bun tools/presentation/render-org-readme.ts` and " +
         "paste the result between the sentinels",
     ];
   }
@@ -97,34 +76,12 @@ export function checkOrgBrandIntroDrift(
   return [];
 }
 
-/**
- * Compares the committed projection against the projection the live cards
- * produce right now. Row-by-row so the failure names the repositories that
- * moved, not just "differs".
- */
-export function checkProjectionFreshness(committed: FleetStatus, live: FleetStatus): string[] {
-  const committedByRepository = new Map(committed.rows.map((r) => [r.repository, r]));
-  const liveByRepository = new Map(live.rows.map((r) => [r.repository, r]));
-  const stale: string[] = [];
-  for (const [repository, liveRow] of liveByRepository) {
-    const committedRow = committedByRepository.get(repository);
-    if (committedRow === undefined || JSON.stringify(committedRow) !== JSON.stringify(liveRow)) {
-      stale.push(repository);
-    }
-  }
-  for (const repository of committedByRepository.keys()) {
-    if (!liveByRepository.has(repository)) stale.push(repository);
-  }
-  if (stale.length === 0 && committed.rows.length === live.rows.length) return [];
-  return [
-    `ecosystem/projections/fleet-status.v1.json lags the live project cards (${stale.sort().join(", ")}) — ` +
-      "run `bun ecosystem/render-fleet-status.ts` and commit the result; render-org-readme.ts and " +
-      "libre-ai/website both read this file",
-  ];
+export function checkProjectionFreshness(committed: unknown, live: PublicFacts): string[] {
+  return checkPublicFacts(committed, live).map(
+    () =>
+      "portfolio projection differs from verified facts — run bun run build:portfolio with approved inputs",
+  );
 }
-
-// ---------------------------------------------------------------------------
-// Live state (network I/O — not unit-tested; the comparisons above are)
 
 function fetchFromGitHub(repository: string, path: string): string | null {
   const result = Bun.spawnSync([
@@ -144,8 +101,8 @@ export interface LiveState {
   readonly freshSection: string;
   readonly freshEnglishIntro: string;
   readonly freshFrenchIntro: string;
-  readonly liveStatus: FleetStatus;
-  readonly committedStatus: FleetStatus;
+  readonly liveStatus: PublicFacts;
+  readonly committedStatus: unknown;
 }
 
 export interface LiveStateFailure {
@@ -159,40 +116,37 @@ export interface LiveStateFailure {
  */
 export async function readLiveState(): Promise<LiveState | LiveStateFailure> {
   const unreadable: string[] = [];
-  const fleet = parseFleet(await Bun.file("ecosystem/repositories.v1.yaml").text());
-  const yamlApi = (Bun as unknown as { YAML: { parse(text: string): unknown } }).YAML;
-  const cards: unknown[] = [];
-  for (const entry of fleet) {
-    if (entry.card === undefined) continue;
-    const text = fetchFromGitHub(entry.repository, entry.card);
-    if (text === null) {
-      unreadable.push(`${entry.repository}: declared card ${entry.card} is unreadable at main`);
-      continue;
-    }
-    cards.push(yamlApi.parse(text));
+  let selection: PublicationSelection;
+  try {
+    selection = await readPublicSelection();
+    if (selection.contracts.length === 0) throw new Error("missing");
+  } catch {
+    return { unreadable: ["public-evidence-required"] };
   }
-
-  const migrationText = fetchFromGitHub("libre-ai/libre-ai", "ecosystem/migration-index.v1.yaml");
-  if (migrationText === null) unreadable.push("libre-ai/libre-ai: migration index unreadable");
   const readme = fetchFromGitHub("libre-ai/.github", "profile/README.md");
   if (readme === null) unreadable.push("libre-ai/.github: profile/README.md unreadable");
   const frenchReadme = fetchFromGitHub("libre-ai/.github", "profile/README.fr.md");
   if (frenchReadme === null) unreadable.push("libre-ai/.github: profile/README.fr.md unreadable");
-  if (migrationText === null || readme === null || frenchReadme === null || unreadable.length > 0) {
+  if (readme === null || frenchReadme === null || unreadable.length > 0) {
     return { unreadable };
   }
 
-  const liveStatus = buildFleetStatus(cards);
-  const committedStatus = (await Bun.file(
-    new URL("../../ecosystem/projections/fleet-status.v1.json", import.meta.url),
-  ).json()) as FleetStatus;
+  const liveStatus = buildPublicFacts(selection);
+  let committedStatus: unknown;
+  try {
+    committedStatus = await readBoundedJson(
+      new URL("../../portfolio/projections/readme-facts.v1.json", import.meta.url),
+    );
+  } catch {
+    return { unreadable: ["portfolio-projection-unreadable"] };
+  }
   const brandProjection = (await Bun.file(
     new URL("../../brand/projections/public-brand.v1.json", import.meta.url),
   ).json()) as PublicBrandProjection;
   return {
     readme,
     frenchReadme,
-    freshSection: renderOrgSection(liveStatus, summarizeMigration(migrationText)),
+    freshSection: renderOrgSection(selection),
     freshEnglishIntro: renderOrgBrandIntro(brandProjection, "en"),
     freshFrenchIntro: renderOrgBrandIntro(brandProjection, "fr"),
     liveStatus,
@@ -215,13 +169,12 @@ if (import.meta.main) {
     const projectionDrift = checkProjectionFreshness(state.committedStatus, state.liveStatus);
     if (projectionDrift.length === 0) {
       report.check(
-        "fleet-status projection",
+        "portfolio projection",
         true,
-        `ecosystem/projections/fleet-status.v1.json matches the live cards (${state.liveStatus.rows.length} rows)`,
+        `portfolio/projections/readme-facts.v1.json matches verified facts (${state.liveStatus.repositories.length} rows)`,
       );
     } else {
-      for (const failure of projectionDrift)
-        report.check("fleet-status projection", false, failure);
+      for (const failure of projectionDrift) report.check("portfolio projection", false, failure);
     }
 
     const drift = checkOrgReadmeDrift(state.readme, state.freshSection);
@@ -229,7 +182,7 @@ if (import.meta.main) {
       report.check(
         "org readme drift",
         true,
-        `libre-ai/.github profile/README.md matches a fresh render (${state.liveStatus.rows.length} rows)`,
+        `libre-ai/.github profile/README.md matches a fresh render (${state.liveStatus.repositories.length} rows)`,
       );
     } else {
       for (const failure of drift) report.check("org readme drift", false, failure);

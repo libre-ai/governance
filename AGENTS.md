@@ -5,24 +5,20 @@
 This repository is the **governance authority** of the Libre AI constellation
 (ADR-0020, general activation 2026-07-28) — the transverse layer's registry
 root: doctrine, invariants, ADRs, the LEXICON, the ecosystem index, the
-project-card schema and fleet aggregator, ecosystem tooling, evidence, and
+current-capability repository contract and portfolio verifier, ecosystem tooling, evidence, and
 the fleet gates. The `contracts` repository is the other transverse authority
 (https://raw.githubusercontent.com/libre-ai/contracts/main/AGENTS.md) and
 owns the canonical contract authorities. Every
-product and satellite repository is responsible for its own perimeter; its
-state lives in the `project.v1.yaml` card of its repository, aggregated and
-verified from here — never declared manually, never duplicated.
+product and satellite repository is responsible for its own perimeter; its public facts derive from the current-capability contract (ADR-0041/I-32);
+private engineering evidence may remain in its project card.
 
 Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/INVARIANTS.md`
 and `docs/decisions/DECISION-REGISTER.md`. `INVARIANTS.md` is exhaustive by
 construction: doctrine absent from it does not exist, whatever another
-document asserts. `ecosystem/FORGOTTEN.yaml` is its counterpart for content
-(I-23, ADR-0019); its `recoverable_at` anchors resolve in the hub archive
-(`libre-ai/libre-ai`), and `bun run check:forgotten` refuses both
-resurrection and citation. The migration index
-(`ecosystem/migration-index.v1.yaml`, maintained in the hub during
-dismantling) is the functional inverse of forgetting: **migrated ≠
-forgotten**.
+document asserts. `ecosystem/FORGOTTEN.yaml` prohibits content resurrection and live citation.
+ADR-0041/I-32 bounds its clean-history exception to the exact owner-confirmed
+public transaction. Private-first ADR-0038, private research ADR-0039/I-31
+and non-executing persistence ADR-0040/D45 remain unchanged.
 
 ## Stack
 

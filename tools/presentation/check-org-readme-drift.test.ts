@@ -1,62 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "../../ecosystem/project-cards";
-import type { FleetStatus, FleetStatusRow } from "../../ecosystem/render-fleet-status";
 import {
   checkOrgBrandIntroDrift,
   checkOrgReadmeDrift,
   checkProjectionFreshness,
 } from "./check-org-readme-drift";
+import { STATUS_SECTION_BEGIN, STATUS_SECTION_END } from "./public-capabilities";
 import { BRAND_INTRO_BEGIN, BRAND_INTRO_END } from "./render-org-brand-intro";
 
 const wrap = (body: string) => `${STATUS_SECTION_BEGIN}\n${body}\n${STATUS_SECTION_END}`;
 
-const row = (overrides: Partial<FleetStatusRow> = {}): FleetStatusRow => ({
-  repository: "libre-ai/radar",
-  project: "radar",
-  kind: "product",
-  layer: "couche-1",
-  summary: "Intelligence de flux locale.",
-  display: "20 % du périmètre actuellement déclaré",
-  maturity: "specified",
-  confidence: "medium",
-  exposure: "spec-published",
-  last_verified_on: "2026-07-30",
-  ...overrides,
-});
-
-const status = (rows: readonly FleetStatusRow[]): FleetStatus => ({
-  schema_version: "libre-ai.fleet-status.v1",
-  source: "project.v1.yaml cards at each repository main",
-  rows,
-});
-
-// The committed projection is what `render-org-readme.ts` renders from and
-// what the website ships as a pinned git-dep; the live cards are what this
-// gate renders from. Measured 2026-09-07: the projection was last regenerated
-// 2026-08-03 (35a1ae2), so the gate's own remedy — "run render-org-readme.ts
-// and paste" — produced a section byte-identical to the one already published
-// and fixed nothing. A stale projection must be its own named failure, with
-// the command that actually regenerates it.
 describe("checkProjectionFreshness", () => {
-  test("a projection equal to the live computation is fresh", () => {
-    expect(checkProjectionFreshness(status([row()]), status([row()]))).toEqual([]);
-  });
-
-  test("a projection lagging the live cards fails and names ecosystem/render-fleet-status.ts", () => {
-    const committed = status([row()]);
-    const live = status([row({ display: "8,3 % du périmètre actuellement déclaré" })]);
-    const failures = checkProjectionFreshness(committed, live);
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain("bun ecosystem/render-fleet-status.ts");
-    expect(failures[0]).toContain("libre-ai/radar");
-  });
-
-  test("a row present live but absent from the projection is drift too", () => {
-    const committed = status([row()]);
-    const live = status([row(), row({ repository: "libre-ai/notebook", project: "notebook" })]);
-    const failures = checkProjectionFreshness(committed, live);
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain("libre-ai/notebook");
+  test("checks exact verified facts, never card progress", () => {
+    const current = { schemaVersion: "readme-facts.v1" as const, repositories: [] };
+    expect(checkProjectionFreshness(current, current)).toEqual([]);
+    expect(checkProjectionFreshness({ rows: [] }, current)[0]).toContain(
+      "portfolio projection differs",
+    );
   });
 });
 

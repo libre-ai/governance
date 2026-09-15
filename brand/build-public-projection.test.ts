@@ -8,7 +8,7 @@ const french = `# Plateforme de marque
 Les plateformes propriétaires vous louent le produit.
 
 <!-- libre-ai:brand:promise -->
-Possédez la fabrique.
+Du travail d’IA que vous pouvez vérifier.
 
 <!-- libre-ai:brand:explanation -->
 Libre AI réunit les logiciels, la méthode et les preuves pour construire des outils d'IA que vous pouvez vérifier, modifier et déployer où vous le décidez.
@@ -20,7 +20,7 @@ Ouverts, souverains et explicables.
 Conçus dans une fabrique ouverte où la preuve fait partie du produit.
 
 <!-- libre-ai:brand:primary-cta -->
-Prenez les clés.
+Essayer Missions.
 
 <!-- libre-ai:brand:secondary-cta -->
 Voir les preuves.
@@ -38,7 +38,7 @@ const english = `# Brand platform
 Proprietary platforms rent you the product.
 
 <!-- libre-ai:brand:promise -->
-Own the factory.
+AI work you can verify.
 
 <!-- libre-ai:brand:explanation -->
 Libre AI brings together the software, method, and evidence to build AI tools you can inspect, modify, and deploy where you choose.
@@ -50,7 +50,7 @@ Open, sovereign, and explainable.
 Built in an open factory where evidence is part of the product.
 
 <!-- libre-ai:brand:primary-cta -->
-Take the keys.
+Try Missions.
 
 <!-- libre-ai:brand:secondary-cta -->
 See the evidence.
@@ -78,8 +78,8 @@ describe("buildPublicBrandProjection", () => {
     expect(projection.copy.fr.tension).toBe(
       "Les plateformes propriétaires vous louent le produit.",
     );
-    expect(projection.copy.fr.promise).toBe("Possédez la fabrique.");
-    expect(projection.copy.fr.primaryCta).toBe("Prenez les clés.");
+    expect(projection.copy.fr.promise).toBe("Du travail d’IA que vous pouvez vérifier.");
+    expect(projection.copy.fr.primaryCta).toBe("Essayer Missions.");
     expect(projection.products).toEqual([
       { repository: "libre-ai/notebook", publicName: "Libre AI Notebook" },
     ]);
@@ -126,7 +126,10 @@ describe("buildPublicBrandProjection", () => {
   });
 
   test("refuses drift from the approved French promise", () => {
-    const drifted = french.replace("Possédez la fabrique.", "Louez une meilleure plateforme.");
+    const drifted = french.replace(
+      "Du travail d’IA que vous pouvez vérifier.",
+      "Louez une meilleure plateforme.",
+    );
 
     expect(() => buildPublicBrandProjection(drifted, english, proofMatrix)).toThrow(
       "brand.public_copy_canonical_mismatch:promise",

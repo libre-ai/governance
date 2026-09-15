@@ -1,0 +1,292 @@
+{
+  "schemaVersion": "repository-settings.v1",
+  "qualification": "candidate",
+  "applicationAuthorized": false,
+  "apiVersion": "2026-03-10",
+  "settings": [
+    {
+      "repository": "libre-ai/.github",
+      "displayName": "Libre AI",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/ai-practice",
+      "displayName": "Libre AI Practice",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/app-kit",
+      "displayName": "Libre AI App Kit",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/contracts",
+      "displayName": "Libre AI Contracts",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/data-lifecycle",
+      "displayName": "Libre AI Data Lifecycle",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/db-inspect",
+      "displayName": "Libre AI Database Inspector",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/feed-radar",
+      "displayName": "Libre AI Radar",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/governance",
+      "displayName": "Libre AI Governance",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/mission-control",
+      "displayName": "Libre AI Mission Control",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/missions",
+      "displayName": "Libre AI Missions",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/model-policy",
+      "displayName": "Libre AI Model Policy",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/notebook",
+      "displayName": "Libre AI Notebook",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/sessions",
+      "displayName": "Libre AI Sessions",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    },
+    {
+      "repository": "libre-ai/website",
+      "displayName": "Libre AI Website",
+      "secretScanning": true,
+      "pushProtection": true,
+      "dependabotAlerts": true,
+      "securityUpdates": true,
+      "privateVulnerabilityReporting": true,
+      "ruleset": {
+        "strictChecks": true,
+        "conversationsResolved": true,
+        "signedCommits": true,
+        "linearHistory": true,
+        "forcePush": false,
+        "deletion": false,
+        "adminEnforced": true,
+        "requiredApprovals": 0,
+        "exactCommitReviewCheck": "independent-review/exact-commit"
+      }
+    }
+  ],
+  "reviewProducerPolicyDigest": null,
+  "blockers": ["review-producer-unbound"],
+  "operations": [],
+  "digest": "4861470f5e516b5f4cdf22b3ea76842b08e0c4f05c0009de1e771ada01dcc2c8"
+}

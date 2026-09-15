@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "travel-planner",
+  "sources": [
+    "travel-agent"
+  ],
+  "assertions": [
+    {
+      "id": "city-itinerary",
+      "requirement": "A complete sourced itinerary for one city"
+    },
+    {
+      "id": "freshness-checks",
+      "requirement": "Freshness checks"
+    },
+    {
+      "id": "local-result-ownership",
+      "requirement": "Local result ownership"
+    },
+    {
+      "id": "runnable-path",
+      "requirement": "A runnable path"
+    }
+  ],
+  "failureDisposition": "Delete the source; do not recreate the target"
+}

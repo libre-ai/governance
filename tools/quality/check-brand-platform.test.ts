@@ -10,7 +10,7 @@ const french = `# Plateforme
 <!-- libre-ai:brand:tension -->
 Les plateformes propriétaires vous louent le produit.
 <!-- libre-ai:brand:promise -->
-Possédez la fabrique.
+Du travail d’IA que vous pouvez vérifier.
 <!-- libre-ai:brand:explanation -->
 Libre AI réunit les logiciels, la méthode et les preuves pour construire des outils d'IA que vous pouvez vérifier, modifier et déployer où vous le décidez.
 <!-- libre-ai:brand:qualification -->
@@ -18,7 +18,7 @@ Ouverts, souverains et explicables.
 <!-- libre-ai:brand:reason-to-believe -->
 Conçus dans une fabrique ouverte où la preuve fait partie du produit.
 <!-- libre-ai:brand:primary-cta -->
-Prenez les clés.
+Essayer Missions.
 <!-- libre-ai:brand:secondary-cta -->
 Voir les preuves.
 
@@ -35,7 +35,7 @@ const english = `# Platform
 <!-- libre-ai:brand:tension -->
 Proprietary platforms rent you the product.
 <!-- libre-ai:brand:promise -->
-Own the factory.
+AI work you can verify.
 <!-- libre-ai:brand:explanation -->
 Libre AI brings together the software, method, and evidence to build AI tools you can inspect, modify, and deploy where you choose.
 <!-- libre-ai:brand:qualification -->
@@ -43,7 +43,7 @@ Open, sovereign, and explainable.
 <!-- libre-ai:brand:reason-to-believe -->
 Built in an open factory where evidence is part of the product.
 <!-- libre-ai:brand:primary-cta -->
-Take the keys.
+Try Missions.
 <!-- libre-ai:brand:secondary-cta -->
 See the evidence.
 `;
@@ -68,7 +68,8 @@ function validDocuments(): BrandDocuments {
     authorityMap: "| Plateforme de marque | `brand/` |",
     invariants: "| I-29 | Brand system | ADR-0033 | 2026-09-09 |",
     decisions: "| D39 | Open verifiable brand system | ADR-0033 |",
-    repositoryIndex: "repositories:\n  - repository: libre-ai/notebook\n    product: Notebook\n",
+    repositoryIndex:
+      "<!-- libre-ai:portfolio:names:begin -->\n| Repository | Public name |\n| --- | --- |\n| notebook | Libre AI Notebook |\n<!-- libre-ai:portfolio:names:end -->",
   };
 }
 
@@ -96,7 +97,10 @@ describe("validateBrandPlatform", () => {
     expect(
       validateBrandPlatform({
         ...documents,
-        repositoryIndex: `${documents.repositoryIndex}  - repository: libre-ai/radar\n    product: Radar\n`,
+        repositoryIndex: documents.repositoryIndex.replace(
+          "<!-- libre-ai:portfolio:names:end -->",
+          "| radar | Libre AI Radar |\n<!-- libre-ai:portfolio:names:end -->",
+        ),
       }),
     ).toContain("brand.product_family_inventory_drift:libre-ai/radar");
   });
@@ -133,7 +137,7 @@ describe("validateBrandPlatform", () => {
   test("refuses a generated projection that no longer matches its authorities", () => {
     const documents = validDocuments();
     const staleProjection = documents.projection.replace(
-      "Possédez la fabrique.",
+      "Du travail d’IA que vous pouvez vérifier.",
       "Possédez la plateforme.",
     );
 
@@ -180,5 +184,20 @@ describe("validateBrandPlatform", () => {
         proofMatrix: documents.proofMatrix.replace("https://", "http://"),
       }),
     ).toContain("brand.projection_invalid:brand.proof_source_invalid");
+  });
+  test("rejects mismatched public names and additional unadmitted products", () => {
+    const documents = validDocuments();
+    expect(
+      validateBrandPlatform({
+        ...documents,
+        repositoryIndex: documents.repositoryIndex.replace(
+          "Libre AI Notebook",
+          "Libre AI Another Name",
+        ),
+      }),
+    ).toContain("brand.product_family_name_drift:libre-ai/notebook");
+    expect(validateBrandPlatform({ ...documents, repositoryIndex: "" })).toContain(
+      "brand.product_inventory_invalid:target_names_markers_invalid",
+    );
   });
 });

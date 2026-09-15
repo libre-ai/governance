@@ -7,6 +7,48 @@
 - **Règle d'anti-hallucination :** tant que cette carte n'est pas signée, aucun agent n'écrit un nom cible comme acquis dans un artefact ; après signature, tout nom hors carte est un défaut bloquant (garde-fou classe 4).
 - **Place documentaire :** après signature, cette carte devient l'autorité unique du sujet « noms cibles et glossaire produit » et s'inscrit à ce titre dans la carte d'autorité (`docs/README.md`) — la même pull request porte cette inscription. Elle ne concurrence ni le registre des invariants ni l'inventaire : elle fixe des noms, pas la doctrine ni la topologie.
 
+## 14. Public reconstruction names — ADR-0041 candidate
+
+This section is the sole target name map for the public reconstruction after owner
+signature. Earlier public maps below are historical. Naming grants no current capability
+or publication permission. Signalement remains a private-first candidate under ADR-0038;
+private administrative product-research remains governed by ADR-0039/I-31.
+
+<!-- libre-ai:portfolio:names:begin -->
+| Repository | Public name |
+| --- | --- |
+| .github | Libre AI |
+| website | Libre AI Website |
+| missions | Libre AI Missions |
+| ai-practice | Libre AI Practice |
+| feed-radar | Libre AI Radar |
+| notebook | Libre AI Notebook |
+| model-policy | Libre AI Model Policy |
+| sessions | Libre AI Sessions |
+| app-kit | Libre AI App Kit |
+| contracts | Libre AI Contracts |
+| governance | Libre AI Governance |
+| mission-control | Libre AI Mission Control |
+| data-lifecycle | Libre AI Data Lifecycle |
+| db-inspect | Libre AI Database Inspector |
+<!-- libre-ai:portfolio:names:end -->
+
+### Provisional conditional names — not publishable before admission
+
+| Planning slug | Provisional display name |
+| --- | --- |
+| vote-mirror | Libre AI Vote Mirror |
+| travel-planner | Libre AI Travel Planner |
+| execution-guard | Libre AI Execution Guard |
+| authorization | Libre AI Authorization |
+| artifact-proof | Libre AI Artifact Proof |
+| collaboration | Libre AI Collaboration |
+
+All six require the executable capability/consumer/security admission gate in the
+approved design. A failed gate grants no name reservation or public projection.
+The exact display name for db-inspect is Libre AI Database Inspector.
+
+<!-- portfolio:historical:begin -->
 ## 1. Repositories GitHub — carte legacy → cible
 
 Doctrine applicable : les URLs des produits historiques sont **réservées** comme emplacements des futurs repositories produits (I-04, ADR-0008 §2) ; elles ne sont **jamais renommées**. Les noms d'outillage hérités ne sont **jamais réutilisés** (I-04).
@@ -313,6 +355,9 @@ Le repository est né après la sortie prouvée de sa phase `sealed-repo`
 (gate d'isolation démontré dans les deux sens, index initial audité sans
 instance de voyage, fiche valide, double licence Apache-2.0/ODbL) — preuves
 dans `travel-agent/docs/evidence/2026-08-18-sealed-repo.md`.
+
+
+<!-- portfolio:historical:end -->
 
 ## 12. Amendement du 2026-09-10 — produit couche 1 pré-repository : `signalement`
 

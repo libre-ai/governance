@@ -1,5 +1,15 @@
 # ADR-0033 — Système de marque ouvert et vérifiable
 
+## Amendment by ADR-0041 (candidate, signature by merge)
+
+D1 and D4's master promise and visual direction, D2's public card-state model,
+D5's visual owner and distribution model, and the primary journey are superseded
+for the public reconstruction. ADR-0041/I-32/D46 governs those changes. D2 proof
+adjacency, D3 family naming and D6's independent exact-licence/similarity controls
+remain. The original text below is historical; it is not renewed authority.
+
+<!-- portfolio:historical:begin -->
+
 - **Statut :** proposed — plateforme et direction A approuvées par le propriétaire
   en session le 2026-09-09 ; le merge signé sous I-17 reste l'acte d'adoption
   doctrinale.
@@ -134,3 +144,5 @@ projection conserve son précédent SHA immuable ; le rollback repointe vers ce
 SHA puis rejoue les gates de dérive, de sécurité et de rendu. Un rollback de
 projection n'annule pas silencieusement I-29 : la doctrine doit être amendée par
 la même surface propriétaire.
+
+<!-- portfolio:historical:end -->

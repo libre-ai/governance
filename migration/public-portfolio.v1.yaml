@@ -1,0 +1,245 @@
+{
+  "schemaVersion": "public-portfolio.v1",
+  "sources": [
+    {
+      "source": ".github",
+      "localDirectory": "dot-github",
+      "disposition": "retain",
+      "target": ".github"
+    },
+    {
+      "source": "ai-practices",
+      "localDirectory": "ai-practices",
+      "disposition": "rename",
+      "target": "ai-practice"
+    },
+    {
+      "source": "artifacts",
+      "localDirectory": "artifacts",
+      "disposition": "conditional",
+      "target": "artifact-proof"
+    },
+    {
+      "source": "auth",
+      "localDirectory": "auth",
+      "disposition": "absorb",
+      "target": "missions"
+    },
+    {
+      "source": "authz-biscuit",
+      "localDirectory": "authz-biscuit",
+      "disposition": "conditional",
+      "target": "authorization"
+    },
+    {
+      "source": "boussole-politique",
+      "localDirectory": "boussole-politique",
+      "disposition": "conditional",
+      "target": "vote-mirror"
+    },
+    {
+      "source": "carriere",
+      "localDirectory": "carriere",
+      "disposition": "delete",
+      "target": null
+    },
+    {
+      "source": "classification",
+      "localDirectory": "classification",
+      "disposition": "delete",
+      "target": null
+    },
+    {
+      "source": "collab-core",
+      "localDirectory": "collab-core",
+      "disposition": "conditional",
+      "target": "collaboration"
+    },
+    {
+      "source": "collab-relay",
+      "localDirectory": "collab-relay",
+      "disposition": "conditional",
+      "target": "collaboration"
+    },
+    {
+      "source": "contracts",
+      "localDirectory": "contracts",
+      "disposition": "retain",
+      "target": "contracts"
+    },
+    {
+      "source": "data",
+      "localDirectory": "data",
+      "disposition": "rename",
+      "target": "data-lifecycle"
+    },
+    {
+      "source": "db-inspect",
+      "localDirectory": "db-inspect",
+      "disposition": "retain",
+      "target": "db-inspect"
+    },
+    {
+      "source": "ecosystem-engine",
+      "localDirectory": "ecosystem-engine",
+      "disposition": "absorb",
+      "target": "governance"
+    },
+    {
+      "source": "envelope",
+      "localDirectory": "envelope",
+      "disposition": "absorb",
+      "target": "mission-control"
+    },
+    {
+      "source": "feed-radar",
+      "localDirectory": "feed-radar",
+      "disposition": "retain",
+      "target": "feed-radar"
+    },
+    {
+      "source": "governance",
+      "localDirectory": "governance",
+      "disposition": "retain",
+      "target": "governance"
+    },
+    {
+      "source": "harness",
+      "localDirectory": "harness",
+      "disposition": "conditional",
+      "target": "execution-guard"
+    },
+    {
+      "source": "knowledge",
+      "localDirectory": "knowledge",
+      "disposition": "delete",
+      "target": null
+    },
+    {
+      "source": "libre-ai",
+      "localDirectory": "libre-ai",
+      "disposition": "delete",
+      "target": null
+    },
+    {
+      "source": "missions",
+      "localDirectory": "missions",
+      "disposition": "retain",
+      "target": "missions"
+    },
+    {
+      "source": "notebook",
+      "localDirectory": "notebook",
+      "disposition": "retain",
+      "target": "notebook"
+    },
+    {
+      "source": "orchestrator",
+      "localDirectory": "orchestrator",
+      "disposition": "rename",
+      "target": "mission-control"
+    },
+    {
+      "source": "policy",
+      "localDirectory": "policy",
+      "disposition": "rename",
+      "target": "model-policy"
+    },
+    {
+      "source": "provenance",
+      "localDirectory": "provenance",
+      "disposition": "conditional",
+      "target": "artifact-proof"
+    },
+    {
+      "source": "rgpd-kit",
+      "localDirectory": "rgpd-kit",
+      "disposition": "absorb",
+      "target": "sessions"
+    },
+    {
+      "source": "sdk-rs",
+      "localDirectory": "sdk-rs",
+      "disposition": "absorb",
+      "target": "contracts"
+    },
+    {
+      "source": "sdk-ts",
+      "localDirectory": "sdk-ts",
+      "disposition": "absorb",
+      "target": "contracts"
+    },
+    {
+      "source": "sessions",
+      "localDirectory": "sessions",
+      "disposition": "retain",
+      "target": "sessions"
+    },
+    {
+      "source": "spec-studio",
+      "localDirectory": "spec-studio",
+      "disposition": "absorb",
+      "target": "missions"
+    },
+    {
+      "source": "starter",
+      "localDirectory": "starter",
+      "disposition": "delete",
+      "target": null
+    },
+    {
+      "source": "testing",
+      "localDirectory": "testing",
+      "disposition": "absorb",
+      "target": "app-kit"
+    },
+    {
+      "source": "travel-agent",
+      "localDirectory": "travel-agent",
+      "disposition": "conditional",
+      "target": "travel-planner"
+    },
+    {
+      "source": "ui",
+      "localDirectory": "ui",
+      "disposition": "rename",
+      "target": "app-kit"
+    },
+    {
+      "source": "web-platform",
+      "localDirectory": "web-platform",
+      "disposition": "absorb",
+      "target": "app-kit"
+    },
+    {
+      "source": "website",
+      "localDirectory": "website",
+      "disposition": "retain",
+      "target": "website"
+    }
+  ],
+  "certainTargets": [
+    ".github",
+    "ai-practice",
+    "app-kit",
+    "contracts",
+    "data-lifecycle",
+    "db-inspect",
+    "feed-radar",
+    "governance",
+    "mission-control",
+    "missions",
+    "model-policy",
+    "notebook",
+    "sessions",
+    "website"
+  ],
+  "conditionalTargets": [
+    "artifact-proof",
+    "authorization",
+    "collaboration",
+    "execution-guard",
+    "travel-planner",
+    "vote-mirror"
+  ]
+}

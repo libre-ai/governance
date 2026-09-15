@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "path-snapshot.v1",
+  "files": [
+    {
+      "source": "missions",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourcePath": "src/main.ts",
+      "sourceDigest": "d32eaec9002b784f14b77609fd92c90258d39f33ad0c0c712cfdcdac598d1d71",
+      "role": "code",
+      "sensitivity": "clear",
+      "license": "current",
+      "provenanceDigest": null,
+      "dependencyAnalysis": {
+        "complete": true,
+        "evidenceDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "requiredNotices": []
+    },
+    {
+      "source": "missions",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourcePath": "src/lib.ts",
+      "sourceDigest": "f99c0f240e19b29c9c0ac0000afa233c60d69bd5737459cfb9e809a025c82c3e",
+      "role": "code",
+      "sensitivity": "clear",
+      "license": "current",
+      "provenanceDigest": null,
+      "dependencyAnalysis": {
+        "complete": true,
+        "evidenceDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "requiredNotices": []
+    },
+    {
+      "source": "missions",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourcePath": "src/only.test.ts",
+      "sourceDigest": "110421c56410906ce45db208ac9375535e05819b3db7ef003b6868672b2dc212",
+      "role": "test",
+      "sensitivity": "clear",
+      "license": "current",
+      "provenanceDigest": null,
+      "dependencyAnalysis": {
+        "complete": true,
+        "evidenceDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "requiredNotices": []
+    },
+    {
+      "source": "missions",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourcePath": "src/dead.ts",
+      "sourceDigest": "14a27a6cbc2ab84864cbc14fb27ce904504a0d0d5c47a0e3bd89f480093b0a43",
+      "role": "code",
+      "sensitivity": "clear",
+      "license": "current",
+      "provenanceDigest": null,
+      "dependencyAnalysis": {
+        "complete": true,
+        "evidenceDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "requiredNotices": []
+    },
+    {
+      "source": "missions",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourcePath": "docs/api.md",
+      "sourceDigest": "905c97787e55f1194e940f269187d66ac93167df5dc59c64835bd6d59131c81b",
+      "role": "documentation",
+      "sensitivity": "clear",
+      "license": "current",
+      "provenanceDigest": null,
+      "dependencyAnalysis": {
+        "complete": true,
+        "evidenceDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "requiredNotices": []
+    }
+  ],
+  "entryPoints": ["aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c"],
+  "edges": [
+    {
+      "consumer": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c",
+      "provider": "2d870cbd9149881d98ec798cc2e92ebe6a3b60cde522ee82ee11d80d4a8e0854",
+      "kind": "runtime"
+    },
+    {
+      "consumer": "510eebeffd1ee87a59e698f5016e9e7c2cbf5f4062b5fc7e84981ddae4704871",
+      "provider": "ab580ca95af6b35f3dc6d134355f7967e00ad3ef8f4ab2d706ace83bd710375d",
+      "kind": "test"
+    }
+  ]
+}

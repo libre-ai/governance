@@ -1,0 +1,53 @@
+[
+  {
+    "file": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c",
+    "disposition": {
+      "kind": "retain",
+      "target": "missions",
+      "targetPath": "src/main.ts",
+      "entryPoint": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c"
+    }
+  },
+  {
+    "file": "2d870cbd9149881d98ec798cc2e92ebe6a3b60cde522ee82ee11d80d4a8e0854",
+    "disposition": {
+      "kind": "retain",
+      "target": "missions",
+      "targetPath": "src/lib.ts",
+      "entryPoint": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c"
+    }
+  },
+  {
+    "file": "510eebeffd1ee87a59e698f5016e9e7c2cbf5f4062b5fc7e84981ddae4704871",
+    "disposition": {
+      "kind": "retain",
+      "target": "missions",
+      "targetPath": "src/only.test.ts",
+      "entryPoint": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c",
+      "supportFor": [
+        "2d870cbd9149881d98ec798cc2e92ebe6a3b60cde522ee82ee11d80d4a8e0854"
+      ],
+      "supportEvidenceDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "file": "ab580ca95af6b35f3dc6d134355f7967e00ad3ef8f4ab2d706ace83bd710375d",
+    "disposition": {
+      "kind": "delete",
+      "reason": "dead"
+    }
+  },
+  {
+    "file": "09ee15b45c48c73a63d34490b1fd0aa42b0c9d4851b73517b3a54dace95105ba",
+    "disposition": {
+      "kind": "retain",
+      "target": "missions",
+      "targetPath": "docs/api.md",
+      "entryPoint": "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c",
+      "supportFor": [
+        "aa9d49eba06f0c0508e978aea2df4dc5392b520f2bd16534c549d59d1e305a2c"
+      ],
+      "supportEvidenceDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  }
+]

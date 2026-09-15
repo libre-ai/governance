@@ -1,0 +1,10 @@
+{
+  "fixtureVersion": "contract-mutation.v1",
+  "source": ".github",
+  "replace": {
+    "benefit": {
+      "en": "Always secure",
+      "fr": "Toujours s\u00fbr"
+    }
+  }
+}

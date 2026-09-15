@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "artifact-proof",
+  "sources": [
+    "artifacts",
+    "provenance"
+  ],
+  "assertions": [
+    {
+      "id": "offline-verifier-cli",
+      "requirement": "Standalone offline verifier CLI"
+    },
+    {
+      "id": "signed-fixture",
+      "requirement": "Signed fixture"
+    },
+    {
+      "id": "sbom-validation",
+      "requirement": "SBOM validation"
+    },
+    {
+      "id": "provenance-validation",
+      "requirement": "Provenance validation"
+    },
+    {
+      "id": "no-contributor-lineage",
+      "requirement": "No agent-contributor lineage model"
+    }
+  ],
+  "failureDisposition": "Delete unconsumed code and the contributor-lineage model"
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "conditional-gate.v1",
+  "target": "authorization",
+  "sources": [
+    "authz-biscuit"
+  ],
+  "assertions": [
+    {
+      "id": "published-crate",
+      "requirement": "Published crate"
+    },
+    {
+      "id": "independent-example",
+      "requirement": "Independent example"
+    },
+    {
+      "id": "threat-model",
+      "requirement": "Threat model"
+    },
+    {
+      "id": "key-rotation",
+      "requirement": "Key rotation tests"
+    },
+    {
+      "id": "revocation",
+      "requirement": "Revocation tests"
+    },
+    {
+      "id": "registry-consumer",
+      "requirement": "Registry-consumer proof"
+    }
+  ],
+  "failureDisposition": "Integrate the required capability into `governance`; delete the standalone source"
+}

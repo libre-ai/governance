@@ -1,7 +1,7 @@
 # Libre AI brand platform
 
-This document is the governed English translation of the canonical French brand
-platform. Public English surfaces project it without inventing claims.
+This document is the canonical English brand authority under ADR-0041. The French
+README is its governed mirror; public facts share one evidence source.
 
 ## Public platform
 
@@ -9,7 +9,7 @@ platform. Public English surfaces project it without inventing claims.
 Proprietary platforms rent you the product.
 
 <!-- libre-ai:brand:promise -->
-Own the factory.
+AI work you can verify.
 
 <!-- libre-ai:brand:explanation -->
 Libre AI brings together the software, method, and evidence to build AI tools you can inspect, modify, and deploy where you choose.
@@ -21,7 +21,7 @@ Open, sovereign, and explainable.
 Built in an open factory where evidence is part of the product.
 
 <!-- libre-ai:brand:primary-cta -->
-Take the keys.
+Try Missions.
 
 <!-- libre-ai:brand:secondary-cta -->
 See the evidence.
@@ -39,7 +39,7 @@ free, dependencies disappear, or control is absolute.
 The voice is incisive, calm, and falsifiable. It challenges closed-factory
 dependency rather than companies, communities, or geographies. A strong claim
 is immediately followed by its mechanism, source, verification date, and limit.
-Project maturity and state always come from `project.v1.yaml`.
+Current actions, outcomes and limitations come from the repository capability contract.
 
 Forbidden brand claims include “free”, “more complete than every competitor”,
 “no dependencies”, “total security”, “fully explainable”, and “absolute
@@ -51,10 +51,13 @@ control”. This explicit prohibition does not make those phrases publishable.
 `Libre AI <Product>`, using a name from the LEXICON. Products do not receive
 independent logos, promises, or permanent status-like colours.
 
-The visual concept is the **open factory**, expressed through open assembly:
-visible pieces, joints, inputs, outputs, and controls. `@libre-ai/ui` owns the
-visual implementation. The candidate mark is the **Workshop Gantry** (`Portique
-d'atelier` in French), constructed from three orthogonal pieces on a 24-unit
-grid. It uses the Envol constructif palette and never forms a gradient between
-jade and iris. No figurative asset is published before its dedicated licence
-and visual-similarity review are accepted and archived.
+The visual direction is **Evidence Signal**: black, white and green, high contrast,
+restrained motion and visible proof markers. Color never conveys state alone.
+`app-kit` owns visual realization. The existing pixel bird is the shared candidate
+mark and remains unpublished until exact asset licensing and a dated visual-similarity
+review are owner-accepted. Open-factory language may explain replaceability editorially;
+it is not the master promise, primary CTA or figurative system.
+
+Missions is the sole primary launch journey. Product names follow LEXICON §14;
+conditional names remain unpublished until executable admission. Names alone never
+establish a current capability or publication permission.

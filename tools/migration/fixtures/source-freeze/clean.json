@@ -1,0 +1,19 @@
+{
+  "identityVerified": true,
+  "accessible": true,
+  "defaultBranch": "main",
+  "remoteCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "localCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "dirty": false,
+  "branches": [],
+  "worktrees": [
+    {
+      "path": "/synthetic/main",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "dirty": false,
+      "detached": false
+    }
+  ],
+  "openPullRequests": [],
+  "errors": []
+}

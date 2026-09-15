@@ -60,6 +60,22 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Libre AI contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
+# Portfolio validators and migration acceptance fixtures are generic tooling
+# and interoperability contracts under the existing LICENSING.md categories.
+[[annotations]]
+path = ["portfolio/*.ts", "portfolio/*.schema.json", "portfolio/fixtures/**", "migration/**/*.schema.json", "migration/gates/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Libre AI contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# Source observations, public facts and their generated projections are
+# first-party project records; they confer no rights on the described assets.
+[[annotations]]
+path = ["portfolio/repositories.v1.yaml", "portfolio/source-observations.v1.json", "portfolio/projections/**", "migration/public-portfolio.v1.yaml"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Libre AI contributors"
+SPDX-License-Identifier = "CC-BY-4.0"
+
 # Executable runtime policies and operational prompts remain reciprocal.
 [[annotations]]
 path = ["contracts/authz/**", "contracts/data/**", "prompts/**"]

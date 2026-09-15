@@ -1,0 +1,373 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "repository-contract.v1"
+    },
+    "slug": {
+      "enum": [
+        ".github",
+        "website",
+        "missions",
+        "ai-practice",
+        "feed-radar",
+        "notebook",
+        "model-policy",
+        "sessions",
+        "app-kit",
+        "contracts",
+        "governance",
+        "mission-control",
+        "data-lifecycle",
+        "db-inspect",
+        "vote-mirror",
+        "travel-planner",
+        "execution-guard",
+        "authorization",
+        "artifact-proof",
+        "collaboration"
+      ]
+    },
+    "displayName": {
+      "type": "string",
+      "pattern": "^Libre AI(?: [A-Za-z ]+)?$"
+    },
+    "category": {
+      "enum": ["use", "build", "trust", "explore"]
+    },
+    "benefit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["en", "fr"]
+    },
+    "differentiator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["en", "fr"]
+    },
+    "audience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["en", "fr"]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "fr": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": ["en", "fr"]
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$"
+        }
+      },
+      "required": ["label"]
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["en", "fr"]
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["en", "fr"]
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "enum": [
+          ".github",
+          "website",
+          "missions",
+          "ai-practice",
+          "feed-radar",
+          "notebook",
+          "model-policy",
+          "sessions",
+          "app-kit",
+          "contracts",
+          "governance",
+          "mission-control",
+          "data-lifecycle",
+          "db-inspect",
+          "vote-mirror",
+          "travel-planner",
+          "execution-guard",
+          "authorization",
+          "artifact-proof",
+          "collaboration"
+        ]
+      },
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "fr": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": ["en", "fr"]
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^https://[^\\s]+$"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "limitation": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "fr": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": ["en", "fr"]
+          },
+          "contentDigest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": ["label", "source", "verifiedAt", "limitation", "contentDigest"]
+      }
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "minItems": 5,
+      "maxItems": 8,
+      "uniqueItems": true
+    },
+    "homepage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$"
+        },
+        "smokeEvidence": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$"
+        }
+      },
+      "required": ["url", "smokeEvidence"]
+    },
+    "nextProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "fr": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": ["en", "fr"]
+        },
+        "acceptance": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": ["capability", "acceptance"]
+    },
+    "admission": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "certain"
+            }
+          },
+          "required": ["kind"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "conditional"
+            },
+            "gate": {
+              "enum": [
+                "artifact-proof",
+                "authorization",
+                "collaboration",
+                "execution-guard",
+                "travel-planner",
+                "vote-mirror"
+              ]
+            }
+          },
+          "required": ["kind", "gate"]
+        }
+      ]
+    },
+    "proof": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "pending"
+            }
+          },
+          "required": ["kind"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "evidence"
+            }
+          },
+          "required": ["kind"]
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "slug",
+    "displayName",
+    "category",
+    "benefit",
+    "differentiator",
+    "audience",
+    "action",
+    "outcome",
+    "limitation",
+    "dependencies",
+    "evidence",
+    "topics",
+    "admission",
+    "proof"
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
