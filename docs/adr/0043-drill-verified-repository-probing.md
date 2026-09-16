@@ -4,14 +4,16 @@
 - **Date :** 2026-09-16
 - **Arbitrage :** le propriétaire a demandé, après la campagne d'exploration de sept dépôts du 2026-09-15, que la méthode de fouille devienne un service distribuable respectant la pile Rust ; il a tranché en session : périmètre à quatre verbes, contrat de rapport en premier, dépôt dédié, aucune conservation des résultats de forage.
 - **Trace :** Owner-arbitration: 2026-09-16
-- **Introduit :** I-32 ; nom canonique `drill`, rôle `standalone-tool`, couche transverse ; contrats candidats `probe-brief.v1` et `probe-report.v1`.
-- **Amende :** LEXICON §2.4 (une ligne, §14) ; ADR-0032 reçoit un outil, ses D1–D5 restent inchangés ; ADR-0025 (admission des skills) et ADR-0039 (recherche privée) restent inchangés et deviennent des puits de projection.
+- **Introduit :** I-34 ; nom canonique `drill`, rôle `standalone-tool`, couche transverse ; contrats candidats `probe-brief.v1` et `probe-report.v1`.
+- **Amende :** LEXICON §2.4 (une ligne, §15) ; ADR-0032 reçoit un outil, ses D1–D5 restent inchangés ; ADR-0025 (admission des skills) et ADR-0039 (recherche privée) restent inchangés et deviennent des puits de projection.
 
 ## Contexte
 
 La campagne du 2026-09-15 a fouillé sept dépôts avec 38 missions (Codex et Claude) et produit 84 entrées de registre, 14 lots et 8 constats de flotte. Sa fiabilité a été mesurée après coup : 46 affirmations exactes sur 54 en vague 1, 40 exactes, 14 recalculées et 2 fausses sur 60 en vague 2 ; une porte de sentinelles inerte non détectée ; une invalidation propagée entre deux essais sans relecture ; un fichier de configuration fabriqué dans une copie et pris pour réel ; un « bloqué faute d'isolation » faux. Les 18 rapports structurés ne portaient aucune sentinelle, 60 références de preuve sur 60 en vague 2 étaient des chemins nus non résolvables hors du répertoire du runner, 32 références vers Libre AI n'avaient pas de révision.
 
 La procédure existe déjà sous forme de skill (`source-drill`, ADR-0025) ; un skill instruit, il ne vérifie pas. La vérification exige un contrat de rapport que tout runner peut honorer et un cœur qui applique des règles sans dépendre du runner, du bac à sable ni du dépôt cible.
+
+Deux faits de contexte au 2026-09-16 : un addon Pi privé d'exploration nommé `drill` existe dans `product-research` (lot 1 du 2026-09-15, non normatif, analyses closes sur un modèle local) ; et la refondation du portefeuille (ADR-0041 candidat) est en cours d'exécution, ses vingt dépôts de staging créés le 2026-09-16. Les noms de dépôts cités ici sont ceux de la carte LEXICON en vigueur ; la carte de refondation les remplace à la bascule sans changer les décisions.
 
 ## Décisions
 
@@ -46,6 +48,8 @@ La graine de l'échantillon est `sha256(empreinte du rapport scellé ‖ nonce d
 ### D6 — Dépôt dédié, naissance privée d'abord
 
 `libre-ai/drill` est créé selon ADR-0038/I-30 : nom et enrôlement signés par cet ADR, distant privé vide, attestation fusionnée, exposition publique ensuite. Rôle `standalone-tool`, couche `transverse`, fiche `project.v1.yaml`, exposition initiale `spec-published`. Licences : Apache-2.0 pour le crate, le paquet, les schémas, scripts et fixtures (réutilisables comme les contrats) ; CC-BY-4.0 pour la documentation ; REUSE et DCO obligatoires. Le choix Apache-2.0 plutôt qu'EUPL-1.2 pour un outil destiné à être consommé hors flotte est un point que le propriétaire confirme au merge.
+
+L'addon Pi privé `drill` de `product-research` ne devient pas le dépôt : il est soit adapté en runner qui reçoit un `probe-brief.v1` et rend un `probe-report.v1` (son profil Pi isolé et son cache d'instantanés hors dépôt sont conservés), soit retiré. Cette disposition est prise avant la création du distant privé, et aucun paquet public ne porte le nom `drill` avant elle.
 
 ### D7 — Sécurité et données
 

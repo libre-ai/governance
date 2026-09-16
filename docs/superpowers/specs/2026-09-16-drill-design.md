@@ -102,7 +102,7 @@ Re-forage d'une source épinglée de la campagne (Chisle au SHA `98e05e62…`) a
 
 ## 9. Changements de gouvernance nécessaires
 
-ADR-0043 ; LEXICON §2.4 (ligne `drill`) et §14 ; INVARIANTS I-32 ; `ecosystem/repositories.v1.yaml` (entrée `standalone-tool`, `transverse`, `private` à la naissance puis `public`) ; `contracts` : `probe-brief.v1`, `probe-report.v1`, fixtures, entrées de catalogue `candidate` (owners `drill`, consumers `drill`, `missions` à confirmer), WIT `drill-core-v1` ; skill `source-drill` : sa procédure référence désormais les contrats au lieu de décrire le format de rapport.
+ADR-0043 ; LEXICON §2.4 (ligne `drill`) et §15 ; INVARIANTS I-34 ; `ecosystem/repositories.v1.yaml` (entrée `standalone-tool`, `transverse`, `private` à la naissance puis `public`) ; `contracts` : `probe-brief.v1`, `probe-report.v1`, fixtures, entrées de catalogue `candidate` (owners `drill`, consumers `drill`, `missions` à confirmer), WIT `drill-core-v1` ; skill `source-drill` : sa procédure référence désormais les contrats au lieu de décrire le format de rapport.
 
 ## 10. Ordre d'exécution et critères d'acceptation
 

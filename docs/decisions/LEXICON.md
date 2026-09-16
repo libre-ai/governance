@@ -375,9 +375,9 @@ Ce nom ne désigne ni produit, ni package, ni crate. Le contenu de recherche res
 non normatif ; seuls le nom, le rôle, la visibilité et la frontière d'autorité
 entrent dans l'index public. Les familles de noms existantes restent inchangées.
 
-## 14. Amendement du 2026-09-16 — outil transverse `drill`
+## 15. Amendement du 2026-09-16 — outil transverse `drill`
 
-ADR-0043/I-32 admet `libre-ai/drill`, nom canonique d'un outil transverse
+ADR-0043/I-34 admet `libre-ai/drill`, nom canonique d'un outil transverse
 (`standalone-tool`) qui fore un dépôt source et rend des décisions prouvées par
 mécanisme. Le paquet se nomme `@libre-ai/drill`, le crate `libre-ai-drill`,
 l'interface native `drill-core-v1`. Le vocabulaire de ses objets est fixé :
@@ -397,3 +397,10 @@ marque produit dans la famille ; le contrôle nominatif des surfaces (registres,
 paquets homonymes `drill` sur npm et crates.io) est un point de décision
 propriétaire avant la naissance du dépôt, au même titre que §12.2 pour
 `signalement` ; cette carte ne le présume pas.
+
+Homonyme connu : `product-research` héberge un addon Pi privé d'exploration nommé
+`drill` (commande `/drill`, outils `drill_*`), antérieur à cet amendement et non
+normatif (ADR-0039 D2). Il n'entre pas dans cette carte ; ADR-0043 D6 fixe sa
+disposition : il devient un runner consommateur de `probe-brief.v1` et
+`probe-report.v1`, ou il est retiré avant la naissance de `libre-ai/drill` ; aucun
+paquet public ne porte ce nom d'ici là.
