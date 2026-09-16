@@ -8,7 +8,7 @@ authority: >
   2026-07-19 state; the portfolio grows by owner decision. Repository creation and
   product activation are on the human-touch surface (ADR-0009 §5).
 exposure_scale: [idea, spec-published, usable-verifiable, proven]
-updated_on: 2026-09-10
+updated_on: 2026-09-16
 
 families:
   couche-1-apps:
@@ -38,6 +38,11 @@ families:
       repo: libre-ai/website          # reserved, declared in repositories.v1.yaml
       cdc: docs/apps/website.md
       scope: static/SSR sourced citable projection of knowledge, product records, forge evidence; no CMS, no tracking
+    - name: Drill
+      exposure: spec-published
+      repo: libre-ai/drill            # planned; ADR-0043, birth under ADR-0038/I-30 private-first
+      spec: docs/superpowers/specs/2026-09-16-drill-design.md
+      scope: verified probing of one external repository into mechanism-level decisions projected into the target repository; no runner orchestration, no sandboxing, no result retention
 
   security-of-loops:
     # ADR-0009 §6 — hard prerequisites that GATE couche-2 (Polaris) wave-3 execution.

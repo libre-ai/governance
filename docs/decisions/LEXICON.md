@@ -73,6 +73,7 @@ Le nom de la couche 2 productisée est **Polaris** (ADR-0011 D2, collision de no
 | Brique       | Repo satellite cible  | Package/crate cible    | Note            |
 | ------------ | --------------------- | ---------------------- | --------------- |
 | `mcp-server` | `libre-ai/mcp-server` | `@libre-ai/mcp-server` | À l'activation. |
+| `drill`      | `libre-ai/drill`      | `@libre-ai/drill` · `libre-ai-drill` | À la naissance (ADR-0043) ; rôle `standalone-tool`, interface WIT `drill-core-v1`. |
 | `corpus`     | `libre-ai/corpus`     | —                      | À l'activation. |
 | `docs`       | `libre-ai/docs`       | —                      | À l'activation. |
 
@@ -373,3 +374,33 @@ dépôt `administrative-private` transverse, hors portfolio, sans fiche produit.
 Ce nom ne désigne ni produit, ni package, ni crate. Le contenu de recherche reste
 non normatif ; seuls le nom, le rôle, la visibilité et la frontière d'autorité
 entrent dans l'index public. Les familles de noms existantes restent inchangées.
+
+## 15. Amendement du 2026-09-16 — outil transverse `drill`
+
+ADR-0043/I-34 admet `libre-ai/drill`, nom canonique d'un outil transverse
+(`standalone-tool`) qui fore un dépôt source et rend des décisions prouvées par
+mécanisme. Le paquet se nomme `@libre-ai/drill`, le crate `libre-ai-drill`,
+l'interface native `drill-core-v1`. Le vocabulaire de ses objets est fixé :
+une **sonde** (`probe`) est l'unité de forage ; son brief est un
+`probe-brief.v1` ; le rapport rendu par un runner est un `probe-report.v1` ;
+son verdict est un `evidence-report.v1`. Une sonde est `declared`, `sealed`,
+`verified`, `decided` puis `projected` ; il n'existe pas d'état d'archive.
+
+Le mot `Dossier` reste l'objet canonique de `signalement` (§12.1) et n'est pas
+employé par `drill`. Les mots `mission` et `run` restent ceux de l'orchestrateur
+et du harness : un `probe-report` référence une attestation de run, il n'en est
+pas un. Les contenus des dépôts forés sont des données au sens d'ADR-0032 ;
+aucun nom de source externe n'entre dans cette carte.
+
+Contrôle de collision : `drill` est un générique anglais non revendiqué comme
+marque produit dans la famille ; le contrôle nominatif des surfaces (registres,
+paquets homonymes `drill` sur npm et crates.io) est un point de décision
+propriétaire avant la naissance du dépôt, au même titre que §12.2 pour
+`signalement` ; cette carte ne le présume pas.
+
+Homonyme connu : `product-research` héberge un addon Pi privé d'exploration nommé
+`drill` (commande `/drill`, outils `drill_*`), antérieur à cet amendement et non
+normatif (ADR-0039 D2). Il n'entre pas dans cette carte ; ADR-0043 D6 fixe sa
+disposition : il devient un runner consommateur de `probe-brief.v1` et
+`probe-report.v1`, ou il est retiré avant la naissance de `libre-ai/drill` ; aucun
+paquet public ne porte ce nom d'ici là.
