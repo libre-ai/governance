@@ -118,6 +118,15 @@ repositories:
     lifecycle: active
     owns:
       - the package at the repository root (formerly packages/knowledge)
+  - repository: libre-ai/pi-evidence
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    owns:
+      - evidence recipes for agent-made changes (declared checks bound to revision, environment and model identity; signed in-toto attestations; CI replay)
+    consumes:
+      - distribution/templates/evidence (governed recipe variants)
   - repository: libre-ai/rgpd-kit
     card: project.v1.yaml
     role: satellite

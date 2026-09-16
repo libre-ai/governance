@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "notes": "Gabarit gouverné libre-ai/governance distribution/templates/evidence/cargo.json — copie octet-exacte vérifiée par ecosystem/check-evidence-conformance.ts. Tests et clippy sans avertissement sont les critères de conformité de flotte ; le formatage est mesuré sans bloquer.",
+  "policy": "remind",
+  "checks": [
+    {
+      "id": "cargo-test",
+      "command": "cargo",
+      "args": ["test", "--all-targets"],
+      "required": true,
+      "timeout_seconds": 1800
+    },
+    {
+      "id": "cargo-clippy",
+      "command": "cargo",
+      "args": ["clippy", "--all-targets", "--", "-D", "warnings"],
+      "required": true,
+      "timeout_seconds": 1800
+    },
+    {
+      "id": "cargo-fmt",
+      "command": "cargo",
+      "args": ["fmt", "--all", "--check"],
+      "required": false,
+      "timeout_seconds": 300
+    }
+  ]
+}
