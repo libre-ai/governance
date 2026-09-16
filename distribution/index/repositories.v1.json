@@ -307,15 +307,6 @@
       ]
     },
     {
-      "repository": "libre-ai/signalement",
-      "name": "Signalement",
-      "layer": "couche-1",
-      "role": "reserved-product-home",
-      "visibility": "public",
-      "lifecycle": "active",
-      "card": "project.v1.yaml"
-    },
-    {
       "repository": "libre-ai/spec-studio",
       "name": "Spec Studio",
       "layer": "couche-1",

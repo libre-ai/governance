@@ -118,16 +118,6 @@ repositories:
     lifecycle: active
     owns:
       - the package at the repository root (formerly packages/knowledge)
-  - repository: libre-ai/signalement
-    card: project.v1.yaml
-    role: reserved-product-home
-    layer: couche-1
-    product: Signalement
-    visibility: public
-    lifecycle: active
-    owns:
-      - reviewed web incident reporting, executable reproduction, fix verification, portable multi-system ticket projections (published 2026-09-15; inventoried here so the reconciliation gate stays green — the product owner amends this entry)
-    consumes: []
   - repository: libre-ai/pi-evidence
     role: satellite
     layer: couche-2
